@@ -3,32 +3,45 @@
 	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
 	<link rel="stylesheet" type="text/css" href="css/style.css" />
 	<title>Central Illinois Trap League</title>
+	<meta content="width=device-width, initial-scale=1">
 </head>
 
 <body>
-	<div id="header">
-		<!--<div class="citl-logo">Central Illinois Trap League</div>-->
-		<div class="citl-logo"><a href="index.html"><img src="images/logo_full_small.png" style="max-width:30%;"></a></div>
-		<div class="citl-slogan">An Open Source Shotgun Sport</div>
-	</div>
+	<div id="navbar">
 
-	<div id="sidebar-left">
-		<a style="font-weight:bold;" href="index.html">Home</a>
-		<a href="scorecards.html">Scorecards</a>
-		<a href="rules.html">Rules</a>
-		<a href="about.html">About</a>
-		<a href="downloads.html">Downloads</a>
-		<hr>
-		<a href="http://www.darnalls.com/" target="_blank">Darnall's Gun Works</a>
-		<a href="http://www.shootingsportsouvenirs.com/" target="_blank">Shooting Sports Souvenirs</a>
-	</div>
+		<div id="navbar-right">
+			<a href="index.html">Home</a>
+			<a href="scorecards.html">Scorecards</a>
+			<a href="rules.html">Rules</a>
+			<a href="downloads.html" class="active">Downloads</a>
+			<a href="about.html">About</a>
+		</div>
+	 	<img src="images/logo_full_smaller.png" id="logo">
+ 	</div>
 
-	<div id="main" class="general-text">
+	<div style="margin-top:250px; padding:15px 15px;"></div>
+
 		<div id="content">
-			<div id="main-header">
-				Downloads
-			</div>
-			<div class="general-text">
+			<div class="general-text" style="padding-left: 20%; padding-right: 20%;">
+				<h2>2020 Score Sheets</h2>
+				<table class="shooter-tables">
+					<tr><td><a href="" target="_blank">Week 1 (4/14/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 2 (4/21/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 3 (4/28/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 4 (5/5/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 5 (5/12/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 6 (5/19/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 7 (5/26/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 8 (6/2/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 9 (6/9/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 10 (6/16/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 11 (6/23/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 12 (6/30/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 13 (7/7/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 14 (7/14/2020)</a></td></tr>
+					<tr><td><a href="" target="_blank">Week 15 (7/21/2020)</a></td></tr>
+				</table>
+
 
 				<h2>2019 Score Sheets</h2>
 				<table class="shooter-tables">
@@ -54,21 +67,31 @@
 					<tr><td><a href="https://s3.amazonaws.com/citl/2019_handicap_table.pdf" target="_blank">Handicap Table</a></td></tr>
 				</table>
 
+				<div class="note">
+					Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
+					We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
+				</div>
+
 			</div>
 		</div>
+
 	</div>
 
-	<div id="sidebar-right" class="general-text">
 
-		<a class="weatherwidget-io" href="https://forecast7.com/en/40d48n88d99/bloomington/?unit=us" data-label_1="BLOOMINGTON" data-label_2="WEATHER" data-font="Trebuchet MS" data-icons="Climacons Animated" data-days="3" data-theme="pure" >BLOOMINGTON WEATHER</a>
-		<script>
-		!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
-		</script>
-	</div>
-	<div id="footer">
-		Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
-		We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
-	</div>
+
+<script>
+	window.onscroll = function() {scrollFunction()};
+
+	function scrollFunction() {
+	if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 80) {
+		document.getElementById("navbar").style.padding = "10px 10px";
+		document.getElementById("logo").style.width = "250px";
+	} else {
+		document.getElementById("navbar").style.padding = "30px 10px";
+		document.getElementById("logo").style.width = "636px"; /* 636px */
+		}
+	}
+</script>
 
 </body>
 </html>

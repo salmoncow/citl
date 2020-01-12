@@ -3,34 +3,27 @@
 	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
 	<link rel="stylesheet" type="text/css" href="css/style.css" />
 	<title>Central Illinois Trap League</title>
+	<meta content="width=device-width, initial-scale=1">
 </head>
 
 <body>
-	<div id="header">
-		<!--<div class="citl-logo">Central Illinois Trap League</div>-->
-		<div class="citl-logo"><a href="index.html"><img src="images/logo_full_small.png" style="max-width:30%;"></a></div>
-		<div class="citl-slogan">An Open Source Shotgun Sport</div>
-	</div>
+	<div id="navbar">
 
-	<div id="sidebar-left">
-		<a style="font-weight:bold;" href="index.html">Home</a>
-		<a href="scorecards.html">Scorecards</a>
-		<a href="rules.html">Rules</a>
-		<a href="about.html">About</a>
-		<a href="downloads.html">Downloads</a>
-		<hr>
-		<a href="http://www.darnalls.com/" target="_blank">Darnall's Gun Works</a>
-		<a href="http://www.shootingsportsouvenirs.com/" target="_blank">Shooting Sports Souvenirs</a>
-	</div>
+		<div id="navbar-right">
+			<a href="index.html">Home</a>
+			<a href="scorecards.html">Scorecards</a>
+			<a href="rules.html">Rules</a>
+			<a href="downloads.html">Downloads</a>
+			<a href="about.html" class="active">About</a>
+		</div>
+	 	<img src="images/logo_full_smaller.png" id="logo">
+ 	</div>
 
-	<div id="main" class="general-text">
+	<div style="margin-top:250px; padding:15px 15px;"></div>
+
 		<div id="content">
-			<div id="main-header">
-				About CITL
-			</div>
-			<div class="general-text">
+			<div class="general-text" style="padding-left: 20%; padding-right: 20%;">
 
-				<h2>Trap Shooting</h2>
 				<p><a href="https://en.wikipedia.org/wiki/Trap_shooting" target="_blank">Trap Shooting</a> is a competitive clay pigeon shooting sport where individuals
 				participate in shooting clay targets launched from a stationary bunker. Teams consist of many shooters, but only five shooters from a team will participate
 				during any one event.</p>
@@ -54,22 +47,29 @@
 				<center><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3035.9655576267696!2d-89.15142168474101!3d40.45389927936085!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x880b126c9e636233%3A0x68ace82319b9a7a6!2sDarnall&#39;s+Gun+Works+%26+Ranges!5e0!3m2!1sen!2sus!4v1555177381099!5m2!1sen!2sus" width="70%" height="350" frameborder="0" style="border:0" allowfullscreen></iframe></center>
 				</p>
 
+				<div class="note">
+					Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
+					We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
+				</div>
 
 			</div>
 		</div>
+
 	</div>
 
-	<div id="sidebar-right" class="general-text">
+<script>
+	window.onscroll = function() {scrollFunction()};
 
-		<a class="weatherwidget-io" href="https://forecast7.com/en/40d48n88d99/bloomington/?unit=us" data-label_1="BLOOMINGTON" data-label_2="WEATHER" data-font="Trebuchet MS" data-icons="Climacons Animated" data-days="3" data-theme="pure" >BLOOMINGTON WEATHER</a>
-		<script>
-		!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
-		</script>
-	</div>
-	<div id="footer">
-		Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
-		We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
-	</div>
+	function scrollFunction() {
+	if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 80) {
+		document.getElementById("navbar").style.padding = "10px 10px";
+		document.getElementById("logo").style.width = "250px";
+	} else {
+		document.getElementById("navbar").style.padding = "30px 10px";
+		document.getElementById("logo").style.width = "636px"; /* 636px */
+		}
+	}
+</script>
 
 </body>
 </html>

@@ -1,23 +1,10 @@
-/* CLASS tag overwrites */
-
-/* Color Reference
-	Clay target: 		#FF8000
-	Prussian blue:		#0B3C5D
-	Sky blue:			#328CC1
-	Gold leaf:			#D9B310
-	Ivory black:		#1D2731
-	Blueberry:			#6B7A8F
-*/
-
-html {
-	height: 68vh;
+* {
+    box-sizing: border-box;
 }
 
 body {
-	overflow:auto;
-	margin: 0;
-	padding: 0;
-	height: 100%;
+    margin: 0;
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
 }
 
 a:link {
@@ -33,17 +20,140 @@ a:hover, a:active {
 	color: #328CC1;
 }
 
-/* CLASS */
-
-.citl-logo {
+.note {
 	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	text-decoration: none;
-	line-height: 1;
-	font-size: 37px;
 	letter-spacing: 2px;
+	width: 100%;
+	text-align: center;
+	border-top: 2px solid black;
+	padding: 20px;
+	text-transform: lowercase;
+	font-size: 12px;
 	color: #555555;
-	display: block;
-	top: 17px;
+	clear: both;
+}
+
+
+#navbar {
+    overflow: hidden;
+    background-color: white;
+    border-bottom: 2px solid black;
+    padding: 30px 10px; /* 90 10 */
+    transition: 0.4s;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 99;
+}
+
+#navbar a {
+    float: left;
+    color: black;
+    text-align: center;
+    padding: 12px;
+    text-decoration: none;
+    font-size: 18px;
+    line-height: 25px;
+    border-radius: 4px;
+}
+
+#navbar #logo {
+    font-size: 35px;
+    font-weight: bold;
+    transition: 0.4s;
+    font-variant: small-caps;
+}
+
+#navbar a:hover {
+    background-color: darkgrey;
+    color: black;
+}
+
+#navbar a.active {
+    background-color: #053C5D;
+    color: white;
+}
+
+#navbar-right {
+    vertical-align: bottom;
+    float: right;
+}
+
+@media screen and (max-width: 580px) {
+    #navbar {
+        padding: 20px 10px !important;
+    }
+    #navbar a {
+        float: none;
+        display: block;
+        text-align: left;
+    }
+    #navbar-right {
+        float: none;
+    }
+}
+
+/* Standings Table */
+
+#standing-table {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-align: center;
+	border-collapse: collapse;
+	table-layout: auto;
+	width: 100%;
+}
+
+#standing-table tr {
+	height: 35px;
+}
+
+#standing-table th {
+	padding: 3px;
+	font-size: 15px;
+    background-color: #0B3C5D;
+    color: white;
+	text-transform: uppercase;
+}
+
+#standing-table td, #standing-table th {
+    border: 1px solid #ddd;
+}
+
+#standing-table tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+
+#standing-table td:first-child {
+	text-align: center;
+	width: 1%;
+	font-size: 13px;
+}
+
+#standing-table tr:last-child {
+	text-align: center;
+	width: 20%;
+	padding-right: 5px;
+	font-size: 13px;
+}
+
+#standing-table td:nth-child(n+2):nth-child(-n+16), #standing-table th:nth-child(n+2):nth-child(-n+16) {
+	width: 5%;
+}
+
+#standing-table tr:hover {
+	background-color: #ddd;
+}
+
+/* Main stuff */
+
+#main-header {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	font-size: 25px;
+	letter-spacing: 2px;
+	color: #FF8000;
+	text-transform: uppercase;
+	font-variant: normal;
 }
 
 .citl-slogan {
@@ -56,100 +166,18 @@ a:hover, a:active {
 	display: block;
 	text-align: right;
 	top: 17px;
-}
-
-.user-id {
-	text-transform: uppercase;
+   text-transform: uppercase;
 }
 
 .general-text {
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	font-size: 16px;
+	font-family: "Arial";
+	font-size: 20px;
 	text-decoration: none;
-	color: inherit;
+	color: #404040;
 	letter-spacing: .8px;
 	text-transform: none;
 	padding-bottom: 30px;
-}
-
-.button {
-    background-color: #0B3C5D;
-    border: none;
-	border-radius: 8px;
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	text-decoration: none;
-	color: white;
-	letter-spacing: 1px;
-	text-transform: uppercase;
-    padding: 7px 20px;
-    text-align: center;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-}
-
-.bigtile {
-    background-color: #e6ffee;
-    border: none;
-    border-radius: 6px;
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	font-size: 20px;
-	text-decoration: none;
-	color: inherit;
-	letter-spacing: 1px;
-	text-transform: uppercase;
-    padding: 50px 50px;
-    text-align: center;
-    display: inline-block;
-    margin: 4px 2px;
-    cursor: pointer;
-}
-
-a.bigtile:hover {
-  background-color: #009933;
-  color: white;
-}
-
-input.bigtile:hover {
-  background-color: #009933;
-  color: white;
-}
-
-.liltile {
-    background-color: #e6ffee;
-    border: none;
-    border-radius: 6px;
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	font-size: 20px;
-	text-decoration: none;
-	color: white;
-	letter-spacing: 1px;
-	text-transform: uppercase;
-    padding: 25px 50px;
-    text-align: center;
-    display: inline-block;
-    margin: 4px 2px;
-    cursor: pointer;
-}
-
-a.liltile:hover {
-	background-color: #009933;
-	color: white;
-}
-
-.note {
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	letter-spacing: 2px;
-	width: 100%;
-	text-align: center;
-	border-top: 2px solid black;
-	padding: 20px;
-	box-sizing: border-box;
-	text-transform: lowercase;
-	font-size: 12px;
-	color: #555555;
-	clear: both;
+	line-height: 1.6;
 }
 
 /* Warning table */
@@ -206,6 +234,27 @@ a.liltile:hover {
 	color: white;
 }
 
+/* Collapsible scorecards */
+
+.collapsible {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	background-color: white;
+	color: #0B3C5D;
+	cursor: pointer;
+	padding: 8px;
+	width: 100%;
+	border: none;
+	border-top: 2px solid black;
+	text-align: left;
+	outline: none;
+	font-size: 17px;
+}
+
+.active, .collapsible:hover {
+	background-color: #328CC1;
+	color: white;
+}
+
 .collapsible:after {
 	content: '\002B';
 	color: #053C5D;
@@ -213,17 +262,18 @@ a.liltile:hover {
 	float: right;
 	margin-left: 5px;
 }
-
+/* causing issues with Home button
 .active:after {
 	content: "\2212";
 	color: #053C5D;
-}
+} */
 
 .scorecard {
 	max-height: 0;
 	overflow: hidden;
 	transition: max-height 0.2s ease-out;
 }
+
 
 /* Scorecard Tables */
 
@@ -358,205 +408,4 @@ a.liltile:hover {
 
 .bonus-tables tr:hover {
 	background-color: #ddd;
-}
-
-
-/* Page layout styles */
-
-#wrapper {
-	width: 100%;
-	overflow: hidden;
-}
-
-#header {
-	background-color: white;
-	width:100%;
-	text-align: left;
-	text-transform: uppercase;
-	color: black;
-	border-bottom: solid;
-	padding-top: 10px;
-	padding-left: 10px;
-	padding-right: 10px;
-	box-sizing: border-box;
-}
-
-#main-header {
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	font-size: 25px;
-	letter-spacing: 2px;
-	color: #FF8000;
-	margin: 0px;
-	text-transform: uppercase;
-	font-variant: normal;
-}
-
-#sidebar-left {
-	float:left;
-	width:15%;
-	background-color: #f2f2f2;
-	padding: 0px;
-	box-sizing: border-box;
-}
-
-#sidebar-right {
-	float:left;
-	width:15%;
-	background-color: white;
-	/* padding: 10px; */
-	box-sizing: border-box;
-}
-
-#sidebar-left a:link, #sidebar-left a:visited {
-    background-color: #f2f2f2;
-    color: black;
-    border: 0px solid black;
-    padding: 10px 20px;
-    text-align: left;
-    text-decoration: none;
-    display: inline-block;
-	width: 100%;
-    box-sizing: border-box;
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	letter-spacing: 2px;
-}
-
-#sidebar-left a:hover, #sidebar-left a:active {
-    background-color: #053C5D;
-    color: white;
-}
-
-#main {
-	overflow: auto;
-	height: 65vh;
-	float: left;
-	width:70%;
-	background-color: white;
-	box-sizing: border-box;
-}
-
-#content {
-	float: left;
-	width:100%;
-	background-color: white;
-	padding: 20px;
-	box-sizing: border-box;
-	position: relative;
-	overflow-x: auto;
-}
-
-#footer {
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	letter-spacing: 2px;
-	width: 100%;
-	text-align: center;
-	border-top: 2px solid black;
-	padding: 20px;
-	box-sizing: border-box;
-	text-transform: lowercase;
-	font-size: 12px;
-	color: #555555;
-	clear: both;
-}
-
-#sidebar-left, #sidebar-right, #main {
-	min-height: 100%;
-	box-sizing: border-box;
-}
-
-#messages {
-	text-transform: uppercase;
-}
-
-/* Standings Table */
-
-#standing-table {
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	font-size: 12px;
-	text-align: center;
-	border-collapse: collapse;
-	table-layout: auto;
-	width: 100%;
-}
-
-#standing-table tr {
-	height: 35px;
-}
-
-#standing-table th {
-	padding: 3px;
-	font-size: 15px;
-    background-color: #0B3C5D;
-    color: white;
-	text-transform: uppercase;
-}
-
-#standing-table td, #standing-table th {
-    border: 1px solid #ddd;
-}
-
-#standing-table tr:nth-child(even) {
-	background-color: #f2f2f2;
-}
-
-#standing-table td:first-child {
-	text-align: center;
-	width: 1%;
-	font-size: 13px;
-}
-
-#standing-table tr:last-child {
-	text-align: center;
-	width: 20%;
-	padding-right: 5px;
-	font-size: 13px;
-}
-
-#standing-table td:nth-child(n+2):nth-child(-n+16), #standing-table th:nth-child(n+2):nth-child(-n+16) {
-	width: 5%;
-}
-
-#standing-table tr:hover {
-	background-color: #ddd;
-}
-
-/* Input Tables */
-
-#input-tables {
-	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-	font-size: 12px;
-	text-align: center;
-	border-collapse: collapse;
-	table-layout: auto;
-	/* width: 100%; */
-}
-/*
-#input-tables tr {
-	height: 35px;
-}
-
-#input-tables th {
-	padding: 3px;
-	font-size: 15px;
-    background-color: #009933;
-    color: white;
-	text-transform: uppercase;
-}
-
-#input-tables td, #input-tables th {
-    border: 1px solid #ddd;
-}
-
-#input-tables tr:nth-child(even) {
-	background-color: #f2f2f2;
-}
-
-#input-tables tr:hover {
-	background-color: #ddd;
-}
-*/
-/* Forms */
-
-input[id*="team_name"], input[id*="-first_name"], input[id*="-last_name"], input[id*="-email"] {
-	width: 80%;
 }

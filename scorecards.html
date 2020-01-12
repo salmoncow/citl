@@ -3,36 +3,30 @@
 	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
 	<link rel="stylesheet" type="text/css" href="css/style.css" />
 	<title>Central Illinois Trap League</title>
+	<meta content="width=device-width, initial-scale=1">
 </head>
 
 <body>
-	<div id="header">
-		<!--<div class="citl-logo">Central Illinois Trap League</div>-->
-		<div class="citl-logo"><a href="index.html"><img src="images/logo_full_small.png" style="max-width:30%;"></a></div>
-		<div class="citl-slogan">An Open Source Shotgun Sport</div>
+	<div id="navbar">
+
+	  	<div id="navbar-right">
+	    	<a href="index.html">Home</a>
+	    	<a href="scorecards.html" class="active">Scorecards</a>
+			<a href="rules.html">Rules</a>
+			<a href="downloads.html">Downloads</a>
+	    	<a href="about.html">About</a>
+	  	</div>
+		<img src="images/logo_full_smaller.png" id="logo">
 	</div>
 
-	<div id="sidebar-left">
-		<a style="font-weight:bold;" href="index.html">Home</a>
-		<a href="scorecards.html">Scorecards</a>
-		<a href="rules.html">Rules</a>
-		<a href="about.html">About</a>
-		<a href="downloads.html">Downloads</a>
-		<hr>
-		<a href="http://www.darnalls.com/" target="_blank">Darnall's Gun Works</a>
-		<a href="http://www.shootingsportsouvenirs.com/" target="_blank">Shooting Sports Souvenirs</a>
-	</div>
+	<div style="margin-top:250px; padding:15px 15px;"></div>
 
-	<div id="main" class="general-text">
 		<div id="content">
-			<div id="main-header">
-				2019 Season
-			</div>
-			<div class="general-text">
-				<h2>Scorecards</h2>
+			<div class="general-text" style="padding-left: 20%; padding-right: 20%;">
+				<h2>2020 Scorecards</h2>
 
 
-
+				<h2>2019 Scorecards</h2>
 				<button class="collapsible">Barrels of Fun</button>
 				<div class="scorecard">
 					<table class="scorecard-tables">
@@ -295,39 +289,44 @@
 				</div>
 
 
-
-
+				<div class="note">
+					Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
+					We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
+				</div>
 			</div>
 		</div>
 	</div>
-	<div id="sidebar-right" class="general-text">
 
-		<a class="weatherwidget-io" href="https://forecast7.com/en/40d48n88d99/bloomington/?unit=us" data-label_1="BLOOMINGTON" data-label_2="WEATHER" data-font="Trebuchet MS" data-icons="Climacons Animated" data-days="3" data-theme="pure" >BLOOMINGTON WEATHER</a>
-		<script>
-		!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
-		</script>
-	</div>
-	<div id="footer">
-		Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
-		We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
-	</div>
 
-	<script>
-		var coll = document.getElementsByClassName("collapsible");
-		var i;
+<script>
+	window.onscroll = function() {scrollFunction()};
 
-		for (i = 0; i < coll.length; i++) {
-			coll[i].addEventListener("click", function() {
-				this.classList.toggle("active");
-				var content = this.nextElementSibling;
-				if (content.style.maxHeight){
-					content.style.maxHeight = null;
-				} else {
-					content.style.maxHeight = content.scrollHeight + "px";
-				}
-			});
-		}
-	</script>
+	function scrollFunction() {
+	  	if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 80) {
+	    	document.getElementById("navbar").style.padding = "10px 10px";
+			document.getElementById("logo").style.width = "250px";
+	  	} else {
+	    	document.getElementById("navbar").style.padding = "30px 10px";
+			document.getElementById("logo").style.width = "636px"; /* 636px */
+	  	}
+	}
+
+	/* Collapsible scorecards */
+	var coll = document.getElementsByClassName("collapsible");
+	var i;
+
+	for (i = 0; i < coll.length; i++) {
+		coll[i].addEventListener("click", function() {
+			this.classList.toggle("active");
+			var content = this.nextElementSibling;
+			if (content.style.maxHeight){
+				content.style.maxHeight = null;
+			} else {
+				content.style.maxHeight = content.scrollHeight + "px";
+			}
+		});
+	}
+</script>
 
 </body>
 </html>
