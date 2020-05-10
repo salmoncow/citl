@@ -1,6 +1,11 @@
 variables:
   DOMAIN: "www.google.com"
 
+trigger_build:
+  stage: build
+  script:
+    - "curl -X POST -F token=GITLAB_CI_TOKEN -F ref=GITLAB_CI_REFNAME https://gitlab.com/api/v4/projects/18680622/trigger/pipeline"
+
 stages:
  - build
 
