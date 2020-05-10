@@ -7,4 +7,6 @@ stages:
  build:
    before-script:
      - echo Hello World
+
+  script:
      - nslookup $DOMAIN
