@@ -2,6 +2,7 @@ stages:
  - build
 
 build:
+  image: python:latest
   tags:
     - shared
   stage: build
