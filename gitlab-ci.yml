@@ -1,0 +1,10 @@
+variables:
+  DOMAIN: "www.google.com"
+
+stages:
+ - build
+
+ build:
+   before-script:
+     - echo Hello World
+     - nslookup $DOMAIN
