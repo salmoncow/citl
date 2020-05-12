@@ -15,6 +15,6 @@ build:
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_DEFAULT_REGION
   script:
-    - aws s3 ls
+    - aws s3 sync . s3://$CITL_S3_BUCKET --delete --exclude ".git/*"  --exclude ".gitlab-ci.yml" --exclude "README.md"
   rules:
     - if: $CI_COMMIT_BRANCH == 'master'   # Execute jobs when a new commit is pushed to master branch
