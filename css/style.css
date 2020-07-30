@@ -380,6 +380,8 @@ a:hover, a:active {
 	border-collapse: collapse;
 	table-layout: auto;
 	width: 100%;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 .bonus-tables tr {
