@@ -4,10 +4,9 @@ stages:
 build:
   image: python:latest
   tags:
-    - shared
+    - base
   stage: build
   before_script:
-    - echo Hello World
     - apt-get update
     - apt-get install -y zip unzip
     - pip install awscli
