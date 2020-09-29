@@ -1,16 +1,47 @@
+image: tdeknecht/aws:latest
+before_script:
+  - aws --version
+  - terraform --version
+  - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+  - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+  - aws configure set region us-east-1
+
 stages:
+ - plan
+ - apply
  - build
 
+plan:
+  tags:
+    - base
+  stage: plan
+  script:
+    - cd terraform/ && terraform init && terraform plan
+
+apply:
+  tags:
+    - base
+  stage: apply
+  script:
+    - cd terraform/ && terraform init && terraform apply -auto-approve
+  dependencies:
+    - plan
+  only:
+    refs:
+      - master
+  when: manual
+
 build:
-  image: tdeknecht/aws:latest
   tags:
     - base
   stage: build
-  before_script:
-    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-    - aws configure set region $AWS_DEFAULT_REGION
   script:
-    - aws s3 sync . s3://$CITL_S3_BUCKET --delete --exclude ".git/*"  --exclude ".gitlab-ci.yml" --exclude "README.md"
-  rules:
-    - if: $CI_COMMIT_BRANCH == 'master'   # Execute jobs when a new commit is pushed to master branch
+    - cd www/ && aws s3 sync . s3://citl.club --delete
+  dependencies:
+    - apply
+  only:
+    refs:
+      - master
+  when: manual
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH == 'master'   # Execute jobs when a new commit is pushed to master branch
