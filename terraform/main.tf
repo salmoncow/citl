@@ -11,6 +11,30 @@ module "route53_zone_citl_club" {
   tags    = local.tags
 }
 
+resource "aws_route53_record" "citl_club" {
+  zone_id = module.route53_zone_citl_club.zone_id
+  name    = "citl.club"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.citl_s3_distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.citl_s3_distribution.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "www_citl_club" {
+  zone_id = module.route53_zone_citl_club.zone_id
+  name    = "www.citl.club"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.citl_s3_distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.citl_s3_distribution.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 # ------------------------------------------------------------------------------
 # ACM
 # ------------------------------------------------------------------------------
