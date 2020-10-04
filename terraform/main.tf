@@ -1,19 +1,94 @@
 # ------------------------------------------------------------------------------
+# Route 53
+# ------------------------------------------------------------------------------
+
+# cit.club
+module "route53_zone_citl_club" {
+  source = "git::https://github.com/tdeknecht/aws-terraform//modules/network/route53_zone/"
+
+  name    = "citl.club"
+  comment = "CITL public zone"
+  tags    = local.tags
+}
+
+# ------------------------------------------------------------------------------
+# ACM
+# ------------------------------------------------------------------------------
+
+# citl.club certificate
+module "acm_cert_citl_club" {
+  source = "git::https://github.com/tdeknecht/aws-terraform//modules/network/acm_certificate/"
+
+  ou                        = local.ou
+  certificate_domain_name   = "citl.club"
+  validation_domain_name    = "citl.club"
+  validation_method         = "DNS"
+  subject_alternative_names = ["www.citl.club"]
+  tags                      = local.tags
+}
+output "certificate_arn_citl_club" { value = module.acm_cert_citl_club.certificate_arn }
+
+# ------------------------------------------------------------------------------
+# CloudFront
+# ------------------------------------------------------------------------------
+
+resource "aws_cloudfront_distribution" "citl_s3_distribution" {
+  aliases             = ["www.citl.club", "citl.club"]
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "CITL distribution"
+  default_root_object = "index.html"
+  price_class         = "PriceClass_100"
+  tags                = local.tags
+
+  origin {
+    domain_name = module.s3_bucket_citl_club.bucket_domain_name
+    origin_id   = local.s3_origin_id
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = module.acm_cert_citl_club.certificate_arn
+    minimum_protocol_version = "TLSv1.2_2018"
+    ssl_support_method       = "sni-only"
+  }
+
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = local.s3_origin_id
+    viewer_protocol_policy = "redirect-to-https"
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
 # S3: Buckets
 # ------------------------------------------------------------------------------
 
 # citl.club (website host)
 module "s3_bucket_citl_club" {
-    source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3/s3_bucket/"
-  # source = "../../aws/terraform/modules/storage/s3/s3_bucket"
+  source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3_bucket/"
 
-  ou                            = local.ou
-  use_case                      = local.use_case
-  bucket                        = "citl.club"
-  versioning                    = true
-  base_lifecycle_rule           = true
-  policy                        = data.aws_iam_policy_document.s3_bucket_policy_citl_club.json
-  tags                          = local.tags
+  ou                  = local.ou
+  use_case            = local.use_case
+  bucket              = "citl.club"
+  versioning          = true
+  base_lifecycle_rule = true
+  policy              = data.aws_iam_policy_document.s3_bucket_policy_citl_club.json
+  tags                = local.tags
 
   # website config
   block_public_acls       = false
@@ -26,6 +101,7 @@ module "s3_bucket_citl_club" {
 
 output "s3_citl_club_id" { value = module.s3_bucket_citl_club.id }
 output "s3_citl_club_arn" { value = module.s3_bucket_citl_club.arn }
+output "s3_citl_club_bucket_domain_name" { value = module.s3_bucket_citl_club.bucket_domain_name }
 
 data "aws_iam_policy_document" "s3_bucket_policy_citl_club" {
   statement {
@@ -42,15 +118,14 @@ data "aws_iam_policy_document" "s3_bucket_policy_citl_club" {
 
 # www.citl.club (website redirect)
 module "s3_bucket_www_citl_club" {
-    source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3/s3_bucket/"
-  # source = "../../aws/terraform/modules/storage/s3/s3_bucket"
+  source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3_bucket/"
 
-  ou                            = local.ou
-  use_case                      = local.use_case
-  bucket                        = "www.citl.club"
-  versioning                    = false
-  base_lifecycle_rule           = false
-  tags                          = local.tags
+  ou                  = local.ou
+  use_case            = local.use_case
+  bucket              = "www.citl.club"
+  versioning          = false
+  base_lifecycle_rule = false
+  tags                = local.tags
 
   # website config
   redirect_all_requests_to = "https://citl.club"
@@ -58,16 +133,15 @@ module "s3_bucket_www_citl_club" {
 
 # citl (data)
 module "s3_bucket_citl" {
-    source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3/s3_bucket/"
-  # source = "../../aws/terraform/modules/storage/s3/s3_bucket"
+  source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3_bucket/"
 
-  ou                            = local.ou
-  use_case                      = local.use_case
-  bucket                        = "citl"
-  versioning                    = false
-  base_lifecycle_rule           = true
-  policy                        = data.aws_iam_policy_document.s3_bucket_policy_citl.json
-  tags                          = local.tags
+  ou                  = local.ou
+  use_case            = local.use_case
+  bucket              = "citl"
+  versioning          = false
+  base_lifecycle_rule = true
+  policy              = data.aws_iam_policy_document.s3_bucket_policy_citl.json
+  tags                = local.tags
 }
 
 data "aws_iam_policy_document" "s3_bucket_policy_citl" {

@@ -43,5 +43,4 @@ build:
     refs:
       - master
   when: manual
-  # rules:
-  #   - if: $CI_COMMIT_BRANCH == 'master'   # Execute jobs when a new commit is pushed to master branch
+  
