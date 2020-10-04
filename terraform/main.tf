@@ -162,7 +162,7 @@ module "s3_bucket_citl" {
   ou                  = local.ou
   use_case            = local.use_case
   bucket              = "citl"
-  versioning          = false
+  versioning          = true
   base_lifecycle_rule = true
   policy              = data.aws_iam_policy_document.s3_bucket_policy_citl.json
   tags                = local.tags
