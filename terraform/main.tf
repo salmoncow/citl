@@ -2,7 +2,7 @@
 # Route 53
 # ------------------------------------------------------------------------------
 
-# cit.club
+# citl.club
 module "route53_zone_citl_club" {
   source = "git::https://github.com/tdeknecht/aws-terraform//modules/network/route53_zone/"
 
