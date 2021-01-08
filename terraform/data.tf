@@ -14,7 +14,7 @@ locals {
   s3_origin_id = "S3-citl.club"
 
   tags = {
-    "deployment" = "terraform"
+    "terraform" = true
     "owner"      = "citl"
     "use_case"   = local.use_case
   }
