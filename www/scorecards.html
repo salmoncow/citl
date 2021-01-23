@@ -11,21 +11,19 @@
 
 <body>
 
-<script src="js/scripts.js"></script> 
-
 <div class="header">
-	<img src="images/logo_full_large.png" alt="CITL" id="logo">
+	<a href="/"><img src="images/logo_full_large_white_bg.png" alt="CITL" id="logo"></a>
 </div>
 
 <div class="topnav" id="topnav">
-	<a href="/"><i class="fa fa-home"></i></a>
+	<a href="javascript:void(0);" class="burger" onclick="burgerNav()">
+		<i class="fa fa-bars"></i>
+	</a>
+	<a href="/" class="right"><i class="fa fa-home"></i></a>
 	<a href="scorecards.html" class="active">Scorecards</a>
 	<a href="rules.html">Rules</a>
 	<a href="downloads.html">Downloads</a>
 	<a href="about.html">About</a>
-	<a href="javascript:void(0);" class="burger" onclick="burgerNav()">
-		<i class="fa fa-bars"></i>
-	</a>
 </div>
 
 <div class="main">
@@ -539,23 +537,8 @@
 	Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
 </div>
 
-<script>
-	/* Collapsible scorecards */
-	var coll = document.getElementsByClassName("collapsible");
-	var i;
 
-	for (i = 0; i < coll.length; i++) {
-		coll[i].addEventListener("click", function() {
-			this.classList.toggle("active");
-			var content = this.nextElementSibling;
-			if (content.style.maxHeight){
-				content.style.maxHeight = null;
-			} else {
-				content.style.maxHeight = content.scrollHeight + "px";
-			}
-		});
-	}
-</script> 
+<script src="js/scripts.js"></script> 
 
 </body>
 </html>
