@@ -27,7 +27,6 @@ body {
 }
 
 #logo {
-    /* transition: 0.4s; */
     height: 100%;
 }
 
@@ -71,10 +70,6 @@ body {
     font-size: 17px;
 }
 
-.topnav a.right {
-    float: right;
-}
-
 .topnav a:hover {
     background-color: #ddd;
     color: black;
@@ -90,9 +85,11 @@ body {
 }
 
 @media screen and (max-width: 600px) {
-    .topnav a:not(:first-child) {display: none;}
+    .topnav a:not(:first-child) {
+        display: none;
+    }
     .topnav a.burger {
-        float: right;
+        float: left;
         display: block;
     }
     .topnav.responsive {
@@ -101,8 +98,7 @@ body {
         top: 0;
     }
     .topnav.responsive .burger {
-        position: absolute;
-        right: 0;
+        left: 0;
         top: 0;
     }
     .topnav.responsive a {
@@ -110,14 +106,31 @@ body {
         display: block;
         text-align: left;
     }
+    /* right side button on mobile */
+    .topnav a.right {
+        float: right;
+        display: block;
+    }
+    .topnav.responsive .right {
+        position: absolute;
+        right: 0;
+        top: 0;
+    }
 
     .main {   
         padding-left: 20px;
         padding-right: 20px;
     }
 
+    #logo {
+        width: 100%;
+        max-width: 340px;
+        height: auto;
+    }
+
     .header {
         height: 200px;
+        padding: 10px;
     }
 }
 
