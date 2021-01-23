@@ -81,8 +81,15 @@ resource "aws_cloudfront_distribution" "citl_s3_distribution" {
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = local.s3_origin_id
     viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 3600
 
     forwarded_values {
+      headers = [
+        "Origin", # needed for CORS (https://www.boxuk.com/insight/enabling-cross-domain-access-in-cloudfront/)
+      ]
+      
       query_string = false
 
       cookies {
@@ -121,6 +128,11 @@ module "s3_bucket_citl_club" {
   restrict_public_buckets = false
   index_document          = "index.html"
   error_document          = "error.html"
+
+  # cors config
+  cors_allowed_headers = ["*"]
+  cors_allowed_methods = ["GET"]
+  cors_allowed_origins = ["*"]
 }
 
 output "s3_citl_club_id" { value = module.s3_bucket_citl_club.id }
