@@ -1,76 +1,51 @@
+<!DOCTYPE html>
 <html>
 <head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
 	<link rel="stylesheet" type="text/css" href="css/style.css" />
 	<title>Central Illinois Trap League</title>
-	<meta content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
 </head>
 
 <body>
-	<div id="navbar">
 
-		<div id="navbar-right">
-			<a href="/">Home</a>
-			<a href="scorecards.html">Scorecards</a>
-			<a href="rules.html">Rules</a>
-			<a href="downloads.html" class="active">Downloads</a>
-			<a href="about.html">About</a>
-		</div>
-	 	<img src="images/logo_full_smaller.png" id="logo">
- 	</div>
+<script src="js/scripts.js"></script> 
 
-	<div style="margin-top:250px; padding:15px 15px;"></div>
+<div class="header">
+	<img src="images/logo_full_large.png" alt="CITL" id="logo">
+</div>
 
-		<div id="content">
-			<div class="general-text" style="padding-left: 20%; padding-right: 20%;">
-				<h2>2020 Score Sheets</h2>
-				<table class="shooter-tables">
-                    <tr><td><a href="assets/score_sheets/2020w1.pdf" target="_blank">Week 1 (5/5/2020)</a></td></tr>
-                    <tr><td><a href="assets/score_sheets/2020w2.pdf" target="_blank">Week 2 (5/12/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w3.pdf" target="_blank">Week 3 (5/19/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w4.pdf" target="_blank">Week 4 (5/26/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w5.pdf" target="_blank">Week 5 (6/2/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w6.pdf" target="_blank">Week 6 (6/16/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w7.pdf" target="_blank">Week 7 (6/23/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w8.pdf" target="_blank">Week 8 (6/30/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w9.pdf" target="_blank">Week 9 (7/7/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w10.pdf" target="_blank">Week 10 (7/14/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w11.pdf" target="_blank">Week 11 (7/21/2020)</a></td></tr>
-					<tr><td><a href="assets/score_sheets/2020w12.pdf" target="_blank">Week 12 (7/28/2020)</a></td></tr>
-				</table>
+<div class="topnav" id="topnav">
+	<a href="/"><i class="fa fa-home"></i></a>
+	<a href="scorecards.html">Scorecards</a>
+	<a href="rules.html">Rules</a>
+	<a href="downloads.html" class="active">Downloads</a>
+	<a href="about.html">About</a>
+	<a href="javascript:void(0);" class="burger" onclick="burgerNav()">
+		<i class="fa fa-bars"></i>
+	</a>
+</div>
 
-				<h2>Handicap Table</h2>
-				<table class="shooter-tables">
-					<tr><td><a href="assets/handicap_table.pdf" target="_blank">Handicap Table</a></td></tr>
-				</table>
+<div class="main">
 
-				<p></p>
+	<h2>2021 Score Sheets</h2>
+	<table class="shooter-tables">
+		<tr><td><a href="" target="_blank">Week 1 (4/13/2021)</a></td></tr>
+	</table>
 
-				<div class="note">
-					Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
-					We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
-				</div>
+	<h2>Handicap Table</h2>
+	<table class="shooter-tables">
+		<tr><td><a href="assets/handicap_table.pdf" target="_blank">Handicap Table</a></td></tr>
+	</table>
 
-			</div>
-		</div>
+	<p></p>
 
-	</div>
-
-
-
-<script>
-	window.onscroll = function() {scrollFunction()};
-
-	function scrollFunction() {
-	if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 80) {
-		document.getElementById("navbar").style.padding = "10px 10px";
-		document.getElementById("logo").style.width = "250px";
-	} else {
-		document.getElementById("navbar").style.padding = "30px 10px";
-		document.getElementById("logo").style.width = "636px"; /* 636px */
-		}
-	}
-</script>
+<div class="footer">
+	Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
+</div>
+				
 
 </body>
 </html>
