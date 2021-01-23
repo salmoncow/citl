@@ -1,408 +1,98 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
 	<link rel="stylesheet" type="text/css" href="css/style.css" />
 	<title>Central Illinois Trap League</title>
+    <meta charset="UTF-8">
 	<meta name="description" content="Central Illinois Trap League is an independently organized, non-discriminating shotgun shooting sport. The league
 	itself involves trap shooting - one of the three major disciplines of competitive clay pigeon shooting.">
-	<meta name="keywords" content="shotgun sport, clay pigeon shooting, clay pigeon, trap league, central illinois trap league, citl" content="width=device-width, initial-scale=1">
+	<meta name="keywords" content="shotgun sport, clay pigeon shooting, clay pigeon, trap league, central illinois trap league, citl">
 </head>
-
 <body>
-	
-	<div id="navbar">
 
-	  	<div id="navbar-right">
-	    	<a href="/" class="active">Home</a>
-	    	<a href="scorecards.html">Scorecards</a>
-			<a href="rules.html">Rules</a>
-			<a href="downloads.html">Downloads</a>
-	    	<a href="about.html">About</a>
-	  	</div>
-		<img src="images/logo_full_smaller.png" id="logo">
-	</div>
+<script src="js/scripts.js"></script> 
 
-	<div style="margin-top:250px; padding:15px 15px;"></div>
+<div class="header">
+    <img src="images/logo_full_large.png" alt="CITL" id="logo">
+</div>
 
+<div class="topnav" id="topnav">
+    <a href="/" class="active"><i class="fa fa-home"></i></a>
+    <a href="scorecards.html">Scorecards</a>
+    <a href="rules.html">Rules</a>
+    <a href="downloads.html">Downloads</a>
+    <a href="about.html">About</a>
+    <a href="javascript:void(0);" class="burger" onclick="burgerNav()">
+        <i class="fa fa-bars"></i>
+    </a>
+</div>
 
-		<div id="content">
-			<div class="general-text" style="padding-left: 20%; padding-right: 20%;">
-				
-				<!-- <table align="center" class="warning_table">
-					<tr><th>Season Close</th></tr>
-					<tr><td>
-						<center>A friendly reminder next week, July 28th, is the last day of the season. We shortened the season due to a late start with COVID-19.</center>
-					</td></tr>
-				</table> -->
+<div class="main">
 
-				<p>
-					Hello, everyone! The 2020 season has officially come to a close. I received some good feedback from several captains for clarifications and rule adjustments for next year.
-					I will send out a vote for proposed rule changes before the start of the 2021 season. As a closing note, remember this league is no longer affiliated with State Farm Employee Activities, so anyone can join if they are
-					interested. Please recruit and send interested shooters my way!
-				</p>
+    <!-- <table class="warning_table">
+        <tr><th>Season Close</th></tr>
+        <tr><td style="text-align: center;" >
+            A friendly reminder next week, July 28th, is the last day of the season. We shortened the season due to a late start with COVID-19.
+        </td></tr>
+    </table> -->
 
-				<p>
-					Trophies will again be <a href="http://shootingsportsouvenirs.com/index.php?id=walnut-birds">Walnut Birds with Stands from Shooting Sports Souvenirs</a>. 
-					The total price per trophy with stand is $21.00. These are high	quality walnut birds! <b>Captains, please coordinate with me on who is interested in purchasing and I will put in a bulk order.</b>
-				</p>
+    <!-- <p id="main-header">Week 1 Results</p>
+    <h5>Updated: 5/5/2020</h5>
 
-				<p>Here is an example of what will be engraved on the trophy:</p>
+    <h2>Accolades</h2>
+    <ul>
+        <li><b>John Karl</b> from <i>Missed Again</i> with a 25 straight!</li>
+        <li><b>Sarah Paul</b> from <i>Powderburners</i> with a 25 straight!</li>
+    </ul>
+    Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
 
-				<p style="text-align: center;"><img style="height: 350px;" src="images/trophy_custom_1.png"></p>
+    <h2>Standings (Week 1)</h2>										
+    <table id="standing-table">										
+        <tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
+        <tr>	<td>1</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>196</td>	<td>196</td>	<td>28</td>	<td>5</td>	<td>33</td>	</tr>
+        <tr>	<td>2</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>187</td>	<td>187</td>	<td>26</td>	<td>5</td>	<td>31</td>	</tr>
+        <tr>	<td>3</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>200</td>	<td>200</td>	<td>30</td>	<td>0</td>	<td>30</td>	</tr>
+        <tr>	<td>4</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>174</td>	<td>174</td>	<td>24</td>	<td>0</td>	<td>24</td>	</tr>
+        <tr>	<td>5</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>165</td>	<td>165</td>	<td>21</td>	<td>0</td>	<td>21</td>	</tr>
+        <tr>	<td>5</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>165</td>	<td>165</td>	<td>21</td>	<td>0</td>	<td>21</td>	</tr>
+        <tr>	<td>7</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>159</td>	<td>159</td>	<td>18</td>	<td>0</td>	<td>18</td>	</tr>
+        <tr>	<td>8</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>154</td>	<td>154</td>	<td>16</td>	<td>0</td>	<td>16</td>	</tr>
+        <tr>	<td>9</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>0</td>	<td>0</td>	<td>0</td>	<td>0</td>	<td>0</td>	</tr>
+    </table>										
+                                            
+    <h4><hr></h4> -->
+                
+    <p id="main-header">2021 Season Kickoff</p>
+    <h5>Updated: 1/22/2021</h5>
+                                        
+    <p>The 2021 league will officially kick off on Tuesday, April 13th. We will align to any state regulations related to COVID and gathering sizes based on the classification of Darnall's business.</p>
 
-				<h2>Trophies</h2>					
-				<table class="bonus-tables">					
-					<tr>	<td><img style="height:35px;" src="images/trophy_1.png">1st Place Team</td>	<td>Missed Again</td>	<td>351</td>	</tr>
-					<tr>	<td><img style="height:35px;" src="images/trophy_2.png">2nd Place Team</td>	<td>Sights Impaired</td>	<td>344</td>	</tr>
-					<tr>	<td>Highest Average</td>	<td>Ron Milby</td>	<td>45.6</td>	</tr>
-					<tr>	<td>Rookie of the Year</td>	<td>Mike Chapman</td>	<td>41.4</td>	</tr>
-					<tr>	<td>Most Improved</td>	<td>Tyler Kupferschmid</td>	<td>41.44%</td>	</tr>
-				</table>					
-				
+    <p>To sign up, send an email to <a href="mailto:tyler.citl@gmail.com">tyler.citl@gmail.com</a> with the following information:
+    <ul>
+        <li>Team Name</li>
+        <li>Captain's name, email, and phone number</li>
+        <li>Team member names and email</li>
+    </ul>
+    If signing up as an individual, send your name and email and we will work with existing teams for placement.
+    </p>
 
-				<div style="text-align: center; padding: 0px 0px 30px;">
-					<h2>Highest Shooter Average by Team</h2>					
-					<i>Must have shot at least 6 times during the season</i>					
-					<table class="bonus-tables" style="width: 50%">					
-						<tr>	<th>Team</th>	<th>Shooter</th>	<th>Average</th>	</tr>
-						<tr>	<td>Barrels of Fun</td>	<td>Joe Poole</td>	<td>43.5</td>	</tr>
-						<tr>	<td>Bullshooters</td>	<td>Nestor Gutierrez</td>	<td>41.5</td>	</tr>
-						<tr>	<td>Full Choke Artists</td>	<td>Al Kocar</td>	<td>41.8</td>	</tr>
-						<tr>	<td>Missed Again</td>	<td>Loren Lamar</td>	<td>43.4</td>	</tr>
-						<tr>	<td>Powderburners</td>	<td>Jim Williams</td>	<td>41</td>	</tr>
-						<tr>	<td>Shell Shocked</td>	<td>Tyler DeKnecht</td>	<td>44.9</td>	</tr>
-						<tr>	<td>Shockers</td>	<td>Anthony Schultz</td>	<td>43.4</td>	</tr>
-						<tr>	<td>Sights Impaired</td>	<td>Ron Milby</td>	<td>45.6</td>	</tr>
-						<tr>	<td>Smoking Guns</td>	<td>David Larsen</td>	<td>41.7</td>	</tr>
-					</table>										
-				</div>
+    <div style="text-align: center;">
+        <img style="padding: 0px" src="images/2021_season_calendar_april.png" alt="2021 Season Calendar">
+        <img style="padding: 0px" src="images/2021_season_calendar_may.png" alt="2021 Season Calendar">
+        <img style="padding: 0px" src="images/2021_season_calendar_june.png" alt="2021 Season Calendar">
+        <img style="padding: 0px" src="images/2021_season_calendar_july.png" alt="2021 Season Calendar">
+    </div>
 
-				<h4><hr></h4>
+    <p>For more information about league fees and location check out the <a href="about.html">About</a> page.</p>
 
-				<p id="main-header">Week 12 Final Results</p>
-                <h5>Updated: 7/24/2020</h5>
+</div>
 
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>Loren Lamar</b> from <i>Missed Again</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 12)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>217</td>	<td>2362</td>	<td>30</td>	<td>5</td>	<td>351</td>	</tr>
-					<tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>195</td>	<td>2309</td>	<td>28</td>	<td>0</td>	<td>344</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>170</td>	<td>2234</td>	<td>14</td>	<td>0</td>	<td>316</td>	</tr>
-					<tr>	<td>4</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>193</td>	<td>2197</td>	<td>24</td>	<td>5</td>	<td>310</td>	</tr>
-					<tr>	<td>5</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>174</td>	<td>2208</td>	<td>16</td>	<td>0</td>	<td>298</td>	</tr>
-					<tr>	<td>6</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>191</td>	<td>2186</td>	<td>22</td>	<td>5</td>	<td>297</td>	</tr>
-					<tr>	<td>7</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>179</td>	<td>2194</td>	<td>18</td>	<td>0</td>	<td>296</td>	</tr>
-					<tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>194</td>	<td>2100</td>	<td>26</td>	<td>5</td>	<td>265</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>190</td>	<td>2002</td>	<td>20</td>	<td>5</td>	<td>247</td>	</tr>
-				</table>																		
-																		
-																																							                             
-                <h4><hr></h4>
-				
-
-				<p id="main-header">Week 11 Results</p>
-                <h5>Updated: 7/24/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>Butch Beyer</b> from <i>Barrels of Fun</i> with a 25 straight!</li>
-					<li><b>Loren Lamar</b> from <i>Missed Again</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 11)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>194</td>	<td>2145</td>	<td>23</td>	<td>5</td>	<td>316</td>	</tr>
-					<tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>197</td>	<td>2114</td>	<td>28</td>	<td>5</td>	<td>316</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>196</td>	<td>2064</td>	<td>26</td>	<td>5</td>	<td>302</td>	</tr>
-					<tr>	<td>4</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>194</td>	<td>2034</td>	<td>23</td>	<td>5</td>	<td>282</td>	</tr>
-					<tr>	<td>5</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>200</td>	<td>2004</td>	<td>30</td>	<td>5</td>	<td>281</td>	</tr>
-					<tr>	<td>6</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>186</td>	<td>2015</td>	<td>20</td>	<td>0</td>	<td>278</td>	</tr>
-					<tr>	<td>7</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>173</td>	<td>1995</td>	<td>18</td>	<td>0</td>	<td>270</td>	</tr>
-					<tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>168</td>	<td>1906</td>	<td>16</td>	<td>5</td>	<td>234</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>158</td>	<td>1812</td>	<td>14</td>	<td>5</td>	<td>222</td>	</tr>
-				</table>										
-																		
-																																							                             
-                <h4><hr></h4>
-
-
-				<p id="main-header">Week 10 Results</p>
-                <h5>Updated: 7/16/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>Loren Lamar</b> from <i>Missed Again</i> with a 25 straight!</li>
-					<li><b>Ron Milby</b> from <i>Sights Impaired</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 10)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>211</td>	<td>1951</td>	<td>30</td>	<td>5</td>	<td>288</td>	</tr>
-					<tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>198</td>	<td>1917</td>	<td>26</td>	<td>5</td>	<td>283</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>204</td>	<td>1868</td>	<td>28</td>	<td>5</td>	<td>271</td>	</tr>
-					<tr>	<td>4</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>194</td>	<td>1829</td>	<td>20</td>	<td>6</td>	<td>258</td>	</tr>
-					<tr>	<td>5</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>192</td>	<td>1840</td>	<td>18</td>	<td>5</td>	<td>254</td>	</tr>
-					<tr>	<td>6</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>197</td>	<td>1822</td>	<td>24</td>	<td>5</td>	<td>252</td>	</tr>
-					<tr>	<td>7</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>196</td>	<td>1804</td>	<td>22</td>	<td>5</td>	<td>246</td>	</tr>
-					<tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>182</td>	<td>1738</td>	<td>16</td>	<td>5</td>	<td>213</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>174</td>	<td>1654</td>	<td>14</td>	<td>0</td>	<td>203</td>	</tr>
-				</table>										
-																																							                             
-                <h4><hr></h4>
-
-				<p id="main-header">Week 9 Results</p>
-                <h5>Updated: 7/8/2020</h5>
-
-				<h2>Standings (Week 9)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>197</td>	<td>1740</td>	<td>30</td>	<td>0</td>	<td>253</td>	</tr>
-					<tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>185</td>	<td>1719</td>	<td>21</td>	<td>5</td>	<td>252</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>185</td>	<td>1664</td>	<td>21</td>	<td>5</td>	<td>238</td>	</tr>
-					<tr>	<td>4</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>190</td>	<td>1635</td>	<td>24</td>	<td>6</td>	<td>232</td>	</tr>
-					<tr>	<td>5</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>195</td>	<td>1648</td>	<td>28</td>	<td>5</td>	<td>231</td>	</tr>
-					<tr>	<td>6</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>191</td>	<td>1625</td>	<td>26</td>	<td>5</td>	<td>223</td>	</tr>
-					<tr>	<td>7</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>181</td>	<td>1608</td>	<td>18</td>	<td>7</td>	<td>219</td>	</tr>
-					<tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>141</td>	<td>1556</td>	<td>14</td>	<td>0</td>	<td>192</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>154</td>	<td>1480</td>	<td>16</td>	<td>0</td>	<td>189</td>	</tr>
-				</table>																
-																																		                             
-                <h4><hr></h4>
-
-				<p id="main-header">Week 8 Results</p>
-                <h5>Updated: 7/2/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>John Karl</b> from <i>Missed Again</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 8)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>196</td>	<td>1534</td>	<td>28</td>	<td>0</td>	<td>226</td>	</tr>
-					<tr>	<td>2</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>192</td>	<td>1543</td>	<td>26</td>	<td>0</td>	<td>223</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>188</td>	<td>1479</td>	<td>23</td>	<td>5</td>	<td>212</td>	</tr>
-					<tr>	<td>4</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>197</td>	<td>1445</td>	<td>30</td>	<td>6</td>	<td>202</td>	</tr>
-					<tr>	<td>5</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>188</td>	<td>1453</td>	<td>23</td>	<td>0</td>	<td>198</td>	</tr>
-					<tr>	<td>6</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>188</td>	<td>1427</td>	<td>23</td>	<td>5</td>	<td>194</td>	</tr>
-					<tr>	<td>7</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>186</td>	<td>1434</td>	<td>18</td>	<td>5</td>	<td>192</td>	</tr>
-					<tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>163</td>	<td>1415</td>	<td>16</td>	<td>0</td>	<td>178</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>159</td>	<td>1326</td>	<td>14</td>	<td>5</td>	<td>173</td>	</tr>
-				</table>										
-																																		                             
-                <h4><hr></h4>
-
-				<p id="main-header">Week 7 Results</p>
-                <h5>Updated: 6/24/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>Anthony Schultz</b> from <i>Shockers</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 7)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>209</td>	<td>1338</td>	<td>30</td>	<td>5</td>	<td>198</td>	</tr>
-					<tr>	<td>2</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>200</td>	<td>1351</td>	<td>26</td>	<td>5</td>	<td>197</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>162</td>	<td>1291</td>	<td>16</td>	<td>0</td>	<td>184</td>	</tr>
-					<tr>	<td>4</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>207</td>	<td>1265</td>	<td>28</td>	<td>6</td>	<td>175</td>	</tr>
-					<tr>	<td>5</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>183</td>	<td>1248</td>	<td>24</td>	<td>0</td>	<td>169</td>	</tr>
-					<tr>	<td>6</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>165</td>	<td>1248</td>	<td>18</td>	<td>1</td>	<td>166</td>	</tr>
-					<tr>	<td>7</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>171</td>	<td>1239</td>	<td>20</td>	<td>1</td>	<td>166</td>	</tr>
-					<tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>161</td>	<td>1252</td>	<td>14</td>	<td>0</td>	<td>162</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>179</td>	<td>1167</td>	<td>22</td>	<td>5</td>	<td>154</td>	</tr>
-				</table>										
-																										                             
-                <h4><hr></h4>
-
-				<p id="main-header">Week 6 Results</p>
-                <h5>Updated: 6/17/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>Derri Kerrick</b> from <i>Shockers</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 6)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>205</td>	<td>1129</td>	<td>30</td>	<td>5</td>	<td>168</td>	</tr>
-					<tr>	<td>2</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>186</td>	<td>1151</td>	<td>16</td>	<td>0</td>	<td>166</td>	</tr>
-					<tr>	<td>3</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>187</td>	<td>1129</td>	<td>18</td>	<td>0</td>	<td>163</td>	</tr>
-					<tr>	<td>4</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>193</td>	<td>1091</td>	<td>24</td>	<td>5</td>	<td>148</td>	</tr>
-					<tr>	<td>5</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>192</td>	<td>1083</td>	<td>21</td>	<td>6</td>	<td>147</td>	</tr>
-					<tr>	<td>6</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>201</td>	<td>1068</td>	<td>28</td>	<td>5</td>	<td>145</td>	</tr>
-					<tr>	<td>7</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>195</td>	<td>1065</td>	<td>26</td>	<td>6</td>	<td>145</td>	</tr>
-					<tr>	<td>8</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>176</td>	<td>1058</td>	<td>14</td>	<td>5</td>	<td>141</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>192</td>	<td>988</td>	<td>21</td>	<td>5</td>	<td>127</td>	</tr>
-				</table>										
-																	                             
-                <h4><hr></h4>
-
-				<p id="main-header">Week 5 Results</p>
-                <h5>Updated: 6/2/2020</h5>
-
-				<h2>Standings (Week 5)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>180</td>	<td>965</td>	<td>22</td>	<td>0</td>	<td>150</td>	</tr>
-					<tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>203</td>	<td>942</td>	<td>29</td>	<td>5</td>	<td>145</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>194</td>	<td>924</td>	<td>26</td>	<td>5</td>	<td>133</td>	</tr>
-					<tr>	<td>4</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>203</td>	<td>882</td>	<td>29</td>	<td>5</td>	<td>122</td>	</tr>
-					<tr>	<td>5</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>185</td>	<td>891</td>	<td>24</td>	<td>5</td>	<td>120</td>	</tr>
-					<tr>	<td>6</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>176</td>	<td>898</td>	<td>20</td>	<td>0</td>	<td>119</td>	</tr>
-					<tr>	<td>7</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>164</td>	<td>870</td>	<td>16</td>	<td>0</td>	<td>113</td>	</tr>
-					<tr>	<td>8</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>166</td>	<td>867</td>	<td>18</td>	<td>1</td>	<td>112</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>151</td>	<td>796</td>	<td>14</td>	<td>5</td>	<td>101</td>	</tr>
-				</table>																						   
-                                                        
-                <h4><hr></h4>
-
-				<p id="main-header">Week 4 Results</p>
-                <h5>Updated: 5/26/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>Mike Chapman</b> from <i>Smoking Guns</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 4)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>201</td>	<td>785</td>	<td>30</td>	<td>5</td>	<td>128</td>	</tr>
-					<tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>197</td>	<td>739</td>	<td>26</td>	<td>5</td>	<td>111</td>	</tr>
-					<tr>	<td>3</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>179</td>	<td>730</td>	<td>22</td>	<td>5</td>	<td>102</td>	</tr>
-					<tr>	<td>4</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>171</td>	<td>722</td>	<td>17</td>	<td>0</td>	<td>99</td>	</tr>
-					<tr>	<td>5</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>177</td>	<td>706</td>	<td>20</td>	<td>6</td>	<td>97</td>	</tr>
-					<tr>	<td>6</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>196</td>	<td>701</td>	<td>24</td>	<td>6</td>	<td>93</td>	</tr>
-					<tr>	<td>7</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>199</td>	<td>706</td>	<td>28</td>	<td>6</td>	<td>91</td>	</tr>
-					<tr>	<td>8</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>171</td>	<td>679</td>	<td>17</td>	<td>6</td>	<td>88</td>	</tr>
-					<tr>	<td>9</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>153</td>	<td>645</td>	<td>14</td>	<td>5</td>	<td>82</td>	</tr>
-				</table>													   
-                                                        
-                <h4><hr></h4>
-
-				<p id="main-header">Week 3 Results</p>
-                <h5>Updated: 5/20/2020</h5>
-
-				<h2>Standings (Week 3)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>187</td>	<td>584</td>	<td>28</td>	<td>0</td>	<td>93</td>	</tr>
-					<tr>	<td>2</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>162</td>	<td>551</td>	<td>18</td>	<td>0</td>	<td>82</td>	</tr>
-					<tr>	<td>3</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>193</td>	<td>542</td>	<td>30</td>	<td>5</td>	<td>80</td>	</tr>
-					<tr>	<td>4</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>181</td>	<td>551</td>	<td>24</td>	<td>0</td>	<td>75</td>	</tr>
-					<tr>	<td>5</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>161</td>	<td>529</td>	<td>16</td>	<td>0</td>	<td>71</td>	</tr>
-					<tr>	<td>6</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>182</td>	<td>508</td>	<td>26</td>	<td>6</td>	<td>65</td>	</tr>
-					<tr>	<td>7</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>169</td>	<td>505</td>	<td>20</td>	<td>7</td>	<td>63</td>	</tr>
-					<tr>	<td>8</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>133</td>	<td>492</td>	<td>14</td>	<td>0</td>	<td>63</td>	</tr>
-					<tr>	<td>9</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>171</td>	<td>507</td>	<td>22</td>	<td>1</td>	<td>57</td>	</tr>
-				</table>																								   
-                                                        
-				<h4><hr></h4>
-				
-				<p id="main-header">Week 2 Results</p>
-                <h5>Updated: 5/12/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>Joe Poole</b> from <i>Barrels of Fun</i> with a 25 straight!</li>
-					<li><b>Eric Stroyan</b> from <i>Barrels of Fun</i> with a 25 straight!</li>
-					<li><b>Dan Riccolo</b> from <i>Missed Again</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 2)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>197</td>	<td>397</td>	<td>30</td>	<td>5</td>	<td>65</td>	</tr>
-					<tr>	<td>2</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>193</td>	<td>389</td>	<td>26</td>	<td>5</td>	<td>64</td>	</tr>
-					<tr>	<td>3</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>194</td>	<td>368</td>	<td>28</td>	<td>5</td>	<td>55</td>	</tr>
-					<tr>	<td>4</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>187</td>	<td>370</td>	<td>22</td>	<td>5</td>	<td>51</td>	</tr>
-					<tr>	<td>5</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>172</td>	<td>359</td>	<td>18</td>	<td>0</td>	<td>49</td>	</tr>
-					<tr>	<td>6</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>190</td>	<td>349</td>	<td>24</td>	<td>5</td>	<td>45</td>	</tr>
-					<tr>	<td>7</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>171</td>	<td>336</td>	<td>16</td>	<td>1</td>	<td>36</td>	</tr>
-					<tr>	<td>8</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>182</td>	<td>336</td>	<td>20</td>	<td>0</td>	<td>34</td>	</tr>
-					<tr>	<td>9</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>161</td>	<td>326</td>	<td>14</td>	<td>0</td>	<td>33</td>	</tr>
-				</table>										                           
-                                                        
-                <h4><hr></h4>
-
-				<p id="main-header">Week 1 Results</p>
-                <h5>Updated: 5/5/2020</h5>
-
-				<h2>Accolades</h2>
-				<ul>
-					<li><b>John Karl</b> from <i>Missed Again</i> with a 25 straight!</li>
-					<li><b>Sarah Paul</b> from <i>Powderburners</i> with a 25 straight!</li>
-				</ul>
-				Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
-
-				<h2>Standings (Week 1)</h2>										
-				<table id="standing-table">										
-					<tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
-					<tr>	<td>1</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>196</td>	<td>196</td>	<td>28</td>	<td>5</td>	<td>33</td>	</tr>
-					<tr>	<td>2</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>187</td>	<td>187</td>	<td>26</td>	<td>5</td>	<td>31</td>	</tr>
-					<tr>	<td>3</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>200</td>	<td>200</td>	<td>30</td>	<td>0</td>	<td>30</td>	</tr>
-					<tr>	<td>4</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>174</td>	<td>174</td>	<td>24</td>	<td>0</td>	<td>24</td>	</tr>
-					<tr>	<td>5</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>165</td>	<td>165</td>	<td>21</td>	<td>0</td>	<td>21</td>	</tr>
-					<tr>	<td>5</td>	<td>Full Choke Artists</td>	<td>Jeff Abel</td>	<td>165</td>	<td>165</td>	<td>21</td>	<td>0</td>	<td>21</td>	</tr>
-					<tr>	<td>7</td>	<td>Sights Impaired</td>	<td>Michael Freimann</td>	<td>159</td>	<td>159</td>	<td>18</td>	<td>0</td>	<td>18</td>	</tr>
-					<tr>	<td>8</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>154</td>	<td>154</td>	<td>16</td>	<td>0</td>	<td>16</td>	</tr>
-					<tr>	<td>9</td>	<td>Barrels of Fun</td>	<td>Cindy Grimsley</td>	<td>0</td>	<td>0</td>	<td>0</td>	<td>0</td>	<td>0</td>	</tr>
-				</table>										
-                                                        
-                <h4><hr></h4>
-                          
-                <p id="main-header">2020 Season Kickoff</p>
-                <h5>Updated: 5/1/2020</h5>
-                                                    
-				<p>The 2020 league will officially, and cautiously, kick off on Tuesday, May 5th. A heads up the bridge from Route 9 is being replaced and will be out all summer 2020. The <a href="about.html">About</a> has an updated map that shows a detour.</a></p>
-
-				<div align="center"><img style="width: 80%" src="images/2020_season_calendar_covid.png" alt="2020 Season Calendar"></div>
-
-				<p>For more information about league fees and location check out the <a href="about.html">About</a> page.</p>
-
-
-				<div class="note">
-					Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.
-					We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
-				</div>
-
-			</div>
-		</div>
-
-	</div>
-
-<script>
-	window.onscroll = function() {scrollFunction()};
-
-	function scrollFunction() {
-	  	if (document.body.scrollTop > 80 || document.documentElement.scrollTop > 80) {
-	    	document.getElementById("navbar").style.padding = "10px 10px";
-			document.getElementById("logo").style.width = "250px";
-	  	} else {
-	    	document.getElementById("navbar").style.padding = "30px 10px";
-			document.getElementById("logo").style.width = "636px"; /* 636px */
-	  	}
-	}
-</script>
+<div class="footer">
+  Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
+</div>
 
 </body>
 </html>
