@@ -18,7 +18,8 @@ body {
 }
 
 /* Header/logo Title */
-.header {
+#header {
+    z-index: 8;
     padding: 20px;
     text-align: left;
     background: #ffffff;
@@ -30,12 +31,8 @@ body {
     height: 100%;
 }
 
-.header h1 {
-    font-size: 40px;
-}
-
 /* Main column */
-.main {   
+#main {   
     background-color: white;
     padding-left: 10%;
     padding-right: 10%;
@@ -52,6 +49,7 @@ body {
 /* https://www.w3schools.com/howto/howto_js_topnav_responsive.asp */
 
 .topnav {
+    z-index: 9;
     overflow: hidden;
     background-color: #333;
 
@@ -117,7 +115,7 @@ body {
         top: 0;
     }
 
-    .main {   
+    #main {   
         padding-left: 20px;
         padding-right: 20px;
     }
@@ -128,10 +126,36 @@ body {
         height: auto;
     }
 
-    .header {
+    #header {
         height: 200px;
         padding: 10px;
     }
+
+    /* make first column sticky when mobile, but with long names doesn't work well */
+    /* .scorecard-tables th:first-of-type {
+        background-color: #053C5D;
+        position: sticky;
+        left: 0px;
+        z-index: 1;
+    }
+    .scorecard-tables tr:nth-child(even) td:first-of-type {
+        background-color: #f2f2f2;
+        position: sticky;
+        left: 0px;
+        z-index: 1;
+    }
+    .scorecard-tables tr:nth-child(odd) td:first-of-type {
+        background-color: white;
+        position: sticky;
+        left: 0px;
+        z-index: 1;
+    }
+    .scorecard-tables tr:nth-last-child(-n+3) td:first-of-type {
+        background-color: #053C5D;
+        position: sticky;
+        left: 0px;
+        z-index: 1;
+    } */
 }
 
 /* Main stuff */
@@ -146,7 +170,7 @@ body {
     margin-top: 0;
 }
 
-.footer {
+#footer {
     width: 100%;
     letter-spacing: 2px;
     text-align: center;
@@ -158,7 +182,7 @@ body {
     clear: both;
 }
 
-.warning_table {
+#warning_table {
     font-size: 16px;
     text-align: center;
     border-collapse: collapse;
@@ -170,7 +194,7 @@ body {
     margin-top: 20px;
 }
 
-.warning_table th {
+#warning_table th {
     letter-spacing: 2px;
     font-size: 22px;
     font-weight: bold;
@@ -181,7 +205,7 @@ body {
     padding-top: 10px;
 }
 
-.warning_table td {
+#warning_table td {
     text-align: left;
     background-color: #ffffcc;
     padding: 15px;
@@ -189,7 +213,7 @@ body {
 
 /* Standings Table */
 
-#standing-table {
+.standing-table {
     font-size: 12px;
     text-align: center;
     border-collapse: collapse;
@@ -201,11 +225,11 @@ body {
     white-space: nowrap;
 }
 
-#standing-table tr {
+.standing-table tr {
     height: 35px;
 }
 
-#standing-table th {
+.standing-table th {
     padding: 3px;
     font-size: 15px;
     background-color: #0B3C5D;
@@ -213,32 +237,32 @@ body {
     text-transform: uppercase;
 }
 
-#standing-table td, #standing-table th {
+.standing-table td, .standing-table th {
     border: 1px solid #ddd;
 }
 
-#standing-table tr:nth-child(even) {
+.standing-table tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
-#standing-table td:first-child {
+.standing-table td:first-child {
     text-align: center;
     width: 1%;
     font-size: 13px;
 }
 
-#standing-table tr:last-child {
+.standing-table tr:last-child {
     text-align: center;
     width: 20%;
     padding-right: 5px;
     font-size: 13px;
 }
 
-#standing-table td:nth-child(n+2):nth-child(-n+16), #standing-table th:nth-child(n+2):nth-child(-n+16) {
+.standing-table td:nth-child(n+2):nth-child(-n+16), .standing-table th:nth-child(n+2):nth-child(-n+16) {
     width: 5%;
 }
 
-#standing-table tr:hover {
+.standing-table tr:hover {
     background-color: #ddd;
 }
 
@@ -308,10 +332,6 @@ body {
     border: 0px solid #ddd;
 }
 
-.scorecard-tables tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
 .scorecard-tables td:first-child {
     text-align: left;
     width: 20%;
@@ -319,6 +339,12 @@ body {
     font-size: 13px;
 }
 
+/* main score rows */
+.scorecard-tables tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+/* last 3 rows */
 .scorecard-tables tr:nth-last-child(-n+3) {
     text-align: center;
     width: 20%;
@@ -380,6 +406,7 @@ body {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
+    overflow-x: auto;
 }
 
 .bonus-tables tr {
@@ -414,4 +441,96 @@ body {
 
 .bonus-tables tr:hover {
     background-color: #ddd;
+}
+
+/* Handicap Calculator */
+
+/* Hide number scrollers on num inputs */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.open-button {
+    background-color: #555;
+    color: white;
+    padding: 12px 15px;
+    border: none;
+    cursor: pointer;
+    opacity: 0.8;
+    position: fixed;
+    bottom: 23px;
+    right: 28px;
+}
+  
+.form-popup {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    right: 15px;
+    border: 3px solid #f1f1f1;
+    z-index: 9;
+}
+  
+.form-container {
+    max-width: 300px;
+    padding: 10px;
+    background-color: white;
+    text-align: center;
+
+    text-decoration: none;
+    color: #404040;
+    letter-spacing: .8px;
+    text-transform: none;
+    line-height: 1.6;
+}
+  
+.form-container input[type=number] {
+    width: 100%;
+    padding: 15px;
+    margin: 5px 0 10px 0;
+    border: none;
+    background: #f1f1f1;
+}
+  
+.form-container input[type=number]:focus {
+    background-color: #ddd;
+    outline: none;
+}
+  
+.form-container .btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 10px;
+    opacity: 0.8;
+    float: left;
+    width: 235px;
+}
+
+.form-container .cancel {
+    background-color: #555;
+    color: white;
+    padding: 12px 15px;
+    border: none;
+    cursor: pointer;
+    margin-bottom:10px;
+    opacity: 0.8;
+}
+
+.form-container p {
+    font-size: 12px;
+    text-align: center;
+}
+  
+.form-container .btn:hover, .open-button:hover, .cancel:hover {
+    opacity: 1;
 }

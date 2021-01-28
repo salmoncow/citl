@@ -11,7 +11,7 @@
 
 <body> 
 
-<div class="header">
+<div id="header">
 	<a href="/"><img src="images/logo_full_large_white_bg.png" alt="CITL" id="logo"></a>
 </div>
 
@@ -26,7 +26,7 @@
 	<a href="about.html" class="active">About</a>
 </div>
 
-<div class="main">
+<div id="main">
 
 	<p><a href="https://en.wikipedia.org/wiki/Trap_shooting" target="_blank">Trap Shooting</a> is a competitive clay pigeon shooting sport where individuals
 	participate in shooting clay targets launched from a stationary bunker. Teams consist of many shooters, but only five shooters from a team will participate
@@ -52,8 +52,29 @@
 	<p style="text-align: center;">
 	<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3035.9655576267696!2d-89.15142168474101!3d40.45389927936085!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x880b126c9e636233%3A0x68ace82319b9a7a6!2sDarnall&#39;s+Gun+Works+%26+Ranges!5e0!3m2!1sen!2sus!4v1555177381099!5m2!1sen!2sus" width="80%" height="350" frameborder="0" style="border:0" allowfullscreen></iframe>
 	</p>
+</div>
 
-<div class="footer">
+<button class="open-button" onclick="openForm()"><i class="fa fa-calculator"></i></button>
+<div class="form-popup" id="handi-calc">
+    <form class="form-container" id="handi-calc-form">
+        <h2>Handicap Calculator</h2>
+
+        <p>Sum of 5 averages (shooters + dummies) determines handicap yardage each week</p>
+
+        <div id="result"><h2>&nbsp;</h2></div>
+
+        <input type="number" name="avg1" min="0" max="50" placeholder="Average 1" required>
+        <input type="number" name="avg2" min="0" max="50" placeholder="Average 2" required>
+        <input type="number" name="avg3" min="0" max="50" placeholder="Average 3" required>
+        <input type="number" name="avg4" min="0" max="50" placeholder="Average 4" required>
+        <input type="number" name="avg5" min="0" max="50" placeholder="Average 5" required>
+        
+        <button type="submit" class="btn">Calculate</button>
+        <button type="submit" class="cancel" onclick="closeForm()"><i class="fa fa-minus"></i></button>
+    </form>
+</div>
+
+<div id="footer">
 	Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
 </div>
 
