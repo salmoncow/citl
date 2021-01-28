@@ -66,8 +66,6 @@ var form = document.getElementById('handi-calc-form');
 
 if (form.attachEvent) {
     form.attachEvent("submit", calculateHandicap);
-    console.log("if")
 } else {
     form.addEventListener("submit", calculateHandicap);
-    console.log("else")
 }
