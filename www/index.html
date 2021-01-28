@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<div class="header">
+<div id="header">
     <a href="/"><img src="images/logo_full_large_white_bg.png" alt="CITL" id="logo"></a>
 </div>
 
@@ -29,9 +29,9 @@
 
 </div>
 
-<div class="main">
+<div id="main">
 
-    <!-- <table class="warning_table">
+    <!-- <table id="warning_table">
         <tr><th>Season Close</th></tr>
         <tr><td style="text-align: center;" >
             A friendly reminder next week, July 28th, is the last day of the season. We shortened the season due to a late start with COVID-19.
@@ -49,7 +49,7 @@
     Captains of these individuals, please let me know if they would like a Remington or Winchester patch.
 
     <h2>Standings (Week 1)</h2>										
-    <table id="standing-table">										
+    <table class="standing-table">										
         <tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
         <tr>	<td>1</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>196</td>	<td>196</td>	<td>28</td>	<td>5</td>	<td>33</td>	</tr>
         <tr>	<td>2</td>	<td>Powderburners</td>	<td>Jamie Spencer</td>	<td>187</td>	<td>187</td>	<td>26</td>	<td>5</td>	<td>31</td>	</tr>
@@ -94,8 +94,28 @@
 
 </div>
 
-<div class="footer">
-  Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
+<button class="open-button" onclick="openForm()"><i class="fa fa-calculator"></i></button>
+<div class="form-popup" id="handi-calc">
+    <form class="form-container" id="handi-calc-form">
+        <h2>Handicap Calculator</h2>
+
+        <p>Sum of 5 averages (shooters + dummies) determines handicap yardage each week</p>
+
+        <div id="result"><h2>&nbsp;</h2></div>
+
+        <input type="number" name="avg1" min="0" max="50" placeholder="Average 1" required>
+        <input type="number" name="avg2" min="0" max="50" placeholder="Average 2" required>
+        <input type="number" name="avg3" min="0" max="50" placeholder="Average 3" required>
+        <input type="number" name="avg4" min="0" max="50" placeholder="Average 4" required>
+        <input type="number" name="avg5" min="0" max="50" placeholder="Average 5" required>
+        
+        <button type="submit" class="btn">Calculate</button>
+        <button type="submit" class="cancel" onclick="closeForm()"><i class="fa fa-minus"></i></button>
+    </form>
+</div>
+
+<div id="footer">
+    Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
 </div>
 
 <script src="js/scripts.js"></script> 
