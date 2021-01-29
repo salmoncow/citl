@@ -18,7 +18,7 @@ body {
 }
 
 /* Header/logo Title */
-#header {
+.header {
     z-index: 8;
     padding: 20px;
     text-align: left;
@@ -27,12 +27,12 @@ body {
     height: 400px;
 }
 
-#logo {
+.logo {
     height: 100%;
 }
 
 /* Main column */
-#main {   
+.main {   
     background-color: white;
     padding-left: 10%;
     padding-right: 10%;
@@ -115,18 +115,18 @@ body {
         top: 0;
     }
 
-    #main {   
+    .main {   
         padding-left: 20px;
         padding-right: 20px;
     }
 
-    #logo {
+    .logo {
         width: 100%;
         max-width: 340px;
         height: auto;
     }
 
-    #header {
+    .header {
         height: 200px;
         padding: 10px;
     }
@@ -160,7 +160,7 @@ body {
 
 /* Main stuff */
 
-#main-header {
+.main-header {
     font-size: 40px;
     letter-spacing: 2px;
     color: #FF8000;
@@ -170,7 +170,7 @@ body {
     margin-top: 0;
 }
 
-#footer {
+.footer {
     width: 100%;
     letter-spacing: 2px;
     text-align: center;
@@ -182,7 +182,7 @@ body {
     clear: both;
 }
 
-#warning_table {
+.warning_table {
     font-size: 16px;
     text-align: center;
     border-collapse: collapse;
@@ -194,7 +194,7 @@ body {
     margin-top: 20px;
 }
 
-#warning_table th {
+.warning_table th {
     letter-spacing: 2px;
     font-size: 22px;
     font-weight: bold;
@@ -205,7 +205,7 @@ body {
     padding-top: 10px;
 }
 
-#warning_table td {
+.warning_table td {
     text-align: left;
     background-color: #ffffcc;
     padding: 15px;
@@ -339,12 +339,10 @@ body {
     font-size: 13px;
 }
 
-/* main score rows */
 .scorecard-tables tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
-/* last 3 rows */
 .scorecard-tables tr:nth-last-child(-n+3) {
     text-align: center;
     width: 20%;
@@ -367,37 +365,34 @@ body {
     background-color: #ddd;
 }
 
-/* Shooter Tables formatting */
-
-.shooter-tables {
+/* Score Sheets table */
+.scoresheets-table {
     font-size: 17px;
     border-collapse: collapse;
-    min-width: 40%;
     text-transform: uppercase;
 }
 
-.shooter-tables td, .shooter-tables th {
+.scoresheets-table td, .scoresheets-table th {
     border: 1px solid #ddd;
     padding: 8px;
-    padding-right: 20px;
+    padding: 5px 20px;
 }
 
-.shooter-tables tr:nth-child(even) {
+.scoresheets-table tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
-.shooter-tables tr:hover {
+.scoresheets-table tr:hover {
     background-color: #ddd;
 }
 
-.shooter-tables th {
+.scoresheets-table th {
     text-align: left;
     background-color: #009933;
     color: white;
 }
 
 /* Bonus Tables */
-
 .bonus-tables {
     font-size: 14px;
     text-align: center;
