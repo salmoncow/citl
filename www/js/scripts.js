@@ -24,7 +24,7 @@ for (i = 0; i < coll.length; i++) {
     });
 }
 
-/* Handicap calculator */
+/* Yardage calculator */
 function openForm() {
     document.getElementById("handi-calc").style.display = "block";
 }
@@ -36,7 +36,6 @@ function closeForm() {
 function calculateHandicap(e) {
     if (e.preventDefault) e.preventDefault();
 
-    console.log(e.preventDefault)
     var avg1 = Number(document.getElementsByName("avg1")[0].value);
     var avg2 = Number(document.getElementsByName("avg2")[0].value);
     var avg3 = Number(document.getElementsByName("avg3")[0].value);
@@ -63,9 +62,10 @@ function calculateHandicap(e) {
 }
 
 var form = document.getElementById('handi-calc-form');
-
-if (form.attachEvent) {
-    form.attachEvent("submit", calculateHandicap);
-} else {
-    form.addEventListener("submit", calculateHandicap);
+if (form != null) {
+    if (form.attachEvent) {
+        form.attachEvent("submit", calculateHandicap);
+    } else {
+        form.addEventListener("submit", calculateHandicap);
+    }
 }
