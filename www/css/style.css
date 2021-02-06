@@ -82,6 +82,19 @@ body {
     display: none;
 }
 
+/* Progress Bar */
+.progress-container {
+    float: left;
+    width: 100%;
+    height: 8px;
+    background: #ccc;
+}
+.progress-bar {
+    height: 8px;
+    background: #328CC1;
+    width: 0%;
+}
+
 @media screen and (max-width: 600px) {
     .topnav a:not(:first-child) {
         display: none;
