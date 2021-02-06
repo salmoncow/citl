@@ -1,3 +1,26 @@
+/* Simple cookie */
+function cookies() {
+    document.cookie = "cookies=true; secure";
+    var x = document.cookie; 
+    console.log(x)
+}
+
+/* Cookie Modal */
+var modal = document.getElementById("cookieModal");
+var btn = document.getElementById("myBtn");
+var span = document.getElementsByClassName("cookie-modal-close")[0];
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  modal.style.display = "none";
+}
+// When the user clicks anywhere outside of the modal, close it
+// window.onclick = function(event) {
+//   if (event.target == modal) {
+//     modal.style.display = "none";
+//   }
+// }
+
 /* Responsive top nav */
 function burgerNav() {
     var x = document.getElementById("topnav");
@@ -7,6 +30,16 @@ function burgerNav() {
         x.className = "topnav";
     }
 }
+
+/* Progress Bar */
+window.onscroll = function() {myFunction()};
+
+function myFunction() {
+  var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+  var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  var scrolled = (winScroll / height) * 100;
+  document.getElementById("myBar").style.width = scrolled + "%";
+} 
 
 /* Collapsible scorecards */
 var coll = document.getElementsByClassName("collapsible");
