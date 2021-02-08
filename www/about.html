@@ -9,7 +9,7 @@
 	<meta charset="UTF-8">
 </head>
 
-<body> 
+<body onload="cookiesAllowed()">
 
 <div class="header">
 	<a href="/"><img src="images/logo_full_large_white_bg.png" alt="CITL" class="logo"></a>
@@ -59,7 +59,13 @@
 </div>
 
 <div class="footer">
-	Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.
+    <p>Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.</p>
+    <p><a href="mailto:tyler.citl@gmail.com">Contact Us</a></p>
+</div>
+
+<div class="cookie-footer footer" id="cookie-footer">
+    <p>This site uses cookies for basic functionality. No personal, advertising, analytics, or other related data is captured. By continuing to browse you are agreeing to our use of cookies.</p>
+    <p><a href="#" onclick="setCookie('cookies','true');return false;">Continue</a></p>
 </div>
 
 <script src="js/scripts.js"></script>
