@@ -80,11 +80,13 @@ body {
 
 /* Responsive topnav */
 /* https://www.w3schools.com/howto/howto_js_topnav_responsive.asp */
-
-.topnav {
+.topnav { 
+    /* Dropdown menu doesn't work if `overflow: hidden;` and `position:sticky;`. Need to specify a min-height to fix it
+       https://stackoverflow.com/questions/57913781/css-sticky-navbar-with-dropdown-menu-not-showing-overflow */
     z-index: 9;
-    overflow: hidden;
     background-color: #333;
+    min-height: 48px;
+    /* overflow: hidden; */
 
     position: sticky;
     position: -webkit-sticky;
@@ -94,6 +96,7 @@ body {
 .topnav a {
     float: left;
     display: block;
+    /* display: inline-block; */
     color: #f2f2f2;
     text-align: center;
     padding: 14px 16px;
@@ -115,6 +118,56 @@ body {
     display: none;
 }
 
+/* Dropdown Button */
+.dropbtn {
+    background-color: inherit;
+    font-family: inherit;
+    color: white;
+    padding: 14px 16px;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+
+    display: inline-block;
+}
+.dropdown {
+    float: left;
+    overflow: hidden;
+}
+.dropdown .dropbtn {
+    font-size: 17px;    
+    border: none;
+    outline: none;
+    color: white;
+    padding: 14px 16px;
+    background-color: inherit;
+    font-family: inherit;
+    margin: 0;
+}
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #ddd;
+    color: black;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+.dropdown-content a {
+    float: none;
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+    width: 100%;
+} 
+.dropdown-content a:hover {background-color: #ddd;} 
+.dropdown-show {display:block;} 
+
 /* Progress Bar */
 .progress-container {
     float: left;
@@ -129,7 +182,7 @@ body {
 }
 
 @media screen and (max-width: 600px) {
-    .topnav a:nth-child(n+3) {
+    .topnav a:nth-child(n+3), .dropdown .dropbtn {
         display: none;
     }
     .topnav a.burger {
@@ -150,9 +203,7 @@ body {
         display: block;
         text-align: left;
     }
-    .topnav.responsive a:nth-child(2) {
-        display: inline-block;
-    }
+    .topnav.responsive a:nth-child(2) {display: inline-block;}
     .topnav a.right {
         float: right;
         display: block;
@@ -161,6 +212,13 @@ body {
         position: absolute;
         right: 0;
         top: 0;
+    }
+    .topnav.responsive .dropdown {float: none;}
+    .topnav.responsive .dropdown-content {position: relative;}
+    .topnav.responsive .dropdown .dropbtn {
+        display: block;
+        width: 100%;
+        text-align: left;
     }
 
     .main {   
