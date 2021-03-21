@@ -43,8 +43,6 @@
 </div>
 
 <div class="main">
-    <!-- <button onclick="deleteCookie()">Delete cookie</button> -->
-
     <!-- <div id="modal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -55,7 +53,7 @@
     <!-- <table class="warning_table">
         <tr><th>Ammo Shortage</th></tr>
         <tr><td style="text-align: center;" >
-            A friendly reminder next week, July 28th, is the last day of the season. We shortened the season due to a late start with COVID-19.
+            There is an ammo shortage. Buy ahead of time.
         </td></tr>
     </table> -->
 
@@ -86,7 +84,12 @@
     <h4><hr></h4> -->
                 
     <p class="main-header">2021 Season Kickoff</p>
-    <h5>Updated: 1/22/2021</h5>
+    <h5>Updated: 3/20/2021</h5>
+
+    <p><b style="color: red;">NEW for 2021 </b>The captains have voted <b>majority in favor</b> of updating the calculations for handicap yardage each week. The calculations can be found in <a href="rules.html#scoring-and-yardage">Rules Section 5.6</a>.</p>
+    <p>To streamline the calculations between bunkers, please use the Yardage Calculator (bottom right-hand corner on this page) to quickly calculate your yardage.</p>
+
+    <hr>
                                         
     <p>The 2021 league will officially kick off on Tuesday, April 13th. We will align to any state regulations related to COVID and gathering sizes based on the classification of Darnall's business.</p>
 
@@ -120,15 +123,19 @@
     <form class="form-container" id="handi-calc-form">
         <h2>Yardage Calculator</h2>
 
-        <p>Sum of 5 averages (shooters + dummies) determines handicap yardage each week</p>
+        <p style="text-align: left;">
+            Bunker 1: All shooters start at 16 yards.
+            &nbsp;
+            Bunker 2: Calculator determines <a href="rules.html#scoring-and-yardage">yardage</a>.
+        </p>
 
         <div id="result"><h2>&nbsp;</h2></div>
 
-        <input type="number" name="avg1" min="0" max="50" placeholder="Average 1" required step="0.1">
-        <input type="number" name="avg2" min="0" max="50" placeholder="Average 2" required step="0.1">
-        <input type="number" name="avg3" min="0" max="50" placeholder="Average 3" required step="0.1">
-        <input type="number" name="avg4" min="0" max="50" placeholder="Average 4" required step="0.1">
-        <input type="number" name="avg5" min="0" max="50" placeholder="Average 5" required step="0.1">
+        <input type="number" name="avg1" min="0" max="25" placeholder="Average 1" required step="1">
+        <input type="number" name="avg2" min="0" max="25" placeholder="Average 2" required step="1">
+        <input type="number" name="avg3" min="0" max="25" placeholder="Average 3" required step="1">
+        <input type="number" name="avg4" min="0" max="25" placeholder="Average 4" required step="1">
+        <input type="number" name="avg5" min="0" max="25" placeholder="Average 5" required step="1">
         
         <button type="submit" class="btn">Calculate</button>
         <button type="submit" class="cancel" onclick="closeForm()"><i class="fa fa-minus"></i></button>
