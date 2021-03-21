@@ -107,28 +107,24 @@ function closeForm() {
 function calculateHandicap(e) {
     if (e.preventDefault) e.preventDefault();
 
-    var avg1 = Number(document.getElementsByName("avg1")[0].value);
-    var avg2 = Number(document.getElementsByName("avg2")[0].value);
-    var avg3 = Number(document.getElementsByName("avg3")[0].value);
-    var avg4 = Number(document.getElementsByName("avg4")[0].value);
-    var avg5 = Number(document.getElementsByName("avg5")[0].value);
+    var avgs = [
+        document.getElementsByName("avg1")[0].value,
+        document.getElementsByName("avg2")[0].value,
+        document.getElementsByName("avg3")[0].value,
+        document.getElementsByName("avg4")[0].value,
+        document.getElementsByName("avg5")[0].value,
+    ]
 
-    sum = avg1 + avg2 + avg3 + avg4 + avg5;
+    avgs.sort();
+    avgs.shift(); // Drop min score
+    avgs.pop();   // Drop max score
 
-    if (sum <= 175.49) { yardage = "16 Yards" } else
-    if (sum >= 175.50 && sum <= 185.49) { yardage = "17 Yards" } else
-    if (sum >= 185.50 && sum <= 187.49) { yardage = "18 Yards" } else
-    if (sum >= 187.50 && sum <= 189.49) { yardage = "19 Yards" } else
-    if (sum >= 189.50 && sum <= 191.49) { yardage = "20 Yards" } else
-    if (sum >= 191.50 && sum <= 193.49) { yardage = "21 Yards" } else
-    if (sum >= 193.50 && sum <= 196.49) { yardage = "22 Yards" } else
-    if (sum >= 196.50 && sum <= 201.49) { yardage = "23 Yards" } else
-    if (sum >= 201.50 && sum <= 207.49) { yardage = "24 Yards" } else
-    if (sum >= 207.50 && sum <= 211.49) { yardage = "25 Yards" } else
-    if (sum >= 211.50 && sum <= 215.49) { yardage = "26 Yards" } else
-    if (sum >= 215.50 && sum <= 250.00) { yardage = "27 Yards" } else { yardage = "Invalid" }
+    yardage = Math.round(avgs.reduce((a, b) => a + parseInt(b), 0) / 3);
+
+    if (yardage < 16) yardage = 16;
     
     document.getElementById("result").innerHTML = "<h2>"+yardage+"</h2>";
+
     return false;
 }
 
@@ -142,6 +138,7 @@ if (form != null) {
 }
 
 
+// Dropdown button in horizontal nav
 function dropButton() {
     document.getElementById("dropdown").classList.toggle("dropdown-show");
 }
