@@ -15,7 +15,7 @@ locals {
 
   tags = {
     "terraform" = true
-    "owner"      = "citl"
-    "use_case"   = local.use_case
+    "owner"     = "citl"
+    "use_case"  = local.use_case
   }
 }
