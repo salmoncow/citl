@@ -68,6 +68,10 @@ resource "aws_cloudfront_distribution" "citl_s3_distribution" {
   origin {
     domain_name = module.s3_bucket_citl_club.bucket_domain_name
     origin_id   = local.s3_origin_id
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.citl_club_oai.cloudfront_access_identity_path
+    }
   }
 
   viewer_certificate {
@@ -81,15 +85,12 @@ resource "aws_cloudfront_distribution" "citl_s3_distribution" {
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = local.s3_origin_id
     viewer_protocol_policy = "redirect-to-https"
-    # min_ttl                = 0
-    # default_ttl            = 3600
-    # max_ttl                = 3600
 
     forwarded_values {
       headers = [
         "Origin", # needed for CORS (https://www.boxuk.com/insight/enabling-cross-domain-access-in-cloudfront/)
       ]
-      
+
       query_string = false
 
       cookies {
@@ -103,6 +104,10 @@ resource "aws_cloudfront_distribution" "citl_s3_distribution" {
       restriction_type = "none"
     }
   }
+}
+
+resource "aws_cloudfront_origin_access_identity" "citl_club_oai" {
+  comment = "citl.club origin access identity"
 }
 
 # ------------------------------------------------------------------------------
@@ -122,12 +127,8 @@ module "s3_bucket_citl_club" {
   tags                = local.tags
 
   # website config
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-  index_document          = "index.html"
-  error_document          = "error.html"
+  index_document = "index.html"
+  error_document = "error.html"
 
   # cors config
   cors_allowed_headers = ["*"]
@@ -141,13 +142,13 @@ output "s3_citl_club_bucket_domain_name" { value = module.s3_bucket_citl_club.bu
 
 data "aws_iam_policy_document" "s3_bucket_policy_citl_club" {
   statement {
-    sid       = "publicRead"
+    sid       = "OaiGetObject"
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::citl.club/*"]
     effect    = "Allow"
     principals {
-      type        = "*"
-      identifiers = ["*"]
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.citl_club_oai.iam_arn]
     }
   }
 }
