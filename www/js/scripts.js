@@ -1,3 +1,10 @@
+/* on load */
+function onLoad() {
+    cookiesAllowed()
+
+    // modal.style.display = "block";
+}
+
 /* Cookies */
 var cookieFooter = document.getElementById("cookie-footer");
 
@@ -44,20 +51,19 @@ function deleteCookie() {
 }
 
 /* Modal */
-var modal = document.getElementById("modal");
-var span = document.getElementsByClassName("close-modal")[0];
+// var modal = document.getElementById("modal");
+// var btn   = document.getElementById("modal-button");
+// var span  = document.getElementsByClassName("modal-close")[0];
 
-if (span != null) {
-    span.onclick = function() {
-    modal.style.display = "none";
-    }
-}
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-  if (event.target == modal) {
-    modal.style.display = "none";
-  }
-} 
+// btn.onclick = function() {
+//     modal.style.display = "block";
+// }
+
+// if (span != null) {
+//     span.onclick = function() {
+//         modal.style.display = "none";
+//     }
+// }
 
 
 /* Responsive top nav */
@@ -142,9 +148,9 @@ if (form != null) {
 function dropButton() {
     document.getElementById("dropdown").classList.toggle("dropdown-show");
 }
-  
-// Close the dropdown menu if the user clicks outside of it
+
 window.onclick = function(event) {
+    // close the dropdown menu if the user clicks outside of it
     if (!event.target.matches('.dropbtn')) {
         var dropdowns = document.getElementsByClassName("dropdown-content");
         var i;
@@ -155,4 +161,9 @@ window.onclick = function(event) {
             }
         }
     }
+
+    // When the user clicks anywhere outside of the modal, close it
+    // if (event.target == modal) {
+    //     modal.style.display = "none";
+    // }
 }
