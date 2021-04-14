@@ -16,14 +16,14 @@ plan:
     - base
   stage: plan
   script:
-    - cd terraform/ && terraform init && terraform plan
+    - cd src/terraform/ && terraform init && terraform plan
 
 apply:
   tags:
     - base
   stage: apply
   script:
-    - cd terraform/ && terraform init && terraform apply -auto-approve
+    - cd src/terraform/ && terraform init && terraform apply -auto-approve
   dependencies:
     - plan
   only:
@@ -36,7 +36,7 @@ build:
     - base
   stage: build
   script:
-    - cd www/ && aws s3 sync . s3://citl.club --delete
+    - cd src/www/ && aws s3 sync . s3://citl.club --delete
   dependencies:
     - apply
   only:

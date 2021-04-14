@@ -2,6 +2,17 @@
 
 html {scroll-behavior: smooth;}
 
+h1 {
+    font-size: 40px;
+    letter-spacing: 2px;
+    color: #FF8000;
+    text-transform: uppercase;
+    font-variant: normal;
+    margin-bottom: 0;
+    margin-top: 10px;
+    font-weight: normal;
+}
+
 h5 {margin-top: 0;}
 
 /* Style the body */
@@ -238,16 +249,6 @@ body {
         left: 0px;
         z-index: 1;
     } */
-}
-
-.main-header {
-    font-size: 40px;
-    letter-spacing: 2px;
-    color: #FF8000;
-    text-transform: uppercase;
-    font-variant: normal;
-    margin-bottom: 0;
-    margin-top: 10px;
 }
 
 /* Footer */
