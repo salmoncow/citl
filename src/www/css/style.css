@@ -351,12 +351,6 @@ body {
     width: 1%;
     font-size: 13px;
 }
-.standing-table tr:last-child {
-    text-align: center;
-    width: 20%;
-    padding-right: 5px;
-    font-size: 13px;
-}
 .standing-table td:nth-child(n+2):nth-child(-n+16), .standing-table th:nth-child(n+2):nth-child(-n+16) {width: 5%;}
 .standing-table tr:hover {background-color: #ddd;}
 
