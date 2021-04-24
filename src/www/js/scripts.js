@@ -111,7 +111,7 @@ function closeForm() {
 }
 
 function calculateHandicap(e) {
-    if (e.preventDefault) e.preventDefault();
+    if (e.preventDefault) e.preventDefault(); // prevent page reload on button push
 
     var avgs = [
         document.getElementsByName("avg1")[0].value,
@@ -121,17 +121,30 @@ function calculateHandicap(e) {
         document.getElementsByName("avg5")[0].value,
     ]
 
-    avgs.sort();
-    avgs.shift(); // Drop min score
-    avgs.pop();   // Drop max score
+    avgs = avgs.filter(e => e); // Remove empty strings
 
-    yardage = Math.round(avgs.reduce((a, b) => a + parseInt(b), 0) / 3);
+    if (avgs.length == 0) {
+        return;
+    }
+
+    avgs.sort();
+
+    if (avgs.length > 2) {
+        avgs.shift(); // Drop min score
+        avgs.pop();   // Drop max score
+    }
+
+    var avgsTotal = 0;
+    for(var i = 0; i < avgs.length; i++) {
+        avgsTotal += parseInt(avgs[i])
+    }
+    var yardage = Math.round(avgsTotal / avgs.length, 0);
 
     if (yardage < 16) yardage = 16;
     
     document.getElementById("result").innerHTML = "<h2>"+yardage+"</h2>";
 
-    return false;
+    return;
 }
 
 var form = document.getElementById('handi-calc-form');
