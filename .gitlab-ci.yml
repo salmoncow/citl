@@ -37,6 +37,8 @@ build:
   stage: build
   script:
     - cd src/www/ && aws s3 sync . s3://citl.club --delete
+    - sleep 5
+    - aws cloudfront create-invalidation --distribution-id E16OFBJW5KU8T7 --paths "/scorecards.html" "/index.html" "/downloads.html"
   dependencies:
     - apply
   only:
