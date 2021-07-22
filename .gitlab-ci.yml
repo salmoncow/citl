@@ -28,7 +28,7 @@ apply:
     - plan
   only:
     refs:
-      - master
+      - main
   when: manual
 
 build:
@@ -43,6 +43,6 @@ build:
     - apply
   only:
     refs:
-      - master
+      - main
   when: manual
   
