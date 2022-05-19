@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
+	<link rel="stylesheet" type="text/css" href="css/style.css" />
+	<title>Central Illinois Trap League</title>
+    <meta charset="UTF-8">
+	<meta name="description" content="Central Illinois Trap League is an independently organized, non-discriminating shotgun shooting sport. The league involves trap shooting - one of the three major disciplines of competitive clay pigeon shooting.">
+	<meta name="keywords" content="illinois trap, illinois shotgun, central illinois, trap shooting, central illinois trap, shotgun sport, clay pigeon shooting, clay pigeon, trap league, central illinois trap league, citl">
+</head>
+
+<body onload="onLoad()">
+
+<div class="header">
+    <a href="/"><img src="images/logo_full_large_white_bg.png" alt="CITL" class="logo"></a>
+</div>
+
+<div class="topnav" id="topnav">
+    <a href="javascript:void(0);" class="burger" onclick="burgerNav()">
+        <i class="fa fa-bars"></i>
+    </a>
+    <a href="/"><i class="fa fa-home"></i></a>
+    <a href="scorecards.html">Scorecards</i></a>
+    <a href="rules.html">Rules</a>
+    <a href="about.html">About</a>
+    <a href="downloads.html">Downloads</a>
+    <div class="dropdown">
+        <button onclick="dropButton()" class="dropbtn">Resources
+            <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content" id="dropdown">
+            <a href="https://www.darnalls.com/" target="_blank">Darnall's Gun Works</a>
+            <a href="http://shootingsportsouvenirs.com/" target="_blank">Shooting Sport Souvenirs</a>
+            <a href="https://shootata.com/" target="_blank">Amateur Trapshooting Association (ATA)</a>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="myBar"></div>
+    </div>
+</div>
+
+<div class="main">
+    <!-- <button id="modal-button">Open Modal</button>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <p>Modal text</p>
+        </div>
+    </div> -->
+
+
+    <!-- <table class="warning_table">
+        <tr><th>Standings</th></tr>
+        <tr><td style="text-align: center;" >
+            Standings will not be accurate due to a team notifying me within accordance with the rules of a reschule. Once the team has scores, the standings will correct.
+        </td></tr>
+    </table> -->
+
+    <h1>Week 5 Results</h1>
+    <h5>Updated: 5/10/2022</h5>
+
+    <h2>Accolades</h2>
+    
+    <ul>
+        <li><b>Chad Albertson</b> from <i>Over Unders</i> with a 25 straight!</li>
+        <li><b>Garry Garrett</b> from <i>Missed Again</i> with a 25 straight!</li>
+    </ul>
+
+    <h2>Standings (Week 5)</h2>										
+    <table class="standing-table">										
+        <tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
+        <tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>220</td>	<td>1038</td>	<td>30</td>	<td>5</td>	<td>160</td>	</tr>
+        <tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Dan Barrington</td>	<td>199</td>	<td>970</td>	<td>26</td>	<td>5</td>	<td>142</td>	</tr>
+        <tr>	<td>3</td>	<td>Over Unders</td>	<td>Al Kocar</td>	<td>196</td>	<td>940</td>	<td>24</td>	<td>5</td>	<td>134</td>	</tr>
+        <tr>	<td>4</td>	<td>Full Choke Artists</td>	<td>Randy Jones</td>	<td>201</td>	<td>854</td>	<td>28</td>	<td>5</td>	<td>113</td>	</tr>
+        <tr>	<td>5</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>183</td>	<td>866</td>	<td>20</td>	<td>6</td>	<td>112</td>	</tr>
+        <tr>	<td>6</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>168</td>	<td>872</td>	<td>13</td>	<td>0</td>	<td>107</td>	</tr>
+        <tr>	<td>7</td>	<td>Shooting Dummies</td>	<td>Mike Litwiller</td>	<td>176</td>	<td>859</td>	<td>16</td>	<td>5</td>	<td>102</td>	</tr>
+        <tr>	<td>8</td>	<td>Barrels of Fun</td>	<td>Sue Giacometti</td>	<td>182</td>	<td>839</td>	<td>18</td>	<td>5</td>	<td>100</td>	</tr>
+        <tr>	<td>9</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>187</td>	<td>838</td>	<td>22</td>	<td>6</td>	<td>99</td>	</tr>
+        <tr>	<td>10</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>168</td>	<td>764</td>	<td>13</td>	<td>5</td>	<td>72</td>	</tr>
+        <tr>	<td>11</td>	<td>Blind Gunmen</td>	<td>Kerry McKnight</td>	<td>145</td>	<td>667</td>	<td>10</td>	<td>6</td>	<td>56</td>	</tr>
+        <tr>	<td>12</td>	<td>Powder Burners</td>	<td>Jamie Spencer</td>	<td>137</td>	<td>707</td>	<td>8</td>	<td>6</td>	<td>53</td>	</tr>
+    </table>										
+
+    <h4><hr></h4>
+
+    <h1>Week 4 Results</h1>
+    <h5>Updated: 5/7/2022</h5>
+
+    <h2>Standings (Week 4)</h2>										
+    <table class="standing-table">										
+        <tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
+        <tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>205</td>	<td>818</td>	<td>30</td>	<td>5</td>	<td>125</td>	</tr>
+        <tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Dan Barrington</td>	<td>198</td>	<td>771</td>	<td>28</td>	<td>0</td>	<td>111</td>	</tr>
+        <tr>	<td>3</td>	<td>Over Unders</td>	<td>Al Kocar</td>	<td>186</td>	<td>744</td>	<td>24</td>	<td>6</td>	<td>105</td>	</tr>
+        <tr>	<td>4</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>153</td>	<td>704</td>	<td>16</td>	<td>1</td>	<td>94</td>	</tr>
+        <tr>	<td>5</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>187</td>	<td>683</td>	<td>26</td>	<td>5</td>	<td>86</td>	</tr>
+        <tr>	<td>6</td>	<td>Shooting Dummies</td>	<td>Mike Litwiller</td>	<td>169</td>	<td>683</td>	<td>20</td>	<td>0</td>	<td>81</td>	</tr>
+        <tr>	<td>7</td>	<td>Full Choke Artists</td>	<td>Randy Jones</td>	<td>145</td>	<td>653</td>	<td>14</td>	<td>1</td>	<td>80</td>	</tr>
+        <tr>	<td>8</td>	<td>Barrels of Fun</td>	<td>Sue Giacometti</td>	<td>177</td>	<td>657</td>	<td>22</td>	<td>5</td>	<td>77</td>	</tr>
+        <tr>	<td>9</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>160</td>	<td>651</td>	<td>18</td>	<td>1</td>	<td>71</td>	</tr>
+        <tr>	<td>10</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>139</td>	<td>596</td>	<td>12</td>	<td>1</td>	<td>54</td>	</tr>
+        <tr>	<td>11</td>	<td>Blind Gunmen</td>	<td>Kerry McKnight</td>	<td>133</td>	<td>522</td>	<td>8</td>	<td>1</td>	<td>40</td>	</tr>
+        <tr>	<td>12</td>	<td>Powder Burners</td>	<td>Jamie Spencer</td>	<td>134</td>	<td>570</td>	<td>10</td>	<td>1</td>	<td>39</td>	</tr>
+    </table>										                                 
+    
+    <h4><hr></h4>
+
+    <h1>Week 3 Results</h1>
+    <h5>Updated: 4/27/2022</h5>
+
+    <h2>Accolades</h2>
+    
+    <ul>
+        <li><b>Joe Poole</b> from <i>Barrels of Fun</i> with a 25 straight!</li>
+    </ul>
+
+    <h2>Standings (Week 3)</h2>										
+    <table class="standing-table">										
+        <tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
+        <tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>198</td>	<td>613</td>	<td>30</td>	<td>0</td>	<td>90</td>	</tr>
+        <tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Dan Barrington</td>	<td>182</td>	<td>573</td>	<td>28</td>	<td>0</td>	<td>83</td>	</tr>
+        <tr>	<td>3</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>174</td>	<td>551</td>	<td>24</td>	<td>0</td>	<td>77</td>	</tr>
+        <tr>	<td>4</td>	<td>Over Unders</td>	<td>Al Kocar</td>	<td>177</td>	<td>558</td>	<td>26</td>	<td>1</td>	<td>75</td>	</tr>
+        <tr>	<td>5</td>	<td>Full Choke Artists</td>	<td>Randy Jones</td>	<td>148</td>	<td>508</td>	<td>16</td>	<td>0</td>	<td>65</td>	</tr>
+        <tr>	<td>6</td>	<td>Shooting Dummies</td>	<td>Mike Litwiller</td>	<td>169</td>	<td>514</td>	<td>21</td>	<td>0</td>	<td>61</td>	</tr>
+        <tr>	<td>7</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>147</td>	<td>496</td>	<td>14</td>	<td>1</td>	<td>55</td>	</tr>
+        <tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>156</td>	<td>491</td>	<td>18</td>	<td>1</td>	<td>52</td>	</tr>
+        <tr>	<td>9</td>	<td>Barrels of Fun</td>	<td>Sue Giacometti</td>	<td>169</td>	<td>480</td>	<td>21</td>	<td>5</td>	<td>50</td>	</tr>
+        <tr>	<td>10</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>136</td>	<td>457</td>	<td>12</td>	<td>1</td>	<td>41</td>	</tr>
+        <tr>	<td>11</td>	<td>Blind Gunmen</td>	<td>Kerry McKnight</td>	<td>101</td>	<td>389</td>	<td>8</td>	<td>0</td>	<td>31</td>	</tr>
+        <tr>	<td>12</td>	<td>Powder Burners</td>	<td>Jamie Spencer</td>	<td>129</td>	<td>436</td>	<td>10</td>	<td>0</td>	<td>28</td>	</tr>
+    </table>										
+    
+    <h4><hr></h4>
+
+    <h1>Week 2 Results</h1>
+    <h5>Updated: 4/20/2022</h5>
+
+    <table class="standing-table">										
+        <tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
+        <tr>	<td>1</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>208</td>	<td>415</td>	<td>30</td>	<td>0</td>	<td>60</td>	</tr>
+        <tr>	<td>2</td>	<td>Sights Impaired</td>	<td>Dan Barrington</td>	<td>193</td>	<td>391</td>	<td>28</td>	<td>0</td>	<td>55</td>	</tr>
+        <tr>	<td>3</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>181</td>	<td>377</td>	<td>24</td>	<td>0</td>	<td>53</td>	</tr>
+        <tr>	<td>4</td>	<td>Full Choke Artists</td>	<td>Randy Jones</td>	<td>162</td>	<td>360</td>	<td>17</td>	<td>0</td>	<td>49</td>	</tr>
+        <tr>	<td>5</td>	<td>Over Unders</td>	<td>Al Kocar</td>	<td>189</td>	<td>381</td>	<td>26</td>	<td>0</td>	<td>48</td>	</tr>
+        <tr>	<td>6</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>165</td>	<td>349</td>	<td>20</td>	<td>0</td>	<td>40</td>	</tr>
+        <tr>	<td>7</td>	<td>Shooting Dummies</td>	<td>Mike Litwiller</td>	<td>166</td>	<td>345</td>	<td>22</td>	<td>0</td>	<td>40</td>	</tr>
+        <tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>162</td>	<td>335</td>	<td>17</td>	<td>0</td>	<td>33</td>	</tr>
+        <tr>	<td>9</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>161</td>	<td>321</td>	<td>14</td>	<td>0</td>	<td>28</td>	</tr>
+        <tr>	<td>10</td>	<td>Barrels of Fun</td>	<td>Sue Giacometti</td>	<td>153</td>	<td>311</td>	<td>12</td>	<td>0</td>	<td>24</td>	</tr>
+        <tr>	<td>11</td>	<td>Blind Gunmen</td>	<td>Kerry McKnight</td>	<td>131</td>	<td>288</td>	<td>8</td>	<td>0</td>	<td>23</td>	</tr>
+        <tr>	<td>12</td>	<td>Powder Burners</td>	<td>Jamie Spencer</td>	<td>151</td>	<td>307</td>	<td>10</td>	<td>0</td>	<td>18</td>	</tr>
+    </table>										                                                          
+                                            
+    <h4><hr></h4>
+
+    <h1>Week 1 Results</h1>
+    <h5>Updated: 4/13/2022</h5>
+
+    <table class="standing-table">										
+        <tr>	<th>Standing</th>	<th>Team</th>	<th>Captain</th>	<th>Targets</th>	<th>Total Targets</th>	<th>Rank Points</th>	<th>Bonus Points</th>	<th>Total Points</th>	</tr>
+        <tr>	<td>1</td>	<td>Full Choke Artists</td>	<td>Randy Jones</td>	<td>198</td>	<td>198</td>	<td>27</td>	<td>5</td>	<td>32</td>	</tr>
+        <tr>	<td>2</td>	<td>Missed Again</td>	<td>Ben Dittmar</td>	<td>207</td>	<td>207</td>	<td>30</td>	<td>0</td>	<td>30</td>	</tr>
+        <tr>	<td>3</td>	<td>Shell Shocked</td>	<td>Troy Johns</td>	<td>196</td>	<td>196</td>	<td>24</td>	<td>5</td>	<td>29</td>	</tr>
+        <tr>	<td>4</td>	<td>Sights Impaired</td>	<td>Dan Barrington</td>	<td>198</td>	<td>198</td>	<td>27</td>	<td>0</td>	<td>27</td>	</tr>
+        <tr>	<td>5</td>	<td>Over Unders</td>	<td>Al Kocar</td>	<td>192</td>	<td>192</td>	<td>22</td>	<td>0</td>	<td>22</td>	</tr>
+        <tr>	<td>6</td>	<td>Bullshooters</td>	<td>Greg Litchfield</td>	<td>184</td>	<td>184</td>	<td>20</td>	<td>0</td>	<td>20</td>	</tr>
+        <tr>	<td>7</td>	<td>Shooting Dummies</td>	<td>Mike Litwiller</td>	<td>179</td>	<td>179</td>	<td>18</td>	<td>0</td>	<td>18</td>	</tr>
+        <tr>	<td>8</td>	<td>Smoking Guns</td>	<td>Gordon Larsen</td>	<td>173</td>	<td>173</td>	<td>16</td>	<td>0</td>	<td>16</td>	</tr>
+        <tr>	<td>9</td>	<td>Blind Gunmen</td>	<td>Kerry McKnight</td>	<td>157</td>	<td>157</td>	<td>10</td>	<td>5</td>	<td>15</td>	</tr>
+        <tr>	<td>10</td>	<td>Shockers</td>	<td>Logan McKenna</td>	<td>160</td>	<td>160</td>	<td>14</td>	<td>0</td>	<td>14</td>	</tr>
+        <tr>	<td>11</td>	<td>Barrels of Fun</td>	<td>Sue Giacometti</td>	<td>158</td>	<td>158</td>	<td>12</td>	<td>0</td>	<td>12</td>	</tr>
+        <tr>	<td>12</td>	<td>Powder Burners</td>	<td>Jamie Spencer</td>	<td>156</td>	<td>156</td>	<td>8</td>	<td>0</td>	<td>8</td>	</tr>
+    </table>										                         
+                                            
+    <h4><hr></h4>
+                
+    <h1>2022 Season Kickoff</h1>
+    <h5>Updated: 1/27/2022</h5>
+                        
+    <p>
+        The 2022 league will officially kick off on Tuesday, April 12th. Similar to last year, we will align to any state 
+        regulations related to COVID and gathering sizes based on the classification of Darnall's business.
+    </p>
+
+    <p>
+        To sign up, send an email to <a href="mailto:tyler.citl@gmail.com">tyler.citl@gmail.com</a> with the following information:
+        <ul>
+            <li>Team Name</li>
+            <li>Captain's name, email, and phone number</li>
+            <li>Team member names and email</li>
+        </ul>
+        If signing up as an individual, send your name and email and we will work with existing teams for placement.
+    </p>
+
+    <p>For more information about league fees and location check the <a href="about.html">About</a> page.</p>
+
+    <h2>Schedule</h2>
+
+    <p>
+        An informal practice day will be held the Tuesday before the league starts (4/5/2022). 
+        This is a great time to meet up with other shooters and work off some cobwebs from last season.
+    </p>
+
+    <div style="text-align: center;">
+        <img style="padding: 0px" src="images/2022_season_calendar_april.png" alt="2022 Season Calendar">
+        <img style="padding: 0px" src="images/2022_season_calendar_may.png" alt="2022 Season Calendar">
+        <img style="padding: 0px" src="images/2022_season_calendar_june.png" alt="2022 Season Calendar">
+        <img style="padding: 0px" src="images/2022_season_calendar_july.png" alt="2022 Season Calendar">
+    </div>
+
+</div>
+
+<button class="open-button" onclick="openForm()"><i class="fa fa-calculator"></i></button>
+<div class="form-popup" id="handi-calc">
+    <form class="form-container" id="handi-calc-form">
+        <h2>Yardage Calculator</h2>
+
+        <p style="text-align: left;">
+            Bunker 1: All shooters start at 16 yards.
+            &nbsp;
+            Bunker 2: Calculator determines <a href="rules.html#scoring-and-yardage">yardage</a>.
+        </p>
+
+        <div id="result"><h2>&nbsp;</h2></div>
+
+        <input type="number" name="avg1" min="0" max="25" placeholder="Score 1" step="1">
+        <input type="number" name="avg2" min="0" max="25" placeholder="Score 2" step="1">
+        <input type="number" name="avg3" min="0" max="25" placeholder="Score 3" step="1">
+        <input type="number" name="avg4" min="0" max="25" placeholder="Score 4" step="1">
+        <input type="number" name="avg5" min="0" max="25" placeholder="Score 5" step="1">
+        
+        <button type="submit" class="btn">Calculate</button>
+        <button type="submit" class="cancel" onclick="closeForm()"><i class="fa fa-minus"></i></button>
+    </form>
+</div>
+
+<div class="footer">
+    <p>Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate.  We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.</p>
+    <p><a href="mailto:tyler.citl@gmail.com">Contact Us</a></p>
+</div>
+
+<div class="cookie-footer footer" id="cookie-footer">
+    <p>This site uses cookies for basic functionality. No personal, advertising, analytics, or other related data is captured. By continuing to browse you are agreeing to our use of cookies.</p>
+    <p><a href="#" onclick="setCookie('cookies','true');return false;">Continue</a></p>
+</div>
+
+<script src="js/scripts.js"></script> 
+
+</body>
+</html>
