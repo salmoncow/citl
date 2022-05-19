@@ -50,7 +50,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::117865246796:role/td000-dev-salmoncow-role
+          role-to-assume: arn:aws:iam::117865246796:role/td000-dev-citl-deployer-role
           role-session-name: salmoncowDeployer
           aws-region: ${{ env.AWS_REGION }}
       
