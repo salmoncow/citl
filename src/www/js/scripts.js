@@ -127,20 +127,20 @@ function calculateHandicap(e) {
         return;
     }
 
-    avgs.sort();
+    const sum = Math.round(avgs.reduce((a, b) => a + parseInt(b), 0));
 
-    if (avgs.length > 2) {
-        avgs.shift(); // Drop min score
-        avgs.pop();   // Drop max score
-    }
-
-    var avgsTotal = 0;
-    for(var i = 0; i < avgs.length; i++) {
-        avgsTotal += parseInt(avgs[i])
-    }
-    var yardage = Math.round(avgsTotal / avgs.length, 0);
-
-    if (yardage < 16) yardage = 16;
+    if (sum <= 175.49) { yardage = "16 Yards" } else
+    if (sum >= 175.50 && sum <= 185.49) { yardage = "17 Yards" } else
+    if (sum >= 185.50 && sum <= 187.49) { yardage = "18 Yards" } else
+    if (sum >= 187.50 && sum <= 189.49) { yardage = "19 Yards" } else
+    if (sum >= 189.50 && sum <= 191.49) { yardage = "20 Yards" } else
+    if (sum >= 191.50 && sum <= 193.49) { yardage = "21 Yards" } else
+    if (sum >= 193.50 && sum <= 196.49) { yardage = "22 Yards" } else
+    if (sum >= 196.50 && sum <= 201.49) { yardage = "23 Yards" } else
+    if (sum >= 201.50 && sum <= 207.49) { yardage = "24 Yards" } else
+    if (sum >= 207.50 && sum <= 211.49) { yardage = "25 Yards" } else
+    if (sum >= 211.50 && sum <= 215.49) { yardage = "26 Yards" } else
+    if (sum >= 215.50 && sum <= 250.00) { yardage = "27 Yards" } else { yardage = "Invalid" }
     
     document.getElementById("result").innerHTML = "<h2>"+yardage+"</h2>";
 
