@@ -1,7 +1,19 @@
 # ------------------------------------------------------------------------------
-# Providers
+# Variables
 # ------------------------------------------------------------------------------
 
-provider "aws" {
-  region  = var.region
+variable "region" {
+  type = string
+}
+
+variable "ou" {
+  type = string
+}
+
+variable "use_case" {
+  type = string
+}
+
+variable "tenant" {
+  type = string
 }

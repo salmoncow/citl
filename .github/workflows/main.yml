@@ -1,8 +1,11 @@
 name: CI
-on: [push]
+on:
+  push:
+    branches:    
+      - main
 
 env:
-  AWS_REGION: "us-east-1"
+  AWS_REGION: us-east-1
 
 permissions:
       id-token: write
@@ -21,7 +24,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::117865246796:role/td000-dev-citl-deployer-role
+          role-to-assume: arn:aws:iam::678856875282:role/td001-dev-citl-deployer-role
           role-session-name: citlDeployer
           aws-region: ${{ env.AWS_REGION }}
 
@@ -50,16 +53,16 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::117865246796:role/td000-dev-citl-deployer-role
-          role-session-name: salmoncowDeployer
+          role-to-assume: arn:aws:iam::678856875282:role/td001-dev-citl-deployer-role
+          role-session-name: citlDeployer
           aws-region: ${{ env.AWS_REGION }}
       
       - name: Copy files
         run: |
-          cd src/www
-          aws s3 sync . s3://citl.club --delete
-          sleep 5
+          cd src/spa
+          aws s3 sync . s3://citl-app --delete
 
       - name: Invalidate distribution
         run: |
-          aws cloudfront create-invalidation --distribution-id E16OFBJW5KU8T7 --paths "/scorecards.html" "/index.html" "/downloads.html"
+          sleep 5
+          aws cloudfront create-invalidation --distribution-id E170ICT83E2JKV --paths "/scorecards.html" "/index.html" "/downloads.html"

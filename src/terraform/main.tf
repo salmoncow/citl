@@ -1,4 +1,24 @@
 # ------------------------------------------------------------------------------
+# data, variables, locals, etc.
+# ------------------------------------------------------------------------------
+
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_account_alias" "current" {}
+
+locals {
+  s3_origin_id = "s3-citl.club"
+
+  tags = {
+    "terraform" = true
+    "region"    = var.region
+    "ou"        = var.ou
+    "use_case"  = var.use_case
+    "tenant"    = var.tenant
+  }
+}
+
+# ------------------------------------------------------------------------------
 # Route 53
 # ------------------------------------------------------------------------------
 
@@ -41,16 +61,16 @@ resource "aws_route53_record" "www_citl_club" {
 
 # citl.club certificate
 module "acm_cert_citl_club" {
+  depends_on = [module.route53_zone_citl_club]
   source = "git::https://github.com/tdeknecht/aws-terraform//modules/network/acm_certificate/"
 
-  ou                        = local.ou
+  ou                        = var.ou
   certificate_domain_name   = "citl.club"
   validation_domain_name    = "citl.club"
   validation_method         = "DNS"
   subject_alternative_names = ["www.citl.club"]
   tags                      = local.tags
 }
-output "certificate_arn_citl_club" { value = module.acm_cert_citl_club.certificate_arn }
 
 # ------------------------------------------------------------------------------
 # CloudFront
@@ -66,7 +86,7 @@ resource "aws_cloudfront_distribution" "citl_s3_distribution" {
   tags                = local.tags
 
   origin {
-    domain_name = module.s3_bucket_citl_club.bucket_domain_name
+    domain_name = module.s3_bucket_citl_app.s3_bucket_bucket_domain_name
     origin_id   = local.s3_origin_id
 
     s3_origin_config {
@@ -114,37 +134,66 @@ resource "aws_cloudfront_origin_access_identity" "citl_club_oai" {
 # S3: Buckets
 # ------------------------------------------------------------------------------
 
-# citl.club (website host)
-module "s3_bucket_citl_club" {
-  source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3_bucket/"
+# citl.club application
+module "s3_bucket_citl_app" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "3.4.0"
 
-  ou                  = local.ou
-  use_case            = local.use_case
-  bucket              = "citl.club"
-  versioning          = true
-  base_lifecycle_rule = true
-  policy              = data.aws_iam_policy_document.s3_bucket_policy_citl_club.json
-  tags                = local.tags
+  bucket        = "citl-app"
+  attach_policy = true
+  policy        = data.aws_iam_policy_document.s3_bucket_policy_citl_app.json
+  versioning = {
+    enabled = true
+  }
 
-  # website config
-  index_document = "index.html"
-  error_document = "error.html"
+  lifecycle_rule = [
+    {
+      id                                     = "base"
+      enabled                                = true
+      abort_incomplete_multipart_upload_days = 7
 
-  # cors config
-  cors_allowed_headers = ["*"]
-  cors_allowed_methods = ["GET"]
-  cors_allowed_origins = ["*"]
+      expiration = {
+        expired_object_delete_marker = true
+      }
+
+      noncurrent_version_expiration = {
+        days = 30
+      }
+    },
+    {
+      id      = "cloudtrail"
+      enabled = true
+      prefix  = "cloudtrail/"
+
+      expiration = {
+        days = 180
+      }
+
+      noncurrent_version_expiration = {
+        days = 7
+      }
+    }
+  ]
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  tags = merge(
+    {
+      "Name" = "${var.use_case}-${var.ou}-${var.region}"
+    },
+    local.tags
+  )
 }
 
-output "s3_citl_club_id" { value = module.s3_bucket_citl_club.id }
-output "s3_citl_club_arn" { value = module.s3_bucket_citl_club.arn }
-output "s3_citl_club_bucket_domain_name" { value = module.s3_bucket_citl_club.bucket_domain_name }
 
-data "aws_iam_policy_document" "s3_bucket_policy_citl_club" {
+data "aws_iam_policy_document" "s3_bucket_policy_citl_app" {
   statement {
-    sid       = "OaiGetObject"
+    sid       = "oaiGetObject"
     actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::citl.club/*"]
+    resources = ["arn:aws:s3:::citl-app/*"]
     effect    = "Allow"
     principals {
       type        = "AWS"
@@ -153,39 +202,65 @@ data "aws_iam_policy_document" "s3_bucket_policy_citl_club" {
   }
 }
 
-# www.citl.club (website redirect)
-module "s3_bucket_www_citl_club" {
-  source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3_bucket/"
+# citl.club data
+module "s3_bucket_citl_data" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "3.4.0"
 
-  ou                  = local.ou
-  use_case            = local.use_case
-  bucket              = "www.citl.club"
-  versioning          = false
-  base_lifecycle_rule = false
-  tags                = local.tags
+  bucket        = "citl-data"
+  attach_policy = true
+  policy        = data.aws_iam_policy_document.s3_bucket_policy_citl_data.json
+  versioning = {
+    enabled = true
+  }
 
-  # website config
-  redirect_all_requests_to = "https://citl.club"
+  lifecycle_rule = [
+    {
+      id                                     = "base"
+      enabled                                = true
+      abort_incomplete_multipart_upload_days = 7
+
+      expiration = {
+        expired_object_delete_marker = true
+      }
+
+      noncurrent_version_expiration = {
+        days = 30
+      }
+    },
+    {
+      id      = "cloudtrail"
+      enabled = true
+      prefix  = "cloudtrail/"
+
+      expiration = {
+        days = 180
+      }
+
+      noncurrent_version_expiration = {
+        days = 7
+      }
+    }
+  ]
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  tags = merge(
+    {
+      "Name" = "${var.use_case}-${var.ou}-${var.region}"
+    },
+    local.tags
+  )
 }
 
-# citl (data)
-module "s3_bucket_citl" {
-  source = "git::https://github.com/tdeknecht/aws-terraform//modules/storage/s3_bucket/"
-
-  ou                  = local.ou
-  use_case            = local.use_case
-  bucket              = "citl"
-  versioning          = true
-  base_lifecycle_rule = true
-  policy              = data.aws_iam_policy_document.s3_bucket_policy_citl.json
-  tags                = local.tags
-}
-
-data "aws_iam_policy_document" "s3_bucket_policy_citl" {
+data "aws_iam_policy_document" "s3_bucket_policy_citl_data" {
   statement {
-    sid       = "citl"
+    sid       = "citlData"
     actions   = ["s3:*"]
-    resources = ["arn:aws:s3:::citl/*"]
+    resources = ["arn:aws:s3:::citl-data/*"]
     principals {
       type        = "AWS"
       identifiers = [data.aws_caller_identity.current.account_id]
