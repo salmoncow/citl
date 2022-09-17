@@ -1,4 +1,24 @@
 # ------------------------------------------------------------------------------
+# data, variables, locals, etc.
+# ------------------------------------------------------------------------------
+
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_account_alias" "current" {}
+
+locals {
+  s3_origin_id = "S3-citl.com"
+
+  tags = {
+    "terraform" = true
+    "region"    = var.region
+    "ou"        = var.ou
+    "use_case"  = var.use_case
+    "tenant"    = var.tenant
+  }
+}
+
+# ------------------------------------------------------------------------------
 # Route 53
 # ------------------------------------------------------------------------------
 
