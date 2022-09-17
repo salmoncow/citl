@@ -65,4 +65,4 @@ jobs:
       - name: Invalidate distribution
         run: |
           sleep 5
-          aws cloudfront create-invalidation --distribution-id E16OFBJW5KU8T7 --paths "/scorecards.html" "/index.html" "/downloads.html"
+          aws cloudfront create-invalidation --distribution-id E170ICT83E2JKV --paths "/scorecards.html" "/index.html" "/downloads.html"
