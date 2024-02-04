@@ -15,7 +15,7 @@ jobs:
   build-infra:
     runs-on: ubuntu-latest
     container: 
-      image: tdeknecht/aws:latest
+      image: tdeknecht/aws:alpine
 
     steps:
       - name: Git clone the repository
