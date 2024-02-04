@@ -8,8 +8,8 @@ env:
   AWS_REGION: us-east-1
 
 permissions:
-      id-token: write
-      contents: read    # Required for actions/checkout@v2
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
 
 jobs:
   build-infra:
@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Git clone the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::678856875282:role/td001-dev-citl-deployer-role
           role-session-name: citlDeployer
@@ -48,10 +48,10 @@ jobs:
 
     steps:
       - name: Git clone the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::678856875282:role/td001-dev-citl-deployer-role
           role-session-name: citlDeployer
