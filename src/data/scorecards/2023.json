@@ -1,0 +1,1209 @@
+{
+  "season": 2023,
+  "teams": [
+    {
+      "name": "Barrels of Fun",
+      "shooters": [
+        {
+          "name": "Mark Kosinski",
+          "rookie": false,
+          "startingAvg": 27.2,
+          "scores": [null, null, null, null, null, 32, null, 36, null, 28, null, 26, null, 31, null],
+          "weeksShot": 5,
+          "finalAvg": 30.6
+        },
+        {
+          "name": "Laura Kosinski",
+          "rookie": false,
+          "startingAvg": 23.1,
+          "scores": [null, 29, null, 27, null, 34, null, null, null, 24, null, 33, null, 37, null],
+          "weeksShot": 6,
+          "finalAvg": 30.7
+        },
+        {
+          "name": "Sue Giacometti",
+          "rookie": false,
+          "startingAvg": 31.3,
+          "scores": [40, null, 31, null, 34, null, 25, null, 36, null, 26, null, 34, 35, 35],
+          "weeksShot": 9,
+          "finalAvg": 32.9
+        },
+        {
+          "name": "Joe Poole",
+          "rookie": false,
+          "startingAvg": 38.5,
+          "scores": [null, 42, null, null, 44, null, null, null, 38, null, 40, null, 39, null, 40],
+          "weeksShot": 6,
+          "finalAvg": 40.5
+        },
+        {
+          "name": "Butch Beyer",
+          "rookie": false,
+          "startingAvg": 40.5,
+          "scores": [null, null, 42, 39, 43, null, 35, null, 43, null, 35, 45, 42, null, 45],
+          "weeksShot": 9,
+          "finalAvg": 41.0
+        },
+        {
+          "name": "Steve Novel",
+          "rookie": false,
+          "startingAvg": 37.0,
+          "scores": [null, null, null, null, 41, null, null, 37, null, null, 38, null, 36, null, null],
+          "weeksShot": 4,
+          "finalAvg": 38.0
+        },
+        {
+          "name": "Justin Hinshaw",
+          "rookie": false,
+          "startingAvg": 38.1,
+          "scores": [null, null, null, null, null, null, null, null, 43, 40, 36, null, 44, null, 39],
+          "weeksShot": 5,
+          "finalAvg": 40.4
+        },
+        {
+          "name": "Tim Harris",
+          "rookie": false,
+          "startingAvg": 27.1,
+          "scores": [38, 36, 32, 26, null, 37, null, 43, null, 30, null, 31, null, 30, null],
+          "weeksShot": 9,
+          "finalAvg": 33.7
+        },
+        {
+          "name": "Tim Nord",
+          "rookie": false,
+          "startingAvg": 38.4,
+          "scores": [null, null, null, 33, null, 34, null, 44, null, 41, null, 41, null, 45, null],
+          "weeksShot": 6,
+          "finalAvg": 39.7
+        },
+        {
+          "name": "Greg McNeely",
+          "rookie": false,
+          "startingAvg": 35.1,
+          "scores": [null, 38, 38, 29, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 3,
+          "finalAvg": 35.0
+        },
+        {
+          "name": "Andy Kosinski",
+          "rookie": false,
+          "startingAvg": 39.2,
+          "scores": [null, null, null, null, null, 43, 28, null, null, null, null, null, null, null, null],
+          "weeksShot": 2,
+          "finalAvg": 35.5
+        },
+        {
+          "name": "Kerry McKnight",
+          "rookie": false,
+          "startingAvg": 31.6,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 31.6
+        },
+        {
+          "name": "Susie McKnight",
+          "rookie": false,
+          "startingAvg": 32.8,
+          "scores": [null, null, null, null, 38, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 35.4
+        },
+        {
+          "name": "Kyle Hembree",
+          "rookie": false,
+          "startingAvg": 35.0,
+          "scores": [32, 35, null, null, null, null, null, null, 33, null, null, null, null, null, 32],
+          "weeksShot": 4,
+          "finalAvg": 33.0
+        },
+        {
+          "name": "William McNeely",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, 26, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 30.5
+        },
+        {
+          "name": "Fun DUMMY1",
+          "rookie": false,
+          "startingAvg": 36.7,
+          "scores": [32, null, null, null, null, null, 24, 35, null, null, null, null, null, null, null],
+          "weeksShot": 3,
+          "finalAvg": 30.3
+        },
+        {
+          "name": "Fun DUMMY2",
+          "rookie": false,
+          "startingAvg": 36.7,
+          "scores": [32, null, null, null, null, null, 24, null, null, null, null, null, null, null, null],
+          "weeksShot": 2,
+          "finalAvg": 28.0
+        }
+      ],
+      "totals": {
+        "targets":    [174, 180, 169, 154, 200, 180, 136, 195, 193, 163, 175, 176, 195, 178, 191],
+        "rankPoints": [15,  14,  16,  16,  26,  20,  12,  18,  29,  12,  18,  18,  26,  14,  12],
+        "bonusPoints":[5, 5, null, null, 5, 5, null, 5, 5, null, null, 5, 5, 5, 5]
+      }
+    },
+    {
+      "name": "Bullshooters",
+      "shooters": [
+        {
+          "name": "Greg Litchfield",
+          "rookie": false,
+          "startingAvg": 41.9,
+          "scores": [41, null, 39, 29, 37, null, 47, null, 38, 37, 36, null, null, 44, 48],
+          "weeksShot": 10,
+          "finalAvg": 39.6
+        },
+        {
+          "name": "Bill Murphy",
+          "rookie": false,
+          "startingAvg": 39.6,
+          "scores": [null, 42, null, null, null, 34, 39, null, null, null, null, 39, 36, null, 43],
+          "weeksShot": 6,
+          "finalAvg": 38.8
+        },
+        {
+          "name": "Ken Sutter",
+          "rookie": false,
+          "startingAvg": 38.7,
+          "scores": [46, null, 34, 40, 36, null, 40, 41, 31, null, null, 33, 35, 38, 42],
+          "weeksShot": 11,
+          "finalAvg": 37.8
+        },
+        {
+          "name": "Nestor Gutierrez",
+          "rookie": false,
+          "startingAvg": 39.5,
+          "scores": [null, null, null, null, 45, null, null, null, null, null, 33, null, null, null, null],
+          "weeksShot": 2,
+          "finalAvg": 39.0
+        },
+        {
+          "name": "Howard Hallstein",
+          "rookie": false,
+          "startingAvg": 31.2,
+          "scores": [39, 42, null, null, null, 31, null, 45, 29, 41, 42, 33, null, 42, null],
+          "weeksShot": 9,
+          "finalAvg": 38.2
+        },
+        {
+          "name": "Jim Schmidt",
+          "rookie": false,
+          "startingAvg": 34.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 34.8
+        },
+        {
+          "name": "Terry Garbe",
+          "rookie": false,
+          "startingAvg": 35.7,
+          "scores": [null, null, null, null, null, null, null, null, null, null, 36, null, 42, null, null],
+          "weeksShot": 2,
+          "finalAvg": 39.0
+        },
+        {
+          "name": "Bruce Schenkel",
+          "rookie": false,
+          "startingAvg": 30.0,
+          "scores": [null, null, 39, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 34.5
+        },
+        {
+          "name": "Lindsay Bourda",
+          "rookie": false,
+          "startingAvg": 38.0,
+          "scores": [41, 42, 40, 35, 34, 39, null, 42, 34, 37, null, 29, 38, 27, 37],
+          "weeksShot": 13,
+          "finalAvg": 36.5
+        },
+        {
+          "name": "Mike Litwiller",
+          "rookie": false,
+          "startingAvg": 38.5,
+          "scores": [42, 39, null, null, 45, 33, null, null, 35, 40, null, null, 36, 43, null],
+          "weeksShot": 8,
+          "finalAvg": 39.1
+        },
+        {
+          "name": "Randy Litwiller",
+          "rookie": false,
+          "startingAvg": 30.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 30.8
+        },
+        {
+          "name": "Steve Gronowski",
+          "rookie": false,
+          "startingAvg": 28.6,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 28.6
+        },
+        {
+          "name": "Jon Otto",
+          "rookie": false,
+          "startingAvg": 37.2,
+          "scores": [null, null, 39, 31, null, null, 44, 41, null, null, null, 36, null, null, 41],
+          "weeksShot": 6,
+          "finalAvg": 38.7
+        },
+        {
+          "name": "Ed Serbia",
+          "rookie": false,
+          "startingAvg": 33.3,
+          "scores": [null, 41, null, 25, null, 35, 44, 38, null, 33, 37, null, null, null, null],
+          "weeksShot": 7,
+          "finalAvg": 36.1
+        },
+        {
+          "name": "Bullshooters DUMMY1",
+          "rookie": false,
+          "startingAvg": 41.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 41.8
+        },
+        {
+          "name": "Bullshooters DUMMY2",
+          "rookie": false,
+          "startingAvg": 41.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 41.8
+        }
+      ],
+      "totals": {
+        "targets":    [209, 206, 191, 160, 197, 172, 214, 207, 167, 188, 184, 170, 187, 194, 211],
+        "rankPoints": [29,  26,  28,  18,  22,  14,  30,  30,  18,  26,  24,  14,  19,  18,  26],
+        "bonusPoints":[5, 5, null, null, 5, null, 5, 5, null, null, null, null, null, 5, 5]
+      }
+    },
+    {
+      "name": "Full Choke Artists",
+      "shooters": [
+        {
+          "name": "Randy Jones",
+          "rookie": false,
+          "startingAvg": 37.6,
+          "scores": [48, 44, 42, null, 34, 44, 42, null, null, null, 39, 35, null, 42, 48],
+          "weeksShot": 10,
+          "finalAvg": 41.8
+        },
+        {
+          "name": "Jeff Abel",
+          "rookie": false,
+          "startingAvg": 39.8,
+          "scores": [null, null, null, null, 40, 44, 40, 48, 30, 34, 39, 30, 38, 41, null],
+          "weeksShot": 10,
+          "finalAvg": 38.4
+        },
+        {
+          "name": "Rod Dale",
+          "rookie": false,
+          "startingAvg": 37.3,
+          "scores": [45, 46, null, 39, 41, 43, 38, 40, 32, null, null, null, null, null, null],
+          "weeksShot": 8,
+          "finalAvg": 40.5
+        },
+        {
+          "name": "Harry Burks",
+          "rookie": false,
+          "startingAvg": 40.3,
+          "scores": [null, 47, 42, 35, null, 41, null, null, 31, 37, 35, 36, null, 41, 46],
+          "weeksShot": 10,
+          "finalAvg": 39.1
+        },
+        {
+          "name": "Neal Percival",
+          "rookie": false,
+          "startingAvg": 24.0,
+          "scores": [null, 24, null, 17, null, null, null, 38, null, 26, null, null, 25, null, 27],
+          "weeksShot": 6,
+          "finalAvg": 26.2
+        },
+        {
+          "name": "Mark Gauding",
+          "rookie": false,
+          "startingAvg": 40.4,
+          "scores": [43, null, 42, 41, null, null, 37, 46, 25, 41, null, 31, 45, null, null],
+          "weeksShot": 9,
+          "finalAvg": 39.0
+        },
+        {
+          "name": "Scott Petri",
+          "rookie": false,
+          "startingAvg": 22.9,
+          "scores": [36, null, 30, null, 22, 15, null, 29, null, null, 30, null, 35, 34, 33],
+          "weeksShot": 9,
+          "finalAvg": 29.3
+        },
+        {
+          "name": "Scott Gould",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [29, 33, 21, 42, null, null, 32, null, null, 34, 38, 36, 38, 43, 38],
+          "weeksShot": 11,
+          "finalAvg": 34.9
+        },
+        {
+          "name": "Harold Streator",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 35.0
+        },
+        {
+          "name": "Artists DUMMY1",
+          "rookie": false,
+          "startingAvg": 40.2,
+          "scores": [null, null, null, null, 29, null, null, null, 25, null, null, null, null, null, null],
+          "weeksShot": 2,
+          "finalAvg": 27.0
+        },
+        {
+          "name": "Artists DUMMY2",
+          "rookie": false,
+          "startingAvg": 40.2,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 40.2
+        }
+      ],
+      "totals": {
+        "targets":    [201, 194, 177, 174, 166, 187, 189, 201, 143, 172, 181, 168, 181, 201, 192],
+        "rankPoints": [24,  24,  20,  26,  14,  22,  17,  21,  12,  15,  22,  12,  16,  22,  14],
+        "bonusPoints":[5, 6, 1, 1, null, null, 1, 5, null, 1, 5, null, 5, 5, 5]
+      }
+    },
+    {
+      "name": "Missed Again",
+      "shooters": [
+        {
+          "name": "John Karl",
+          "rookie": false,
+          "startingAvg": 41.7,
+          "scores": [44, 49, null, 41, 43, 45, 45, 49, 45, 47, 44, 43, null, null, 44],
+          "weeksShot": 12,
+          "finalAvg": 44.9
+        },
+        {
+          "name": "Loren Lamar",
+          "rookie": false,
+          "startingAvg": 43.5,
+          "scores": [42, 42, 45, 42, 42, 42, 47, 42, 41, 41, null, null, 42, 44, 44],
+          "weeksShot": 13,
+          "finalAvg": 42.8
+        },
+        {
+          "name": "Arthur Parks",
+          "rookie": false,
+          "startingAvg": 33.3,
+          "scores": [27, 33, 30, 29, 32, 34, null, 41, 25, 34, 34, 34, 30, null, null],
+          "weeksShot": 12,
+          "finalAvg": 31.9
+        },
+        {
+          "name": "Dave Coale",
+          "rookie": false,
+          "startingAvg": 42.6,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, 42, 45, 40],
+          "weeksShot": 3,
+          "finalAvg": 42.3
+        },
+        {
+          "name": "Dan Riccolo",
+          "rookie": false,
+          "startingAvg": 40.3,
+          "scores": [30, null, 41, null, 40, null, 32, null, 40, 39, 36, 43, 30, 38, 39],
+          "weeksShot": 11,
+          "finalAvg": 37.1
+        },
+        {
+          "name": "Steve Robbins",
+          "rookie": false,
+          "startingAvg": 40.7,
+          "scores": [31, null, 45, null, null, null, 35, null, 42, null, 43, 49, null, 42, 47],
+          "weeksShot": 8,
+          "finalAvg": 41.8
+        },
+        {
+          "name": "Alex Hawkins",
+          "rookie": false,
+          "startingAvg": 35.3,
+          "scores": [null, null, 41, 33, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 2,
+          "finalAvg": 37.0
+        },
+        {
+          "name": "Ben Dittmar",
+          "rookie": false,
+          "startingAvg": 38.2,
+          "scores": [null, 43, null, 33, null, 35, null, 35, null, 40, null, null, null, 41, null],
+          "weeksShot": 6,
+          "finalAvg": 37.8
+        },
+        {
+          "name": "Gary Garrett",
+          "rookie": false,
+          "startingAvg": 42.1,
+          "scores": [null, 42, null, null, 41, 36, null, 37, null, null, null, null, null, null, null],
+          "weeksShot": 4,
+          "finalAvg": 39.0
+        },
+        {
+          "name": "Bob Reardon",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 35.0
+        },
+        {
+          "name": "Adam McVey",
+          "rookie": false,
+          "startingAvg": 36.5,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, 42, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 39.3
+        },
+        {
+          "name": "Again Floater 1",
+          "rookie": false,
+          "startingAvg": 45.1,
+          "scores": [null, null, null, null, null, null, 44, null, null, null, 47, null, 46, null, null],
+          "weeksShot": 3,
+          "finalAvg": 45.7
+        },
+        {
+          "name": "Again DUMMY1",
+          "rookie": false,
+          "startingAvg": 34.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 34.8
+        },
+        {
+          "name": "Again DUMMY2",
+          "rookie": false,
+          "startingAvg": 34.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 34.8
+        }
+      ],
+      "totals": {
+        "targets":    [174, 209, 202, 178, 198, 192, 203, 204, 193, 201, 204, 211, 190, 210, 214],
+        "rankPoints": [15,  30,  30,  28,  24,  26,  26,  25,  29,  30,  30,  30,  24,  28,  28],
+        "bonusPoints":[null, 5, 5, null, 5, null, null, 5, null, 5, 5, 5, null, 5, 5]
+      }
+    },
+    {
+      "name": "Over Unders",
+      "shooters": [
+        {
+          "name": "Al Kocar",
+          "rookie": false,
+          "startingAvg": 42.1,
+          "scores": [44, null, 42, 37, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 3,
+          "finalAvg": 41.0
+        },
+        {
+          "name": "Bob Brimm",
+          "rookie": false,
+          "startingAvg": 38.6,
+          "scores": [36, 40, 38, null, null, null, null, 44, 42, 34, 26, 37, null, null, 43],
+          "weeksShot": 9,
+          "finalAvg": 37.8
+        },
+        {
+          "name": "Todd Fish",
+          "rookie": false,
+          "startingAvg": 36.5,
+          "scores": [33, 42, 34, 34, 40, 46, 38, null, 35, 25, 31, null, 38, 40, 41],
+          "weeksShot": 13,
+          "finalAvg": 36.7
+        },
+        {
+          "name": "Jerry Kurtz",
+          "rookie": false,
+          "startingAvg": 42.0,
+          "scores": [43, 46, null, 37, 45, 42, 47, 47, 50, 44, null, 44, 43, 45, null],
+          "weeksShot": 12,
+          "finalAvg": 44.4
+        },
+        {
+          "name": "Sherrie Kurtz",
+          "rookie": false,
+          "startingAvg": 33.4,
+          "scores": [null, null, null, null, 38, 22, 32, 32, 34, null, null, 43, 40, 42, null],
+          "weeksShot": 8,
+          "finalAvg": 35.4
+        },
+        {
+          "name": "Reese Kurtz",
+          "rookie": false,
+          "startingAvg": 34.3,
+          "scores": [null, null, null, null, null, null, null, 37, 28, null, null, 35, 38, 38, 44],
+          "weeksShot": 6,
+          "finalAvg": 36.7
+        },
+        {
+          "name": "Chad Albertson",
+          "rookie": false,
+          "startingAvg": 39.1,
+          "scores": [39, 40, 41, 37, 47, 41, 45, 45, null, 38, 38, null, 44, 42, 44],
+          "weeksShot": 13,
+          "finalAvg": 41.6
+        },
+        {
+          "name": "Mike Brewer",
+          "rookie": false,
+          "startingAvg": 34.9,
+          "scores": [null, 39, 34, 25, 41, 40, 42, null, null, 34, 33, 47, null, null, 46],
+          "weeksShot": 10,
+          "finalAvg": 38.1
+        },
+        {
+          "name": "Unders Floater 1",
+          "rookie": false,
+          "startingAvg": 43.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, 48, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 45.9
+        },
+        {
+          "name": "Unders DUMMY1",
+          "rookie": false,
+          "startingAvg": 39.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 39.0
+        },
+        {
+          "name": "Unders DUMMY2",
+          "rookie": false,
+          "startingAvg": 39.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 39.0
+        }
+      ],
+      "totals": {
+        "targets":    [195, 207, 189, 170, 211, 191, 204, 205, 189, 175, 176, 206, 203, 207, 218],
+        "rankPoints": [22,  28,  24,  22,  30,  24,  28,  28,  26,  20,  20,  28,  30,  26,  30],
+        "bonusPoints":[null, 5, null, null, 5, 5, 5, 5, 5, null, null, 5, 5, 5, 5]
+      }
+    },
+    {
+      "name": "Powder Burners",
+      "shooters": [
+        {
+          "name": "Sarah Paul",
+          "rookie": false,
+          "startingAvg": 36.4,
+          "scores": [null, 24, 33, null, 25, 34, 35, 40, 36, 37, 34, 37, 35, 40, 41],
+          "weeksShot": 13,
+          "finalAvg": 34.7
+        },
+        {
+          "name": "Randy Paul",
+          "rookie": false,
+          "startingAvg": 34.3,
+          "scores": [null, null, null, 32, null, null, null, 43, null, null, null, 36, null, null, 49],
+          "weeksShot": 4,
+          "finalAvg": 40.0
+        },
+        {
+          "name": "Jamie Spencer",
+          "rookie": false,
+          "startingAvg": 32.4,
+          "scores": [35, null, null, 34, 40, 37, 38, null, 32, null, 33, null, null, null, 42],
+          "weeksShot": 8,
+          "finalAvg": 36.4
+        },
+        {
+          "name": "Valerie Spencer",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [14, null, null, null, null, 22, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 2,
+          "finalAvg": 18.0
+        },
+        {
+          "name": "John Spencer",
+          "rookie": false,
+          "startingAvg": 31.7,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 31.7
+        },
+        {
+          "name": "Mandy Lane",
+          "rookie": false,
+          "startingAvg": 23.1,
+          "scores": [34, 27, null, null, null, 28, null, null, 22, 20, null, 23, null, null, 27],
+          "weeksShot": 7,
+          "finalAvg": 25.9
+        },
+        {
+          "name": "Matt Lane",
+          "rookie": false,
+          "startingAvg": 35.7,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 35.7
+        },
+        {
+          "name": "Macy Lane",
+          "rookie": false,
+          "startingAvg": 32.3,
+          "scores": [40, null, 27, 30, null, null, 37, null, null, 35, 35, null, 40, null, null],
+          "weeksShot": 7,
+          "finalAvg": 34.9
+        },
+        {
+          "name": "Maddie Lane",
+          "rookie": false,
+          "startingAvg": 28.3,
+          "scores": [36, 35, 37, null, null, null, 28, 39, 28, null, null, null, 35, 36, null],
+          "weeksShot": 8,
+          "finalAvg": 34.3
+        },
+        {
+          "name": "Jim Williams",
+          "rookie": false,
+          "startingAvg": 37.6,
+          "scores": [null, null, null, 36, 43, null, null, 42, null, 43, null, null, null, 44, 47],
+          "weeksShot": 6,
+          "finalAvg": 42.5
+        },
+        {
+          "name": "Laurin Bartelmay",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, 43, 43, null, 42, 48, 38, null, 42, 37, 27, 43, 46, 45, null],
+          "weeksShot": 11,
+          "finalAvg": 41.3
+        },
+        {
+          "name": "Dustin Carter",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, 32, 23, 29, 36, null, null, 37, null, null, 30, 33, 32, 36, null],
+          "weeksShot": 9,
+          "finalAvg": 32.0
+        },
+        {
+          "name": "Craig Bartels",
+          "rookie": false,
+          "startingAvg": 28.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 28.0
+        },
+        {
+          "name": "Tony McClelland",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 35.0
+        },
+        {
+          "name": "Burners DUMMY1",
+          "rookie": false,
+          "startingAvg": 31.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 31.8
+        },
+        {
+          "name": "Burners DUMMY2",
+          "rookie": false,
+          "startingAvg": 31.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 31.8
+        }
+      ],
+      "totals": {
+        "targets":    [159, 161, 163, 161, 186, 169, 176, 201, 160, 172, 159, 172, 188, 201, 206],
+        "rankPoints": [12,  12,  14,  20,  16,  12,  14,  21,  16,  15,  12,  16,  22,  22,  22],
+        "bonusPoints":[5, null, 1, 1, 6, 6, null, 6, null, null, null, 5, 5, 5, 5]
+      }
+    },
+    {
+      "name": "Shell Shocked",
+      "shooters": [
+        {
+          "name": "Troy Johns",
+          "rookie": false,
+          "startingAvg": 42.8,
+          "scores": [45, 40, 36, 40, 39, 45, null, null, 40, null, 40, null, null, 43, 39],
+          "weeksShot": 10,
+          "finalAvg": 40.7
+        },
+        {
+          "name": "Carter Johns",
+          "rookie": false,
+          "startingAvg": 11.0,
+          "scores": [null, null, null, null, 15, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 13.0
+        },
+        {
+          "name": "Gary Hopf",
+          "rookie": false,
+          "startingAvg": 39.2,
+          "scores": [35, 41, 30, 43, 39, null, 41, 39, null, null, null, null, null, 42, 39],
+          "weeksShot": 9,
+          "finalAvg": 38.8
+        },
+        {
+          "name": "Adam Hopf",
+          "rookie": false,
+          "startingAvg": 35.3,
+          "scores": [null, null, null, null, null, 37, null, 32, 34, null, 28, 38, null, 39, 34],
+          "weeksShot": 7,
+          "finalAvg": 34.6
+        },
+        {
+          "name": "Tyler Kupferschmid",
+          "rookie": false,
+          "startingAvg": 36.5,
+          "scores": [null, 36, null, 37, null, 40, null, null, null, 37, 34, 41, null, null, 36],
+          "weeksShot": 7,
+          "finalAvg": 37.3
+        },
+        {
+          "name": "Tyler DeKnecht",
+          "rookie": false,
+          "startingAvg": 41.7,
+          "scores": [42, null, 28, 44, null, null, 42, null, null, null, null, null, null, null, null],
+          "weeksShot": 4,
+          "finalAvg": 39.0
+        },
+        {
+          "name": "Rob Johnson",
+          "rookie": false,
+          "startingAvg": 36.6,
+          "scores": [null, null, 35, null, null, 45, 42, 44, 37, 43, 43, 43, null, 46, 46],
+          "weeksShot": 10,
+          "finalAvg": 42.4
+        },
+        {
+          "name": "Jacob Schroeder",
+          "rookie": false,
+          "startingAvg": 37.3,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 37.3
+        },
+        {
+          "name": "Jason Pitman",
+          "rookie": false,
+          "startingAvg": 35.0,
+          "scores": [null, 36, 29, null, 41, 35, null, null, 35, null, null, null, null, null, null],
+          "weeksShot": 5,
+          "finalAvg": 35.2
+        },
+        {
+          "name": "Steve Cravens",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, 7, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 21.0
+        },
+        {
+          "name": "Bob Benjamin",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, null, null, 24, 27, null, 29, null, null, null, 31, null],
+          "weeksShot": 4,
+          "finalAvg": 27.8
+        },
+        {
+          "name": "Tom Coulon",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, null, null, 42, 34, 30, 34, 26, 30, null, null, null],
+          "weeksShot": 6,
+          "finalAvg": 32.7
+        },
+        {
+          "name": "Shocked DUMMY1",
+          "rookie": false,
+          "startingAvg": 40.7,
+          "scores": [36, 33, null, null, 29, null, null, null, null, 31, null, 33, null, null, null],
+          "weeksShot": 5,
+          "finalAvg": 32.4
+        },
+        {
+          "name": "Shocked DUMMY2",
+          "rookie": false,
+          "startingAvg": 40.7,
+          "scores": [36, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 38.4
+        }
+      ],
+      "totals": {
+        "targets":    [194, 186, 158, 171, 163, 202, 191, 176, 176, 174, 171, 185, null, 201, 194],
+        "rankPoints": [20,  17,  12,  24,  12,  30,  20,  12,  22,  18,  15,  20,  12,  22,  16],
+        "bonusPoints":[null, null, null, null, 5, 5, 5, 1, null, 6, null, 5, 5, 5, 5]
+      }
+    },
+    {
+      "name": "Shockers",
+      "shooters": [
+        {
+          "name": "Logan McKenna",
+          "rookie": false,
+          "startingAvg": 28.5,
+          "scores": [39, 27, 30, 25, 32, null, 40, null, 21, 37, 35, 38, 31, 34, 38],
+          "weeksShot": 13,
+          "finalAvg": 32.8
+        },
+        {
+          "name": "Seth Gieson",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 35.0
+        },
+        {
+          "name": "David Goveia",
+          "rookie": false,
+          "startingAvg": 36.4,
+          "scores": [42, null, 34, null, 39, null, 43, 38, null, null, 44, 43, 44, 41, 42],
+          "weeksShot": 10,
+          "finalAvg": 41.0
+        },
+        {
+          "name": "Anthony Schultz",
+          "rookie": false,
+          "startingAvg": 43.6,
+          "scores": [46, 48, 48, 41, null, null, null, 37, 41, null, null, 45, null, null, null],
+          "weeksShot": 7,
+          "finalAvg": 43.7
+        },
+        {
+          "name": "Dennis Wright",
+          "rookie": false,
+          "startingAvg": 39.1,
+          "scores": [null, null, null, null, null, null, null, 41, 32, 37, null, null, 43, 40, 39],
+          "weeksShot": 6,
+          "finalAvg": 38.7
+        },
+        {
+          "name": "Derri Kerrick",
+          "rookie": false,
+          "startingAvg": 30.4,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 30.4
+        },
+        {
+          "name": "Cari Shields",
+          "rookie": false,
+          "startingAvg": 32.4,
+          "scores": [null, 36, 41, 26, null, 33, 33, null, null, 32, 39, null, 35, 37, null],
+          "weeksShot": 9,
+          "finalAvg": 34.7
+        },
+        {
+          "name": "Brian Dehart",
+          "rookie": false,
+          "startingAvg": 30.0,
+          "scores": [null, null, 32, 29, null, 24, 32, 24, null, null, 30, 24, 26, null, 31],
+          "weeksShot": 9,
+          "finalAvg": 28.0
+        },
+        {
+          "name": "Rob Glinka",
+          "rookie": false,
+          "startingAvg": 32.7,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 32.7
+        },
+        {
+          "name": "Austin Beyer",
+          "rookie": false,
+          "startingAvg": 33.1,
+          "scores": [44, 40, null, 29, 40, 38, 41, null, 33, 40, null, null, null, null, null],
+          "weeksShot": 8,
+          "finalAvg": 38.1
+        },
+        {
+          "name": "Dan Riddle",
+          "rookie": false,
+          "startingAvg": 32.4,
+          "scores": [null, 40, null, null, 44, 37, null, null, 29, null, null, null, null, null, null],
+          "weeksShot": 4,
+          "finalAvg": 37.5
+        },
+        {
+          "name": "Matt Lamb",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, 41, 41, null, 38, null, 40, 42, 45, null, 41, 47],
+          "weeksShot": 8,
+          "finalAvg": 41.9
+        },
+        {
+          "name": "Shockers DUMMY1",
+          "rookie": false,
+          "startingAvg": 42.8,
+          "scores": [38, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 40.4
+        },
+        {
+          "name": "Shockers DUMMY2",
+          "rookie": false,
+          "startingAvg": 42.8,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 42.8
+        }
+      ],
+      "totals": {
+        "targets":    [209, 191, 185, 150, 196, 173, 189, 178, 156, 186, 190, 195, 179, 193, 197],
+        "rankPoints": [29,  22,  22,  12,  20,  16,  17,  14,  14,  24,  26,  26,  14,  16,  18],
+        "bonusPoints":[5, 5, 5, null, 5, null, 5, null, null, 5, 5, 5, 5, 5, 5]
+      }
+    },
+    {
+      "name": "Sights Impaired",
+      "shooters": [
+        {
+          "name": "Dan Barrington",
+          "rookie": false,
+          "startingAvg": 34.4,
+          "scores": [43, 27, null, null, 36, 37, 34, 36, 36, null, null, null, 41, null, 35],
+          "weeksShot": 9,
+          "finalAvg": 36.1
+        },
+        {
+          "name": "Jack Vick",
+          "rookie": false,
+          "startingAvg": 40.0,
+          "scores": [null, 35, null, 38, 33, null, 40, null, null, 42, 43, 41, 42, 43, 45],
+          "weeksShot": 10,
+          "finalAvg": 40.2
+        },
+        {
+          "name": "Mark Cabaj",
+          "rookie": false,
+          "startingAvg": 30.3,
+          "scores": [null, 31, 30, 36, null, 23, null, 39, null, 31, 31, 33, 25, 16, null],
+          "weeksShot": 10,
+          "finalAvg": 29.5
+        },
+        {
+          "name": "Allen Cary",
+          "rookie": false,
+          "startingAvg": 36.6,
+          "scores": [41, null, null, 37, 44, 33, 41, null, null, 40, 37, 35, null, null, 40],
+          "weeksShot": 9,
+          "finalAvg": 38.7
+        },
+        {
+          "name": "Michael Freimann",
+          "rookie": false,
+          "startingAvg": 35.2,
+          "scores": [31, null, 35, 28, null, null, 37, 36, 33, null, 36, null, 41, null, 34],
+          "weeksShot": 9,
+          "finalAvg": 34.6
+        },
+        {
+          "name": "Shannon McMahon",
+          "rookie": false,
+          "startingAvg": 37.0,
+          "scores": [41, null, 39, null, 43, 39, null, 45, 25, 32, null, 39, 38, null, null],
+          "weeksShot": 9,
+          "finalAvg": 37.9
+        },
+        {
+          "name": "Rich Drennen",
+          "rookie": false,
+          "startingAvg": 44.9,
+          "scores": [null, 47, 42, 45, 48, null, null, 48, 43, 47, null, null, null, null, null],
+          "weeksShot": 7,
+          "finalAvg": 45.7
+        },
+        {
+          "name": "Ron Milby",
+          "rookie": false,
+          "startingAvg": 45.1,
+          "scores": [47, 48, 44, null, null, 46, 43, null, 35, null, 47, 46, null, 46, 44],
+          "weeksShot": 10,
+          "finalAvg": 44.6
+        },
+        {
+          "name": "David Jones",
+          "rookie": true,
+          "startingAvg": 35.0,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, 31, null],
+          "weeksShot": 1,
+          "finalAvg": 33.0
+        },
+        {
+          "name": "Impaired Floater 1",
+          "rookie": false,
+          "startingAvg": 38.9,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, 41, null],
+          "weeksShot": 1,
+          "finalAvg": 40.0
+        },
+        {
+          "name": "Impaired DUMMY1",
+          "rookie": false,
+          "startingAvg": 40.6,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 40.6
+        },
+        {
+          "name": "Impaired DUMMY2",
+          "rookie": false,
+          "startingAvg": 40.6,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 40.6
+        }
+      ],
+      "totals": {
+        "targets":    [203, 188, 190, 184, 204, 178, 195, 204, 172, 192, 194, 194, 187, 177, 198],
+        "rankPoints": [26,  20,  26,  30,  28,  18,  24,  25,  20,  28,  28,  24,  19,  12,  20],
+        "bonusPoints":[5, null, null, null, 5, null, 5, 5, null, 5, 5, 5, 5, null, 5]
+      }
+    },
+    {
+      "name": "Smoking Guns",
+      "shooters": [
+        {
+          "name": "Gordon Larsen",
+          "rookie": false,
+          "startingAvg": 41.4,
+          "scores": [null, 43, null, null, 41, 42, null, 43, null, 43, 42, null, 47, 42, 42],
+          "weeksShot": 9,
+          "finalAvg": 42.8
+        },
+        {
+          "name": "Jamie Beilfuss",
+          "rookie": false,
+          "startingAvg": 39.0,
+          "scores": [41, null, null, 40, null, null, null, 45, 41, 38, null, 42, null, 42, 46],
+          "weeksShot": 8,
+          "finalAvg": 41.9
+        },
+        {
+          "name": "Mike Chapman",
+          "rookie": false,
+          "startingAvg": 38.9,
+          "scores": [null, 49, 45, 36, null, 45, 45, null, 44, null, 44, null, 39, null, 48],
+          "weeksShot": 9,
+          "finalAvg": 43.9
+        },
+        {
+          "name": "Heston Eveland",
+          "rookie": false,
+          "startingAvg": 31.1,
+          "scores": [40, 37, 25, null, 34, null, null, 25, 32, null, 31, 31, null, null, 34],
+          "weeksShot": 9,
+          "finalAvg": 32.1
+        },
+        {
+          "name": "Corey Norton",
+          "rookie": false,
+          "startingAvg": 35.0,
+          "scores": [17, null, null, null, null, null, null, null, null, null, 22, null, 37, 41, 38],
+          "weeksShot": 5,
+          "finalAvg": 31.0
+        },
+        {
+          "name": "Jacob Roberson",
+          "rookie": false,
+          "startingAvg": 35.8,
+          "scores": [null, null, 34, 26, 35, 35, 38, null, null, null, null, null, 39, 41, null],
+          "weeksShot": 7,
+          "finalAvg": 35.4
+        },
+        {
+          "name": "Jonathan Roberson",
+          "rookie": false,
+          "startingAvg": 39.9,
+          "scores": [42, null, 42, null, 44, 43, 41, null, null, 35, null, 40, null, 46, null],
+          "weeksShot": 8,
+          "finalAvg": 41.6
+        },
+        {
+          "name": "Dan Yeomans",
+          "rookie": false,
+          "startingAvg": 27.0,
+          "scores": [null, 38, 28, 19, null, 36, 33, null, 28, 32, 32, 31, null, null, null],
+          "weeksShot": 9,
+          "finalAvg": 30.8
+        },
+        {
+          "name": "Trevor Chapman",
+          "rookie": false,
+          "startingAvg": 34.8,
+          "scores": [47, null, null, 31, 36, null, 36, 32, 34, 28, null, 44, 40, null, null],
+          "weeksShot": 9,
+          "finalAvg": 36.4
+        },
+        {
+          "name": "Keith Hanson",
+          "rookie": false,
+          "startingAvg": 25.0,
+          "scores": [null, 19, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 22.0
+        },
+        {
+          "name": "Evan Beilfuss",
+          "rookie": false,
+          "startingAvg": 36.5,
+          "scores": [null, null, null, null, null, null, null, 36, null, null, null, null, null, null, null],
+          "weeksShot": 1,
+          "finalAvg": 36.3
+        },
+        {
+          "name": "Guns DUMMY1",
+          "rookie": false,
+          "startingAvg": 37.4,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 37.4
+        },
+        {
+          "name": "Guns DUMMY2",
+          "rookie": false,
+          "startingAvg": 37.4,
+          "scores": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          "weeksShot": null,
+          "finalAvg": 37.4
+        }
+      ],
+      "totals": {
+        "targets":    [187, 186, 174, 152, 190, 201, 193, 181, 179, 176, 171, 188, 202, 212, 208],
+        "rankPoints": [18,  17,  18,  14,  18,  28,  22,  16,  24,  22,  15,  22,  28,  30,  24],
+        "bonusPoints":[5, 5, null, null, 5, 5, 5, null, null, null, null, 5, 5, 5, 5]
+      }
+    }
+  ]
+}
