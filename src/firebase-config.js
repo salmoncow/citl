@@ -4,10 +4,15 @@
  * Reads config values from VITE_FIREBASE_* environment variables.
  * Copy .env.example to .env and fill in values from Firebase console.
  *
- * Phase 1: No Firebase SDK is imported here. This is a stub that allows
- * the app to run fully locally without Firebase credentials.
- * Firebase SDK will be wired in Phase 2 (feat/firebase-setup).
+ * Exports:
+ *   firebaseConfig  — raw config object (for reference / Auth init)
+ *   db              — Firestore database instance
+ *   isDevelopment   — true when running via `npm run dev`
+ *   isProduction    — true when running via `npm run build`
  */
+
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -36,9 +41,7 @@ export function validateFirebaseConfig() {
   return true;
 }
 
-if (isDevelopment) {
-  console.warn(
-    'Firebase not configured — running in local mode. ' +
-    'Copy .env.example to .env and fill in your Firebase project values to enable Firebase features.'
-  );
-}
+const app = initializeApp(firebaseConfig);
+
+/** @type {import('firebase/firestore').Firestore} */
+export const db = getFirestore(app);

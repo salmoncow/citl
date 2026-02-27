@@ -6,8 +6,6 @@
  *
  * Phase 1: Static views, no Firebase.
  * Phase 2+: Firebase config wired in, auth and Firestore added.
- *
- * Modeled after salmoncow src/main.js.
  */
 
 import './styles/main.css';

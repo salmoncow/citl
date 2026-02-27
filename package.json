@@ -19,5 +19,8 @@
     "terser": "^5.44.1",
     "typescript": "^5.9.3",
     "vite": "^7.2.7"
+  },
+  "dependencies": {
+    "firebase": "^12.9.0"
   }
 }

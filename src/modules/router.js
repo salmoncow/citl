@@ -3,8 +3,6 @@
  *
  * Routes are registered as path strings (e.g. '/', '/scorecards').
  * Navigation uses window.location.hash (e.g. '#/', '#/scorecards').
- *
- * Modeled after salmoncow src/modules/router.js.
  */
 
 export class RouterModule {
