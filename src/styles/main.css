@@ -23,11 +23,10 @@ h5 {margin-top: 0;}
 /* Style the body */
 body {
     font-family: Arial, Helvetica, sans-serif;
-    /* font-family: "Trebuchet MS", Arial, Helvetica, sans-serif; */
     margin: 0;
 }
 
-/* Header/logo Title */
+/* Header/logo */
 .header {
     z-index: 8;
     padding: 20px;
@@ -40,7 +39,7 @@ body {
 .logo {height: 100%;}
 
 /* Main column */
-.main {   
+.main {
     background-color: white;
     padding-left: 10%;
     padding-right: 10%;
@@ -53,46 +52,11 @@ body {
     line-height: 1.6;
 }
 
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 99;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgb(0,0,0);
-    background-color: rgba(0,0,0,0.4);
-}
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 65%;
-}
-.modal-close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-.modal-close:hover, .modal-close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
-
 /* Responsive topnav */
-.topnav { 
-    /* Dropdown menu doesn't work if `overflow: hidden;` and `position:sticky;`. Need to specify a min-height to fix it
-       https://stackoverflow.com/questions/57913781/css-sticky-navbar-with-dropdown-menu-not-showing-overflow */
+.topnav {
     z-index: 9;
     background-color: #333;
     min-height: 52px;
-    /* overflow: hidden; */
 
     position: sticky;
     position: -webkit-sticky;
@@ -134,7 +98,7 @@ body {
     overflow: hidden;
 }
 .dropdown .dropbtn {
-    font-size: 17px;    
+    font-size: 17px;
     border: none;
     outline: none;
     color: white;
@@ -163,9 +127,9 @@ body {
     display: block;
     text-align: left;
     width: 100%;
-} 
-.dropdown-content a:hover {background-color: #ddd;} 
-.dropdown-show {display:block;} 
+}
+.dropdown-content a:hover {background-color: #ddd;}
+.dropdown-show {display: block;}
 
 /* Progress Bar */
 .progress-container {
@@ -213,7 +177,7 @@ body {
         text-align: left;
     }
 
-    .main {   
+    .main {
         padding-left: 20px;
         padding-right: 20px;
     }
@@ -228,32 +192,6 @@ body {
         height: 200px;
         padding: 10px;
     }
-
-    /* make Scorecard first column sticky when mobile, but with long names doesn't work well */
-    /* .scorecard-tables th:first-of-type {
-        background-color: #053C5D;
-        position: sticky;
-        left: 0px;
-        z-index: 1;
-    }
-    .scorecard-tables tr:nth-child(even) td:first-of-type {
-        background-color: #f2f2f2;
-        position: sticky;
-        left: 0px;
-        z-index: 1;
-    }
-    .scorecard-tables tr:nth-child(odd) td:first-of-type {
-        background-color: white;
-        position: sticky;
-        left: 0px;
-        z-index: 1;
-    }
-    .scorecard-tables tr:nth-last-child(-n+3) td:first-of-type {
-        background-color: #053C5D;
-        position: sticky;
-        left: 0px;
-        z-index: 1;
-    } */
 }
 
 /* Footer */
@@ -285,18 +223,6 @@ body {
     color: #328CC1;
     background-color: transparent;
     text-decoration: underline;
-}
-
-/* Cookie Footer */
-.cookie-footer {
-    z-index: 99;
-    display: none;
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    background-color: white;
-    border-top: 2px solid red;
-    text-align: center;
 }
 
 /* Warning Table */
@@ -389,7 +315,6 @@ body {
     transition: max-height 0.2s ease-out;
 }
 
-
 /* Scorecard Tables */
 .scorecard-tables {
     font-size: 12px;
@@ -442,7 +367,6 @@ body {
 }
 .scoresheets-table td, .scoresheets-table th {
     border: 1px solid #ddd;
-    padding: 8px;
     padding: 5px 20px;
 }
 .scoresheets-table tr:nth-child(even) {background-color: #f2f2f2;}
@@ -482,81 +406,10 @@ body {
 .bonus-tables td:nth-child(n+2):nth-child(-n+16), .bonus-tables th:nth-child(n+2):nth-child(-n+16) {width: 5%;}
 .bonus-tables tr:hover {background-color: #ddd;}
 
-/* Handicap Calculator */
-
 /* Hide number scrollers on num inputs */
-/* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-/* Firefox */
 input[type=number] {-moz-appearance: textfield;}
-.open-button {
-    background-color: #555;
-    color: white;
-    padding: 12px 15px;
-    border: none;
-    cursor: pointer;
-    opacity: 0.8;
-    position: fixed;
-    bottom: 23px;
-    right: 28px;
-}
-.form-popup {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    right: 15px;
-    border: 3px solid #f1f1f1;
-    z-index: 9;
-}
-.form-container {
-    max-width: 300px;
-    padding: 10px;
-    background-color: white;
-    text-align: center;
-
-    text-decoration: none;
-    color: #404040;
-    letter-spacing: .8px;
-    text-transform: none;
-    line-height: 1.6;
-}
-.form-container input[type=number] {
-    width: 100%;
-    padding: 15px;
-    margin: 5px 0 10px 0;
-    border: none;
-    background: #f1f1f1;
-}
-.form-container input[type=number]:focus {
-    background-color: #ddd;
-    outline: none;
-}
-.form-container .btn {
-    background-color: #4CAF50;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    cursor: pointer;
-    margin-bottom: 10px;
-    opacity: 0.8;
-    float: left;
-    width: 235px;
-}
-.form-container .cancel {
-    background-color: #555;
-    color: white;
-    padding: 12px 15px;
-    border: none;
-    cursor: pointer;
-    margin-bottom:10px;
-    opacity: 0.8;
-}
-.form-container p {
-    font-size: 12px;
-    text-align: center;
-}
-.form-container .btn:hover, .open-button:hover, .cancel:hover {opacity: 1;}
