@@ -14,7 +14,7 @@ shooting league in Central Illinois. The site publishes weekly standings, result
 The project is mid-migration from a legacy AWS S3 + raw HTML site to a modern
 **Vite 7 SPA** hosted on **Firebase Hosting** with **Firestore** as the live data backend.
 
-**Firebase project ID**: `citl`
+**Firebase project ID**: `citl-baed2`
 
 ---
 
@@ -139,6 +139,17 @@ Progress tracker for the AWS → Firebase modernization.
 - [x] `.specs/technical/firebase-deployment.md`
 - [x] `.prompts/meta/architectural-decision-log.md` — pre-populated (ADR-001 through ADR-005)
 - [x] `AGENTS.md` slimmed to orientation + pointers
+
+### Phase 3.5 — Tech Debt Resolution ✅
+Identified during post-migration architectural review (2026-02-27):
+
+- [x] `src/types/scorecard.js` — created JSDoc typedefs for `Shooter`, `TeamTotals`, `Team`, `SeasonData` (was missing; `scorecards.js` referenced it)
+- [x] Firebase project ID `citl` → `citl-baed2` corrected in `AGENTS.md`, `PLAN.md`, `.env.example`
+- [x] `http://` → `https://` links updated in `src/views/home.js` and `src/index.html`
+- [x] Stale `gstatic.com` CDN external rule removed from `vite.config.js` (Firebase SDK is npm-installed, not CDN-loaded)
+- [x] `innerHTML` in `main.js:_renderView()` documented as accepted transitional debt (static strings only; resolved in Phase 4 when views become Web Components)
+- [x] `CONTRIBUTING.md`, `DEVELOPMENT.md`, `PLAN.md` removed — superseded by `AGENTS.md` + `.specs/constitution.md`
+- [ ] `src/components/` directory — create when Phase 4 `standings-table` Web Component work begins
 
 ### Phase 4 — Firestore Data Layer (partial)
 - [x] Firestore data model designed (see ADR-004 + constitution §II.5)

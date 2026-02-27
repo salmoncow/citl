@@ -87,6 +87,12 @@ class App {
   /**
    * Render HTML into the main content area.
    * @param {string} html
+   *
+   * Constitutional note (§IV.2): innerHTML is flagged as a forbidden pattern when
+   * used with user-supplied content. All view functions return static, developer-authored
+   * HTML strings — no user input ever flows into this call. This is accepted transitional
+   * debt: in Phase 4, views will be replaced by Web Components that build DOM directly,
+   * eliminating this pattern entirely. See constitution §II.4 and ADR-004.
    */
   _renderView(html) {
     if (this._mainContent) {

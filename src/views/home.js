@@ -22,7 +22,7 @@ export function homeView() {
 
     <p>
       Trophies will again be
-      <a href="http://shootingsportsouvenirs.com/index.php?id=walnut-birds" target="_blank">
+      <a href="https://shootingsportsouvenirs.com/index.php?id=walnut-birds" target="_blank">
         Walnut Birds with Stands from Shooting Sports Souvenirs
       </a>.
       The total price per trophy with stand is $28.00. These are high quality walnut birds!

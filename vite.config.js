@@ -13,9 +13,6 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
 
       rollupOptions: {
-        // Keep Firebase SDK on CDN as external (Phase 2+)
-        external: [/^https:\/\/www\.gstatic\.com\/firebasejs\/.*/],
-
         output: {
           assetFileNames: (assetInfo) => {
             const ext = assetInfo.name.split('.').pop();
