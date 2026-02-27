@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Central Illinois Trap League is an independently organized, non-discriminating shotgun shooting sport. The league involves trap shooting — one of the three major disciplines of competitive clay pigeon shooting.">
+  <meta name="keywords" content="illinois trap, illinois shotgun, central illinois, trap shooting, central illinois trap, shotgun sport, clay pigeon shooting, clay pigeon, trap league, central illinois trap league, citl">
+  <title>Central Illinois Trap League</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+
+  <div class="header">
+    <a href="#/" id="header-logo-link">
+      <img src="/assets/images/logo_full_large_white_bg.png" alt="Central Illinois Trap League" class="logo">
+    </a>
+  </div>
+
+  <div class="topnav" id="topnav">
+    <!-- Burger button (mobile) — listener attached by navigation.js -->
+    <a href="javascript:void(0);" class="burger" id="burger-btn" aria-label="Toggle navigation">
+      <i class="fa fa-bars"></i>
+    </a>
+
+    <!-- Nav links — data-route used by navigation.js for active-link highlighting -->
+    <a href="#/" data-route="/">
+      <i class="fa fa-home"></i>
+    </a>
+    <a href="#/scorecards" data-route="/scorecards">Scorecards</a>
+    <a href="#/rules" data-route="/rules">Rules</a>
+    <a href="#/about" data-route="/about">About</a>
+    <a href="#/downloads" data-route="/downloads">Downloads</a>
+
+    <!-- Resources dropdown — listener attached by navigation.js -->
+    <div class="dropdown">
+      <button class="dropbtn" id="dropbtn" aria-haspopup="true" aria-expanded="false">
+        Resources <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content" id="dropdown">
+        <a href="https://www.darnalls.com/" target="_blank" rel="noopener noreferrer">Darnall's Gun Works</a>
+        <a href="https://shootingsportsouvenirs.com/" target="_blank" rel="noopener noreferrer">Shooting Sport Souvenirs</a>
+        <a href="https://shootata.com/" target="_blank" rel="noopener noreferrer">Amateur Trapshooting Association (ATA)</a>
+      </div>
+    </div>
+
+    <!-- Scroll progress bar -->
+    <div class="progress-container">
+      <div class="progress-bar" id="myBar"></div>
+    </div>
+  </div>
+
+  <!-- Router renders view content here -->
+  <div class="main" id="main-content"></div>
+
+  <div class="footer">
+    <p>Central Illinois Trap League is an independently organized, non-discriminating shooting sport.
+    We encourage families and friends to participate. We remind everyone to keep it legal by shooting
+    with an adult if under age, or otherwise having a valid FOID card.</p>
+    <p><a href="mailto:tyler.citl@gmail.com">Contact Us</a></p>
+  </div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

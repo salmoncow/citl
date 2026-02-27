@@ -1,0 +1,26 @@
+{
+  "name": "citl-static",
+  "version": "1.0.0",
+  "description": "Central Illinois Trap League — citl.club",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0 <25.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:preview": "npm run build && firebase hosting:channel:deploy preview"
+  },
+  "devDependencies": {
+    "terser": "^5.44.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7"
+  },
+  "dependencies": {
+    "firebase": "^12.9.0"
+  }
+}
