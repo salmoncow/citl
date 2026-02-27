@@ -32,7 +32,7 @@ Config file:         .firebaserc
 ```json
 {
   "projects": {
-    "default": "citl"
+    "default": "citl-baed2"
   }
 }
 ```
@@ -88,7 +88,7 @@ Before running `npm run deploy` or `npm run deploy:preview`:
 
 ### Post-Deployment Verification
 
-After every deploy, verify at `https://citl.web.app` (or preview channel URL):
+After every deploy, verify at `https://citl-baed2.web.app` (or preview channel URL):
 
 - [ ] Home page loads and displays standings / results feed
 - [ ] Navigation works: About, Rules, Downloads, Scorecards
@@ -221,12 +221,12 @@ directly into the JS bundle by Vite. They are **not** secrets at runtime
 ```bash
 # .env (gitignored — never commit)
 VITE_FIREBASE_API_KEY=AIza...
-VITE_FIREBASE_PROJECT_ID=citl
+VITE_FIREBASE_PROJECT_ID=citl-baed2
 # ...
 
 # .env.example (committed — template only)
 VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_PROJECT_ID=citl
+VITE_FIREBASE_PROJECT_ID=citl-baed2
 # ...
 ```
 
@@ -289,7 +289,7 @@ Vite content-hashes all bundles — a new `npm run build` always generates new f
 If users still see an old version, check if `index.html` is being cached:
 ```bash
 # Verify cache headers on index.html
-curl -I https://citl.web.app
+curl -I https://citl-baed2.web.app
 # Should include: cache-control: no-cache
 ```
 

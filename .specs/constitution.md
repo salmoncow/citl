@@ -431,7 +431,7 @@ The following are CITL-specific milestones that don't exist in a greenfield proj
 ### VII.2 DNS Cutover Prerequisites (Phase 7)
 
 Before cutting DNS, all of the following must be verified:
-- [ ] All 5 SPA routes work correctly on Firebase Hosting URL (`citl.web.app`)
+- [ ] All 5 SPA routes work correctly on Firebase Hosting URL (`citl-baed2.web.app`)
 - [ ] CSP headers pass browser console with zero violations
 - [ ] Firestore reads/writes functioning correctly with live data
 - [ ] Firestore security rules tested in Local Emulator

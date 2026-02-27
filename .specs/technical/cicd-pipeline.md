@@ -162,9 +162,9 @@ The preview deploy action automatically posts the preview URL as a PR comment.
 |-------------|-------|--------|
 | `FIREBASE_SERVICE_ACCOUNT` | Firebase service account JSON | Firebase console → Project Settings → Service accounts |
 | `VITE_FIREBASE_API_KEY` | Firebase API key | Firebase console → Project Settings → Your apps |
-| `VITE_FIREBASE_AUTH_DOMAIN` | `citl.firebaseapp.com` | Firebase console |
-| `VITE_FIREBASE_PROJECT_ID` | `citl` | Firebase console |
-| `VITE_FIREBASE_STORAGE_BUCKET` | `citl.firebasestorage.app` | Firebase console |
+| `VITE_FIREBASE_AUTH_DOMAIN` | `citl-baed2.firebaseapp.com` | Firebase console |
+| `VITE_FIREBASE_PROJECT_ID` | `citl-baed2` | Firebase console |
+| `VITE_FIREBASE_STORAGE_BUCKET` | `citl-baed2.firebasestorage.app` | Firebase console |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Sender ID | Firebase console |
 | `VITE_FIREBASE_APP_ID` | App ID | Firebase console |
 | `VITE_FIREBASE_MEASUREMENT_ID` | Measurement ID | Firebase console |

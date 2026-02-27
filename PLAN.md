@@ -73,7 +73,7 @@ These require action outside the codebase:
 1. **Firebase console**: confirm Firebase Hosting is enabled on the `citl` project
 2. **Local CLI**: `firebase login && firebase use citl`
 3. **Build + deploy**: `npm run deploy` (= `npm run build && firebase deploy --only hosting`)
-4. **Validate**: open `https://citl.web.app`, verify all 5 routes, nav, scorecards accordion,
+4. **Validate**: open `https://citl-baed2.web.app`, verify all 5 routes, nav, scorecards accordion,
    Google Maps embed, Font Awesome icons — check browser console for CSP violations
 
 ---
