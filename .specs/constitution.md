@@ -274,7 +274,7 @@ seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapsh
 
 **Backend / Platform**:
 - **Platform**: Firebase (`citl` project, Spark plan)
-  - Firestore (NoSQL, `us-east1` region, production mode)
+  - Firestore (NoSQL, `us-central1` region, production mode)
   - Hosting (SPA rewrite, security headers, cache rules)
   - Auth (Google, admin-only — Phase 5)
 - **SDK**: `firebase` npm package (installed; imported as ES modules)

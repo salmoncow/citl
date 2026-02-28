@@ -122,7 +122,7 @@ Progress tracker for the AWS → Firebase modernization.
 - [x] `src/firebase-config.js` (initializes Firebase app, exports `db`)
 - [ ] Enable Firebase Hosting in console *(manual)*
 - [ ] Enable Firebase Auth (Google) *(manual — deferred to Phase 5)*
-- [ ] Enable Firestore in console (production mode, `us-east1`) *(manual — deferred to Phase 4)*
+- [ ] Enable Firestore in console (production mode, `us-central1`) *(manual — deferred to Phase 4)*
 
 ### Phase 3 — Application Structure ✅
 - [x] `src/index.html` → Vite entry point
@@ -169,25 +169,39 @@ Identified during post-migration architectural review (2026-02-27):
 - [x] Cross-validate `computeSeasonTotals(parseSeasonCsv(...))` against JSON scorecards — 2023, 2024, 2025
 - [x] `src/components/standings-table.js` Web Component
 
-### Phase 5 — Admin Portal (localStorage backend)
+### Phase 5 — Admin Portal (localStorage backend) ✅
 Goal: ship a working admin score-entry UI backed by localStorage. Validate the
 admin workflow before committing to Firestore writes.
 
-- [ ] `src/firebase-config.js` — add `getAuth()` export alongside existing `db`
-- [ ] `src/modules/auth.js` — Google sign-in (`signInWithPopup`), `signOut`, `onAuthStateChanged`, `currentUser` getter
-- [ ] `src/views/admin.js` — admin view: login gate + panel (no separate /login route)
-- [ ] `src/components/admin-panel.js` — score entry form; saves via `localStorage` backend
-- [ ] `src/main.js` — register `#/admin` route; use `router.onBeforeNavigate()` for auth guard
+- [x] `src/firebase-config.js` — add `getAuth()` export alongside existing `db`
+- [x] `src/modules/auth.js` — Google sign-in (`signInWithPopup`), `signOut`, `onAuthStateChanged`, `currentUser` getter
+- [x] `src/views/admin.js` — admin view: login gate + panel (no separate /login route)
+- [x] `src/components/admin-panel.js` — score entry form; saves via `localStorage` backend
+- [x] `src/main.js` — register `#/admin` route; use `router.onBeforeNavigate()` for auth guard
+
+### Phase 5.5 — Teams Roster Pre-population ✅
+- [x] `scripts/extract-teams.js` — reads scorecards JSON (2023–2025) → `teams.json`
+- [x] `src/data/teams/teams.json` — Firestore-ready team+shooter roster data
+- [x] `src/components/admin-panel.js` — team select populated from `teams.json`; shooter rows pre-filled on team selection
 
 ### Phase 6 — Firestore Live
 Goal: move admin-entered data from localStorage → Firestore; enforce security.
 
-- [ ] Enable Firestore in console (production mode, `us-east1`) *(manual)*
-- [ ] `firestore.rules` — public read, admin-write (`admin: true` custom claim)
-- [ ] Set `admin: true` custom claim on admin user UID *(Firebase Admin SDK or console)*
-- [ ] Migrate localStorage data → Firestore (one-time import utility)
-- [ ] Test security rules in Firebase Local Emulator
-- [ ] Update repository-factory default: `localStorage` → `firestore`
+- [x] Enable Firestore in console (production mode, `us-central1`) *(manual)*
+- [x] `firestore.rules` — public read, admin-write (`admin: true` custom claim)
+- [x] Set `admin: true` custom claim on admin user UID *(Firebase Admin SDK or console — manual)*
+- [x] `src/types/score.js` — add `TeamResult`, `ShooterScore`, `SeasonEntry` typedefs; update `WeekResult`
+- [x] `src/types/season.js` — update `Season` to Phase 6 schema; add `SeasonStandings` typedef
+- [x] `src/repositories/score-repository.js` — add `saveEntry`, `getEntry`, `getEntries`, `publishWeek`
+- [x] `src/services/score-service.js` — add `saveEntry()` and `publishWeek()`
+- [x] `src/components/admin-panel.js` — entry saves to Firestore (localStorage fallback); load entries from Firestore; "Publish Week" button
+- [x] `scripts/seed-teams.js` — one-time: `teams.json` → `seasons/{year}/teams/` Firestore docs
+- [x] `scripts/migrate-entries.js` — one-time: localStorage entry JSON export → Firestore entries
+- [x] `src/repositories/repository-factory.js` — default backend: `localStorage` → `firestore`
+- [ ] Test security rules in Firebase Local Emulator *(manual)*
+- [x] Run `node scripts/seed-teams.js` *(manual — after Firestore is enabled)*
+- [ ] Run `node scripts/import-historical.js` *(manual — imports 2019–2025 scorecard data to Firestore)*
+- [ ] Run `node scripts/migrate-entries.js` *(manual — after Firestore is enabled)*
 
 ### Phase 7 — CI/CD *(deferred until after DNS cutover)*
 - [ ] `.github/workflows/deploy-production.yml`

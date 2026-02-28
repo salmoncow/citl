@@ -2,21 +2,27 @@
  * admin-panel — Custom Element
  *
  * Score-entry form for weekly trap league data.
- * Stores raw entries to localStorage: citl:entry:{year}:{week}:{teamSlug}
- * Each entry: { year, weekNumber, teamName, savedAt, shooters[] }
- * Each shooter: { name, score1, score2, total }
+ * Primary storage: Firestore via ScoreService (requires auth).
+ * Fallback: localStorage (citl:entry:{year}:{week}:{teamSlug}) for offline use.
  *
  * No shadow DOM. All user values rendered via textContent (never innerHTML).
  */
 
+import { db } from '@/firebase-config.js';
+import { createRepositoryFactory } from '@/repositories/repository-factory.js';
+import { ScoreService } from '@/services/score-service.js';
+
+const factory = createRepositoryFactory({ db });
+const scoreService = new ScoreService(factory.getScoreRepository());
+
 const CURRENT_YEAR = new Date().getFullYear();
 const MAX_WEEKS = 15;
 const MAX_SCORE = 25;
-const KEY_PREFIX = 'citl:entry';
+const LS_PREFIX = 'citl:entry';
 const TEAMS_DATA_URL = '/data/teams/teams.json';
 
 const toSlug = (name) => name.trim().toLowerCase().replace(/\s+/g, '-');
-const entryKey = (year, week, team) => `${KEY_PREFIX}:${year}:${week}:${toSlug(team)}`;
+const lsEntryKey = (year, week, team) => `${LS_PREFIX}:${year}:${week}:${toSlug(team)}`;
 
 function buildOptions(min, max, label, selected) {
   let html = '';
@@ -60,6 +66,14 @@ class AdminPanel extends HTMLElement {
         <p id="ap-status" class="admin-status" aria-live="polite"></p>
         <h3>Saved Entries</h3>
         <ul id="ap-saved-list" class="admin-saved-list"></ul>
+        <div class="admin-publish-section">
+          <h3>Publish</h3>
+          <p class="admin-publish-note">Publishing runs the scoring engine over all saved entries and writes computed results to Firestore.</p>
+          <div class="admin-actions">
+            <button id="ap-publish">Publish Week</button>
+          </div>
+          <p id="ap-publish-status" class="admin-status" aria-live="polite"></p>
+        </div>
       </div>`;
 
     this._addShooterRow();
@@ -68,6 +82,7 @@ class AdminPanel extends HTMLElement {
     this.querySelector('#ap-add-shooter').addEventListener('click', () => this._addShooterRow());
     this.querySelector('#ap-clear').addEventListener('click', () => this._clearForm());
     this.querySelector('#ap-save').addEventListener('click', () => this._saveEntry());
+    this.querySelector('#ap-publish').addEventListener('click', () => this._publishWeek());
     this.querySelector('#ap-year').addEventListener('change', () => {
       this._populateTeamSelect();
       this._populateShooterRows();
@@ -189,14 +204,14 @@ class AdminPanel extends HTMLElement {
     return input;
   }
 
-  _saveEntry() {
+  async _saveEntry() {
     const year = parseInt(this.querySelector('#ap-year').value, 10);
     const weekNumber = parseInt(this.querySelector('#ap-week').value, 10);
     const teamSelect = this.querySelector('#ap-team');
     const teamName = teamSelect.options[teamSelect.selectedIndex]?.text ?? '';
-    const teamValue = teamSelect.value;
+    const teamId = teamSelect.value;
 
-    if (!teamValue) { this._setStatus('Team selection is required.', 'error'); return; }
+    if (!teamId) { this._setStatus('Team selection is required.', 'error'); return; }
 
     const shooters = [];
     for (const row of this.querySelectorAll('.ap-shooter-row')) {
@@ -223,63 +238,91 @@ class AdminPanel extends HTMLElement {
       this._setStatus('At least one shooter with valid scores is required.', 'error'); return;
     }
 
-    const key = entryKey(year, weekNumber, teamName);
-    localStorage.setItem(key, JSON.stringify({ year, weekNumber, teamName, savedAt: new Date().toISOString(), shooters }));
-    this._setStatus(`Saved: ${key}`, 'success');
+    const entry = {
+      year,
+      weekNumber,
+      teamId,
+      teamName,
+      savedAt: new Date().toISOString(),
+      shooters,
+    };
+
+    // Primary: write to Firestore
+    const result = await scoreService.saveEntry(year, entry);
+    if (result.success) {
+      this._setStatus(`Saved entry for ${teamName} week ${weekNumber}.`, 'success');
+    } else {
+      this._setStatus(`Firestore save failed: ${result.error}`, 'error');
+    }
+
+    // Fallback: also write to localStorage
+    try {
+      const lsKey = lsEntryKey(year, weekNumber, teamName);
+      localStorage.setItem(lsKey, JSON.stringify(entry));
+    } catch {
+      // localStorage not critical; ignore
+    }
+
     this._loadSavedEntries();
   }
 
-  _loadSavedEntries() {
-    const year = this.querySelector('#ap-year')?.value;
-    const week = this.querySelector('#ap-week')?.value;
+  async _loadSavedEntries() {
+    const year = parseInt(this.querySelector('#ap-year')?.value, 10);
+    const weekNumber = parseInt(this.querySelector('#ap-week')?.value, 10);
     const list = this.querySelector('#ap-saved-list');
     if (!list) return;
 
     while (list.firstChild) list.removeChild(list.firstChild);
 
-    const prefix = `${KEY_PREFIX}:${year}:${week}:`;
-    const keys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith(prefix)) keys.push(k);
-    }
-    keys.sort();
+    // Try Firestore first
+    const result = await scoreService.getEntries(year, weekNumber);
+    const entries = result.success
+      ? result.data.filter((e) => e.weekNumber === weekNumber)
+      : _lsGetEntries(year, weekNumber);
 
-    if (keys.length === 0) {
+    if (entries.length === 0) {
       const li = document.createElement('li');
       li.textContent = 'No entries saved for this year/week.';
       list.appendChild(li);
       return;
     }
 
-    for (const k of keys) {
-      let entry;
-      try { entry = JSON.parse(localStorage.getItem(k)); } catch { continue; }
-
+    for (const entry of entries) {
       const li = document.createElement('li');
       li.className = 'admin-saved-item';
 
-      const keySpan = document.createElement('span');
-      keySpan.className = 'admin-saved-key';
-      keySpan.textContent = k;
+      const label = document.createElement('span');
+      label.className = 'admin-saved-key';
+      label.textContent = `${entry.teamName}`;
 
       const detail = document.createElement('span');
-      detail.textContent = ` — ${entry.teamName}, ${entry.shooters?.length ?? 0} shooter(s), saved ${new Date(entry.savedAt).toLocaleString()}`;
+      detail.textContent = ` — ${entry.shooters?.length ?? 0} shooter(s), saved ${new Date(entry.savedAt).toLocaleString()}`;
 
-      const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'ap-delete-entry';
-      delBtn.textContent = 'Delete';
-      delBtn.addEventListener('click', () => {
-        localStorage.removeItem(k);
-        this._loadSavedEntries();
-        this._setStatus(`Deleted: ${k}`, 'success');
-      });
-
-      li.appendChild(keySpan);
+      li.appendChild(label);
       li.appendChild(detail);
-      li.appendChild(delBtn);
       list.appendChild(li);
+    }
+  }
+
+  async _publishWeek() {
+    const year = parseInt(this.querySelector('#ap-year').value, 10);
+    const weekNumber = parseInt(this.querySelector('#ap-week').value, 10);
+    const btn = this.querySelector('#ap-publish');
+
+    btn.disabled = true;
+    this._setPublishStatus(`Publishing week ${weekNumber}…`, '');
+
+    const result = await scoreService.publishWeek(year, weekNumber);
+
+    btn.disabled = false;
+
+    if (result.success) {
+      this._setPublishStatus(
+        `Week ${weekNumber} published. Standings updated.`,
+        'success',
+      );
+    } else {
+      this._setPublishStatus(`Publish failed: ${result.error}`, 'error');
     }
   }
 
@@ -296,6 +339,35 @@ class AdminPanel extends HTMLElement {
     el.textContent = message;
     el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
   }
+
+  _setPublishStatus(message, type) {
+    const el = this.querySelector('#ap-publish-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
+  }
+}
+
+/**
+ * Fallback: read entries for a week from localStorage.
+ * @param {number} year
+ * @param {number} weekNumber
+ * @returns {Array}
+ */
+function _lsGetEntries(year, weekNumber) {
+  const prefix = `${LS_PREFIX}:${year}:${weekNumber}:`;
+  const entries = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k?.startsWith(prefix)) continue;
+      try {
+        const entry = JSON.parse(localStorage.getItem(k));
+        if (entry) entries.push(entry);
+      } catch { /* skip corrupt entries */ }
+    }
+  } catch { /* localStorage unavailable */ }
+  return entries;
 }
 
 customElements.define('admin-panel', AdminPanel);

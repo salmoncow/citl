@@ -47,7 +47,7 @@ function stubSuccess() {
 
 /**
  * A no-op ScoreRepository for offline development without Firestore credentials.
- * Every method resolves immediately with success(null).
+ * Every method resolves immediately with success(null) or success([]).
  */
 class StubScoreRepository {
   async getSeason() { return stubSuccess(); }
@@ -59,6 +59,10 @@ class StubScoreRepository {
   async getLatestWeekResult() { return stubSuccess(); }
   async saveWeekResult() { return stubSuccess(); }
   async updateSeason() { return stubSuccess(); }
+  async saveEntry() { return stubSuccess(); }
+  async getEntry() { return stubSuccess(); }
+  async getEntries() { return { success: true, data: [] }; }
+  async publishWeek() { return stubSuccess(); }
 }
 
 // ---------------------------------------------------------------------------
