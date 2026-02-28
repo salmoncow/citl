@@ -3,7 +3,6 @@
  *
  * Score-entry form for weekly trap league data.
  * Primary storage: Firestore via ScoreService (requires auth).
- * Fallback: localStorage (citl:entry:{year}:{week}:{teamSlug}) for offline use.
  *
  * No shadow DOM. All user values rendered via textContent (never innerHTML).
  */
@@ -18,11 +17,6 @@ const scoreService = new ScoreService(factory.getScoreRepository());
 const CURRENT_YEAR = new Date().getFullYear();
 const MAX_WEEKS = 15;
 const MAX_SCORE = 25;
-const LS_PREFIX = 'citl:entry';
-const TEAMS_DATA_URL = '/data/teams/teams.json';
-
-const toSlug = (name) => name.trim().toLowerCase().replace(/\s+/g, '-');
-const lsEntryKey = (year, week, team) => `${LS_PREFIX}:${year}:${week}:${toSlug(team)}`;
 
 function buildOptions(min, max, label, selected) {
   let html = '';
@@ -84,8 +78,7 @@ class AdminPanel extends HTMLElement {
     this.querySelector('#ap-save').addEventListener('click', () => this._saveEntry());
     this.querySelector('#ap-publish').addEventListener('click', () => this._publishWeek());
     this.querySelector('#ap-year').addEventListener('change', () => {
-      this._populateTeamSelect();
-      this._populateShooterRows();
+      this._fetchTeamsData();
       this._loadSavedEntries();
     });
     this.querySelector('#ap-week').addEventListener('change', () => this._loadSavedEntries());
@@ -96,12 +89,13 @@ class AdminPanel extends HTMLElement {
   }
 
   async _fetchTeamsData() {
-    try {
-      const res = await fetch(TEAMS_DATA_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      this._teamsData = await res.json();
-    } catch (err) {
-      console.warn('admin-panel: could not load teams data:', err.message);
+    const year = parseInt(this.querySelector('#ap-year').value, 10);
+    const result = await scoreService.getTeams(year);
+    if (result.success) {
+      this._teamsData = result.data;
+    } else {
+      console.warn('admin-panel: could not load teams data:', result.error);
+      this._teamsData = [];
     }
     this._populateTeamSelect();
     this._populateShooterRows();
@@ -111,8 +105,7 @@ class AdminPanel extends HTMLElement {
     const select = this.querySelector('#ap-team');
     if (!select) return;
 
-    const year = this.querySelector('#ap-year').value;
-    const teams = this._teamsData?.seasons?.[year] ?? [];
+    const teams = this._teamsData ?? [];
 
     while (select.firstChild) select.removeChild(select.firstChild);
 
@@ -130,14 +123,13 @@ class AdminPanel extends HTMLElement {
   }
 
   _populateShooterRows() {
-    const year = this.querySelector('#ap-year')?.value;
     const teamId = this.querySelector('#ap-team')?.value;
     const tbody = this.querySelector('#ap-shooters-body');
     if (!tbody) return;
 
     while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
 
-    const team = this._teamsData?.seasons?.[year]?.find((t) => t.id === teamId);
+    const team = this._teamsData?.find((t) => t.id === teamId);
 
     if (!team) {
       this._addShooterRow();
@@ -247,20 +239,11 @@ class AdminPanel extends HTMLElement {
       shooters,
     };
 
-    // Primary: write to Firestore
     const result = await scoreService.saveEntry(year, entry);
     if (result.success) {
       this._setStatus(`Saved entry for ${teamName} week ${weekNumber}.`, 'success');
     } else {
       this._setStatus(`Firestore save failed: ${result.error}`, 'error');
-    }
-
-    // Fallback: also write to localStorage
-    try {
-      const lsKey = lsEntryKey(year, weekNumber, teamName);
-      localStorage.setItem(lsKey, JSON.stringify(entry));
-    } catch {
-      // localStorage not critical; ignore
     }
 
     this._loadSavedEntries();
@@ -274,11 +257,17 @@ class AdminPanel extends HTMLElement {
 
     while (list.firstChild) list.removeChild(list.firstChild);
 
-    // Try Firestore first
     const result = await scoreService.getEntries(year, weekNumber);
-    const entries = result.success
-      ? result.data.filter((e) => e.weekNumber === weekNumber)
-      : _lsGetEntries(year, weekNumber);
+
+    if (!result.success) {
+      console.warn('admin-panel: could not load entries:', result.error);
+      const li = document.createElement('li');
+      li.textContent = 'Error loading entries.';
+      list.appendChild(li);
+      return;
+    }
+
+    const entries = result.data.filter((e) => e.weekNumber === weekNumber);
 
     if (entries.length === 0) {
       const li = document.createElement('li');
@@ -346,28 +335,6 @@ class AdminPanel extends HTMLElement {
     el.textContent = message;
     el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
   }
-}
-
-/**
- * Fallback: read entries for a week from localStorage.
- * @param {number} year
- * @param {number} weekNumber
- * @returns {Array}
- */
-function _lsGetEntries(year, weekNumber) {
-  const prefix = `${LS_PREFIX}:${year}:${weekNumber}:`;
-  const entries = [];
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k?.startsWith(prefix)) continue;
-      try {
-        const entry = JSON.parse(localStorage.getItem(k));
-        if (entry) entries.push(entry);
-      } catch { /* skip corrupt entries */ }
-    }
-  } catch { /* localStorage unavailable */ }
-  return entries;
 }
 
 customElements.define('admin-panel', AdminPanel);

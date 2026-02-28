@@ -57,16 +57,14 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `src/modules/navigation.js` | Responsive nav, burger menu |
 | `src/firebase-config.js` | Firebase SDK init, exports `db` |
 | `src/services/score-service.js` | Firestore reads + 1-hr cache |
-| `src/services/standings-service.js` | Cumulative standings, results feed |
 | `src/services/scoring-engine.js` | Pure scoring calculations (ADR-006) |
-| `src/utils/csv-parser.js` | Parse `{year}-inputs.csv` → `SeasonData` |
-| `src/components/standings-table.js` | Custom Element: cumulative season standings |
+| `src/components/standings-table.js` | Custom Element: cumulative season standings (reads Firestore) |
 | `src/repositories/score-repository.js` | Raw Firestore operations |
-| `src/repositories/repository-factory.js` | Factory: `firestore`, `stub`, or `localStorage` |
-| `src/repositories/localstorage-score-repository.js` | localStorage backend |
+| `src/repositories/repository-factory.js` | Factory: `firestore` or `stub` |
 | `src/views/home.js` | Home page (static HTML — Phase 4 target) |
 | `src/views/scorecards.js` | Scorecards accordion (JSON-driven, all 7 seasons) |
 | `src/data/scorecards/*.json` | Historical scorecard data 2019–2025 |
+| `scripts/set-admin-claim.js` | Admin-user management utility (keep) |
 | `firebase.json` | Hosting config: SPA rewrite, CSP, cache headers |
 | `.env.example` | Template for required `VITE_FIREBASE_*` env vars |
 
@@ -120,9 +118,9 @@ Progress tracker for the AWS → Firebase modernization.
 - [x] `firebase.json` (Hosting config: SPA rewrite, security headers, cache rules)
 - [x] `.firebaserc` (`default: citl`)
 - [x] `src/firebase-config.js` (initializes Firebase app, exports `db`)
-- [ ] Enable Firebase Hosting in console *(manual)*
-- [ ] Enable Firebase Auth (Google) *(manual — deferred to Phase 5)*
-- [ ] Enable Firestore in console (production mode, `us-central1`) *(manual — deferred to Phase 4)*
+- [x] Enable Firebase Hosting in console *(manual)*
+- [x] Enable Firebase Auth (Google) *(manual)*
+- [x] Enable Firestore in console (production mode, `us-central1`) *(manual)*
 
 ### Phase 3 — Application Structure ✅
 - [x] `src/index.html` → Vite entry point
@@ -194,14 +192,16 @@ Goal: move admin-entered data from localStorage → Firestore; enforce security.
 - [x] `src/types/season.js` — update `Season` to Phase 6 schema; add `SeasonStandings` typedef
 - [x] `src/repositories/score-repository.js` — add `saveEntry`, `getEntry`, `getEntries`, `publishWeek`
 - [x] `src/services/score-service.js` — add `saveEntry()` and `publishWeek()`
-- [x] `src/components/admin-panel.js` — entry saves to Firestore (localStorage fallback); load entries from Firestore; "Publish Week" button
-- [x] `scripts/seed-teams.js` — one-time: `teams.json` → `seasons/{year}/teams/` Firestore docs
-- [x] `scripts/migrate-entries.js` — one-time: localStorage entry JSON export → Firestore entries
-- [x] `src/repositories/repository-factory.js` — default backend: `localStorage` → `firestore`
-- [ ] Test security rules in Firebase Local Emulator *(manual)*
-- [x] Run `node scripts/seed-teams.js` *(manual — after Firestore is enabled)*
-- [ ] Run `node scripts/import-historical.js` *(manual — imports 2019–2025 scorecard data to Firestore)*
-- [ ] Run `node scripts/migrate-entries.js` *(manual — after Firestore is enabled)*
+- [x] `src/components/admin-panel.js` — entry saves to Firestore; load entries from Firestore; "Publish Week" button; teams fetched from Firestore
+- [x] `scripts/seed-teams.js` — one-time: `teams.json` → `seasons/{year}/teams/` Firestore docs *(run + deleted)*
+- [x] `scripts/migrate-entries.js` — one-time: localStorage entry JSON export → Firestore entries *(run + deleted)*
+- [x] `scripts/import-historical.js` — one-time: 2019–2025 scorecard data → Firestore *(run + deleted)*
+- [x] `scripts/extract-teams.js` — one-time: scorecards JSON → `teams.json` *(run + deleted)*
+- [x] `src/repositories/repository-factory.js` — default backend: `localStorage` → `firestore`; localStorage backend removed
+- [x] Test security rules in Firebase Local Emulator *(manual)*
+- [x] Run `node scripts/seed-teams.js` *(manual — complete)*
+- [x] Run `node scripts/import-historical.js` *(manual — complete; 7 seasons in Firestore)*
+- [x] Run `node scripts/migrate-entries.js` *(manual — complete)*
 
 ### Phase 7 — CI/CD *(deferred until after DNS cutover)*
 - [ ] `.github/workflows/deploy-production.yml`

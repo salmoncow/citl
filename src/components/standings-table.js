@@ -2,7 +2,7 @@
  * standings-table — Custom Element
  *
  * Displays cumulative season standings (rank points + bonus points per team,
- * ranked by total descending). Data source: static JSON scorecards.
+ * ranked by total descending). Data source: Firestore `seasons/{year}.standings`
  *
  * Usage: <standings-table year="2025"></standings-table>
  *
@@ -11,6 +11,13 @@
  *
  * No shadow DOM; uses global `.standing-table` CSS class.
  */
+
+import { db } from '@/firebase-config.js';
+import { createRepositoryFactory } from '@/repositories/repository-factory.js';
+import { ScoreService } from '@/services/score-service.js';
+
+const factory = createRepositoryFactory({ db });
+const scoreService = new ScoreService(factory.getScoreRepository());
 
 class StandingsTable extends HTMLElement {
   static get observedAttributes() {
@@ -28,7 +35,7 @@ class StandingsTable extends HTMLElement {
   }
 
   _render() {
-    const year = this.getAttribute('year');
+    const year = parseInt(this.getAttribute('year'), 10);
     if (!year) {
       this.innerHTML = '<p>No year specified.</p>';
       return;
@@ -36,67 +43,35 @@ class StandingsTable extends HTMLElement {
 
     this.innerHTML = '<p>Loading&hellip;</p>';
 
-    fetch(`/data/scorecards/${year}.json`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        const rows = this._computeStandings(data);
-        this.innerHTML = this._buildTable(rows);
+    scoreService.getSeason(year)
+      .then((result) => {
+        if (!result.success || !result.data) {
+          this.innerHTML = `<p>Error loading standings for ${year}.</p>`;
+          return;
+        }
+        const standings = result.data.standings ?? [];
+        this.innerHTML = this._buildTable(standings);
       })
       .catch((err) => {
-        console.error('[standings-table] fetch error:', err);
+        console.error('[standings-table] error:', err);
         this.innerHTML = `<p>Error loading standings for ${year}.</p>`;
       });
   }
 
   /**
-   * Compute cumulative standings from scorecard JSON.
-   * @param {object} data — parsed scorecard JSON
-   * @returns {Array<{teamName, rankPointsTotal, bonusPointsTotal, totalPoints, standing}>}
-   */
-  _computeStandings(data) {
-    const rows = (data.teams || []).map((team) => {
-      const rp = (team.totals?.rankPoints || []).reduce(
-        (sum, v) => sum + (v != null ? v : 0),
-        0
-      );
-      const bp = (team.totals?.bonusPoints || []).reduce(
-        (sum, v) => sum + (v != null ? v : 0),
-        0
-      );
-      return {
-        teamName: team.name,
-        rankPointsTotal: rp,
-        bonusPointsTotal: bp,
-        totalPoints: rp + bp,
-      };
-    });
-
-    rows.sort((a, b) => b.totalPoints - a.totalPoints);
-
-    rows.forEach((row, i) => {
-      row.standing = i + 1;
-    });
-
-    return rows;
-  }
-
-  /**
    * Build the standings HTML table.
-   * @param {Array} rows
+   * @param {import('@/types/season.js').SeasonStandings[]} standings
    * @returns {string}
    */
-  _buildTable(rows) {
-    const trs = rows
+  _buildTable(standings) {
+    const trs = standings
       .map(
         (r) => `<tr>
-          <td>${r.standing}</td>
+          <td>${r.rank}</td>
           <td>${r.teamName}</td>
-          <td>${r.rankPointsTotal}</td>
-          <td>${r.bonusPointsTotal}</td>
-          <td>${r.totalPoints}</td>
+          <td>${r.totalRankPoints}</td>
+          <td>${r.totalBonusPoints}</td>
+          <td>${r.totalRankPoints + r.totalBonusPoints}</td>
         </tr>`
       )
       .join('');

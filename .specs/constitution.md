@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.0.0
-**Last Updated:** 2026-02-27
+**Version:** 1.0.1
+**Last Updated:** 2026-02-28
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-05-27)
 
@@ -68,14 +68,14 @@ detailed patterns in `.prompts/` for implementation guidance.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-02-27
+**Last Updated**: 2026-02-28
 **Last Architecture Review**: 2026-02-27
 
 | Domain | Current Phase | Target Phase | Status |
 |--------|---------------|--------------|--------|
 | **UI Components** | Phase 1: Vanilla JS views (no Web Components yet) | Phase 2: Web Components | Scorecards + home view are functional; first component is standings-table (Phase 4) |
 | **Security** | Phase 1: No auth; public read only | Phase 2: Firebase Auth (Google) + Firestore rules | Deferred to Phase 5 (admin-only auth) |
-| **Data** | Phase 1: Static JSON (7 seasons) + Firestore data layer wired | Phase 2: Firestore live reads | Firestore not yet enabled in console; home view still static HTML |
+| **Data** | Phase 2: Firestore live reads | Phase 2: Firestore live reads | Firestore live (us-central1); security rules deployed; admin writes + standings in Firestore; scorecards page uses static JSON per §II.5 |
 | **Testing** | Phase 1: Manual browser testing | Phase 2: Vitest unit tests | Trigger: 10+ modules or production launch |
 | **Deployment** | Phase 1: Manual (`npm run deploy`) | Phase 2: GitHub Actions CI/CD | Deferred to Phase 6 (after DNS cutover) |
 | **Monitoring** | Phase 1: Manual Firebase console checks | Phase 2: Firebase Performance Monitoring | Deferred until production launch |
@@ -90,13 +90,13 @@ detailed patterns in `.prompts/` for implementation guidance.
 - **Types**: 3 (`score`, `shooter`, `season`)
 - **Data files**: 7 JSON scorecard seasons (2019–2025)
 - **Team Size**: 1 developer
-- **Firebase Usage**: ~0% (Hosting not yet live; Firestore not yet enabled)
+- **Firebase Usage**: Hosting configured (DNS not yet cutover); Firestore live; Spark free tier usage <5%
 
-**Migration Context** (current as of 2026-02-27):
+**Migration Context** (current as of 2026-02-28):
 - Hosted on AWS S3 + CloudFront (legacy)
 - Firebase Hosting configured but DNS not yet cut over
-- Firestore enabled in firebase.json but not yet enabled in Firebase console
-- Target: DNS cutover to `citl.club` → Firebase Hosting after Phase 4 is complete and validated
+- Firestore enabled and live; security rules deployed; 7 seasons imported
+- Target: DNS cutover to `citl.club` → Firebase Hosting (Phase 8)
 
 ### II.2 Evolution Triggers
 
@@ -419,11 +419,11 @@ The following are CITL-specific milestones that don't exist in a greenfield proj
 | Vite SPA + static routes | Phase 1–3 | ✅ Complete |
 | Firebase Hosting config | Phase 2 | ✅ Complete |
 | Firestore data layer (code) | Phase 4 | ✅ Complete |
-| Enable Firestore in console | Phase 4 | ⬜ Manual step |
-| `standings-table` Web Component | Phase 4 | ⬜ Pending |
-| Firestore security rules | Phase 4 | ⬜ Pending |
-| Admin auth (Google sign-in) | Phase 5 | ⬜ Pending |
-| Admin score entry UI | Phase 5 | ⬜ Pending |
+| Enable Firestore in console | Phase 4 | ✅ Complete |
+| `standings-table` Web Component | Phase 4 | ✅ Complete |
+| Firestore security rules | Phase 4 | ✅ Complete |
+| Admin auth (Google sign-in) | Phase 5 | ✅ Complete |
+| Admin score entry UI | Phase 5 | ✅ Complete |
 | GitHub Actions CI/CD | Phase 6 | ⬜ Deferred until after DNS cutover |
 | DNS cutover (`citl.club` → Firebase) | Phase 7 | ⬜ Deferred |
 | Decommission AWS Terraform | Phase 7 | ⬜ Deferred |
