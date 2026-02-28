@@ -58,8 +58,12 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `src/firebase-config.js` | Firebase SDK init, exports `db` |
 | `src/services/score-service.js` | Firestore reads + 1-hr cache |
 | `src/services/standings-service.js` | Cumulative standings, results feed |
+| `src/services/scoring-engine.js` | Pure scoring calculations (ADR-006) |
+| `src/utils/csv-parser.js` | Parse `{year}-inputs.csv` → `SeasonData` |
+| `src/components/standings-table.js` | Custom Element: cumulative season standings |
 | `src/repositories/score-repository.js` | Raw Firestore operations |
-| `src/repositories/repository-factory.js` | Factory: `firestore` or `stub` backend |
+| `src/repositories/repository-factory.js` | Factory: `firestore`, `stub`, or `localStorage` |
+| `src/repositories/localstorage-score-repository.js` | localStorage backend |
 | `src/views/home.js` | Home page (static HTML — Phase 4 target) |
 | `src/views/scorecards.js` | Scorecards accordion (JSON-driven, all 7 seasons) |
 | `src/data/scorecards/*.json` | Historical scorecard data 2019–2025 |
@@ -149,33 +153,49 @@ Identified during post-migration architectural review (2026-02-27):
 - [x] Stale `gstatic.com` CDN external rule removed from `vite.config.js` (Firebase SDK is npm-installed, not CDN-loaded)
 - [x] `innerHTML` in `main.js:_renderView()` documented as accepted transitional debt (static strings only; resolved in Phase 4 when views become Web Components)
 - [x] `CONTRIBUTING.md`, `DEVELOPMENT.md`, `PLAN.md` removed — superseded by `AGENTS.md` + `.specs/constitution.md`
-- [ ] `src/components/` directory — create when Phase 4 `standings-table` Web Component work begins
+- [x] `src/components/` directory — created for Phase 4 `standings-table` Web Component
 
-### Phase 4 — Firestore Data Layer (partial)
+### Phase 4 — Scoring Engine + Standings Component ✅
 - [x] Firestore data model designed (see ADR-004 + constitution §II.5)
 - [x] `src/types/score.js`, `src/types/shooter.js`, `src/types/season.js`
 - [x] `src/repositories/score-repository.js`
-- [x] `src/repositories/repository-factory.js`
+- [x] `src/repositories/repository-factory.js` (now supports `firestore`, `stub`, `localStorage`)
 - [x] `src/services/score-service.js`
 - [x] `src/services/standings-service.js`
+- [x] `src/services/scoring-engine.js` — pure scoring calculation functions (ADR-006)
+- [x] `src/utils/csv-parser.js` — parse `{year}-inputs.csv` → `SeasonData`
+- [x] `src/repositories/localstorage-score-repository.js` — localStorage backend
+- [x] `.specs/features/scoring-engine.md` — formal business rules spec
+- [x] Cross-validate `computeSeasonTotals(parseSeasonCsv(...))` against JSON scorecards — 2023, 2024, 2025
+- [x] `src/components/standings-table.js` Web Component
+
+### Phase 5 — Admin Portal (localStorage backend)
+Goal: ship a working admin score-entry UI backed by localStorage. Validate the
+admin workflow before committing to Firestore writes.
+
+- [ ] `src/firebase-config.js` — add `getAuth()` export alongside existing `db`
+- [ ] `src/modules/auth.js` — Google sign-in (`signInWithPopup`), `signOut`, `onAuthStateChanged`, `currentUser` getter
+- [ ] `src/views/admin.js` — admin view: login gate + panel (no separate /login route)
+- [ ] `src/components/admin-panel.js` — score entry form; saves via `localStorage` backend
+- [ ] `src/main.js` — register `#/admin` route; use `router.onBeforeNavigate()` for auth guard
+
+### Phase 6 — Firestore Live
+Goal: move admin-entered data from localStorage → Firestore; enforce security.
+
 - [ ] Enable Firestore in console (production mode, `us-east1`) *(manual)*
-- [ ] `src/components/standings-table.js` Web Component
-- [ ] `firestore.rules` — public read, admin-write
+- [ ] `firestore.rules` — public read, admin-write (`admin: true` custom claim)
+- [ ] Set `admin: true` custom claim on admin user UID *(Firebase Admin SDK or console)*
+- [ ] Migrate localStorage data → Firestore (one-time import utility)
 - [ ] Test security rules in Firebase Local Emulator
+- [ ] Update repository-factory default: `localStorage` → `firestore`
 
-### Phase 5 — Admin Auth
-- [ ] `src/modules/auth.js` — Google sign-in, auth state
-- [ ] `#/admin` route with auth guard
-- [ ] `src/components/admin-panel.js` — score entry UI
-- [ ] Set `admin: true` custom claim on admin user
-
-### Phase 6 — CI/CD *(deferred until after DNS cutover)*
+### Phase 7 — CI/CD *(deferred until after DNS cutover)*
 - [ ] `.github/workflows/deploy-production.yml`
 - [ ] `.github/workflows/deploy-preview.yml`
 - [ ] GitHub Actions secrets: `FIREBASE_SERVICE_ACCOUNT`, all `VITE_FIREBASE_*`
 - [ ] Decommission AWS/Terraform pipeline
 
-### Phase 7 — DNS Cutover
+### Phase 8 — DNS Cutover
 - [ ] Add `citl.club` + `www.citl.club` as custom domains in Firebase console
 - [ ] Update DNS records (A/CNAME) from CloudFront → Firebase Hosting IPs
 - [ ] Verify SSL provisioning

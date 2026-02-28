@@ -291,6 +291,57 @@ prompted to sign in. Admin access is behind a hidden `#/admin` route.
 
 ---
 
+### ADR-006: Scoring Engine as Pure Computation Service
+
+**Date**: 2026-02-27
+**Status**: Accepted
+**Domains Affected**: Data, UI
+
+**Context**
+
+Trap league scores were previously computed in Excel. The RANK POINTS and BONUS POINTS
+formula rows developed `#REF!` errors. The raw weekly shooter scores are authoritative;
+all derived values (rank points, bonus points, standings, season awards) needed to be
+rebuilt in code that is auditable, testable, and not locked to Excel.
+
+**Decision**
+
+Implement a pure computation service (`src/services/scoring-engine.js`) with no I/O,
+no side effects, and no framework dependencies. CSV parsing is separated into
+`src/utils/csv-parser.js`. Persistence uses the existing Repository + Factory pattern
+with a new `localStorage` backend (`src/repositories/localstorage-score-repository.js`).
+
+**Rationale**
+
+- Pure functions are trivially testable and portable — Firestore migration requires no
+  engine changes; only the factory backend reconfigures
+- Separating parsing from calculation (SRP) keeps both units focused and independently
+  testable
+- localStorage backend fits the existing factory pattern; swapping to Firestore is a
+  one-line `factory.reconfigure({ backend: 'firestore', db })` call
+- Existing JSON data (7 seasons, 2019–2025) validates engine correctness without
+  requiring a dedicated test framework
+
+**Alternatives Considered**
+
+- **Inline scoring in views**: rejected — untestable, mixes concerns, can't reuse for admin entry
+- **Test-framework-first (Vitest)**: deferred — JSON validation is sufficient for Phase 1;
+  Vitest added in Phase 2 when admin UI requires more rigorous coverage
+- **Firestore-first (skip localStorage)**: rejected — localStorage allows offline dev and
+  admin data entry before Firestore is provisioned in console
+
+**Consequences**
+
+- Enables: scoring logic is version-controlled and auditable; engine validates against
+  7 seasons of known-good JSON data; Firestore migration path is clear
+- Constrains: dummy going-in average computation is stateful (must process weeks
+  sequentially; cannot parallelize weeks)
+- Current files: `scoring-engine.js`, `csv-parser.js`, `localstorage-score-repository.js`
+
+**Review Date**: 2026-08-27
+
+---
+
 ## How AI Agents Should Use This Log
 
 1. **Before implementing a new feature**: Check if a relevant decision exists that constrains

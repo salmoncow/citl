@@ -9,6 +9,7 @@
  */
 
 import './styles/main.css';
+import './components/standings-table.js';
 
 import { NavigationModule } from './modules/navigation.js';
 import { RouterModule } from './modules/router.js';
