@@ -1,0 +1,1757 @@
+{
+  "seasons": {
+    "2023": [
+      {
+        "id": "barrels-of-fun",
+        "name": "Barrels of Fun",
+        "shooters": [
+          {
+            "name": "Mark Kosinski",
+            "rookie": false,
+            "startingAvg": 27.2
+          },
+          {
+            "name": "Laura Kosinski",
+            "rookie": false,
+            "startingAvg": 23.1
+          },
+          {
+            "name": "Sue Giacometti",
+            "rookie": false,
+            "startingAvg": 31.3
+          },
+          {
+            "name": "Joe Poole",
+            "rookie": false,
+            "startingAvg": 38.5
+          },
+          {
+            "name": "Butch Beyer",
+            "rookie": false,
+            "startingAvg": 40.5
+          },
+          {
+            "name": "Steve Novel",
+            "rookie": false,
+            "startingAvg": 37
+          },
+          {
+            "name": "Justin Hinshaw",
+            "rookie": false,
+            "startingAvg": 38.1
+          },
+          {
+            "name": "Tim Harris",
+            "rookie": false,
+            "startingAvg": 27.1
+          },
+          {
+            "name": "Tim Nord",
+            "rookie": false,
+            "startingAvg": 38.4
+          },
+          {
+            "name": "Greg McNeely",
+            "rookie": false,
+            "startingAvg": 35.1
+          },
+          {
+            "name": "Andy Kosinski",
+            "rookie": false,
+            "startingAvg": 39.2
+          },
+          {
+            "name": "Kerry McKnight",
+            "rookie": false,
+            "startingAvg": 31.6
+          },
+          {
+            "name": "Susie McKnight",
+            "rookie": false,
+            "startingAvg": 32.8
+          },
+          {
+            "name": "Kyle Hembree",
+            "rookie": false,
+            "startingAvg": 35
+          },
+          {
+            "name": "William McNeely",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "bullshooters",
+        "name": "Bullshooters",
+        "shooters": [
+          {
+            "name": "Greg Litchfield",
+            "rookie": false,
+            "startingAvg": 41.9
+          },
+          {
+            "name": "Bill Murphy",
+            "rookie": false,
+            "startingAvg": 39.6
+          },
+          {
+            "name": "Ken Sutter",
+            "rookie": false,
+            "startingAvg": 38.7
+          },
+          {
+            "name": "Nestor Gutierrez",
+            "rookie": false,
+            "startingAvg": 39.5
+          },
+          {
+            "name": "Howard Hallstein",
+            "rookie": false,
+            "startingAvg": 31.2
+          },
+          {
+            "name": "Jim Schmidt",
+            "rookie": false,
+            "startingAvg": 34.8
+          },
+          {
+            "name": "Terry Garbe",
+            "rookie": false,
+            "startingAvg": 35.7
+          },
+          {
+            "name": "Bruce Schenkel",
+            "rookie": false,
+            "startingAvg": 30
+          },
+          {
+            "name": "Lindsay Bourda",
+            "rookie": false,
+            "startingAvg": 38
+          },
+          {
+            "name": "Mike Litwiller",
+            "rookie": false,
+            "startingAvg": 38.5
+          },
+          {
+            "name": "Randy Litwiller",
+            "rookie": false,
+            "startingAvg": 30.8
+          },
+          {
+            "name": "Steve Gronowski",
+            "rookie": false,
+            "startingAvg": 28.6
+          },
+          {
+            "name": "Jon Otto",
+            "rookie": false,
+            "startingAvg": 37.2
+          },
+          {
+            "name": "Ed Serbia",
+            "rookie": false,
+            "startingAvg": 33.3
+          }
+        ]
+      },
+      {
+        "id": "full-choke-artists",
+        "name": "Full Choke Artists",
+        "shooters": [
+          {
+            "name": "Randy Jones",
+            "rookie": false,
+            "startingAvg": 37.6
+          },
+          {
+            "name": "Jeff Abel",
+            "rookie": false,
+            "startingAvg": 39.8
+          },
+          {
+            "name": "Rod Dale",
+            "rookie": false,
+            "startingAvg": 37.3
+          },
+          {
+            "name": "Harry Burks",
+            "rookie": false,
+            "startingAvg": 40.3
+          },
+          {
+            "name": "Neal Percival",
+            "rookie": false,
+            "startingAvg": 24
+          },
+          {
+            "name": "Mark Gauding",
+            "rookie": false,
+            "startingAvg": 40.4
+          },
+          {
+            "name": "Scott Petri",
+            "rookie": false,
+            "startingAvg": 22.9
+          },
+          {
+            "name": "Scott Gould",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Harold Streator",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "missed-again",
+        "name": "Missed Again",
+        "shooters": [
+          {
+            "name": "John Karl",
+            "rookie": false,
+            "startingAvg": 41.7
+          },
+          {
+            "name": "Loren Lamar",
+            "rookie": false,
+            "startingAvg": 43.5
+          },
+          {
+            "name": "Arthur Parks",
+            "rookie": false,
+            "startingAvg": 33.3
+          },
+          {
+            "name": "Dave Coale",
+            "rookie": false,
+            "startingAvg": 42.6
+          },
+          {
+            "name": "Dan Riccolo",
+            "rookie": false,
+            "startingAvg": 40.3
+          },
+          {
+            "name": "Steve Robbins",
+            "rookie": false,
+            "startingAvg": 40.7
+          },
+          {
+            "name": "Alex Hawkins",
+            "rookie": false,
+            "startingAvg": 35.3
+          },
+          {
+            "name": "Ben Dittmar",
+            "rookie": false,
+            "startingAvg": 38.2
+          },
+          {
+            "name": "Gary Garrett",
+            "rookie": false,
+            "startingAvg": 42.1
+          },
+          {
+            "name": "Bob Reardon",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Adam McVey",
+            "rookie": false,
+            "startingAvg": 36.5
+          },
+          {
+            "name": "Again Floater 1",
+            "rookie": false,
+            "startingAvg": 45.1
+          }
+        ]
+      },
+      {
+        "id": "over-unders",
+        "name": "Over Unders",
+        "shooters": [
+          {
+            "name": "Al Kocar",
+            "rookie": false,
+            "startingAvg": 42.1
+          },
+          {
+            "name": "Bob Brimm",
+            "rookie": false,
+            "startingAvg": 38.6
+          },
+          {
+            "name": "Todd Fish",
+            "rookie": false,
+            "startingAvg": 36.5
+          },
+          {
+            "name": "Jerry Kurtz",
+            "rookie": false,
+            "startingAvg": 42
+          },
+          {
+            "name": "Sherrie Kurtz",
+            "rookie": false,
+            "startingAvg": 33.4
+          },
+          {
+            "name": "Reese Kurtz",
+            "rookie": false,
+            "startingAvg": 34.3
+          },
+          {
+            "name": "Chad Albertson",
+            "rookie": false,
+            "startingAvg": 39.1
+          },
+          {
+            "name": "Mike Brewer",
+            "rookie": false,
+            "startingAvg": 34.9
+          },
+          {
+            "name": "Unders Floater 1",
+            "rookie": false,
+            "startingAvg": 43.8
+          }
+        ]
+      },
+      {
+        "id": "powder-burners",
+        "name": "Powder Burners",
+        "shooters": [
+          {
+            "name": "Sarah Paul",
+            "rookie": false,
+            "startingAvg": 36.4
+          },
+          {
+            "name": "Randy Paul",
+            "rookie": false,
+            "startingAvg": 34.3
+          },
+          {
+            "name": "Jamie Spencer",
+            "rookie": false,
+            "startingAvg": 32.4
+          },
+          {
+            "name": "Valerie Spencer",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "John Spencer",
+            "rookie": false,
+            "startingAvg": 31.7
+          },
+          {
+            "name": "Mandy Lane",
+            "rookie": false,
+            "startingAvg": 23.1
+          },
+          {
+            "name": "Matt Lane",
+            "rookie": false,
+            "startingAvg": 35.7
+          },
+          {
+            "name": "Macy Lane",
+            "rookie": false,
+            "startingAvg": 32.3
+          },
+          {
+            "name": "Maddie Lane",
+            "rookie": false,
+            "startingAvg": 28.3
+          },
+          {
+            "name": "Jim Williams",
+            "rookie": false,
+            "startingAvg": 37.6
+          },
+          {
+            "name": "Laurin Bartelmay",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Dustin Carter",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Craig Bartels",
+            "rookie": false,
+            "startingAvg": 28
+          },
+          {
+            "name": "Tony McClelland",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "shell-shocked",
+        "name": "Shell Shocked",
+        "shooters": [
+          {
+            "name": "Troy Johns",
+            "rookie": false,
+            "startingAvg": 42.8
+          },
+          {
+            "name": "Carter Johns",
+            "rookie": false,
+            "startingAvg": 11
+          },
+          {
+            "name": "Gary Hopf",
+            "rookie": false,
+            "startingAvg": 39.2
+          },
+          {
+            "name": "Adam Hopf",
+            "rookie": false,
+            "startingAvg": 35.3
+          },
+          {
+            "name": "Tyler Kupferschmid",
+            "rookie": false,
+            "startingAvg": 36.5
+          },
+          {
+            "name": "Tyler DeKnecht",
+            "rookie": false,
+            "startingAvg": 41.7
+          },
+          {
+            "name": "Rob Johnson",
+            "rookie": false,
+            "startingAvg": 36.6
+          },
+          {
+            "name": "Jacob Schroeder",
+            "rookie": false,
+            "startingAvg": 37.3
+          },
+          {
+            "name": "Jason Pitman",
+            "rookie": false,
+            "startingAvg": 35
+          },
+          {
+            "name": "Steve Cravens",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Bob Benjamin",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Tom Coulon",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "shockers",
+        "name": "Shockers",
+        "shooters": [
+          {
+            "name": "Logan McKenna",
+            "rookie": false,
+            "startingAvg": 28.5
+          },
+          {
+            "name": "Seth Gieson",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "David Goveia",
+            "rookie": false,
+            "startingAvg": 36.4
+          },
+          {
+            "name": "Anthony Schultz",
+            "rookie": false,
+            "startingAvg": 43.6
+          },
+          {
+            "name": "Dennis Wright",
+            "rookie": false,
+            "startingAvg": 39.1
+          },
+          {
+            "name": "Derri Kerrick",
+            "rookie": false,
+            "startingAvg": 30.4
+          },
+          {
+            "name": "Cari Shields",
+            "rookie": false,
+            "startingAvg": 32.4
+          },
+          {
+            "name": "Brian Dehart",
+            "rookie": false,
+            "startingAvg": 30
+          },
+          {
+            "name": "Rob Glinka",
+            "rookie": false,
+            "startingAvg": 32.7
+          },
+          {
+            "name": "Austin Beyer",
+            "rookie": false,
+            "startingAvg": 33.1
+          },
+          {
+            "name": "Dan Riddle",
+            "rookie": false,
+            "startingAvg": 32.4
+          },
+          {
+            "name": "Matt Lamb",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "sights-impaired",
+        "name": "Sights Impaired",
+        "shooters": [
+          {
+            "name": "Dan Barrington",
+            "rookie": false,
+            "startingAvg": 34.4
+          },
+          {
+            "name": "Jack Vick",
+            "rookie": false,
+            "startingAvg": 40
+          },
+          {
+            "name": "Mark Cabaj",
+            "rookie": false,
+            "startingAvg": 30.3
+          },
+          {
+            "name": "Allen Cary",
+            "rookie": false,
+            "startingAvg": 36.6
+          },
+          {
+            "name": "Michael Freimann",
+            "rookie": false,
+            "startingAvg": 35.2
+          },
+          {
+            "name": "Shannon McMahon",
+            "rookie": false,
+            "startingAvg": 37
+          },
+          {
+            "name": "Rich Drennen",
+            "rookie": false,
+            "startingAvg": 44.9
+          },
+          {
+            "name": "Ron Milby",
+            "rookie": false,
+            "startingAvg": 45.1
+          },
+          {
+            "name": "David Jones",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Impaired Floater 1",
+            "rookie": false,
+            "startingAvg": 38.9
+          }
+        ]
+      },
+      {
+        "id": "smoking-guns",
+        "name": "Smoking Guns",
+        "shooters": [
+          {
+            "name": "Gordon Larsen",
+            "rookie": false,
+            "startingAvg": 41.4
+          },
+          {
+            "name": "Jamie Beilfuss",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Mike Chapman",
+            "rookie": false,
+            "startingAvg": 38.9
+          },
+          {
+            "name": "Heston Eveland",
+            "rookie": false,
+            "startingAvg": 31.1
+          },
+          {
+            "name": "Corey Norton",
+            "rookie": false,
+            "startingAvg": 35
+          },
+          {
+            "name": "Jacob Roberson",
+            "rookie": false,
+            "startingAvg": 35.8
+          },
+          {
+            "name": "Jonathan Roberson",
+            "rookie": false,
+            "startingAvg": 39.9
+          },
+          {
+            "name": "Dan Yeomans",
+            "rookie": false,
+            "startingAvg": 27
+          },
+          {
+            "name": "Trevor Chapman",
+            "rookie": false,
+            "startingAvg": 34.8
+          },
+          {
+            "name": "Keith Hanson",
+            "rookie": false,
+            "startingAvg": 25
+          },
+          {
+            "name": "Evan Beilfuss",
+            "rookie": false,
+            "startingAvg": 36.5
+          }
+        ]
+      }
+    ],
+    "2024": [
+      {
+        "id": "bullshooters",
+        "name": "Bullshooters",
+        "shooters": [
+          {
+            "name": "Greg Litchfield",
+            "rookie": false,
+            "startingAvg": 39.6
+          },
+          {
+            "name": "Bill Murphy",
+            "rookie": false,
+            "startingAvg": 38.8
+          },
+          {
+            "name": "Ken Sutter",
+            "rookie": false,
+            "startingAvg": 37.8
+          },
+          {
+            "name": "Nestor Gutierrez",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Howard Hallstein",
+            "rookie": false,
+            "startingAvg": 38.2
+          },
+          {
+            "name": "Jim Schmidt",
+            "rookie": false,
+            "startingAvg": 34.8
+          },
+          {
+            "name": "Terry Garbe",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Bruce Schenkel",
+            "rookie": false,
+            "startingAvg": 34.5
+          },
+          {
+            "name": "Lindsay Bourda",
+            "rookie": false,
+            "startingAvg": 36.5
+          },
+          {
+            "name": "Mike Litwiller",
+            "rookie": false,
+            "startingAvg": 39.1
+          },
+          {
+            "name": "Randy Litwiller",
+            "rookie": false,
+            "startingAvg": 30.8
+          },
+          {
+            "name": "Steve Gronowski",
+            "rookie": false,
+            "startingAvg": 28.6
+          }
+        ]
+      },
+      {
+        "id": "full-choke-artists",
+        "name": "Full Choke Artists",
+        "shooters": [
+          {
+            "name": "Randy Jones",
+            "rookie": false,
+            "startingAvg": 41.8
+          },
+          {
+            "name": "Jeff Abel",
+            "rookie": false,
+            "startingAvg": 38.4
+          },
+          {
+            "name": "Rod Dale",
+            "rookie": false,
+            "startingAvg": 40.5
+          },
+          {
+            "name": "Neal Percival",
+            "rookie": false,
+            "startingAvg": 26.2
+          },
+          {
+            "name": "Mark Gauding",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Scott Petri",
+            "rookie": false,
+            "startingAvg": 29.3
+          },
+          {
+            "name": "Scott Gould",
+            "rookie": false,
+            "startingAvg": 34.9
+          },
+          {
+            "name": "David Jones",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Branden Sholty",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Giedrius Rakauskas",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Brad Allen",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "missed-again",
+        "name": "Missed Again",
+        "shooters": [
+          {
+            "name": "John Karl",
+            "rookie": false,
+            "startingAvg": 44.9
+          },
+          {
+            "name": "Loren Lamar",
+            "rookie": false,
+            "startingAvg": 42.8
+          },
+          {
+            "name": "Arthur Parks",
+            "rookie": false,
+            "startingAvg": 31.9
+          },
+          {
+            "name": "Dave Coale",
+            "rookie": false,
+            "startingAvg": 42.3
+          },
+          {
+            "name": "Dan Riccolo",
+            "rookie": false,
+            "startingAvg": 37.1
+          },
+          {
+            "name": "Steve Robbins",
+            "rookie": false,
+            "startingAvg": 41.8
+          },
+          {
+            "name": "Ben Dittmar",
+            "rookie": false,
+            "startingAvg": 37.8
+          },
+          {
+            "name": "Gary Garrett",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Bob Reardon",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Adam McVey",
+            "rookie": false,
+            "startingAvg": 39.3
+          },
+          {
+            "name": "Again SUB1",
+            "rookie": false,
+            "startingAvg": 43.5
+          },
+          {
+            "name": "Again SUB2",
+            "rookie": false,
+            "startingAvg": 41
+          }
+        ]
+      },
+      {
+        "id": "over-unders",
+        "name": "Over Unders",
+        "shooters": [
+          {
+            "name": "Al Kocar",
+            "rookie": false,
+            "startingAvg": 41
+          },
+          {
+            "name": "Bob Brimm",
+            "rookie": false,
+            "startingAvg": 37.8
+          },
+          {
+            "name": "Todd Fish",
+            "rookie": false,
+            "startingAvg": 36.7
+          },
+          {
+            "name": "Jerry Kurtz",
+            "rookie": false,
+            "startingAvg": 44.4
+          },
+          {
+            "name": "Sherrie Kurtz",
+            "rookie": false,
+            "startingAvg": 35.4
+          },
+          {
+            "name": "Reese Kurtz",
+            "rookie": false,
+            "startingAvg": 36.7
+          },
+          {
+            "name": "Joe Poole",
+            "rookie": false,
+            "startingAvg": 40.5
+          },
+          {
+            "name": "Chad Albertson",
+            "rookie": false,
+            "startingAvg": 41.6
+          },
+          {
+            "name": "Mike Brewer",
+            "rookie": false,
+            "startingAvg": 38.1
+          }
+        ]
+      },
+      {
+        "id": "powder-burners",
+        "name": "Powder Burners",
+        "shooters": [
+          {
+            "name": "Sarah Paul",
+            "rookie": false,
+            "startingAvg": 34.7
+          },
+          {
+            "name": "Randy Paul",
+            "rookie": false,
+            "startingAvg": 40
+          },
+          {
+            "name": "Jamie Spencer",
+            "rookie": false,
+            "startingAvg": 36.4
+          },
+          {
+            "name": "Valerie Spencer",
+            "rookie": false,
+            "startingAvg": 18
+          },
+          {
+            "name": "Michael Terry",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Mandy Lane",
+            "rookie": false,
+            "startingAvg": 25.9
+          },
+          {
+            "name": "Macy Lane",
+            "rookie": false,
+            "startingAvg": 34.9
+          },
+          {
+            "name": "Maddie Lane",
+            "rookie": false,
+            "startingAvg": 34.3
+          },
+          {
+            "name": "Jim Williams",
+            "rookie": false,
+            "startingAvg": 42.5
+          },
+          {
+            "name": "Laurin Bartelmay",
+            "rookie": false,
+            "startingAvg": 41.3
+          },
+          {
+            "name": "Floyd Bartelmay",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Dustin Carter",
+            "rookie": false,
+            "startingAvg": 32
+          },
+          {
+            "name": "Maggie Pedraza",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Dillon Spencer",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "shell-shocked",
+        "name": "Shell Shocked",
+        "shooters": [
+          {
+            "name": "Troy Johns",
+            "rookie": false,
+            "startingAvg": 40.7
+          },
+          {
+            "name": "Carter Johns",
+            "rookie": false,
+            "startingAvg": 13
+          },
+          {
+            "name": "Marc Herren",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Gary Hopf",
+            "rookie": false,
+            "startingAvg": 38.8
+          },
+          {
+            "name": "Adam Hopf",
+            "rookie": false,
+            "startingAvg": 34.6
+          },
+          {
+            "name": "Tyler Kupferschmid",
+            "rookie": false,
+            "startingAvg": 37.3
+          },
+          {
+            "name": "Tyler DeKnecht",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Rob Johnson",
+            "rookie": false,
+            "startingAvg": 42.4
+          },
+          {
+            "name": "Bob Benjamin",
+            "rookie": false,
+            "startingAvg": 27.8
+          },
+          {
+            "name": "Jason Pitman",
+            "rookie": false,
+            "startingAvg": 35.2
+          },
+          {
+            "name": "Steve Cravens",
+            "rookie": false,
+            "startingAvg": 21
+          }
+        ]
+      },
+      {
+        "id": "sights-impaired",
+        "name": "Sights Impaired",
+        "shooters": [
+          {
+            "name": "Dan Barrington",
+            "rookie": false,
+            "startingAvg": 36.1
+          },
+          {
+            "name": "Jack Vick",
+            "rookie": false,
+            "startingAvg": 40.2
+          },
+          {
+            "name": "Mark Cabaj",
+            "rookie": false,
+            "startingAvg": 29.5
+          },
+          {
+            "name": "Allen Cary",
+            "rookie": false,
+            "startingAvg": 38.7
+          },
+          {
+            "name": "Michael Freimann",
+            "rookie": false,
+            "startingAvg": 34.6
+          },
+          {
+            "name": "Shannon McMahon",
+            "rookie": false,
+            "startingAvg": 37.9
+          },
+          {
+            "name": "Rich Drennen",
+            "rookie": false,
+            "startingAvg": 45.7
+          },
+          {
+            "name": "Ron Milby",
+            "rookie": false,
+            "startingAvg": 44.6
+          }
+        ]
+      },
+      {
+        "id": "smoking-guns",
+        "name": "Smoking Guns",
+        "shooters": [
+          {
+            "name": "Gordon Larsen",
+            "rookie": false,
+            "startingAvg": 42.8
+          },
+          {
+            "name": "David Larsen",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Lucas Abel",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Jamie Beilfuss",
+            "rookie": false,
+            "startingAvg": 41.9
+          },
+          {
+            "name": "Heston Eveland",
+            "rookie": false,
+            "startingAvg": 32.1
+          },
+          {
+            "name": "Jacob Roberson",
+            "rookie": false,
+            "startingAvg": 35.4
+          },
+          {
+            "name": "Jonathan Roberson",
+            "rookie": false,
+            "startingAvg": 41.6
+          },
+          {
+            "name": "Tim Schleder",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Tommy McMurtry",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Alex Wickline",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Trevor Chapman",
+            "rookie": false,
+            "startingAvg": 36.4
+          }
+        ]
+      },
+      {
+        "id": "shockers",
+        "name": "Shockers",
+        "shooters": [
+          {
+            "name": "Logan McKenna",
+            "rookie": false,
+            "startingAvg": 32.8
+          },
+          {
+            "name": "Seth Gieson",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "David Goveia",
+            "rookie": false,
+            "startingAvg": 41
+          },
+          {
+            "name": "Anthony Schultz",
+            "rookie": false,
+            "startingAvg": 43.7
+          },
+          {
+            "name": "Dennis Wright",
+            "rookie": false,
+            "startingAvg": 38.7
+          },
+          {
+            "name": "Derri Kerrick",
+            "rookie": false,
+            "startingAvg": 30.4
+          },
+          {
+            "name": "Cari Shields",
+            "rookie": false,
+            "startingAvg": 34.7
+          },
+          {
+            "name": "Brian Dehart",
+            "rookie": false,
+            "startingAvg": 28
+          },
+          {
+            "name": "Rob Glinka",
+            "rookie": false,
+            "startingAvg": 32.7
+          },
+          {
+            "name": "Austin Beyer",
+            "rookie": false,
+            "startingAvg": 38.1
+          },
+          {
+            "name": "Dan Riddle",
+            "rookie": false,
+            "startingAvg": 37.5
+          },
+          {
+            "name": "Matt Lamb",
+            "rookie": false,
+            "startingAvg": 41.9
+          },
+          {
+            "name": "Eric Bell",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Nicole Gould",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Tony Gould",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      }
+    ],
+    "2025": [
+      {
+        "id": "bullshooters",
+        "name": "Bullshooters",
+        "shooters": [
+          {
+            "name": "Greg Litchfield",
+            "rookie": false,
+            "startingAvg": 39.9
+          },
+          {
+            "name": "Bill Murphy",
+            "rookie": false,
+            "startingAvg": 38.7
+          },
+          {
+            "name": "Ken Sutter",
+            "rookie": false,
+            "startingAvg": 36.9
+          },
+          {
+            "name": "Nestor Gutierrez",
+            "rookie": false,
+            "startingAvg": 40.1
+          },
+          {
+            "name": "Howard Hallstein",
+            "rookie": false,
+            "startingAvg": 36.2
+          },
+          {
+            "name": "Terry Garbe",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Bruce Schenkel",
+            "rookie": false,
+            "startingAvg": 38.8
+          },
+          {
+            "name": "Lindsay Bourda",
+            "rookie": false,
+            "startingAvg": 41.7
+          },
+          {
+            "name": "Mike Litwiller",
+            "rookie": false,
+            "startingAvg": 36.9
+          },
+          {
+            "name": "Greg McNeely",
+            "rookie": false,
+            "startingAvg": 35
+          },
+          {
+            "name": "Cory Steers",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Nathan Steers",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Randy Litwiller",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "full-choke-artists",
+        "name": "Full Choke Artists",
+        "shooters": [
+          {
+            "name": "Randy Jones",
+            "rookie": false,
+            "startingAvg": 44.7
+          },
+          {
+            "name": "Jeff Abel",
+            "rookie": false,
+            "startingAvg": 41.9
+          },
+          {
+            "name": "Rod Dale",
+            "rookie": false,
+            "startingAvg": 40.5
+          },
+          {
+            "name": "Neal Percival",
+            "rookie": false,
+            "startingAvg": 33
+          },
+          {
+            "name": "Mark Gauding",
+            "rookie": false,
+            "startingAvg": 37.9
+          },
+          {
+            "name": "Scott Petri",
+            "rookie": false,
+            "startingAvg": 35.2
+          },
+          {
+            "name": "Scott Gould",
+            "rookie": false,
+            "startingAvg": 32.1
+          },
+          {
+            "name": "Dave Jones",
+            "rookie": false,
+            "startingAvg": 37
+          },
+          {
+            "name": "Branden Sholty",
+            "rookie": false,
+            "startingAvg": 45.6
+          },
+          {
+            "name": "Giedrius Rakauskas",
+            "rookie": false,
+            "startingAvg": 39.3
+          },
+          {
+            "name": "Brad Allen",
+            "rookie": false,
+            "startingAvg": 39.1
+          },
+          {
+            "name": "Micheal Benjamin",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "missed-again",
+        "name": "Missed Again",
+        "shooters": [
+          {
+            "name": "Loren Lamar",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Gary Garrett",
+            "rookie": false,
+            "startingAvg": 42.9
+          },
+          {
+            "name": "Dan Riccolo",
+            "rookie": false,
+            "startingAvg": 35
+          },
+          {
+            "name": "Steve Robbins",
+            "rookie": false,
+            "startingAvg": 44
+          },
+          {
+            "name": "Arthur Parks",
+            "rookie": false,
+            "startingAvg": 28.7
+          },
+          {
+            "name": "Dave Coale",
+            "rookie": false,
+            "startingAvg": 42
+          },
+          {
+            "name": "Ben Dittmar",
+            "rookie": false,
+            "startingAvg": 39.9
+          },
+          {
+            "name": "Adam McVey",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Al Kocar",
+            "rookie": false,
+            "startingAvg": 41
+          },
+          {
+            "name": "Jim Sloan",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Ed Lechleiter",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Sub (Ron Milby)",
+            "rookie": false,
+            "startingAvg": 45.5
+          }
+        ]
+      },
+      {
+        "id": "powder-burners",
+        "name": "Powder Burners",
+        "shooters": [
+          {
+            "name": "Sarah Paul",
+            "rookie": false,
+            "startingAvg": 38
+          },
+          {
+            "name": "Randy Paul",
+            "rookie": false,
+            "startingAvg": 38.8
+          },
+          {
+            "name": "Jamie Spencer",
+            "rookie": false,
+            "startingAvg": 33.1
+          },
+          {
+            "name": "Brandon Compton",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Laurin Bartelmay",
+            "rookie": false,
+            "startingAvg": 43.1
+          },
+          {
+            "name": "Mandy Lane",
+            "rookie": false,
+            "startingAvg": 27
+          },
+          {
+            "name": "Macy Lane",
+            "rookie": false,
+            "startingAvg": 37
+          },
+          {
+            "name": "Matt Lane",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Jim Williams",
+            "rookie": false,
+            "startingAvg": 39.6
+          },
+          {
+            "name": "Dustin Carter",
+            "rookie": false,
+            "startingAvg": 33.3
+          },
+          {
+            "name": "Floyd Bartelmay",
+            "rookie": false,
+            "startingAvg": 34.4
+          },
+          {
+            "name": "Mike Burton",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Luke Werts",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Dave Kemper",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Dave Schlattman",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "shell-shocked",
+        "name": "Shell Shocked",
+        "shooters": [
+          {
+            "name": "Troy Johns",
+            "rookie": false,
+            "startingAvg": 42
+          },
+          {
+            "name": "Marc Herren",
+            "rookie": false,
+            "startingAvg": 35.9
+          },
+          {
+            "name": "Gary Hopf",
+            "rookie": false,
+            "startingAvg": 36.9
+          },
+          {
+            "name": "Adam Hopf",
+            "rookie": false,
+            "startingAvg": 38.2
+          },
+          {
+            "name": "Carter Johns",
+            "rookie": false,
+            "startingAvg": 13
+          },
+          {
+            "name": "Tyler Kupferschmid",
+            "rookie": false,
+            "startingAvg": 37.4
+          },
+          {
+            "name": "Tyler DeKnecht",
+            "rookie": false,
+            "startingAvg": 43
+          },
+          {
+            "name": "Rob Johnson",
+            "rookie": false,
+            "startingAvg": 41
+          },
+          {
+            "name": "Bob Benjamin",
+            "rookie": false,
+            "startingAvg": 27.7
+          },
+          {
+            "name": "J.T. Bedell",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Tal Parmenter",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Damien Locke",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "shockers",
+        "name": "Shockers",
+        "shooters": [
+          {
+            "name": "Logan McKenna",
+            "rookie": false,
+            "startingAvg": 36.9
+          },
+          {
+            "name": "David Goveia",
+            "rookie": false,
+            "startingAvg": 35.5
+          },
+          {
+            "name": "Anthony Schultz",
+            "rookie": false,
+            "startingAvg": 44
+          },
+          {
+            "name": "Dennis Wright",
+            "rookie": false,
+            "startingAvg": 36.5
+          },
+          {
+            "name": "Cari Shields",
+            "rookie": false,
+            "startingAvg": 31
+          },
+          {
+            "name": "Brian Dehart",
+            "rookie": false,
+            "startingAvg": 29
+          },
+          {
+            "name": "Rob Glinka",
+            "rookie": false,
+            "startingAvg": 33.7
+          },
+          {
+            "name": "Austin Beyer",
+            "rookie": false,
+            "startingAvg": 37.5
+          },
+          {
+            "name": "Dan Riddle",
+            "rookie": false,
+            "startingAvg": 37.5
+          },
+          {
+            "name": "Matt Lamb",
+            "rookie": false,
+            "startingAvg": 40.6
+          },
+          {
+            "name": "Ezra Lamb",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Eric Bell",
+            "rookie": false,
+            "startingAvg": 40.8
+          },
+          {
+            "name": "Chris Anthony",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "sights-impaired",
+        "name": "Sights Impaired",
+        "shooters": [
+          {
+            "name": "Dan Barrington",
+            "rookie": false,
+            "startingAvg": 35.7
+          },
+          {
+            "name": "Jack Vick",
+            "rookie": false,
+            "startingAvg": 40.4
+          },
+          {
+            "name": "Mark Cabaj",
+            "rookie": false,
+            "startingAvg": 31.4
+          },
+          {
+            "name": "Allen Cary",
+            "rookie": false,
+            "startingAvg": 40.8
+          },
+          {
+            "name": "Michael Freimann",
+            "rookie": false,
+            "startingAvg": 38.5
+          },
+          {
+            "name": "Shannon McMahon",
+            "rookie": false,
+            "startingAvg": 38
+          },
+          {
+            "name": "Rich Drennen",
+            "rookie": false,
+            "startingAvg": 46
+          },
+          {
+            "name": "Ron Milby",
+            "rookie": false,
+            "startingAvg": 45.5
+          },
+          {
+            "name": "Mike Brewer",
+            "rookie": false,
+            "startingAvg": 40.8
+          },
+          {
+            "name": "Pamela Ross",
+            "rookie": true,
+            "startingAvg": 35
+          }
+        ]
+      },
+      {
+        "id": "smoking-guns",
+        "name": "Smoking Guns",
+        "shooters": [
+          {
+            "name": "Gordon Larsen",
+            "rookie": false,
+            "startingAvg": 39.8
+          },
+          {
+            "name": "Jamie Beilfuss",
+            "rookie": false,
+            "startingAvg": 39
+          },
+          {
+            "name": "Heston Eveland",
+            "rookie": false,
+            "startingAvg": 35.6
+          },
+          {
+            "name": "Cameron Guidry",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "Jonathan Roberson",
+            "rookie": false,
+            "startingAvg": 40
+          },
+          {
+            "name": "Tim Schleder",
+            "rookie": false,
+            "startingAvg": 30.1
+          },
+          {
+            "name": "Alex Wickline",
+            "rookie": false,
+            "startingAvg": 30.5
+          },
+          {
+            "name": "Tyler Workman",
+            "rookie": true,
+            "startingAvg": 35
+          },
+          {
+            "name": "David Larsen",
+            "rookie": false,
+            "startingAvg": 43
+          }
+        ]
+      }
+    ]
+  }
+}
