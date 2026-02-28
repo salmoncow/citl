@@ -7,12 +7,14 @@
  * Exports:
  *   firebaseConfig  — raw config object (for reference / Auth init)
  *   db              — Firestore database instance
+ *   auth            — Firebase Auth instance
  *   isDevelopment   — true when running via `npm run dev`
  *   isProduction    — true when running via `npm run build`
  */
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -45,3 +47,6 @@ const app = initializeApp(firebaseConfig);
 
 /** @type {import('firebase/firestore').Firestore} */
 export const db = getFirestore(app);
+
+/** @type {import('firebase/auth').Auth} */
+export const auth = getAuth(app);
