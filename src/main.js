@@ -110,10 +110,17 @@ class App {
   // ─── Admin auth ──────────────────────────────────────────────────────────────
 
   _initAdminAuth() {
-    const applyAuthState = (user) => {
+    const applyAuthState = async (user) => {
       this._navigation.updateAuthState(user);
+
+      let isAdmin = false;
+      if (user) {
+        isAdmin = await this._auth.isAdmin();
+      }
+
       document.getElementById('admin-login')?.toggleAttribute('hidden', !!user);
-      document.getElementById('admin-panel-container')?.toggleAttribute('hidden', !user);
+      document.getElementById('admin-unauthorized')?.toggleAttribute('hidden', !user || isAdmin);
+      document.getElementById('admin-panel-container')?.toggleAttribute('hidden', !user || !isAdmin);
 
       const userDisplay = document.getElementById('admin-user-display');
       if (userDisplay) {
@@ -130,6 +137,8 @@ class App {
     document.getElementById('admin-sign-in')
       ?.addEventListener('click', () => this._auth.signIn());
     document.getElementById('admin-sign-out')
+      ?.addEventListener('click', () => this._auth.signOut());
+    document.getElementById('admin-sign-out-unauth')
       ?.addEventListener('click', () => this._auth.signOut());
   }
 

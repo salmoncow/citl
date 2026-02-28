@@ -1,6 +1,6 @@
 # Firebase Deployment — citl.club
 
-**Firebase Project**: `citl`
+**Firebase Project**: `citl-baed2`
 **Hosting Region**: `us-east1` (Firestore) / Global CDN (Hosting)
 **Plan**: Spark (free tier)
 **Last Updated**: 2026-02-27
@@ -23,8 +23,8 @@ See [.specs/technical/cicd-pipeline.md](./cicd-pipeline.md).
 ### Project Binding
 
 ```
-Firebase project ID: citl
-Default alias:       default → citl
+Firebase project ID: citl-baed2
+Default alias:       default → citl-baed2
 Config file:         .firebaserc
 ```
 
@@ -44,9 +44,42 @@ Config file:         .firebaserc
 firebase login
 
 # Verify project binding
-firebase use citl
-firebase projects:list    # confirm 'citl' appears
+firebase use citl-baed2
+firebase projects:list    # confirm 'citl-baed2' appears
 ```
+
+---
+
+## Admin User Provisioning
+
+Admin portal access is gated on a Firebase custom claim (`admin: true`).
+Use `scripts/grant-admin.js` to grant or revoke the claim by email.
+
+### One-time developer setup
+
+```bash
+# Install gcloud CLI, then authenticate with the project owner account
+gcloud auth application-default login
+gcloud auth application-default set-quota-project citl-baed2
+```
+
+### Grant / revoke admin access
+
+```bash
+# Grant admin claim — user can now sign into #/admin
+node scripts/grant-admin.js grant user@example.com
+
+# Revoke admin claim — user sees "no access" message on next sign-in
+node scripts/grant-admin.js revoke user@example.com
+```
+
+The user must sign out and back in after a grant/revoke for the new token to take effect
+(Firebase ID tokens have a 1-hour TTL).
+
+**Required**: the developer running this script must have the **Firebase Authentication Admin**
+IAM role on the `citl-baed2` project.
+
+---
 
 ### Configuration Principles
 
@@ -81,7 +114,7 @@ Before running `npm run deploy` or `npm run deploy:preview`:
 
 - [ ] `npm run build` succeeds with no errors
 - [ ] `.env` is populated with valid `VITE_FIREBASE_*` values
-- [ ] `firebase use citl` is active (`firebase use` to verify)
+- [ ] `firebase use citl-baed2` is active (`firebase use` to verify)
 - [ ] All 5 SPA routes load correctly in `npm run preview`
 - [ ] No CSP violations in browser console during preview
 - [ ] Firebase Hosting quota not near 70% of 360 MB/day limit
@@ -279,7 +312,7 @@ terraform destroy    # in the Terraform directory
 
 ```bash
 firebase login --reauth
-firebase use citl
+firebase use citl-baed2
 npm run deploy
 ```
 
