@@ -10,7 +10,7 @@
  */
 
 import './styles/main.css';
-import './components/standings-table.js';
+import './components/home-standings.js';
 import './components/admin-panel.js';
 
 import { NavigationModule } from './modules/navigation.js';
