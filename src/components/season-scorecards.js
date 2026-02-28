@@ -20,6 +20,7 @@
 import { db } from '@/firebase-config.js';
 import { createRepositoryFactory } from '@/repositories/repository-factory.js';
 import { ScoreService } from '@/services/score-service.js';
+import { computeShooterAverage } from '@/services/scoring-engine.js';
 
 const factory = createRepositoryFactory({ db });
 const scoreService = new ScoreService(factory.getScoreRepository());
@@ -29,6 +30,12 @@ const WEEK_HEADERS = ['W0', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9'
 /** @param {number|null|undefined|string} val */
 function fmt(val) {
   return val === null || val === undefined || val === '-' ? '-' : String(val);
+}
+
+/** @param {string} name */
+function lastWord(name) {
+  const parts = name.trim().split(/\s+/);
+  return parts[parts.length - 1];
 }
 
 class SeasonScorecards extends HTMLElement {
@@ -166,6 +173,7 @@ class SeasonScorecards extends HTMLElement {
         shooterMap.set(s.name, {
           name: s.name,
           rookie: s.rookie ?? false,
+          isDummy: s.name.toUpperCase().includes('DUMMY'),
           startingAvg: s.startingAvg ?? '-',
           scores: new Array(15).fill(null),
         });
@@ -195,6 +203,7 @@ class SeasonScorecards extends HTMLElement {
           shooterMap.set(ss.name, {
             name: ss.name,
             rookie: false,
+            isDummy: ss.name.toUpperCase().includes('DUMMY'),
             startingAvg: '-',
             scores: new Array(15).fill(null),
           });
@@ -203,16 +212,69 @@ class SeasonScorecards extends HTMLElement {
       }
     }
 
+    // Pad to 2 DUMMY placeholder rows per team
+    const existingDummies = [...shooterMap.values()].filter((s) => s.isDummy);
+    if (existingDummies.length < 2) {
+      const prefix = lastWord(teamName);
+      for (let n = existingDummies.length + 1; n <= 2; n++) {
+        const dName = `${prefix} DUMMY${n}`;
+        if (!shooterMap.has(dName)) {
+          shooterMap.set(dName, {
+            name: dName,
+            rookie: false,
+            isDummy: true,
+            startingAvg: '-',
+            scores: new Array(15).fill(null),
+          });
+        }
+      }
+    }
+
+    // DUMMY W0 display = mean of real teammates' actual W1 scores
+    const realW1Scores = [...shooterMap.values()]
+      .filter((s) => !s.isDummy && s.scores[0] !== null)
+      .map((s) => s.scores[0]);
+    if (realW1Scores.length > 0) {
+      const dummyW0Display =
+        Math.round((realW1Scores.reduce((a, b) => a + b, 0) / realW1Scores.length) * 10) / 10;
+      for (const s of shooterMap.values()) {
+        if (s.isDummy) s.w0Display = dummyW0Display;
+      }
+    }
+
+    // DUMMY effective W0 for finalAvg = mean of real teammates' numeric startingAvgs
+    // (= mean of real shooters' going-in avgs before W1, per scoring-engine rule)
+    const realNumericStartingAvgs = [...shooterMap.values()]
+      .filter((s) => !s.isDummy && Number.isFinite(s.startingAvg))
+      .map((s) => s.startingAvg);
+    if (realNumericStartingAvgs.length > 0) {
+      const dummyEffectiveW0 =
+        realNumericStartingAvgs.reduce((a, b) => a + b, 0) / realNumericStartingAvgs.length;
+      for (const s of shooterMap.values()) {
+        if (s.isDummy) s.effectiveW0 = dummyEffectiveW0;
+      }
+    }
+
     // 4. Compute weeksShot and finalAvg per shooter
     const shooters = [...shooterMap.values()].map((s) => {
       const nonNull = s.scores.filter((v) => v !== null);
       const weeksShot = nonNull.length > 0 ? nonNull.length : null;
-      const finalAvg =
-        nonNull.length > 0 ? Math.round((nonNull.reduce((a, b) => a + b, 0) / nonNull.length) * 10) / 10 : s.startingAvg;
+      const w0 = Number.isFinite(s.startingAvg) ? s.startingAvg : (s.effectiveW0 ?? null);
+      const finalAvg = w0 !== null
+        ? Math.round(computeShooterAverage(w0, s.scores, 14) * 10) / 10
+        : nonNull.length > 0
+          ? Math.round((nonNull.reduce((a, b) => a + b, 0) / nonNull.length) * 10) / 10
+          : s.startingAvg;
       return { ...s, weeksShot, finalAvg };
     });
 
     // 5. Render
+    // Sort: real shooters first, dummies last
+    shooters.sort((a, b) => {
+      if (a.isDummy === b.isDummy) return 0;
+      return a.isDummy ? 1 : -1;
+    });
+
     const headerCells = WEEK_HEADERS.map((w) => `<th>${w}</th>`).join('');
 
     const shooterRows = shooters
@@ -220,7 +282,8 @@ class SeasonScorecards extends HTMLElement {
         const rookieMark = s.rookie ? 'R' : '';
         const scoreCells = s.scores.map((v) => `<td>${fmt(v)}</td>`).join('');
         const weeks = s.weeksShot !== null ? s.weeksShot : '-';
-        return `<tr><td>${s.name}</td><td>${rookieMark}</td><td>${fmt(s.startingAvg)}</td>${scoreCells}<td>${weeks}</td><td>${fmt(s.finalAvg)}</td></tr>`;
+        const rowClass = s.isDummy ? ' class="dummy-row"' : '';
+        return `<tr${rowClass}><td>${s.name}</td><td>${rookieMark}</td><td>${fmt(s.w0Display ?? s.startingAvg)}</td>${scoreCells}<td>${weeks}</td><td>${fmt(s.finalAvg)}</td></tr>`;
       })
       .join('\n        ');
 
