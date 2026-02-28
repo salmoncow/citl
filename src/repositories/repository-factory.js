@@ -8,6 +8,7 @@
  * Current backends:
  *   'firestore'    — Cloud Firestore (requires firebase-config.js)
  *   'stub'         — In-memory no-op (for testing / offline dev without .env)
+ *   'localStorage' — Browser localStorage (offline dev / admin entry before Firestore is provisioned)
  *
  * Usage:
  *   import { createRepositoryFactory } from '@/repositories/repository-factory.js';
@@ -18,9 +19,10 @@
  */
 
 import { ScoreRepository } from '@/repositories/score-repository.js';
+import { LocalStorageScoreRepository } from '@/repositories/localstorage-score-repository.js';
 
 /**
- * @typedef {'firestore' | 'stub'} StorageBackend
+ * @typedef {'firestore' | 'stub' | 'localStorage'} StorageBackend
  */
 
 /**
@@ -99,6 +101,10 @@ export class RepositoryFactory {
 
       case 'stub':
         repo = new StubScoreRepository();
+        break;
+
+      case 'localStorage':
+        repo = new LocalStorageScoreRepository();
         break;
 
       default:

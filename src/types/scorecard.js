@@ -18,6 +18,7 @@
  * @typedef {Object} Shooter
  * @property {string}           name         - Full name, e.g. "Greg Litchfield"
  * @property {boolean}          rookie       - True if this was the shooter's first season
+ * @property {boolean}          [isDummy]    - True if name contains "DUMMY" (case-insensitive); set by csv-parser
  * @property {number}           startingAvg  - Going-in average for handicap purposes
  * @property {(number|null)[]}  scores       - Array of 15 weekly scores (W1–W15); null = did not shoot
  * @property {number|null}      weeksShot    - Number of weeks actually shot; null if zero

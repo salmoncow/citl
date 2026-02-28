@@ -2,8 +2,8 @@
  * homeView — 2025 Season results and standings
  *
  * Migrated from src/spa/index.html (main content only).
- * All data is static for Phase 1. Will be replaced with
- * Firestore-backed dynamic content in Phase 4.
+ * Static per-week standings tables remain for historical weeks 1–14.
+ * The final standings section uses <standings-table> (Phase 4 Web Component).
  */
 
 /**
@@ -65,18 +65,8 @@ export function homeView() {
       <li><b>Lindsay Bourda</b> from <i>Bullshooters</i> with a 25 straight!</li>
     </ul>
 
-    <h2>Standings (Week 15)</h2>
-    <table class="standing-table">
-      <tr><th>Standing</th><th>Team</th><th>Captain</th><th>Targets</th><th>Total Targets</th><th>Rank Points</th><th>Bonus Points</th><th>Total Points</th></tr>
-      <tr><td>1</td><td>Sights Impaired</td><td>Dan Barrington</td><td>197</td><td>2880</td><td>25</td><td>5</td><td>433</td></tr>
-      <tr><td>2</td><td>Full Choke Artists</td><td>Randy Jones</td><td>198</td><td>2912</td><td>28</td><td>5</td><td>415</td></tr>
-      <tr><td>3</td><td>Shockers</td><td>Logan McKenna</td><td>197</td><td>2828</td><td>25</td><td>5</td><td>405</td></tr>
-      <tr><td>4</td><td>Missed Again</td><td>Loren Lamar</td><td>189</td><td>2908</td><td>19</td><td>0</td><td>404</td></tr>
-      <tr><td>5</td><td>Bullshooters</td><td>Greg Litchfield</td><td>189</td><td>2814</td><td>19</td><td>5</td><td>388</td></tr>
-      <tr><td>6</td><td>Powder Burners</td><td>Sarah Paul</td><td>194</td><td>2781</td><td>22</td><td>5</td><td>386</td></tr>
-      <tr><td>7</td><td>Smoking Guns</td><td>Gordon Larsen</td><td>173</td><td>2788</td><td>16</td><td>0</td><td>377</td></tr>
-      <tr><td>8</td><td>Shell Shocked</td><td>Troy Johns</td><td>199</td><td>2576</td><td>30</td><td>5</td><td>362</td></tr>
-    </table>
+    <h2>Final Standings</h2>
+    <standings-table year="2025"></standings-table>
 
     <h4><hr></h4>
 
