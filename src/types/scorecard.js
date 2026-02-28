@@ -1,14 +1,10 @@
 /**
  * @file Scorecard type definitions
  *
- * JSDoc typedefs for historical scorecard display data.
- * These types describe the JSON structure in src/data/scorecards/*.json.
+ * JSDoc typedefs for scorecard display data. Used by scoring-engine.js and
+ * score-service.js to describe the SeasonData shape computed from Firestore.
  *
  * No runtime code — for IDE support only.
- *
- * Note: These types are separate from the Firestore-backed types in score.js /
- * season.js / shooter.js. Scorecard JSON files are permanent static assets
- * (ADR-003) and are never replaced by Firestore data.
  */
 
 /**
@@ -18,7 +14,7 @@
  * @typedef {Object} Shooter
  * @property {string}           name         - Full name, e.g. "Greg Litchfield"
  * @property {boolean}          rookie       - True if this was the shooter's first season
- * @property {boolean}          [isDummy]    - True if name contains "DUMMY" (case-insensitive); set by csv-parser
+ * @property {boolean}          [isDummy]    - True if name contains "DUMMY" (case-insensitive)
  * @property {number}           startingAvg  - Going-in average for handicap purposes
  * @property {(number|null)[]}  scores       - Array of 15 weekly scores (W1–W15); null = did not shoot
  * @property {number|null}      weeksShot    - Number of weeks actually shot; null if zero
@@ -45,8 +41,7 @@
  */
 
 /**
- * The complete scorecard data for one season, as stored in
- * src/data/scorecards/{year}.json.
+ * The complete scorecard data for one season.
  *
  * @typedef {Object} SeasonData
  * @property {number}  season  - The season year, e.g. 2025

@@ -37,7 +37,16 @@ The CSV parser (`src/utils/csv-parser.js`) is a separate unit that converts
 Teams may field up to 2 dummies when they cannot fill a full squad.
 
 - **Identification**: `name.toUpperCase().includes('DUMMY')`
+- **Naming convention**: last word of team name + `DUMMY1` / `DUMMY2` (no space before number).
+  Example: "Full Choke Artists" → "Artists DUMMY1", "Artists DUMMY2"
+- **Max-2 constraint**: a team may have at most 2 dummy shooters per week. This is enforced
+  at publish time in `score-service.js` `publishWeek()`, which returns a `VALIDATION_ERROR`
+  if any entry for the published week contains more than 2 shooters matching the DUMMY pattern.
 - **Dummy going-in average**: mean of the real shooters' going-in averages for that week
+- **W0 display**: going-in average shown in scorecard W0 column = mean of the actual
+  W1 scores (scores[0]) of real teammates who shot W1, rounded to 1 decimal.
+  Falls back to `-` when no W1 participants have a non-null score (pre-migration
+  seasons or season not yet started).
 - **Dummy score in CSV**: present when fielded (their actual score column value is non-null)
 - **Dummies excluded from**: season awards, highest average, rookie of year, most improved
 
@@ -103,7 +112,7 @@ Forfeit teams (targets = 0 but participated) rank last (e.g., Rank 8 in an 8-tea
 
 ## Data Contracts
 
-### Inputs — SeasonData (from csv-parser or localStorage)
+### Inputs — SeasonData (from Firestore)
 
 ```
 SeasonData {
@@ -158,58 +167,8 @@ from cumulative rank+bonus totals and are returned as `null`.
 
 ---
 
-## Validation
-
-Compare `computeSeasonTotals(parseSeasonCsv(csvText, year))` against `src/data/scorecards/{year}.json`.
-
-Paste in the browser console at `localhost:3000` after `npm run dev`:
-
-```javascript
-const { parseSeasonCsv } = await import('/utils/csv-parser.js');
-const { computeSeasonTotals } = await import('/services/scoring-engine.js');
-
-async function validate(year) {
-  const csvText = await fetch(`/${year}-inputs.csv`).then(r => r.text());
-  const expected = await fetch(`/data/scorecards/${year}.json`).then(r => r.json());
-
-  const parsed = parseSeasonCsv(csvText, year);
-  const computed = computeSeasonTotals(parsed);
-
-  let errors = 0;
-  computed.teams.forEach((team, ti) => {
-    const exp = expected.teams[ti];
-    if (!exp) { console.warn(`[${year}] No expected team at index ${ti}`); return; }
-
-    team.totals.targets.forEach((val, wi) => {
-      const e = exp.totals.targets[wi];
-      const ok = val === e || (val === 0 && e === null) || (val === null && e === null);
-      if (!ok) { console.error(`[${year}][${team.name}] W${wi+1} targets: got ${val}, expected ${e}`); errors++; }
-    });
-    team.totals.rankPoints.forEach((val, wi) => {
-      const e = exp.totals.rankPoints[wi];
-      if (val !== e) { console.error(`[${year}][${team.name}] W${wi+1} rankPoints: got ${val}, expected ${e}`); errors++; }
-    });
-    team.totals.bonusPoints.forEach((val, wi) => {
-      const e = exp.totals.bonusPoints[wi];
-      if (val !== e) { console.error(`[${year}][${team.name}] W${wi+1} bonusPoints: got ${val}, expected ${e}`); errors++; }
-    });
-  });
-
-  console.log(errors === 0
-    ? `✓ [${year}] All totals match ${year}.json`
-    : `✗ [${year}] ${errors} mismatches found`);
-}
-
-await validate(2023);
-await validate(2024);
-await validate(2025);
-```
-
----
-
 ## SOLID Compliance
 
 - `scoring-engine.js`: no imports from repository/service/view layers (pure functions only)
-- `localstorage-score-repository.js`: no business logic; does not call engine
 - `repository-factory.js`: adding localStorage backend does not touch existing backends
 - Views/services: depend on repository interface, not concrete class

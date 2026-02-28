@@ -60,11 +60,9 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `src/services/scoring-engine.js` | Pure scoring calculations (ADR-006) |
 | `src/components/standings-table.js` | Custom Element: cumulative season standings (reads Firestore) |
 | `src/repositories/score-repository.js` | Raw Firestore operations |
-| `src/repositories/repository-factory.js` | Factory: `firestore` or `stub` |
+| `src/repositories/repository-factory.js` | Factory: Firestore backend only |
 | `src/views/home.js` | Home page (static HTML — Phase 4 target) |
-| `src/views/scorecards.js` | Scorecards accordion (JSON-driven, all 7 seasons) |
-| `src/data/scorecards/*.json` | Historical scorecard data 2019–2025 |
-| `scripts/set-admin-claim.js` | Admin-user management utility (keep) |
+| `src/views/scorecards.js` | Scorecards Web Component (Firestore-backed, all 7 seasons) |
 | `firebase.json` | Hosting config: SPA rewrite, CSP, cache headers |
 | `.env.example` | Template for required `VITE_FIREBASE_*` env vars |
 

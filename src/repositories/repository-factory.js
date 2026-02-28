@@ -1,13 +1,7 @@
 /**
  * Repository Factory
  *
- * Creates and caches repository instances based on the configured backend.
- * Enables swapping storage backends (Firestore ↔ stub) without changing
- * the service layer.
- *
- * Current backends:
- *   'firestore' — Cloud Firestore (requires firebase-config.js)
- *   'stub'      — In-memory no-op (for testing / offline dev without .env)
+ * Creates and caches a ScoreRepository backed by Cloud Firestore.
  *
  * Usage:
  *   import { createRepositoryFactory } from '@/repositories/repository-factory.js';
@@ -20,48 +14,9 @@
 import { ScoreRepository } from '@/repositories/score-repository.js';
 
 /**
- * @typedef {'firestore' | 'stub'} StorageBackend
- */
-
-/**
  * @typedef {Object} FactoryConfig
- * @property {import('firebase/firestore').Firestore} [db] - Firestore instance (required for 'firestore' backend)
- * @property {StorageBackend} [backend] - Which backend to use (default: 'firestore')
+ * @property {import('firebase/firestore').Firestore} db - Firestore instance
  */
-
-/** @type {FactoryConfig} */
-const DEFAULT_CONFIG = Object.freeze({
-  backend: 'firestore',
-});
-
-// ---------------------------------------------------------------------------
-// Stub repository (in-memory no-op for offline dev)
-// ---------------------------------------------------------------------------
-
-/** @returns {import('./score-repository.js').Result} */
-function stubSuccess() {
-  return { success: true, data: null };
-}
-
-/**
- * A no-op ScoreRepository for offline development without Firestore credentials.
- * Every method resolves immediately with success(null) or success([]).
- */
-class StubScoreRepository {
-  async getSeason() { return stubSuccess(); }
-  async getAllSeasons() { return { success: true, data: [] }; }
-  async getTeams() { return { success: true, data: [] }; }
-  async getTeam() { return stubSuccess(); }
-  async getWeekResult() { return stubSuccess(); }
-  async getAllWeekResults() { return { success: true, data: [] }; }
-  async getLatestWeekResult() { return stubSuccess(); }
-  async saveWeekResult() { return stubSuccess(); }
-  async updateSeason() { return stubSuccess(); }
-  async saveEntry() { return stubSuccess(); }
-  async getEntry() { return stubSuccess(); }
-  async getEntries() { return { success: true, data: [] }; }
-  async publishWeek() { return stubSuccess(); }
-}
 
 // ---------------------------------------------------------------------------
 // Factory
@@ -72,49 +27,34 @@ class StubScoreRepository {
  */
 export class RepositoryFactory {
   /**
-   * @param {FactoryConfig} [config]
+   * @param {FactoryConfig} config
    */
-  constructor(config = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+  constructor(config) {
+    this.config = config;
     /** @type {Map<string, object>} */
     this.instances = new Map();
   }
 
   /**
-   * Get a ScoreRepository instance (singleton per backend).
-   * @returns {ScoreRepository | StubScoreRepository}
+   * Get a ScoreRepository instance (singleton).
+   * @returns {ScoreRepository}
    */
   getScoreRepository() {
-    const key = `score:${this.config.backend}`;
-    if (this.instances.has(key)) return this.instances.get(key);
+    if (this.instances.has('score')) return this.instances.get('score');
 
-    let repo;
-
-    switch (this.config.backend) {
-      case 'firestore':
-        if (!this.config.db) {
-          throw new Error(
-            'RepositoryFactory: db is required when backend is "firestore". ' +
-            'Pass { db } from firebase-config.js.',
-          );
-        }
-        repo = new ScoreRepository(this.config.db);
-        break;
-
-      case 'stub':
-        repo = new StubScoreRepository();
-        break;
-
-      default:
-        throw new Error(`RepositoryFactory: unknown backend "${this.config.backend}"`);
+    if (!this.config.db) {
+      throw new Error(
+        'RepositoryFactory: db is required. Pass { db } from firebase-config.js.',
+      );
     }
 
-    this.instances.set(key, repo);
+    const repo = new ScoreRepository(this.config.db);
+    this.instances.set('score', repo);
     return repo;
   }
 
   /**
-   * Swap backend and clear cached instances (e.g. after Firebase credentials load).
+   * Reconfigure and clear cached instances.
    * @param {Partial<FactoryConfig>} config
    */
   reconfigure(config) {
@@ -130,7 +70,7 @@ export class RepositoryFactory {
 
 /**
  * Convenience factory function.
- * @param {FactoryConfig} [config]
+ * @param {FactoryConfig} config
  * @returns {RepositoryFactory}
  */
 export function createRepositoryFactory(config) {
