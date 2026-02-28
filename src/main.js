@@ -11,6 +11,7 @@
 
 import './styles/main.css';
 import './components/home-standings.js';
+import './components/season-scorecards.js';
 import './components/admin-panel.js';
 
 import { NavigationModule } from './modules/navigation.js';
@@ -74,7 +75,6 @@ class App {
     this._renderView(scorecardsView());
     this._navigation.setActiveLink('/scorecards');
     this._navigation.closeDropdown();
-    this._initCollapsibles();
     window.scrollTo(0, 0);
   }
 
@@ -156,28 +156,6 @@ class App {
     if (this._mainContent) {
       this._mainContent.innerHTML = html;
     }
-  }
-
-  /**
-   * Initialize collapsible scorecard accordion.
-   * Must be called after scorecardsView() HTML is in the DOM.
-   * Replaces the old scripts.js collapsible initialization.
-   */
-  _initCollapsibles() {
-    const collapsibles = document.querySelectorAll('.collapsible');
-    collapsibles.forEach((btn) => {
-      btn.addEventListener('click', function () {
-        this.classList.toggle('active');
-        const panel = this.nextElementSibling;
-        if (panel && panel.classList.contains('scorecard')) {
-          if (panel.style.maxHeight) {
-            panel.style.maxHeight = null;
-          } else {
-            panel.style.maxHeight = `${panel.scrollHeight}px`;
-          }
-        }
-      });
-    });
   }
 }
 
