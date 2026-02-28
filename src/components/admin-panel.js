@@ -13,6 +13,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const MAX_WEEKS = 15;
 const MAX_SCORE = 25;
 const KEY_PREFIX = 'citl:entry';
+const TEAMS_DATA_URL = '/data/teams/teams.json';
 
 const toSlug = (name) => name.trim().toLowerCase().replace(/\s+/g, '-');
 const entryKey = (year, week, team) => `${KEY_PREFIX}:${year}:${week}:${toSlug(team)}`;
@@ -27,6 +28,8 @@ function buildOptions(min, max, label, selected) {
 
 class AdminPanel extends HTMLElement {
   connectedCallback() {
+    this._teamsData = null;
+
     this.innerHTML = `
       <div class="admin-panel">
         <h2>Score Entry</h2>
@@ -38,7 +41,9 @@ class AdminPanel extends HTMLElement {
         </div>
         <div class="admin-form-row">
           <label for="ap-team">Team</label>
-          <input id="ap-team" type="text" placeholder="Team name" autocomplete="off">
+          <select id="ap-team">
+            <option value="">-- Select team --</option>
+          </select>
         </div>
         <h3>Shooters</h3>
         <table class="admin-shooters-table">
@@ -63,13 +68,76 @@ class AdminPanel extends HTMLElement {
     this.querySelector('#ap-add-shooter').addEventListener('click', () => this._addShooterRow());
     this.querySelector('#ap-clear').addEventListener('click', () => this._clearForm());
     this.querySelector('#ap-save').addEventListener('click', () => this._saveEntry());
-    this.querySelector('#ap-year').addEventListener('change', () => this._loadSavedEntries());
+    this.querySelector('#ap-year').addEventListener('change', () => {
+      this._populateTeamSelect();
+      this._populateShooterRows();
+      this._loadSavedEntries();
+    });
     this.querySelector('#ap-week').addEventListener('change', () => this._loadSavedEntries());
+    this.querySelector('#ap-team').addEventListener('change', () => this._populateShooterRows());
 
+    this._fetchTeamsData();
     this._loadSavedEntries();
   }
 
-  _addShooterRow() {
+  async _fetchTeamsData() {
+    try {
+      const res = await fetch(TEAMS_DATA_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      this._teamsData = await res.json();
+    } catch (err) {
+      console.warn('admin-panel: could not load teams data:', err.message);
+    }
+    this._populateTeamSelect();
+    this._populateShooterRows();
+  }
+
+  _populateTeamSelect() {
+    const select = this.querySelector('#ap-team');
+    if (!select) return;
+
+    const year = this.querySelector('#ap-year').value;
+    const teams = this._teamsData?.seasons?.[year] ?? [];
+
+    while (select.firstChild) select.removeChild(select.firstChild);
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = teams.length ? '-- Select team --' : 'No teams available for this year';
+    select.appendChild(placeholder);
+
+    for (const team of teams) {
+      const opt = document.createElement('option');
+      opt.value = team.id;
+      opt.textContent = team.name;
+      select.appendChild(opt);
+    }
+  }
+
+  _populateShooterRows() {
+    const year = this.querySelector('#ap-year')?.value;
+    const teamId = this.querySelector('#ap-team')?.value;
+    const tbody = this.querySelector('#ap-shooters-body');
+    if (!tbody) return;
+
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+    const team = this._teamsData?.seasons?.[year]?.find((t) => t.id === teamId);
+
+    if (!team) {
+      this._addShooterRow();
+      this._addShooterRow();
+      return;
+    }
+
+    for (const shooter of team.shooters) {
+      this._addShooterRow(shooter.name);
+    }
+    // blank row for mid-season additions
+    this._addShooterRow();
+  }
+
+  _addShooterRow(prefilledName = '') {
     const tbody = this.querySelector('#ap-shooters-body');
     const row = document.createElement('tr');
     row.className = 'ap-shooter-row';
@@ -79,6 +147,7 @@ class AdminPanel extends HTMLElement {
     nameInput.className = 'ap-shooter-name';
     nameInput.placeholder = 'Shooter name';
     nameInput.autocomplete = 'off';
+    if (prefilledName) nameInput.value = prefilledName;
 
     const s1 = this._scoreInput();
     const s2 = this._scoreInput();
@@ -123,9 +192,11 @@ class AdminPanel extends HTMLElement {
   _saveEntry() {
     const year = parseInt(this.querySelector('#ap-year').value, 10);
     const weekNumber = parseInt(this.querySelector('#ap-week').value, 10);
-    const teamName = this.querySelector('#ap-team').value.trim();
+    const teamSelect = this.querySelector('#ap-team');
+    const teamName = teamSelect.options[teamSelect.selectedIndex]?.text ?? '';
+    const teamValue = teamSelect.value;
 
-    if (!teamName) { this._setStatus('Team name is required.', 'error'); return; }
+    if (!teamValue) { this._setStatus('Team selection is required.', 'error'); return; }
 
     const shooters = [];
     for (const row of this.querySelectorAll('.ap-shooter-row')) {
@@ -213,12 +284,9 @@ class AdminPanel extends HTMLElement {
   }
 
   _clearForm() {
-    const teamInput = this.querySelector('#ap-team');
-    if (teamInput) teamInput.value = '';
-    const tbody = this.querySelector('#ap-shooters-body');
-    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
-    this._addShooterRow();
-    this._addShooterRow();
+    const teamSelect = this.querySelector('#ap-team');
+    if (teamSelect) teamSelect.value = '';
+    this._populateShooterRows();
     this._setStatus('Form cleared.', '');
   }
 
