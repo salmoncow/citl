@@ -6,7 +6,7 @@
  *
  * Phase 1: Static views, no Firebase.
  * Phase 2+: Firebase config wired in, auth and Firestore added.
- * Phase 5: Admin portal with Google auth (localStorage backend).
+ * Phase 5: Admin portal with Google auth (Firestore backend).
  */
 
 import './styles/main.css';

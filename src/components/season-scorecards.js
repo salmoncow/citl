@@ -259,12 +259,12 @@ class SeasonScorecards extends HTMLElement {
     const shooters = [...shooterMap.values()].map((s) => {
       const nonNull = s.scores.filter((v) => v !== null);
       const weeksShot = nonNull.length > 0 ? nonNull.length : null;
-      const w0 = Number.isFinite(s.startingAvg) ? s.startingAvg : (s.effectiveW0 ?? null);
+      const w0 = Number.isFinite(s.startingAvg) ? s.startingAvg : (nonNull.length > 0 ? (s.effectiveW0 ?? null) : null);
       const finalAvg = w0 !== null
         ? Math.round(computeShooterAverage(w0, s.scores, 14) * 10) / 10
         : nonNull.length > 0
           ? Math.round((nonNull.reduce((a, b) => a + b, 0) / nonNull.length) * 10) / 10
-          : s.startingAvg;
+          : s.w0Display ?? s.startingAvg;
       return { ...s, weeksShot, finalAvg };
     });
 

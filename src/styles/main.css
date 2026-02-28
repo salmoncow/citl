@@ -359,6 +359,12 @@ body {
 }
 .scorecard-tables tr:hover {background-color: #ddd;}
 
+/* DUMMY shooter rows — italic + muted */
+.scorecard-tables tr.dummy-row td {
+  font-style: italic;
+  color: #999;
+}
+
 /* Score Sheets table */
 .scoresheets-table {
     font-size: 17px;

@@ -1,9 +1,6 @@
 /**
  * scorecardsView — renders the <season-scorecards> Web Component.
- *
- * Data is now loaded from Firestore by the component itself.
- * Static JSON files in src/data/scorecards/ are kept as backup/reference but
- * no longer imported here.
+ * Data is loaded from Firestore by the component itself.
  */
 
 export function scorecardsView() {

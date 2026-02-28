@@ -284,6 +284,20 @@ export class ScoreService {
       return failure(`No entries found for ${year} weeks 1–${weekNumber}`, 'NO_DATA');
     }
 
+    // Validate: max 2 dummy shooters per team per week
+    for (const entry of entries) {
+      if (entry.weekNumber !== weekNumber) continue;
+      const dummyCount = entry.shooters.filter(
+        (s) => s.name.toUpperCase().includes('DUMMY'),
+      ).length;
+      if (dummyCount > 2) {
+        return failure(
+          `Team "${entry.teamName}" has ${dummyCount} dummy shooters in week ${weekNumber}; maximum is 2`,
+          'VALIDATION_ERROR',
+        );
+      }
+    }
+
     // 2. Fetch team rosters
     const teamsResult = await this.repository.getTeams(year);
     if (!teamsResult.success) return teamsResult;
