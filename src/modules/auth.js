@@ -9,6 +9,7 @@
  *   async signIn()              → { success, data: UserCredential } | { success: false, error }
  *   async signOut()             → { success } | { success: false, error }
  *   onAuthStateChanged(cb)      → Firebase unsubscribe function
+ *   async isAdmin()             → true if current user has admin custom claim
  */
 
 import { auth } from '@/firebase-config.js';
@@ -58,6 +59,16 @@ export class AuthModule {
       console.error('[AuthModule] signOut error:', error);
       return { success: false, error };
     }
+  }
+
+  /**
+   * Returns true if the current user has the admin custom claim.
+   * @returns {Promise<boolean>}
+   */
+  async isAdmin() {
+    if (!auth.currentUser) return false;
+    const tokenResult = await auth.currentUser.getIdTokenResult();
+    return tokenResult.claims.admin === true;
   }
 
   /**

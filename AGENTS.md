@@ -57,13 +57,14 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `src/modules/navigation.js` | Responsive nav, burger menu |
 | `src/firebase-config.js` | Firebase SDK init, exports `db` |
 | `src/services/score-service.js` | Firestore reads + 1-hr cache |
+| `src/modules/auth.js` | AuthModule: Google sign-in/out, isAdmin claim check |
 | `src/services/scoring-engine.js` | Pure scoring calculations (ADR-006) |
-| `src/components/standings-table.js` | Custom Element: cumulative season standings (reads Firestore) |
 | `src/repositories/score-repository.js` | Raw Firestore operations |
 | `src/repositories/repository-factory.js` | Factory: Firestore backend only |
 | `src/views/home.js` | Home page (static HTML — Phase 4 target) |
 | `src/views/scorecards.js` | Scorecards Web Component (Firestore-backed, all 7 seasons) |
 | `firebase.json` | Hosting config: SPA rewrite, CSP, cache headers |
+| `scripts/grant-admin.js` | CLI utility: grant/revoke admin custom claim (ADC) |
 | `.env.example` | Template for required `VITE_FIREBASE_*` env vars |
 
 ### Layer Dependency Direction
@@ -185,7 +186,7 @@ Goal: move admin-entered data from localStorage → Firestore; enforce security.
 
 - [x] Enable Firestore in console (production mode, `us-central1`) *(manual)*
 - [x] `firestore.rules` — public read, admin-write (`admin: true` custom claim)
-- [x] Set `admin: true` custom claim on admin user UID *(Firebase Admin SDK or console — manual)*
+- [x] Grant `admin: true` custom claim to admin users via `scripts/grant-admin.js` *(manual — see firebase-deployment.md)*
 - [x] `src/types/score.js` — add `TeamResult`, `ShooterScore`, `SeasonEntry` typedefs; update `WeekResult`
 - [x] `src/types/season.js` — update `Season` to Phase 6 schema; add `SeasonStandings` typedef
 - [x] `src/repositories/score-repository.js` — add `saveEntry`, `getEntry`, `getEntries`, `publishWeek`
@@ -213,6 +214,12 @@ Goal: move admin-entered data from localStorage → Firestore; enforce security.
 - [ ] Verify SSL provisioning
 - [ ] Validate production site at `citl.club`
 - [ ] `terraform destroy` — decommission AWS
+
+### Phase 8.5 — Admin Access Control ✅
+- [x] `src/modules/auth.js` — add `isAdmin()`: checks `admin` custom claim via `getIdTokenResult()`
+- [x] `src/views/admin.js` — add `#admin-unauthorized` section (signed-in, no claim)
+- [x] `src/main.js` — async `applyAuthState`: gates 3 sections on auth + admin claim
+- [x] `scripts/grant-admin.js` — permanent CLI utility: grant/revoke admin claim by email (ADC, no key file)
 
 ---
 

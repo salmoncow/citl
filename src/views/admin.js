@@ -15,8 +15,14 @@ export function adminView() {
     <h1>Admin Portal</h1>
 
     <div id="admin-login">
-      <p>Sign in with your authorized Google account to access the admin panel.</p>
+      <p>Sign in with your Google account to access the admin panel.</p>
       <button id="admin-sign-in" class="btn-primary">Sign in with Google</button>
+    </div>
+
+    <div id="admin-unauthorized" hidden>
+      <p>You are signed in but do not have admin access to this portal.</p>
+      <p>Contact the league administrator to request access.</p>
+      <button id="admin-sign-out-unauth" class="btn-secondary">Sign out</button>
     </div>
 
     <div id="admin-panel-container" hidden>
