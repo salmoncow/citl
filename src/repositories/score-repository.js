@@ -20,6 +20,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  writeBatch,
   query,
   where,
   orderBy,
@@ -28,7 +29,9 @@ import {
 
 /** @typedef {import('@/types/score.js').Team} Team */
 /** @typedef {import('@/types/score.js').WeekResult} WeekResult */
+/** @typedef {import('@/types/score.js').SeasonEntry} SeasonEntry */
 /** @typedef {import('@/types/season.js').Season} Season */
+/** @typedef {import('@/types/season.js').SeasonStandings} SeasonStandings */
 
 // ---------------------------------------------------------------------------
 // Result helpers
@@ -228,32 +231,101 @@ export class ScoreRepository {
   }
 
   // -------------------------------------------------------------------------
-  // Admin writes (Phase 5 — stubbed here for completeness)
+  // Admin writes
   // -------------------------------------------------------------------------
 
   /**
-   * Write or overwrite a week result document.
-   * Requires admin: true custom claim enforced by Firestore rules.
+   * Save a raw admin score entry (audit trail).
+   * Document ID: {weekNumber}_{teamId}
    * @param {number} year
-   * @param {WeekResult} weekResult
+   * @param {SeasonEntry} entry
    * @returns {Promise<Result>}
    */
-  async saveWeekResult(year, weekResult) {
+  async saveEntry(year, entry) {
+    try {
+      if (!entry || !entry.weekNumber || !entry.teamId) {
+        return failure('entry.weekNumber and entry.teamId are required', 'VALIDATION_ERROR');
+      }
+      const entryId = `${entry.weekNumber}_${entry.teamId}`;
+      const ref = doc(this.db, 'seasons', String(year), 'entries', entryId);
+      await setDoc(ref, entry);
+      return success({ ...entry, id: entryId });
+    } catch (err) {
+      return failure(`Failed to save entry: ${err.message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  /**
+   * Get a single raw entry by week + team.
+   * @param {number} year
+   * @param {number} weekNumber
+   * @param {string} teamId
+   * @returns {Promise<Result>} Result with SeasonEntry or null
+   */
+  async getEntry(year, weekNumber, teamId) {
+    try {
+      const entryId = `${weekNumber}_${teamId}`;
+      const ref = doc(this.db, 'seasons', String(year), 'entries', entryId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return success(null);
+      return success({ id: snap.id, ...snap.data() });
+    } catch (err) {
+      return failure(`Failed to load entry: ${err.message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  /**
+   * Get all raw entries for weeks 1 through maxWeekNumber.
+   * @param {number} year
+   * @param {number} maxWeekNumber - fetch entries where weekNumber <= this value
+   * @returns {Promise<Result>} Result with SeasonEntry[]
+   */
+  async getEntries(year, maxWeekNumber) {
+    try {
+      const q = query(
+        collection(this.db, 'seasons', String(year), 'entries'),
+        where('weekNumber', '<=', maxWeekNumber),
+        limit(maxWeekNumber * 10),
+      );
+      const snap = await getDocs(q);
+      const entries = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      return success(entries);
+    } catch (err) {
+      return failure(`Failed to load entries: ${err.message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  /**
+   * Atomically publish a computed week result and update season standings.
+   * Uses a write batch: one write for WeekResult, one merge-write for season doc.
+   * @param {number} year
+   * @param {WeekResult} weekResult
+   * @param {{ currentWeek: number, standings: SeasonStandings[] }} seasonUpdates
+   * @returns {Promise<Result>}
+   */
+  async publishWeek(year, weekResult, seasonUpdates) {
     try {
       if (!weekResult || !weekResult.weekNumber) {
         return failure('weekResult.weekNumber is required', 'VALIDATION_ERROR');
       }
-      const ref = doc(
+      const batch = writeBatch(this.db);
+
+      const weekRef = doc(
         this.db,
         'seasons',
         String(year),
         'weeks',
         String(weekResult.weekNumber),
       );
-      await setDoc(ref, weekResult, { merge: true });
-      return success(weekResult);
+      batch.set(weekRef, weekResult);
+
+      const seasonRef = doc(this.db, 'seasons', String(year));
+      batch.set(seasonRef, { year, ...seasonUpdates }, { merge: true });
+
+      await batch.commit();
+      return success({ weekResult, seasonUpdates });
     } catch (err) {
-      return failure(`Failed to save week result: ${err.message}`, 'FIRESTORE_WRITE_ERROR');
+      return failure(`Failed to publish week: ${err.message}`, 'FIRESTORE_WRITE_ERROR');
     }
   }
 

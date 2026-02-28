@@ -7,18 +7,25 @@
 
 /**
  * Season-level trophy / award winners.
+ * Populated at season end; embedded in the seasons/{year} document.
  *
  * @typedef {Object} SeasonAwards
- * @property {string} firstPlaceTeam       - Team name
- * @property {number} firstPlacePoints     - Winning total points
- * @property {string} secondPlaceTeam      - Team name
- * @property {number} secondPlacePoints    - Runner-up total points
- * @property {string} highestAvgShooter    - Shooter name
- * @property {number} highestAvg           - Final average
- * @property {string|null} rookieOfYear    - Shooter name, or null if not awarded
- * @property {number|null} rookieAvg       - Rookie's final average
- * @property {string|null} mostImproved    - Shooter name, or null if not awarded
- * @property {string|null} improvement     - e.g. "51.79%" improvement string
+ * @property {{ shooterName: string, teamName: string, avg: number }}       highestAvg   - Highest average shooter
+ * @property {{ shooterName: string, teamName: string, avg: number }|null}  rookieOfYear - Rookie of the year; null if not awarded
+ * @property {{ shooterName: string, teamName: string, improvement: string }|null} mostImproved - Most improved; null if not awarded
+ */
+
+/**
+ * A single row in the embedded standings array on the season document.
+ * Updated on each week publish for O(1) home page reads.
+ *
+ * @typedef {Object} SeasonStandings
+ * @property {number} rank              - 1-based position
+ * @property {string} teamId            - Firestore team document ID
+ * @property {string} teamName          - Display name
+ * @property {number} totalRankPoints   - Cumulative rank points
+ * @property {number} totalBonusPoints  - Cumulative bonus points
+ * @property {number} totalTargets      - Cumulative targets shot
  */
 
 /**
@@ -36,13 +43,10 @@
  * Firestore path: seasons/{year}
  *
  * @typedef {Object} Season
- * @property {string} id               - Firestore document ID (year as string, e.g. "2025")
- * @property {number} year             - Numeric year, e.g. 2025
- * @property {number} weekCount        - Total scheduled weeks (15, or 12 for 2020)
- * @property {string} startDate        - ISO 8601 date of first week
- * @property {string|null} endDate     - ISO 8601 date of final week; null if season in progress
- * @property {boolean} completed       - True once all weeks are finalized
- * @property {SeasonAwards|null} awards - End-of-season awards; null if season not completed
- * @property {TeamTopShooter[]} topShootersByTeam - Best avg per team (min 6 weeks shot)
- * @property {string[]} teamIds        - Ordered list of team document IDs for this season
+ * @property {string}            id          - Firestore document ID (year as string, e.g. "2025")
+ * @property {number}            year        - Numeric year, e.g. 2025
+ * @property {'active'|'complete'} status    - Season status
+ * @property {number}            currentWeek - Highest published week number
+ * @property {SeasonStandings[]} standings   - Cumulative standings; updated on each week publish
+ * @property {SeasonAwards|null} awards      - End-of-season awards; null if season not completed
  */

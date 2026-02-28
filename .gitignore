@@ -10,6 +10,11 @@
 *-debug.log
 firebase-debug.log
 
+# Service account keys (NEVER commit — grants full Admin SDK access)
+service-account.json
+*-service-account.json
+*-firebase-adminsdk-*.json
+
 # Logs
 logs
 *.log
