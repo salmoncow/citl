@@ -1,0 +1,256 @@
+/**
+ * ScoreRepository — Firestore implementation
+ *
+ * Data access layer for seasons, teams, shooters, and weekly results.
+ * All public methods return a Result object — never throw across module boundaries.
+ *
+ * Architecture: components → modules → services → repositories
+ * This file is the innermost layer; it may only import from firebase/firestore and types.
+ */
+
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  writeBatch,
+  query,
+  where,
+  orderBy,
+  limit,
+  type Firestore,
+} from 'firebase/firestore';
+
+import type { Team, WeekResult, SeasonEntry } from '@/types/score';
+import type { Season, SeasonStandings } from '@/types/season';
+
+// ---------------------------------------------------------------------------
+// Result type + helpers
+// ---------------------------------------------------------------------------
+
+export type Result<T> =
+  | { success: true; data: T }
+  | { success: false; error: string; code: string };
+
+export function success<T>(data: T): Result<T> {
+  return { success: true, data };
+}
+
+export function failure(error: string, code = 'UNKNOWN_ERROR'): Result<never> {
+  return { success: false, error, code };
+}
+
+// ---------------------------------------------------------------------------
+// ScoreRepository
+// ---------------------------------------------------------------------------
+
+export class ScoreRepository {
+  private readonly db: Firestore;
+
+  constructor(db: Firestore) {
+    if (!db) throw new Error('Firestore db instance is required');
+    this.db = db;
+  }
+
+  // -------------------------------------------------------------------------
+  // Seasons
+  // -------------------------------------------------------------------------
+
+  async getSeason(year: number): Promise<Result<Season | null>> {
+    try {
+      const ref = doc(this.db, 'seasons', String(year));
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return success(null);
+      return success({ id: snap.id, ...snap.data() } as Season);
+    } catch (err) {
+      return failure(`Failed to load season ${year}: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  async getAllSeasons(): Promise<Result<Season[]>> {
+    try {
+      const q = query(
+        collection(this.db, 'seasons'),
+        orderBy('year', 'desc'),
+        limit(20),
+      );
+      const snap = await getDocs(q);
+      const seasons = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Season));
+      return success(seasons);
+    } catch (err) {
+      return failure(`Failed to load seasons: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Teams
+  // -------------------------------------------------------------------------
+
+  async getTeams(year: number): Promise<Result<Team[]>> {
+    try {
+      const q = query(
+        collection(this.db, 'seasons', String(year), 'teams'),
+        orderBy('name', 'asc'),
+        limit(20),
+      );
+      const snap = await getDocs(q);
+      const teams = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Team));
+      return success(teams);
+    } catch (err) {
+      return failure(`Failed to load teams for ${year}: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  async getTeam(year: number, teamId: string): Promise<Result<Team | null>> {
+    try {
+      const ref = doc(this.db, 'seasons', String(year), 'teams', teamId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return success(null);
+      return success({ id: snap.id, ...snap.data() } as Team);
+    } catch (err) {
+      return failure(`Failed to load team ${teamId}: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Weekly results
+  // -------------------------------------------------------------------------
+
+  async getWeekResult(year: number, weekNumber: number): Promise<Result<WeekResult | null>> {
+    try {
+      const ref = doc(this.db, 'seasons', String(year), 'weeks', String(weekNumber));
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return success(null);
+      return success({ id: snap.id, ...snap.data() } as unknown as WeekResult);
+    } catch (err) {
+      return failure(
+        `Failed to load week ${weekNumber} for ${year}: ${(err as Error).message}`,
+        'FIRESTORE_READ_ERROR',
+      );
+    }
+  }
+
+  async getAllWeekResults(year: number): Promise<Result<WeekResult[]>> {
+    try {
+      const q = query(
+        collection(this.db, 'seasons', String(year), 'weeks'),
+        orderBy('weekNumber', 'asc'),
+        limit(15),
+      );
+      const snap = await getDocs(q);
+      const weeks = snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as WeekResult));
+      return success(weeks);
+    } catch (err) {
+      return failure(
+        `Failed to load week results for ${year}: ${(err as Error).message}`,
+        'FIRESTORE_READ_ERROR',
+      );
+    }
+  }
+
+  async getLatestWeekResult(year: number): Promise<Result<WeekResult | null>> {
+    try {
+      const q = query(
+        collection(this.db, 'seasons', String(year), 'weeks'),
+        orderBy('weekNumber', 'desc'),
+        limit(1),
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) return success(null);
+      const d = snap.docs[0]!;
+      return success({ id: d.id, ...d.data() } as unknown as WeekResult);
+    } catch (err) {
+      return failure(
+        `Failed to load latest week for ${year}: ${(err as Error).message}`,
+        'FIRESTORE_READ_ERROR',
+      );
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Admin writes
+  // -------------------------------------------------------------------------
+
+  async saveEntry(year: number, entry: SeasonEntry): Promise<Result<SeasonEntry & { id: string }>> {
+    try {
+      if (!entry || !entry.weekNumber || !entry.teamId) {
+        return failure('entry.weekNumber and entry.teamId are required', 'VALIDATION_ERROR');
+      }
+      const entryId = `${entry.weekNumber}_${entry.teamId}`;
+      const ref = doc(this.db, 'seasons', String(year), 'entries', entryId);
+      await setDoc(ref, entry);
+      return success({ ...entry, id: entryId });
+    } catch (err) {
+      return failure(`Failed to save entry: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  async getEntry(year: number, weekNumber: number, teamId: string): Promise<Result<SeasonEntry | null>> {
+    try {
+      const entryId = `${weekNumber}_${teamId}`;
+      const ref = doc(this.db, 'seasons', String(year), 'entries', entryId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return success(null);
+      return success({ id: snap.id, ...snap.data() } as unknown as SeasonEntry);
+    } catch (err) {
+      return failure(`Failed to load entry: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  async getEntries(year: number, maxWeekNumber: number): Promise<Result<SeasonEntry[]>> {
+    try {
+      const q = query(
+        collection(this.db, 'seasons', String(year), 'entries'),
+        where('weekNumber', '<=', maxWeekNumber),
+        limit(maxWeekNumber * 10),
+      );
+      const snap = await getDocs(q);
+      const entries = snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as SeasonEntry));
+      return success(entries);
+    } catch (err) {
+      return failure(`Failed to load entries: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
+    }
+  }
+
+  async publishWeek(
+    year: number,
+    weekResult: WeekResult,
+    seasonUpdates: { currentWeek: number; standings: SeasonStandings[]; status: string },
+  ): Promise<Result<{ weekResult: WeekResult; seasonUpdates: typeof seasonUpdates }>> {
+    try {
+      if (!weekResult || !weekResult.weekNumber) {
+        return failure('weekResult.weekNumber is required', 'VALIDATION_ERROR');
+      }
+      const batch = writeBatch(this.db);
+
+      const weekRef = doc(
+        this.db,
+        'seasons',
+        String(year),
+        'weeks',
+        String(weekResult.weekNumber),
+      );
+      batch.set(weekRef, weekResult);
+
+      const seasonRef = doc(this.db, 'seasons', String(year));
+      batch.set(seasonRef, { year, ...seasonUpdates }, { merge: true });
+
+      await batch.commit();
+      return success({ weekResult, seasonUpdates });
+    } catch (err) {
+      return failure(`Failed to publish week: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  async updateSeason(year: number, updates: Partial<Season>): Promise<Result<Partial<Season>>> {
+    try {
+      const ref = doc(this.db, 'seasons', String(year));
+      await updateDoc(ref, updates as Record<string, unknown>);
+      return success(updates);
+    } catch (err) {
+      return failure(`Failed to update season ${year}: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+}

@@ -5,8 +5,8 @@ The official website for the Central Illinois Trap League — **[citl.club](http
 ## Tech Stack
 
 - **Build Tool**: Vite 7.x (HMR, optimized builds, Terser minification)
-- **JavaScript**: Vanilla ES6+ modules with JSDoc types
-- **Styling**: Plain CSS with CSS custom properties
+- **JavaScript**: TypeScript (strict mode, no emit — Vite strips types via esbuild)
+- **Styling**: CSS design system — two-layer custom properties; system-aware dark/light mode
 - **Hosting**: Firebase Hosting (CDN, automatic HTTPS, SPA routing)
 - **Data**: Firestore (Phase 4+)
 - **Auth**: Firebase Authentication — admin users only (Phase 5+)

@@ -7,9 +7,10 @@
  * No shadow DOM. All user values rendered via textContent (never innerHTML).
  */
 
-import { db } from '@/firebase-config.js';
-import { createRepositoryFactory } from '@/repositories/repository-factory.js';
-import { ScoreService } from '@/services/score-service.js';
+import { db } from '@/firebase-config';
+import { createRepositoryFactory } from '@/repositories/repository-factory';
+import { ScoreService } from '@/services/score-service';
+import type { Team } from '@/types/score';
 
 const factory = createRepositoryFactory({ db });
 const scoreService = new ScoreService(factory.getScoreRepository());
@@ -18,7 +19,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const MAX_WEEKS = 15;
 const MAX_SCORE = 25;
 
-function buildOptions(min, max, label, selected) {
+function buildOptions(min: number, max: number, label: string, selected: number): string {
   let html = '';
   for (let i = min; i <= max; i++) {
     html += `<option value="${i}"${i === selected ? ' selected' : ''}>${label ? `${label} ${i}` : i}</option>`;
@@ -27,9 +28,9 @@ function buildOptions(min, max, label, selected) {
 }
 
 class AdminPanel extends HTMLElement {
-  connectedCallback() {
-    this._teamsData = null;
+  private _teamsData: Team[] | null = null;
 
+  connectedCallback(): void {
     this.innerHTML = `
       <div class="admin-panel">
         <h2>Score Entry</h2>
@@ -73,23 +74,23 @@ class AdminPanel extends HTMLElement {
     this._addShooterRow();
     this._addShooterRow();
 
-    this.querySelector('#ap-add-shooter').addEventListener('click', () => this._addShooterRow());
-    this.querySelector('#ap-clear').addEventListener('click', () => this._clearForm());
-    this.querySelector('#ap-save').addEventListener('click', () => this._saveEntry());
-    this.querySelector('#ap-publish').addEventListener('click', () => this._publishWeek());
-    this.querySelector('#ap-year').addEventListener('change', () => {
-      this._fetchTeamsData();
-      this._loadSavedEntries();
+    this.querySelector('#ap-add-shooter')!.addEventListener('click', () => this._addShooterRow());
+    this.querySelector('#ap-clear')!.addEventListener('click', () => this._clearForm());
+    this.querySelector('#ap-save')!.addEventListener('click', () => void this._saveEntry());
+    this.querySelector('#ap-publish')!.addEventListener('click', () => void this._publishWeek());
+    this.querySelector('#ap-year')!.addEventListener('change', () => {
+      void this._fetchTeamsData();
+      void this._loadSavedEntries();
     });
-    this.querySelector('#ap-week').addEventListener('change', () => this._loadSavedEntries());
-    this.querySelector('#ap-team').addEventListener('change', () => this._populateShooterRows());
+    this.querySelector('#ap-week')!.addEventListener('change', () => void this._loadSavedEntries());
+    this.querySelector('#ap-team')!.addEventListener('change', () => this._populateShooterRows());
 
-    this._fetchTeamsData();
-    this._loadSavedEntries();
+    void this._fetchTeamsData();
+    void this._loadSavedEntries();
   }
 
-  async _fetchTeamsData() {
-    const year = parseInt(this.querySelector('#ap-year').value, 10);
+  private async _fetchTeamsData(): Promise<void> {
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
     const result = await scoreService.getTeams(year);
     if (result.success) {
       this._teamsData = result.data;
@@ -101,8 +102,8 @@ class AdminPanel extends HTMLElement {
     this._populateShooterRows();
   }
 
-  _populateTeamSelect() {
-    const select = this.querySelector('#ap-team');
+  private _populateTeamSelect(): void {
+    const select = this.querySelector<HTMLSelectElement>('#ap-team');
     if (!select) return;
 
     const teams = this._teamsData ?? [];
@@ -122,8 +123,8 @@ class AdminPanel extends HTMLElement {
     }
   }
 
-  _populateShooterRows() {
-    const teamId = this.querySelector('#ap-team')?.value;
+  private _populateShooterRows(): void {
+    const teamId = this.querySelector<HTMLSelectElement>('#ap-team')?.value;
     const tbody = this.querySelector('#ap-shooters-body');
     if (!tbody) return;
 
@@ -140,12 +141,12 @@ class AdminPanel extends HTMLElement {
     for (const shooter of team.shooters) {
       this._addShooterRow(shooter.name);
     }
-    // blank row for mid-season additions
     this._addShooterRow();
   }
 
-  _addShooterRow(prefilledName = '') {
+  private _addShooterRow(prefilledName = ''): void {
     const tbody = this.querySelector('#ap-shooters-body');
+    if (!tbody) return;
     const row = document.createElement('tr');
     row.className = 'ap-shooter-row';
 
@@ -177,7 +178,11 @@ class AdminPanel extends HTMLElement {
     removeBtn.className = 'ap-remove-shooter';
     removeBtn.addEventListener('click', () => tbody.removeChild(row));
 
-    const td = (child) => { const c = document.createElement('td'); c.appendChild(child); return c; };
+    const td = (child: HTMLElement) => {
+      const c = document.createElement('td');
+      c.appendChild(child);
+      return c;
+    };
     row.appendChild(td(nameInput));
     row.appendChild(td(s1));
     row.appendChild(td(s2));
@@ -186,7 +191,7 @@ class AdminPanel extends HTMLElement {
     tbody.appendChild(row);
   }
 
-  _scoreInput() {
+  private _scoreInput(): HTMLInputElement {
     const input = document.createElement('input');
     input.type = 'number';
     input.min = '0';
@@ -196,21 +201,21 @@ class AdminPanel extends HTMLElement {
     return input;
   }
 
-  async _saveEntry() {
-    const year = parseInt(this.querySelector('#ap-year').value, 10);
-    const weekNumber = parseInt(this.querySelector('#ap-week').value, 10);
-    const teamSelect = this.querySelector('#ap-team');
+  private async _saveEntry(): Promise<void> {
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+    const weekNumber = parseInt(this.querySelector<HTMLSelectElement>('#ap-week')!.value, 10);
+    const teamSelect = this.querySelector<HTMLSelectElement>('#ap-team')!;
     const teamName = teamSelect.options[teamSelect.selectedIndex]?.text ?? '';
     const teamId = teamSelect.value;
 
     if (!teamId) { this._setStatus('Team selection is required.', 'error'); return; }
 
-    const shooters = [];
+    const shooters: { name: string; score1: number; score2: number; total: number }[] = [];
     for (const row of this.querySelectorAll('.ap-shooter-row')) {
-      const name = row.querySelector('.ap-shooter-name').value.trim();
-      const inputs = row.querySelectorAll('.ap-score-input');
-      const score1Raw = inputs[0].value;
-      const score2Raw = inputs[1].value;
+      const name = row.querySelector<HTMLInputElement>('.ap-shooter-name')!.value.trim();
+      const inputs = row.querySelectorAll<HTMLInputElement>('.ap-score-input');
+      const score1Raw = inputs[0]?.value ?? '';
+      const score2Raw = inputs[1]?.value ?? '';
 
       if (!name && score1Raw === '' && score2Raw === '') continue;
       if (!name) { this._setStatus('All shooter rows must have a name.', 'error'); return; }
@@ -246,12 +251,12 @@ class AdminPanel extends HTMLElement {
       this._setStatus(`Firestore save failed: ${result.error}`, 'error');
     }
 
-    this._loadSavedEntries();
+    void this._loadSavedEntries();
   }
 
-  async _loadSavedEntries() {
-    const year = parseInt(this.querySelector('#ap-year')?.value, 10);
-    const weekNumber = parseInt(this.querySelector('#ap-week')?.value, 10);
+  private async _loadSavedEntries(): Promise<void> {
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')?.value ?? '0', 10);
+    const weekNumber = parseInt(this.querySelector<HTMLSelectElement>('#ap-week')?.value ?? '0', 10);
     const list = this.querySelector('#ap-saved-list');
     if (!list) return;
 
@@ -293,10 +298,10 @@ class AdminPanel extends HTMLElement {
     }
   }
 
-  async _publishWeek() {
-    const year = parseInt(this.querySelector('#ap-year').value, 10);
-    const weekNumber = parseInt(this.querySelector('#ap-week').value, 10);
-    const btn = this.querySelector('#ap-publish');
+  private async _publishWeek(): Promise<void> {
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+    const weekNumber = parseInt(this.querySelector<HTMLSelectElement>('#ap-week')!.value, 10);
+    const btn = this.querySelector<HTMLButtonElement>('#ap-publish')!;
 
     btn.disabled = true;
     this._setPublishStatus(`Publishing week ${weekNumber}…`, '');
@@ -306,30 +311,27 @@ class AdminPanel extends HTMLElement {
     btn.disabled = false;
 
     if (result.success) {
-      this._setPublishStatus(
-        `Week ${weekNumber} published. Standings updated.`,
-        'success',
-      );
+      this._setPublishStatus(`Week ${weekNumber} published. Standings updated.`, 'success');
     } else {
       this._setPublishStatus(`Publish failed: ${result.error}`, 'error');
     }
   }
 
-  _clearForm() {
-    const teamSelect = this.querySelector('#ap-team');
+  private _clearForm(): void {
+    const teamSelect = this.querySelector<HTMLSelectElement>('#ap-team');
     if (teamSelect) teamSelect.value = '';
     this._populateShooterRows();
     this._setStatus('Form cleared.', '');
   }
 
-  _setStatus(message, type) {
+  private _setStatus(message: string, type: '' | 'success' | 'error'): void {
     const el = this.querySelector('#ap-status');
     if (!el) return;
     el.textContent = message;
     el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
   }
 
-  _setPublishStatus(message, type) {
+  private _setPublishStatus(message: string, type: '' | 'success' | 'error'): void {
     const el = this.querySelector('#ap-publish-status');
     if (!el) return;
     el.textContent = message;

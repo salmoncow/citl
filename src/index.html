@@ -7,37 +7,43 @@
   <meta name="keywords" content="illinois trap, illinois shotgun, central illinois, trap shooting, central illinois trap, shotgun sport, clay pigeon shooting, clay pigeon, trap league, central illinois trap league, citl">
   <title>Central Illinois Trap League</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
 
-  <div class="header">
+  <div class="site-brand">
     <a href="#/" id="header-logo-link">
-      <img src="/assets/images/logo_full_large_white_bg.png" alt="Central Illinois Trap League" class="logo">
+      <img src="/assets/images/logo_full_large_white_bg.png" alt="Central Illinois Trap League" class="site-brand__logo">
     </a>
   </div>
 
-  <div class="topnav" id="topnav">
-    <!-- Burger button (mobile) — listener attached by navigation.js -->
-    <a href="javascript:void(0);" class="burger" id="burger-btn" aria-label="Toggle navigation">
-      <i class="fa fa-bars"></i>
-    </a>
+  <nav class="site-nav" id="topnav">
+    <!-- Burger button (mobile) — listener attached by navigation.ts -->
+    <button class="site-nav__burger" id="burger-btn" aria-label="Toggle navigation">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 448 512" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M0 96h448v42.7H0zm0 177.3h448V316H0zm0 177.3h448V512H0z"/>
+      </svg>
+    </button>
 
-    <!-- Nav links — data-route used by navigation.js for active-link highlighting -->
-    <a href="#/" data-route="/">
-      <i class="fa fa-home"></i>
+    <!-- Nav links — data-route used by navigation.ts for active-link highlighting -->
+    <a href="#/" class="site-nav__link site-nav__link--home" data-route="/">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 576 512" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M575.8 255.5c0 18-15 32.1-32 32.1h-32l.7 160.2c0 2.7-.2 5.4-.5 8.1V472c0 22.1-17.9 40-40 40H456c-1.1 0-2.2 0-3.3-.1-1.4.1-2.8.1-4.2.1H416c-22.1 0-40-17.9-40-40V448H200v24c0 22.1-17.9 40-40 40H120.6c-1.6 0-3.2-.1-4.8-.2-1.6.1-3.2.2-4.8.2H96c-22.1 0-40-17.9-40-40V368l.7-160.2h-32C7.6 207.6.5 194.5.5 181.4c0-11.6 4.4-22.8 12.3-31.3L224 0l348.2 150.2c7.9 8.4 12.3 19.5 12.3 31.3z"/>
+      </svg>
     </a>
-    <a href="#/scorecards" data-route="/scorecards">Scorecards</a>
-    <a href="#/rules" data-route="/rules">Rules</a>
-    <a href="#/about" data-route="/about">About</a>
-    <a href="#/downloads" data-route="/downloads">Downloads</a>
+    <a href="#/scorecards" class="site-nav__link" data-route="/scorecards">Scorecards</a>
+    <a href="#/rules" class="site-nav__link" data-route="/rules">Rules</a>
+    <a href="#/about" class="site-nav__link" data-route="/about">About</a>
+    <a href="#/downloads" class="site-nav__link" data-route="/downloads">Downloads</a>
 
-    <!-- Resources dropdown — listener attached by navigation.js -->
-    <div class="dropdown">
-      <button class="dropbtn" id="dropbtn" aria-haspopup="true" aria-expanded="false">
-        Resources <i class="fa fa-caret-down"></i>
+    <!-- Resources dropdown — listener attached by navigation.ts -->
+    <div class="site-nav__dropdown">
+      <button class="site-nav__dropbtn" id="dropbtn" aria-haspopup="true" aria-expanded="false">
+        Resources
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 320 512" aria-hidden="true" focusable="false">
+          <path fill="currentColor" d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"/>
+        </svg>
       </button>
-      <div class="dropdown-content" id="dropdown">
+      <div class="site-nav__dropdown-menu" id="dropdown">
         <a href="https://www.darnalls.com/" target="_blank" rel="noopener noreferrer">Darnall's Gun Works</a>
         <a href="https://shootingsportsouvenirs.com/" target="_blank" rel="noopener noreferrer">Shooting Sport Souvenirs</a>
         <a href="https://shootata.com/" target="_blank" rel="noopener noreferrer">Amateur Trapshooting Association (ATA)</a>
@@ -45,10 +51,10 @@
     </div>
 
     <!-- Scroll progress bar -->
-    <div class="progress-container">
-      <div class="progress-bar" id="myBar"></div>
+    <div class="site-nav__progress-track">
+      <div class="site-nav__progress-bar" id="myBar"></div>
     </div>
-  </div>
+  </nav>
 
   <!-- Router renders view content here -->
   <div class="main" id="main-content"></div>
@@ -60,6 +66,6 @@
     <p><a href="mailto:tyler.citl@gmail.com">Contact Us</a></p>
   </div>
 
-  <script type="module" src="/main.js"></script>
+  <script type="module" src="/main.ts"></script>
 </body>
 </html>

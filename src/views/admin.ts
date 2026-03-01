@@ -2,15 +2,11 @@
  * adminView — Admin portal login gate + panel container
  *
  * Pure HTML-string factory. No business logic.
- * Auth state toggling (show/hide sections) is handled in main.js _initAdminAuth().
+ * Auth state toggling (show/hide sections) is handled in main.ts _initAdminAuth().
  * Score entry is handled by the <admin-panel> Custom Element.
  */
 
-/**
- * Returns the HTML string for the admin view.
- * @returns {string}
- */
-export function adminView() {
+export function adminView(): string {
   return `
     <h1>Admin Portal</h1>
 

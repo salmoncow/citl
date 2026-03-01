@@ -1,14 +1,8 @@
 /**
  * aboutView — About the league
- *
- * Migrated from src/spa/about.html (main content only).
  */
 
-/**
- * Returns the HTML string for the about view.
- * @returns {string}
- */
-export function aboutView() {
+export function aboutView(): string {
   return `
     <h2>Trap Shooting</h2>
 
@@ -57,16 +51,15 @@ export function aboutView() {
 
     <p>The league shoots at Darnall's Gun Works &amp; Ranges just west of Bloomington, IL.</p>
 
-    <p style="text-align: center;">
+    <div class="map-container">
       <iframe
         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3035.9655576267696!2d-89.15142168474101!3d40.45389927936085!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x880b126c9e636233%3A0x68ace82319b9a7a6!2sDarnall&#39;s+Gun+Works+%26+Ranges!5e0!3m2!1sen!2sus!4v1555177381099!5m2!1sen!2sus"
         width="80%"
         height="350"
-        frameborder="0"
         style="border:0"
         allowfullscreen
         title="Darnall's Gun Works &amp; Ranges map">
       </iframe>
-    </p>
+    </div>
   `;
 }
