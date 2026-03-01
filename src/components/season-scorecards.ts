@@ -8,7 +8,7 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
-import { computeShooterAverage } from '@/services/scoring-engine';
+import { computeShooterAverage, computeShooterStartingAvg, isShooterRookie } from '@/services/scoring-engine';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult } from '@/types/score';
 
@@ -39,11 +39,34 @@ function lastWord(name: string): string {
   return parts[parts.length - 1] ?? '';
 }
 
+/** Build a name-keyed map of average weekly total from prior-year published week results. */
+function _buildPriorAvgMap(weekResults: WeekResult[]): Map<string, number> {
+  const acc = new Map<string, { total: number; weeks: number }>();
+  for (const wr of weekResults) {
+    for (const tr of wr.teamResults ?? []) {
+      for (const s of tr.shooterScores ?? []) {
+        if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
+        const key = s.name.toLowerCase().trim();
+        const cur = acc.get(key) ?? { total: 0, weeks: 0 };
+        acc.set(key, { total: cur.total + s.total, weeks: cur.weeks + 1 });
+      }
+    }
+  }
+  const result = new Map<string, number>();
+  for (const [key, { total, weeks }] of acc) {
+    result.set(key, parseFloat((total / weeks).toFixed(1)));
+  }
+  return result;
+}
+
 class SeasonScorecards extends HTMLElement {
   private _seasons: Season[] = [];
   private _selectedYear: number | null = null;
   private _teams: Team[] = [];
   private _allWeekResults: WeekResult[] = [];
+  private _prior1Teams: Team[] = [];
+  private _prior2Teams: Team[] = [];
+  private _prior1AvgMap: Map<string, number> = new Map();
 
   connectedCallback(): void {
     this.innerHTML = `
@@ -63,10 +86,10 @@ class SeasonScorecards extends HTMLElement {
 
     // Event delegation for collapsible buttons
     this.querySelector('#sc-content')!.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (!target.matches('button.collapsible')) return;
-      target.classList.toggle('active');
-      const panel = target.nextElementSibling;
+      const btn = (e.target as HTMLElement).closest('button.collapsible') as HTMLElement | null;
+      if (!btn) return;
+      btn.classList.toggle('active');
+      const panel = btn.nextElementSibling;
       if (panel?.classList.contains('scorecard')) {
         (panel as HTMLElement).style.maxHeight =
           (panel as HTMLElement).style.maxHeight ? '' : `${panel.scrollHeight}px`;
@@ -106,13 +129,20 @@ class SeasonScorecards extends HTMLElement {
   private async _loadYear(year: number): Promise<void> {
     this.querySelector('#sc-content')!.innerHTML = '<p>Loading&hellip;</p>';
 
-    const [teamsResult, weeksResult] = await Promise.all([
+    const [teamsResult, weeksResult, prior1TeamsResult, prior2TeamsResult, prior1WeeksResult] = await Promise.all([
       scoreService.getTeams(year),
       scoreService.getAllWeekResults(year),
+      scoreService.getTeams(year - 1),
+      scoreService.getTeams(year - 2),
+      scoreService.getAllWeekResults(year - 1),
     ]);
 
     this._teams = teamsResult.success ? (teamsResult.data ?? []) : [];
     this._allWeekResults = weeksResult.success ? (weeksResult.data ?? []) : [];
+    this._prior1Teams = prior1TeamsResult.success ? prior1TeamsResult.data : [];
+    this._prior2Teams = prior2TeamsResult.success ? prior2TeamsResult.data : [];
+    const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
+    this._prior1AvgMap = _buildPriorAvgMap(prior1Weeks);
 
     if (!weeksResult.success && !teamsResult.success) {
       this.querySelector('#sc-content')!.innerHTML = `<p>Error loading scorecard data for ${year}.</p>`;
@@ -160,11 +190,14 @@ class SeasonScorecards extends HTMLElement {
 
     if (teamDoc?.shooters?.length) {
       for (const s of teamDoc.shooters) {
+        const key = s.name.toLowerCase().trim();
+        const computedAvg = this._prior1AvgMap.get(key) ?? computeShooterStartingAvg(s.name, this._prior1Teams);
+        const computedRookie = isShooterRookie(s.name, this._prior1Teams, this._prior2Teams);
         shooterMap.set(s.name, {
           name: s.name,
-          rookie: s.rookie ?? false,
+          rookie: computedRookie,
           isDummy: s.name.toUpperCase().includes('DUMMY'),
-          startingAvg: s.startingAvg ?? '-',
+          startingAvg: computedAvg,
           scores: new Array<number | null>(15).fill(null),
         });
       }
@@ -187,11 +220,14 @@ class SeasonScorecards extends HTMLElement {
 
       for (const ss of teamResult.shooterScores ?? []) {
         if (!shooterMap.has(ss.name)) {
+          const key = ss.name.toLowerCase().trim();
+          const computedAvg = this._prior1AvgMap.get(key) ?? computeShooterStartingAvg(ss.name, this._prior1Teams);
+          const computedRookie = isShooterRookie(ss.name, this._prior1Teams, this._prior2Teams);
           shooterMap.set(ss.name, {
             name: ss.name,
-            rookie: false,
+            rookie: computedRookie,
             isDummy: ss.name.toUpperCase().includes('DUMMY'),
-            startingAvg: '-',
+            startingAvg: computedAvg,
             scores: new Array<number | null>(15).fill(null),
           });
         }
@@ -278,11 +314,13 @@ class SeasonScorecards extends HTMLElement {
     const rpCells = rankPoints.map((v) => `<td>${fmt(v)}</td>`).join('');
     const bpCells = bonusPoints.map((v) => `<td>${fmt(v)}</td>`).join('');
 
+    const chevronSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 320 512" class="collapsible__chevron" aria-hidden="true" focusable="false"><path fill="currentColor" d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"/></svg>`;
+
     return `
-    <button class="collapsible">${teamName}</button>
+    <button class="collapsible"><span class="collapsible__label">${teamName}</span>${chevronSvg}</button>
     <div class="scorecard">
       <table class="scorecard-tables">
-        <tr><th></th><th></th>${headerCells}<th>Weeks Shot</th><th>Avg</th></tr>
+        <tr><th></th><th>R</th>${headerCells}<th>Weeks Shot</th><th>Avg</th></tr>
         ${shooterRows}
         <tr><td>TOTAL TARGETS</td><td></td><td></td>${targetCells}<td></td><td></td></tr>
         <tr><td>RANK POINTS</td><td></td><td></td>${rpCells}<td></td><td></td></tr>
