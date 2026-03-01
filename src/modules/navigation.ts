@@ -10,27 +10,34 @@
 
 import type { User } from 'firebase/auth';
 
+const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+const SUN_SVG  = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
 export class NavigationModule {
   private _topnav: HTMLElement | null = null;
   private _dropdown: HTMLElement | null = null;
-  private _progressBar: HTMLElement | null = null;
   private _burgerBtn: HTMLButtonElement | null = null;
   private _dropBtn: HTMLButtonElement | null = null;
+  private _themeToggleBtn: HTMLButtonElement | null = null;
   private _dropdownOpen = false;
 
-  private readonly _boundScrollHandler = this._updateProgressBar.bind(this);
   private readonly _boundClickOutsideHandler = this._handleClickOutside.bind(this);
   private readonly _boundKeydownHandler = this._handleKeydown.bind(this);
 
   init(): void {
     this._topnav = document.getElementById('topnav');
     this._dropdown = document.getElementById('dropdown');
-    this._progressBar = document.getElementById('myBar');
     this._burgerBtn = document.getElementById('burger-btn') as HTMLButtonElement | null;
     this._dropBtn = document.getElementById('dropbtn') as HTMLButtonElement | null;
+    this._themeToggleBtn = document.getElementById('theme-toggle') as HTMLButtonElement | null;
 
     if (this._burgerBtn) {
       this._burgerBtn.addEventListener('click', () => this._toggleBurgerNav());
+    }
+
+    if (this._themeToggleBtn) {
+      this._themeToggleBtn.addEventListener('click', () => this._toggleTheme());
+      this._updateThemeIcon();
     }
 
     if (this._dropBtn) {
@@ -40,7 +47,6 @@ export class NavigationModule {
       });
     }
 
-    window.addEventListener('scroll', this._boundScrollHandler);
     document.addEventListener('click', this._boundClickOutsideHandler);
     document.addEventListener('keydown', this._boundKeydownHandler);
   }
@@ -71,7 +77,6 @@ export class NavigationModule {
   }
 
   destroy(): void {
-    window.removeEventListener('scroll', this._boundScrollHandler);
     document.removeEventListener('click', this._boundClickOutsideHandler);
     document.removeEventListener('keydown', this._boundKeydownHandler);
   }
@@ -109,11 +114,26 @@ export class NavigationModule {
     }
   }
 
-  private _updateProgressBar(): void {
-    if (!this._progressBar) return;
-    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const scrollPercent = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-    this._progressBar.style.width = `${scrollPercent}%`;
+  private _getCurrentIsDark(): boolean {
+    const attr = document.documentElement.getAttribute('data-color-scheme');
+    if (attr === 'dark') return true;
+    if (attr === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
+
+  private _toggleTheme(): void {
+    const next = this._getCurrentIsDark() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-color-scheme', next);
+    localStorage.setItem('color-scheme', next);
+    this._updateThemeIcon();
+  }
+
+  private _updateThemeIcon(): void {
+    if (!this._themeToggleBtn) return;
+    const isDark = this._getCurrentIsDark();
+    // Show sun (→ switch to light) in dark mode; moon (→ switch to dark) in light mode
+    this._themeToggleBtn.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    this._themeToggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+
 }

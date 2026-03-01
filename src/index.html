@@ -7,16 +7,22 @@
   <meta name="keywords" content="illinois trap, illinois shotgun, central illinois, trap shooting, central illinois trap, shotgun sport, clay pigeon shooting, clay pigeon, trap league, central illinois trap league, citl">
   <title>Central Illinois Trap League</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <!-- Prevent flash of wrong theme by applying stored preference before first paint -->
+  <script>
+    (function () {
+      var s = localStorage.getItem('color-scheme');
+      if (s === 'dark' || s === 'light') document.documentElement.setAttribute('data-color-scheme', s);
+    })();
+  </script>
 </head>
 <body>
 
-  <div class="site-brand">
-    <a href="#/" id="header-logo-link">
-      <img src="/assets/images/logo_full_large_white_bg.png" alt="Central Illinois Trap League" class="site-brand__logo">
-    </a>
-  </div>
-
   <nav class="site-nav" id="topnav">
+    <!-- Logo in nav — links to home -->
+    <a href="#/" class="site-nav__logo-link" id="header-logo-link">
+      <span class="site-nav__logo-text">CITL</span>
+    </a>
+
     <!-- Burger button (mobile) — listener attached by navigation.ts -->
     <button class="site-nav__burger" id="burger-btn" aria-label="Toggle navigation">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 448 512" aria-hidden="true" focusable="false">
@@ -25,46 +31,54 @@
     </button>
 
     <!-- Nav links — data-route used by navigation.ts for active-link highlighting -->
-    <a href="#/" class="site-nav__link site-nav__link--home" data-route="/">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 576 512" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M575.8 255.5c0 18-15 32.1-32 32.1h-32l.7 160.2c0 2.7-.2 5.4-.5 8.1V472c0 22.1-17.9 40-40 40H456c-1.1 0-2.2 0-3.3-.1-1.4.1-2.8.1-4.2.1H416c-22.1 0-40-17.9-40-40V448H200v24c0 22.1-17.9 40-40 40H120.6c-1.6 0-3.2-.1-4.8-.2-1.6.1-3.2.2-4.8.2H96c-22.1 0-40-17.9-40-40V368l.7-160.2h-32C7.6 207.6.5 194.5.5 181.4c0-11.6 4.4-22.8 12.3-31.3L224 0l348.2 150.2c7.9 8.4 12.3 19.5 12.3 31.3z"/>
-      </svg>
-    </a>
-    <a href="#/scorecards" class="site-nav__link" data-route="/scorecards">Scorecards</a>
-    <a href="#/rules" class="site-nav__link" data-route="/rules">Rules</a>
-    <a href="#/about" class="site-nav__link" data-route="/about">About</a>
-    <a href="#/downloads" class="site-nav__link" data-route="/downloads">Downloads</a>
-
-    <!-- Resources dropdown — listener attached by navigation.ts -->
-    <div class="site-nav__dropdown">
-      <button class="site-nav__dropbtn" id="dropbtn" aria-haspopup="true" aria-expanded="false">
-        Resources
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 320 512" aria-hidden="true" focusable="false">
-          <path fill="currentColor" d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"/>
+    <div class="site-nav__links">
+      <a href="#/" class="site-nav__link site-nav__link--home" data-route="/">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" focusable="false">
+          <path fill-rule="evenodd" d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7z" clip-rule="evenodd"/>
         </svg>
-      </button>
-      <div class="site-nav__dropdown-menu" id="dropdown">
-        <a href="https://www.darnalls.com/" target="_blank" rel="noopener noreferrer">Darnall's Gun Works</a>
-        <a href="https://shootingsportsouvenirs.com/" target="_blank" rel="noopener noreferrer">Shooting Sport Souvenirs</a>
-        <a href="https://shootata.com/" target="_blank" rel="noopener noreferrer">Amateur Trapshooting Association (ATA)</a>
+      </a>
+      <a href="#/scorecards" class="site-nav__link" data-route="/scorecards">Scorecards</a>
+      <a href="#/rules" class="site-nav__link" data-route="/rules">Rules</a>
+      <a href="#/about" class="site-nav__link" data-route="/about">About</a>
+      <a href="#/downloads" class="site-nav__link" data-route="/downloads">Downloads</a>
+
+      <!-- Resources dropdown — listener attached by navigation.ts -->
+      <div class="site-nav__dropdown">
+        <button class="site-nav__dropbtn" id="dropbtn" aria-haspopup="true" aria-expanded="false">
+          Resources
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 320 512" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"/>
+          </svg>
+        </button>
+        <div class="site-nav__dropdown-menu" id="dropdown">
+          <a href="https://www.darnalls.com/" target="_blank" rel="noopener noreferrer">Darnall's Gun Works</a>
+          <a href="https://shootingsportsouvenirs.com/" target="_blank" rel="noopener noreferrer">Shooting Sport Souvenirs</a>
+          <a href="https://shootata.com/" target="_blank" rel="noopener noreferrer">Amateur Trapshooting Association (ATA)</a>
+        </div>
       </div>
     </div>
 
-    <!-- Scroll progress bar -->
-    <div class="site-nav__progress-track">
-      <div class="site-nav__progress-bar" id="myBar"></div>
-    </div>
+    <!-- Theme toggle — always visible, far right of nav -->
+    <button class="site-nav__theme-toggle" id="theme-toggle" aria-label="Switch to dark mode">
+      <!-- Moon: default shown until JS runs (assumes light mode) -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+
   </nav>
 
   <!-- Router renders view content here -->
-  <div class="main" id="main-content"></div>
+  <main class="main" id="main-content"></main>
 
-  <div class="footer">
-    <p>Central Illinois Trap League is an independently organized, non-discriminating shooting sport.
-    We encourage families and friends to participate. We remind everyone to keep it legal by shooting
-    with an adult if under age, or otherwise having a valid FOID card.</p>
-    <p><a href="mailto:tyler.citl@gmail.com">Contact Us</a></p>
-  </div>
+  <footer class="footer">
+    <p>Central Illinois Trap League is an independently organized, non-discriminating shooting sport. We encourage families and friends to participate. We remind everyone to keep it legal by shooting with an adult if under age, or otherwise having a valid FOID card.</p>
+    <p>Central Illinois Trap League &middot; 2026 &middot;
+      <a href="#/admin" class="footer__admin-link">Admin</a>
+    </p>
+  </footer>
+
+  <div id="toast-container" aria-live="polite"></div>
 
   <script type="module" src="/main.ts"></script>
 </body>
