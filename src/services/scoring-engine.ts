@@ -11,6 +11,7 @@
 
 import type { ScorecardShooter, SeasonData } from '@/types/scorecard';
 import type { ComputedAwards } from '@/types/season';
+import type { Team } from '@/types/score';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -244,6 +245,54 @@ export function computeSeasonTotals(seasonData: SeasonData): SeasonData {
  * Compute the Most Improved percentage score.
  * Formula: 100 × (finalAvg − startingAvg) / (50 − startingAvg)
  */
+/**
+ * Compute the starting average for a shooter entering a new season.
+ * If found in any prior-year team with a non-null finalAvg, returns that value.
+ * Otherwise returns 35 (new-shooter default).
+ * Name matching is case-insensitive and trimmed. Pure — no I/O.
+ */
+export function computeShooterStartingAvg(
+  shooterName: string,
+  priorYearTeams: Team[],
+): number {
+  const key = shooterName.toLowerCase().trim();
+  for (const team of priorYearTeams) {
+    for (const shooter of team.shooters) {
+      if (shooter.name.toLowerCase().trim() === key && shooter.finalAvg !== null) {
+        return shooter.finalAvg;
+      }
+    }
+  }
+  return 35;
+}
+
+/**
+ * Determine if a shooter is a rookie for the upcoming season.
+ * Rookie = NOT found on any team roster in BOTH of the two prior years.
+ * Presence on a prior-year team roster (regardless of weeksShot) → not a rookie.
+ * Pure — no I/O.
+ */
+export function isShooterRookie(
+  shooterName: string,
+  prior1YearTeams: Team[],
+  prior2YearTeams: Team[],
+): boolean {
+  const key = shooterName.toLowerCase().trim();
+
+  const shotInYear = (teams: Team[]): boolean => {
+    for (const team of teams) {
+      for (const shooter of team.shooters) {
+        if (shooter.name.toLowerCase().trim() === key) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  return !shotInYear(prior1YearTeams) && !shotInYear(prior2YearTeams);
+}
+
 export function computeMostImprovedScore(startingAvg: number, finalAvg: number): number {
   return (100 * (finalAvg - startingAvg)) / (50 - startingAvg);
 }

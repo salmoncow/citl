@@ -8,7 +8,7 @@
  */
 
 import { success, failure, type Result } from '@/repositories/score-repository';
-import { computeSeasonTotals } from '@/services/scoring-engine';
+import { computeSeasonTotals, computeShooterStartingAvg, isShooterRookie } from '@/services/scoring-engine';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
@@ -258,6 +258,137 @@ export class ScoreService {
     return publishResult;
   }
 
+  async updateTeamMeta(year: number, teamId: string, name: string, captain: string): Promise<Result<void>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+    if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
+    const trimmedName = name.trim();
+    const trimmedCaptain = captain.trim();
+    if (!trimmedName) return failure('Team name is required', 'VALIDATION_ERROR');
+    if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
+
+    const check = await this.repository.getTeam(year, teamId);
+    if (!check.success) return check;
+    if (check.data === null) return failure(`Team "${teamId}" not found`, 'NOT_FOUND');
+
+    const result = await this.repository.updateTeamMeta(year, teamId, {
+      name: trimmedName,
+      captain: trimmedCaptain,
+    });
+    if (result.success) this.cache.delete(`teams:${year}`);
+    return result;
+  }
+
+  async createTeam(year: number, name: string, captain: string): Promise<Result<Team>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+    const trimmedName = name.trim();
+    const trimmedCaptain = captain.trim();
+    if (!trimmedName) return failure('Team name is required', 'VALIDATION_ERROR');
+    if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
+
+    const teamId = _slugify(trimmedName);
+
+    // Duplicate check
+    const existing = await this.repository.getTeam(year, teamId);
+    if (existing.success && existing.data !== null) {
+      return failure(`Team "${trimmedName}" already exists for ${year}`, 'DUPLICATE_ERROR');
+    }
+
+    const newTeam: Omit<Team, 'id'> = {
+      name: trimmedName,
+      captain: trimmedCaptain,
+      shooters: [],
+      totals: { targets: [], rankPoints: [], bonusPoints: [] },
+    };
+
+    const result = await this.repository.createTeam(year, teamId, newTeam);
+    if (result.success) this.cache.delete(`teams:${year}`);
+    return result;
+  }
+
+  async computeRosterDefaults(year: number, teamId: string): Promise<Result<Team>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+    if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
+
+    // Fire all four reads in parallel — one round-trip
+    const [currentResult, prior1Result, prior2Result, prior1WeeksResult] = await Promise.all([
+      this.repository.getTeam(year, teamId),
+      this.repository.getTeams(year - 1),
+      this.repository.getTeams(year - 2),
+      this.repository.getAllWeekResults(year - 1),
+    ]);
+
+    if (!currentResult.success) return currentResult;
+    if (currentResult.data === null) {
+      return failure(`Team "${teamId}" not found for ${year}`, 'NOT_FOUND');
+    }
+
+    // Prior-year failures → empty arrays (graceful degradation, not a hard error)
+    const prior1Teams = prior1Result.success ? prior1Result.data : [];
+    const prior2Teams = prior2Result.success ? prior2Result.data : [];
+    const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
+
+    // Build name → avg map from prior-year published week results (covers historical seasons)
+    const prior1AvgMap = _buildAvgMapFromWeekResults(prior1Weeks);
+
+    const updatedShooters = currentResult.data.shooters.map((shooter) => {
+      const key = shooter.name.toLowerCase().trim();
+      return {
+        ...shooter,
+        startingAvg: prior1AvgMap.get(key)
+          ?? computeShooterStartingAvg(shooter.name, prior1Teams),
+        rookie: isShooterRookie(shooter.name, prior1Teams, prior2Teams),
+      };
+    });
+
+    return success({ ...currentResult.data, shooters: updatedShooters });
+  }
+
+  async deleteTeam(year: number, teamId: string): Promise<Result<void>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+    if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
+
+    const result = await this.repository.deleteTeam(year, teamId);
+    if (result.success) this.cache.delete(`teams:${year}`);
+    return result;
+  }
+
+  async saveTeamRoster(
+    year: number,
+    teamId: string,
+    captain: string,
+    shooters: Team['shooters'],
+  ): Promise<Result<void>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+    if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
+    const trimmedCaptain = captain.trim();
+    if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
+    for (const s of shooters) {
+      if (!s.name.trim()) return failure('All shooter names are required', 'VALIDATION_ERROR');
+    }
+
+    // Verify team exists before updating
+    const check = await this.repository.getTeam(year, teamId);
+    if (!check.success) return check;
+    if (check.data === null) return failure(`Team "${teamId}" not found for ${year}`, 'NOT_FOUND');
+
+    const result = await this.repository.saveTeamRoster(year, teamId, {
+      captain: trimmedCaptain,
+      shooters,
+    });
+    if (result.success) this.cache.delete(`teams:${year}`);
+    return result;
+  }
+
   // -------------------------------------------------------------------------
   // Cache control
   // -------------------------------------------------------------------------
@@ -351,6 +482,42 @@ function _buildSeasonData(
   });
 
   return { season: year, teams };
+}
+
+function _buildAvgMapFromWeekResults(weekResults: WeekResult[]): Map<string, number> {
+  const acc = new Map<string, { total: number; weeks: number }>();
+  for (const wr of weekResults) {
+    for (const tr of wr.teamResults ?? []) {
+      for (const s of tr.shooterScores ?? []) {
+        if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
+        const key = s.name.toLowerCase().trim();
+        const cur = acc.get(key) ?? { total: 0, weeks: 0 };
+        acc.set(key, { total: cur.total + s.total, weeks: cur.weeks + 1 });
+      }
+    }
+  }
+  const result = new Map<string, number>();
+  for (const [key, { total, weeks }] of acc) {
+    result.set(key, parseFloat((total / weeks).toFixed(1)));
+  }
+  return result;
+}
+
+function _buildAvgMapFromEntries(entries: SeasonEntry[]): Map<string, number> {
+  const acc = new Map<string, { total: number; weeks: number }>();
+  for (const entry of entries) {
+    for (const s of entry.shooters) {
+      if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
+      const key = s.name.toLowerCase().trim();
+      const cur = acc.get(key) ?? { total: 0, weeks: 0 };
+      acc.set(key, { total: cur.total + s.total, weeks: cur.weeks + 1 });
+    }
+  }
+  const result = new Map<string, number>();
+  for (const [key, { total, weeks }] of acc) {
+    result.set(key, parseFloat((total / weeks).toFixed(1)));
+  }
+  return result;
 }
 
 function _computeStandings(computed: SeasonData, throughWeek: number): SeasonStandings[] {

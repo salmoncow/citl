@@ -15,6 +15,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   writeBatch,
   query,
   where,
@@ -251,6 +252,64 @@ export class ScoreRepository {
       return success(updates);
     } catch (err) {
       return failure(`Failed to update season ${year}: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  async updateTeamMeta(
+    year: number,
+    teamId: string,
+    updates: { name: string; captain: string },
+  ): Promise<Result<void>> {
+    try {
+      const ref = doc(this.db, 'seasons', String(year), 'teams', teamId);
+      await updateDoc(ref, updates as Record<string, unknown>);
+      return success(undefined);
+    } catch (err) {
+      return failure(`Failed to update team: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  async createTeam(
+    year: number,
+    teamId: string,
+    team: Omit<Team, 'id'>,
+  ): Promise<Result<Team>> {
+    try {
+      const batch = writeBatch(this.db);
+      // Ensure season document exists (merge — don't overwrite existing data)
+      const seasonRef = doc(this.db, 'seasons', String(year));
+      batch.set(seasonRef, { year }, { merge: true });
+      // Create team document
+      const teamRef = doc(this.db, 'seasons', String(year), 'teams', teamId);
+      batch.set(teamRef, team);
+      await batch.commit();
+      return success({ id: teamId, ...team });
+    } catch (err) {
+      return failure(`Failed to create team: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  async deleteTeam(year: number, teamId: string): Promise<Result<void>> {
+    try {
+      const ref = doc(this.db, 'seasons', String(year), 'teams', teamId);
+      await deleteDoc(ref);
+      return success(undefined);
+    } catch (e) {
+      return failure(String(e), 'FIRESTORE_ERROR');
+    }
+  }
+
+  async saveTeamRoster(
+    year: number,
+    teamId: string,
+    updates: { captain: string; shooters: Team['shooters'] },
+  ): Promise<Result<void>> {
+    try {
+      const ref = doc(this.db, 'seasons', String(year), 'teams', teamId);
+      await updateDoc(ref, updates as Record<string, unknown>);
+      return success(undefined);
+    } catch (err) {
+      return failure(`Failed to save roster: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
     }
   }
 }
