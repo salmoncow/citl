@@ -74,6 +74,8 @@ class AdminPanel extends HTMLElement {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>W0 Avg</th>
+                  <th>Rookie</th>
                   <th></th>
                 </tr>
               </thead>
@@ -108,7 +110,6 @@ class AdminPanel extends HTMLElement {
             <tbody id="ap-shooters-body"></tbody>
           </table>
           <div class="admin-actions">
-            <button id="ap-clear" class="btn-secondary">Clear</button>
             <button id="ap-save" class="btn-primary">Save Entry</button>
           </div>
           <p id="ap-status" class="admin-status" aria-live="polite"></p>
@@ -146,7 +147,6 @@ class AdminPanel extends HTMLElement {
       void this._loadSavedEntries();
     });
     this.querySelector('#ap-team')!.addEventListener('change', () => void this._populateShooterRows());
-    this.querySelector('#ap-clear')!.addEventListener('click', () => this._clearForm());
     this.querySelector('#ap-save')!.addEventListener('click', () => void this._saveEntry());
     this.querySelector('#ap-publish')!.addEventListener('click', () => void this._publishWeek());
 
@@ -457,12 +457,15 @@ class AdminPanel extends HTMLElement {
     if (teamId) {
       const entryResult = await scoreService.getEntry(year, weekNumber, teamId);
       if (entryResult.success && entryResult.data !== null) {
+        const team = this._teamsData?.find((t) => t.id === teamId);
+        const rosterNames = team ? new Set(team.shooters.map((s) => s.name)) : null;
         const entryNames = new Set(entryResult.data.shooters.map((s) => s.name));
         for (const s of entryResult.data.shooters) {
+          // Skip shooters who have since been removed from the roster
+          if (rosterNames && !rosterNames.has(s.name)) continue;
           this._addShooterRow(s.name, s.score1 ?? undefined, s.score2 ?? undefined);
         }
         // Add any roster members not yet in the saved entry
-        const team = this._teamsData?.find((t) => t.id === teamId);
         if (team) {
           for (const shooter of team.shooters) {
             if (!entryNames.has(shooter.name)) this._addShooterRow(shooter.name);
@@ -476,11 +479,8 @@ class AdminPanel extends HTMLElement {
     const team = this._teamsData?.find((t) => t.id === teamId);
     if (team) {
       for (const shooter of team.shooters) this._addShooterRow(shooter.name);
-      this._addShooterRow();
-    } else {
-      this._addShooterRow();
-      this._addShooterRow();
     }
+    // no-team-selected branch: leave tbody empty (user must select a team)
   }
 
   private _addShooterRow(prefilledName = '', score1?: number, score2?: number): void {
@@ -488,15 +488,19 @@ class AdminPanel extends HTMLElement {
     if (!tbody) return;
     const row = document.createElement('tr');
     row.className = 'ap-shooter-row';
+    if (prefilledName) row.dataset['name'] = prefilledName;
 
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.className = 'ap-shooter-name';
-    nameInput.placeholder = 'Shooter name';
-    nameInput.autocomplete = 'off';
+    const nameCell = document.createElement('td');
     if (prefilledName) {
-      nameInput.value = prefilledName;
-      nameInput.readOnly = true;
+      nameCell.textContent = prefilledName;
+      nameCell.className = 'ap-shooter-name-cell';
+    } else {
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'ap-shooter-name';
+      nameInput.placeholder = 'Shooter name';
+      nameInput.autocomplete = 'off';
+      nameCell.appendChild(nameInput);
     }
 
     const s1 = this._scoreInput();
@@ -517,22 +521,25 @@ class AdminPanel extends HTMLElement {
     s2.addEventListener('input', updateTotal);
     updateTotal();
 
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.textContent = '✕';
-    removeBtn.className = 'ap-remove-shooter';
-    removeBtn.addEventListener('click', () => tbody.removeChild(row));
-
     const td = (child: HTMLElement) => {
       const c = document.createElement('td');
       c.appendChild(child);
       return c;
     };
-    row.appendChild(td(nameInput));
+    row.appendChild(nameCell);
     row.appendChild(td(s1));
     row.appendChild(td(s2));
     row.appendChild(totalCell);
-    row.appendChild(td(removeBtn));
+    if (!prefilledName) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = '✕';
+      removeBtn.className = 'ap-remove-shooter';
+      removeBtn.addEventListener('click', () => tbody.removeChild(row));
+      row.appendChild(td(removeBtn));
+    } else {
+      row.appendChild(document.createElement('td')); // keep column alignment
+    }
     tbody.appendChild(row);
   }
 
@@ -542,7 +549,6 @@ class AdminPanel extends HTMLElement {
     input.min = '0';
     input.max = String(MAX_SCORE);
     input.className = 'ap-score-input';
-    input.placeholder = '0';
     return input;
   }
 
@@ -557,16 +563,18 @@ class AdminPanel extends HTMLElement {
 
     const shooters: { name: string; score1: number; score2: number; total: number }[] = [];
     for (const row of this.querySelectorAll('.ap-shooter-row')) {
-      const name = row.querySelector<HTMLInputElement>('.ap-shooter-name')!.value.trim();
+      const rowEl = row as HTMLElement;
+      const name = (rowEl.dataset['name'] ?? row.querySelector<HTMLInputElement>('.ap-shooter-name')?.value ?? '').trim();
       const inputs = row.querySelectorAll<HTMLInputElement>('.ap-score-input');
       const score1Raw = inputs[0]?.value ?? '';
       const score2Raw = inputs[1]?.value ?? '';
 
-      if (!name && score1Raw === '' && score2Raw === '') continue;
+      // Both inputs empty → shooter did not shoot; exclude from entry (stays null in scoring engine)
+      if (score1Raw === '' && score2Raw === '') continue;
       if (!name) { this._setStatus('All shooter rows must have a name.', 'error'); return; }
 
-      const score1 = parseInt(score1Raw, 10);
-      const score2 = parseInt(score2Raw, 10);
+      const score1 = score1Raw !== '' ? parseInt(score1Raw, 10) : 0;
+      const score2 = score2Raw !== '' ? parseInt(score2Raw, 10) : 0;
       if (isNaN(score1) || score1 < 0 || score1 > MAX_SCORE) {
         this._setStatus(`Score 1 for "${name}" must be 0–${MAX_SCORE}.`, 'error'); return;
       }
@@ -665,13 +673,6 @@ class AdminPanel extends HTMLElement {
     }
   }
 
-  private _clearForm(): void {
-    const teamSelect = this.querySelector<HTMLSelectElement>('#ap-team');
-    if (teamSelect) teamSelect.value = '';
-    this._setStatus('', '');
-    void this._populateShooterRows();
-  }
-
   // ── Roster editor ────────────────────────────────────────────────────────
 
   private _loadRosterForTeam(): void {
@@ -747,6 +748,40 @@ class AdminPanel extends HTMLElement {
     nameInput.autocomplete = 'off';
     if (shooter) nameInput.value = shooter.name;
 
+    const avgSpan = document.createElement('span');
+    avgSpan.className = 'ap-roster-avg-display';
+    const rookieSpan = document.createElement('span');
+    rookieSpan.className = 'ap-roster-rookie-display';
+
+    if (shooter !== undefined) {
+      avgSpan.textContent = String(shooter.startingAvg);
+      rookieSpan.textContent = shooter.rookie ? 'Yes' : 'No';
+    } else {
+      avgSpan.textContent = '—';
+      rookieSpan.textContent = '—';
+
+      nameInput.addEventListener('blur', () => {
+        const name = nameInput.value.trim();
+        if (!name) return;
+        const year = parseInt(
+          this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10,
+        );
+        avgSpan.textContent = '…';
+        rookieSpan.textContent = '…';
+        void scoreService.computeShooterDefaults(year, name).then((result) => {
+          if (!result.success) {
+            avgSpan.textContent = '35';
+            rookieSpan.textContent = 'Yes';
+            return;
+          }
+          row.dataset['startingAvg'] = String(result.data.startingAvg);
+          row.dataset['rookie']      = String(result.data.rookie);
+          avgSpan.textContent   = String(result.data.startingAvg);
+          rookieSpan.textContent = result.data.rookie ? 'Yes' : 'No';
+        });
+      });
+    }
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.textContent = '✕';
@@ -766,6 +801,12 @@ class AdminPanel extends HTMLElement {
       return c;
     };
     row.appendChild(td(nameInput));
+    const avgCell = document.createElement('td');
+    avgCell.appendChild(avgSpan);
+    row.appendChild(avgCell);
+    const rookieCell = document.createElement('td');
+    rookieCell.appendChild(rookieSpan);
+    row.appendChild(rookieCell);
     row.appendChild(td(removeBtn));
     tbody.appendChild(row);
   }
