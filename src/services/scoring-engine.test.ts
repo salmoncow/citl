@@ -9,6 +9,10 @@ import type { ScorecardShooter, SeasonData, Team as ScTeam, TeamTotals } from '@
 import type { Team as PriorTeam } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
 import {
+  mean,
+  isDummyName,
+  normalizeShooterName,
+  getLastWord,
   computeGoingInAverage,
   computeShooterAverage,
   computeTeamTargets,
@@ -21,6 +25,7 @@ import {
   computeMostImprovedScore,
   computeSeasonAwards,
   computeSeasonTotals,
+  computeDummyScore,
 } from './scoring-engine';
 
 // ---------------------------------------------------------------------------
@@ -84,6 +89,71 @@ function makePriorTeam(shooters: Shooter[]): PriorTeam {
     totals: { targets: [], rankPoints: [], bonusPoints: [] },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Block 0: primitive helpers
+// ---------------------------------------------------------------------------
+
+describe('mean', () => {
+  it('returns 0 for empty array', () => {
+    expect(mean([])).toBe(0);
+  });
+
+  it('returns the single value for a one-element array', () => {
+    expect(mean([42])).toBe(42);
+  });
+
+  it('returns arithmetic mean for multiple values', () => {
+    expect(mean([10, 20, 30])).toBeCloseTo(20, 10);
+  });
+});
+
+describe('isDummyName', () => {
+  it('returns true for "DUMMY" (uppercase)', () => {
+    expect(isDummyName('Smith DUMMY1')).toBe(true);
+  });
+
+  it('returns true for mixed-case dummy', () => {
+    expect(isDummyName('Smith Dummy2')).toBe(true);
+  });
+
+  it('returns false for a real shooter name', () => {
+    expect(isDummyName('Alice Smith')).toBe(false);
+  });
+
+  it('returns false for a name containing "dummy" as a substring of a word', () => {
+    // Sanity: this won't appear in real data, but the rule is substring match.
+    expect(isDummyName('McDummy')).toBe(true);
+  });
+});
+
+describe('normalizeShooterName', () => {
+  it('lowercases and trims the name', () => {
+    expect(normalizeShooterName('  Alice Smith  ')).toBe('alice smith');
+  });
+
+  it('returns already-normalized name unchanged', () => {
+    expect(normalizeShooterName('alice smith')).toBe('alice smith');
+  });
+});
+
+describe('getLastWord', () => {
+  it('returns the last word of a multi-word name', () => {
+    expect(getLastWord('John Smith')).toBe('Smith');
+  });
+
+  it('returns the name itself when there is only one word', () => {
+    expect(getLastWord('Smith')).toBe('Smith');
+  });
+
+  it('returns last word of a three-word name', () => {
+    expect(getLastWord('Mary Jane Watson')).toBe('Watson');
+  });
+
+  it('trims surrounding whitespace before splitting', () => {
+    expect(getLastWord('  John Smith  ')).toBe('Smith');
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Block 1: computeGoingInAverage
@@ -174,6 +244,47 @@ describe('computeTeamTargets', () => {
       makeScorecardShooter('DUMMY 1', 35, [30, null], { isDummy: true }),
     ];
     expect(computeTeamTargets(shooters, 0)).toBe(30);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Block 3b: computeDummyScore
+// ---------------------------------------------------------------------------
+
+describe('computeDummyScore', () => {
+  it('returns null when realScores is empty (team had no entry)', () => {
+    expect(computeDummyScore([])).toBeNull();
+  });
+
+  it('single shooter score 20 → round(20)−5 = 15', () => {
+    expect(computeDummyScore([20])).toBe(15);
+  });
+
+  it('two shooters 20 and 22 → round(21)−5 = 16', () => {
+    expect(computeDummyScore([20, 22])).toBe(16);
+  });
+
+  it('rounds mean before subtracting: mean([19,22])=20.5 → round=21 → 16', () => {
+    expect(computeDummyScore([19, 22])).toBe(16);
+  });
+
+  it('rounds mean before subtracting: mean([18,22])=20 → round=20 → 15', () => {
+    expect(computeDummyScore([18, 22])).toBe(15);
+  });
+
+  it('floors result at 0 when mean is less than 5', () => {
+    // mean([3]) = 3 → 3−5 = −2 → 0
+    expect(computeDummyScore([3])).toBe(0);
+  });
+
+  it('floors result at 0 when mean equals exactly 5', () => {
+    // mean([5]) = 5 → 5−5 = 0
+    expect(computeDummyScore([5])).toBe(0);
+  });
+
+  it('four shooters with high scores', () => {
+    // mean([40,42,38,44]) = 41 → 41−5 = 36
+    expect(computeDummyScore([40, 42, 38, 44])).toBe(36);
   });
 });
 
