@@ -7,8 +7,8 @@
 
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
-import { computeShooterAverage, computeShooterStartingAvg, isShooterRookie } from '@/services/scoring-engine';
+import { ScoreService, buildPriorAvgMap } from '@/services/score-service';
+import { computeShooterAverage, computeShooterStartingAvg, isShooterRookie, mean, isDummyName, normalizeShooterName, getLastWord } from '@/services/scoring-engine';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult } from '@/types/score';
 
@@ -34,30 +34,7 @@ function fmt(val: number | null | undefined | '-' | string): string {
   return val === null || val === undefined || val === '-' ? '-' : String(val);
 }
 
-function lastWord(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return parts[parts.length - 1] ?? '';
-}
 
-/** Build a name-keyed map of average weekly total from prior-year published week results. */
-function _buildPriorAvgMap(weekResults: WeekResult[]): Map<string, number> {
-  const acc = new Map<string, { total: number; weeks: number }>();
-  for (const wr of weekResults) {
-    for (const tr of wr.teamResults ?? []) {
-      for (const s of tr.shooterScores ?? []) {
-        if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
-        const key = s.name.toLowerCase().trim();
-        const cur = acc.get(key) ?? { total: 0, weeks: 0 };
-        acc.set(key, { total: cur.total + s.total, weeks: cur.weeks + 1 });
-      }
-    }
-  }
-  const result = new Map<string, number>();
-  for (const [key, { total, weeks }] of acc) {
-    result.set(key, parseFloat((total / weeks).toFixed(1)));
-  }
-  return result;
-}
 
 class SeasonScorecards extends HTMLElement {
   private _seasons: Season[] = [];
@@ -142,7 +119,7 @@ class SeasonScorecards extends HTMLElement {
     this._prior1Teams = prior1TeamsResult.success ? prior1TeamsResult.data : [];
     this._prior2Teams = prior2TeamsResult.success ? prior2TeamsResult.data : [];
     const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
-    this._prior1AvgMap = _buildPriorAvgMap(prior1Weeks);
+    this._prior1AvgMap = buildPriorAvgMap(prior1Weeks, this._prior1Teams);
 
     if (!weeksResult.success && !teamsResult.success) {
       this.querySelector('#sc-content')!.innerHTML = `<p>Error loading scorecard data for ${year}.</p>`;
@@ -190,13 +167,13 @@ class SeasonScorecards extends HTMLElement {
 
     if (teamDoc?.shooters?.length) {
       for (const s of teamDoc.shooters) {
-        const key = s.name.toLowerCase().trim();
+        const key = normalizeShooterName(s.name);
         const computedAvg = this._prior1AvgMap.get(key) ?? computeShooterStartingAvg(s.name, this._prior1Teams);
         const computedRookie = isShooterRookie(s.name, this._prior1Teams, this._prior2Teams);
         shooterMap.set(s.name, {
           name: s.name,
           rookie: computedRookie,
-          isDummy: s.name.toUpperCase().includes('DUMMY'),
+          isDummy: isDummyName(s.name),
           startingAvg: computedAvg,
           scores: new Array<number | null>(15).fill(null),
         });
@@ -220,14 +197,14 @@ class SeasonScorecards extends HTMLElement {
 
       for (const ss of teamResult.shooterScores ?? []) {
         if (!shooterMap.has(ss.name)) {
-          const key = ss.name.toLowerCase().trim();
-          const computedAvg = this._prior1AvgMap.get(key) ?? computeShooterStartingAvg(ss.name, this._prior1Teams);
-          const computedRookie = isShooterRookie(ss.name, this._prior1Teams, this._prior2Teams);
+          // Only add shooters not already on the current roster if they are dummies.
+          // Real shooters removed from the roster must not reappear via published data.
+          if (!isDummyName(ss.name)) continue;
           shooterMap.set(ss.name, {
             name: ss.name,
-            rookie: computedRookie,
-            isDummy: ss.name.toUpperCase().includes('DUMMY'),
-            startingAvg: computedAvg,
+            rookie: false,
+            isDummy: true,
+            startingAvg: '-',
             scores: new Array<number | null>(15).fill(null),
           });
         }
@@ -238,7 +215,7 @@ class SeasonScorecards extends HTMLElement {
     // Pad to 2 DUMMY placeholder rows per team
     const existingDummies = [...shooterMap.values()].filter((s) => s.isDummy);
     if (existingDummies.length < 2) {
-      const prefix = lastWord(teamName);
+      const prefix = getLastWord(teamName);
       for (let n = existingDummies.length + 1; n <= 2; n++) {
         const dName = `${prefix} DUMMY${n}`;
         if (!shooterMap.has(dName)) {
@@ -258,8 +235,7 @@ class SeasonScorecards extends HTMLElement {
       .filter((s) => !s.isDummy && s.scores[0] !== null)
       .map((s) => s.scores[0] as number);
     if (realW1Scores.length > 0) {
-      const dummyW0Display =
-        Math.round((realW1Scores.reduce((a, b) => a + b, 0) / realW1Scores.length) * 10) / 10;
+      const dummyW0Display = Math.round(mean(realW1Scores) * 10) / 10;
       for (const s of shooterMap.values()) {
         if (s.isDummy) s.w0Display = dummyW0Display;
       }
@@ -270,8 +246,7 @@ class SeasonScorecards extends HTMLElement {
       .filter((s) => !s.isDummy && typeof s.startingAvg === 'number')
       .map((s) => s.startingAvg as number);
     if (realNumericStartingAvgs.length > 0) {
-      const dummyEffectiveW0 =
-        realNumericStartingAvgs.reduce((a, b) => a + b, 0) / realNumericStartingAvgs.length;
+      const dummyEffectiveW0 = mean(realNumericStartingAvgs);
       for (const s of shooterMap.values()) {
         if (s.isDummy) s.effectiveW0 = dummyEffectiveW0;
       }
@@ -287,7 +262,7 @@ class SeasonScorecards extends HTMLElement {
       const finalAvg = w0 !== null
         ? Math.round(computeShooterAverage(w0, s.scores, 14) * 10) / 10
         : nonNull.length > 0
-          ? Math.round((nonNull.reduce((a, b) => a + b, 0) / nonNull.length) * 10) / 10
+          ? Math.round(mean(nonNull) * 10) / 10
           : (s.w0Display ?? s.startingAvg);
       return { ...s, weeksShot, finalAvg };
     });

@@ -14,12 +14,31 @@ import type { ComputedAwards } from '@/types/season';
 import type { Team } from '@/types/score';
 
 // ---------------------------------------------------------------------------
-// Internal helpers
+// Primitive helpers — exported for reuse across service and component layers
 // ---------------------------------------------------------------------------
 
-function mean(arr: number[]): number {
+export function mean(arr: number[]): number {
   if (arr.length === 0) return 0;
   return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+/** True if the shooter name represents a dummy/substitute slot. */
+export function isDummyName(name: string): boolean {
+  return name.toUpperCase().includes('DUMMY');
+}
+
+/** Canonical key for case-insensitive name comparisons. */
+export function normalizeShooterName(name: string): string {
+  return name.toLowerCase().trim();
+}
+
+/**
+ * Last word of a name (typically the surname), used to prefix dummy names.
+ * Returns the full name when it contains no spaces.
+ */
+export function getLastWord(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return parts[parts.length - 1] ?? name;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,6 +90,16 @@ export function computeTeamTargets(shooters: ScorecardShooter[], weekIndex: numb
     const score = s.scores[weekIndex];
     return score != null ? sum + score : sum;
   }, 0);
+}
+
+/**
+ * Compute the dummy (substitute) score for an absent shooter.
+ * Rule: mean of real shooters' actual scores that night, minus 5, floored at 0.
+ * Returns null when no real-shooter scores are provided (team had no entry that week).
+ */
+export function computeDummyScore(realScores: number[]): number | null {
+  if (realScores.length === 0) return null;
+  return Math.max(0, Math.round(mean(realScores)) - 5);
 }
 
 /**
@@ -255,10 +284,10 @@ export function computeShooterStartingAvg(
   shooterName: string,
   priorYearTeams: Team[],
 ): number {
-  const key = shooterName.toLowerCase().trim();
+  const key = normalizeShooterName(shooterName);
   for (const team of priorYearTeams) {
     for (const shooter of team.shooters) {
-      if (shooter.name.toLowerCase().trim() === key && shooter.finalAvg !== null) {
+      if (normalizeShooterName(shooter.name) === key && shooter.finalAvg !== null) {
         return shooter.finalAvg;
       }
     }
@@ -277,12 +306,12 @@ export function isShooterRookie(
   prior1YearTeams: Team[],
   prior2YearTeams: Team[],
 ): boolean {
-  const key = shooterName.toLowerCase().trim();
+  const key = normalizeShooterName(shooterName);
 
   const shotInYear = (teams: Team[]): boolean => {
     for (const team of teams) {
       for (const shooter of team.shooters) {
-        if (shooter.name.toLowerCase().trim() === key) {
+        if (normalizeShooterName(shooter.name) === key) {
           return true;
         }
       }

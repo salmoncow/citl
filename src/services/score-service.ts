@@ -8,10 +8,10 @@
  */
 
 import { success, failure, type Result } from '@/repositories/score-repository';
-import { computeSeasonTotals, computeShooterStartingAvg, isShooterRookie } from '@/services/scoring-engine';
+import { computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, normalizeShooterName, getLastWord } from '@/services/scoring-engine';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season, SeasonStandings } from '@/types/season';
-import type { Team, WeekResult, SeasonEntry } from '@/types/score';
+import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
 import type { SeasonData, ScorecardShooter } from '@/types/scorecard';
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -203,7 +203,7 @@ export class ScoreService {
     for (const entry of entries) {
       if (entry.weekNumber !== weekNumber) continue;
       const dummyCount = entry.shooters.filter(
-        (s) => s.name.toUpperCase().includes('DUMMY'),
+        (s) => isDummyName(s.name),
       ).length;
       if (dummyCount > 2) {
         return failure(
@@ -226,13 +226,19 @@ export class ScoreService {
       const teamEntry = entries.find(
         (e) => e.weekNumber === weekNumber && e.teamName === team.name,
       );
+      // DNS shooters and auto-created dummy positions were given computed dummy scores in
+      // _buildSeasonData. Include all of them in shooterScores (score1/score2 null = computed).
+      const entryShooterNames = new Set(teamEntry?.shooters.map((s) => s.name) ?? []);
+      const extraScores: ShooterScore[] = team.shooters
+        .filter((s) => !entryShooterNames.has(s.name) && s.scores[wi] !== null)
+        .map((s) => ({ name: s.name, score1: null, score2: null, total: s.scores[wi] as number }));
       return {
         teamId: _slugify(team.name),
         teamName: team.name,
         targets: team.totals.targets[wi] ?? 0,
         rankPoints: team.totals.rankPoints[wi] ?? 0,
         bonusPoints: team.totals.bonusPoints[wi] ?? 0,
-        shooterScores: teamEntry ? teamEntry.shooters : [],
+        shooterScores: [...(teamEntry?.shooters ?? []), ...extraScores],
       };
     });
 
@@ -334,10 +340,10 @@ export class ScoreService {
     const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
 
     // Build name → avg map from prior-year published week results (covers historical seasons)
-    const prior1AvgMap = _buildAvgMapFromWeekResults(prior1Weeks);
+    const prior1AvgMap = buildPriorAvgMap(prior1Weeks, prior1Teams);
 
     const updatedShooters = currentResult.data.shooters.map((shooter) => {
-      const key = shooter.name.toLowerCase().trim();
+      const key = normalizeShooterName(shooter.name);
       return {
         ...shooter,
         startingAvg: prior1AvgMap.get(key)
@@ -347,6 +353,33 @@ export class ScoreService {
     });
 
     return success({ ...currentResult.data, shooters: updatedShooters });
+  }
+
+  async computeShooterDefaults(
+    year: number,
+    shooterName: string,
+  ): Promise<Result<{ startingAvg: number; rookie: boolean }>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100)
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    if (!shooterName.trim())
+      return failure('shooterName is required', 'VALIDATION_ERROR');
+
+    const [prior1Result, prior2Result, prior1WeeksResult] = await Promise.all([
+      this.repository.getTeams(year - 1),
+      this.repository.getTeams(year - 2),
+      this.repository.getAllWeekResults(year - 1),
+    ]);
+
+    const prior1Teams = prior1Result.success ? prior1Result.data : [];
+    const prior2Teams = prior2Result.success ? prior2Result.data : [];
+    const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
+    const prior1AvgMap = buildPriorAvgMap(prior1Weeks, prior1Teams);
+
+    const key = normalizeShooterName(shooterName);
+    return success({
+      startingAvg: prior1AvgMap.get(key) ?? computeShooterStartingAvg(shooterName, prior1Teams),
+      rookie: isShooterRookie(shooterName, prior1Teams, prior2Teams),
+    });
   }
 
   async deleteTeam(year: number, teamId: string): Promise<Result<void>> {
@@ -412,6 +445,7 @@ function _slugify(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, '-');
 }
 
+
 function _buildSeasonData(
   year: number,
   firestoreTeams: Team[],
@@ -440,7 +474,7 @@ function _buildSeasonData(
       return {
         name: rs.name,
         rookie: rs.rookie ?? false,
-        isDummy: rs.name.toUpperCase().includes('DUMMY'),
+        isDummy: isDummyName(rs.name),
         startingAvg: rs.startingAvg ?? 35,
         scores: new Array<number | null>(WEEK_COUNT).fill(null),
         weeksShot: null,
@@ -451,7 +485,7 @@ function _buildSeasonData(
     const subShooters: ScorecardShooter[] = [...seenNames].map((name) => ({
       name,
       rookie: false,
-      isDummy: name.toUpperCase().includes('DUMMY'),
+      isDummy: isDummyName(name),
       startingAvg: 35,
       scores: new Array<number | null>(WEEK_COUNT).fill(null),
       weeksShot: null,
@@ -467,6 +501,44 @@ function _buildSeasonData(
       for (const entryShooter of entry.shooters) {
         const shooter = shooters.find((s) => s.name === entryShooter.name);
         if (shooter) shooter.scores[wi] = entryShooter.total;
+      }
+
+      // Compute dummy score: mean of real shooters' actual scores that night, minus 5.
+      const realScores = shooters
+        .filter((s) => !s.isDummy && s.scores[wi] !== null)
+        .map((s) => s.scores[wi] as number);
+      const dummyScore = computeDummyScore(realScores);
+      if (dummyScore === null) continue; // no real shooters shot this week → nothing to fill
+
+      // Dummy positions pass: a team always fields 5 scoring slots per week.
+      // Create/fill auto-named DUMMY entries until total scored positions reaches 5.
+      const scoredCount = shooters.filter((s) => s.scores[wi] !== null).length;
+      const dummiesNeeded = Math.min(2, Math.max(0, 5 - scoredCount));
+      if (dummiesNeeded > 0) {
+        const prefix = getLastWord(firestoreTeam.name);
+        let dummyNum = 0;
+        let filled = 0;
+        while (filled < dummiesNeeded && dummyNum < 10) {
+          dummyNum++;
+          const dName = `${prefix} DUMMY${dummyNum}`;
+          let dummyShooter = shooters.find((s) => s.name === dName);
+          if (!dummyShooter) {
+            dummyShooter = {
+              name: dName,
+              rookie: false,
+              isDummy: true,
+              startingAvg: 35,
+              scores: new Array<number | null>(WEEK_COUNT).fill(null),
+              weeksShot: null,
+              finalAvg: 0,
+            };
+            shooters.push(dummyShooter);
+          }
+          if (dummyShooter.scores[wi] === null) {
+            dummyShooter.scores[wi] = dummyScore;
+            filled++;
+          }
+        }
       }
     }
 
@@ -484,41 +556,53 @@ function _buildSeasonData(
   return { season: year, teams };
 }
 
-function _buildAvgMapFromWeekResults(weekResults: WeekResult[]): Map<string, number> {
+/**
+ * Build a name→finalAvg map from published WeekResult documents, applying the
+ * same business rule as computeShooterAverage: when a shooter has fewer than
+ * 2 weeks of actual scores, the starting average is blended into the mean.
+ * priorTeams is required for that startingAvg lookup.
+ *
+ * Exported so the scorecard component can reuse this logic without duplicating it.
+ */
+export function buildPriorAvgMap(weekResults: WeekResult[], priorTeams: Team[]): Map<string, number> {
+  // Build startingAvg lookup keyed by lowercased name (first match wins)
+  const startingAvgMap = new Map<string, number>();
+  for (const team of priorTeams) {
+    for (const shooter of team.shooters) {
+      const key = normalizeShooterName(shooter.name);
+      if (!startingAvgMap.has(key)) {
+        startingAvgMap.set(key, shooter.startingAvg ?? 35);
+      }
+    }
+  }
+
   const acc = new Map<string, { total: number; weeks: number }>();
   for (const wr of weekResults) {
     for (const tr of wr.teamResults ?? []) {
       for (const s of tr.shooterScores ?? []) {
         if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
-        const key = s.name.toLowerCase().trim();
+        const key = normalizeShooterName(s.name);
         const cur = acc.get(key) ?? { total: 0, weeks: 0 };
         acc.set(key, { total: cur.total + s.total, weeks: cur.weeks + 1 });
       }
     }
   }
+
   const result = new Map<string, number>();
   for (const [key, { total, weeks }] of acc) {
-    result.set(key, parseFloat((total / weeks).toFixed(1)));
+    let avg: number;
+    if (weeks < 2) {
+      // Mirror computeShooterAverage: blend startingAvg into mean until ≥ 2 weeks shot
+      const startingAvg = startingAvgMap.get(key) ?? 35;
+      avg = (startingAvg + total) / (weeks + 1);
+    } else {
+      avg = total / weeks;
+    }
+    result.set(key, parseFloat(avg.toFixed(1)));
   }
   return result;
 }
 
-function _buildAvgMapFromEntries(entries: SeasonEntry[]): Map<string, number> {
-  const acc = new Map<string, { total: number; weeks: number }>();
-  for (const entry of entries) {
-    for (const s of entry.shooters) {
-      if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
-      const key = s.name.toLowerCase().trim();
-      const cur = acc.get(key) ?? { total: 0, weeks: 0 };
-      acc.set(key, { total: cur.total + s.total, weeks: cur.weeks + 1 });
-    }
-  }
-  const result = new Map<string, number>();
-  for (const [key, { total, weeks }] of acc) {
-    result.set(key, parseFloat((total / weeks).toFixed(1)));
-  }
-  return result;
-}
 
 function _computeStandings(computed: SeasonData, throughWeek: number): SeasonStandings[] {
   const rows = computed.teams.map((team) => {
