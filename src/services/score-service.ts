@@ -277,12 +277,21 @@ export class ScoreService {
     const check = await this.repository.getTeam(year, teamId);
     if (!check.success) return check;
     if (check.data === null) return failure(`Team "${teamId}" not found`, 'NOT_FOUND');
+    const oldName = check.data.name;
 
     const result = await this.repository.updateTeamMeta(year, teamId, {
       name: trimmedName,
       captain: trimmedCaptain,
     });
-    if (result.success) this.cache.delete(`teams:${year}`);
+    if (!result.success) return result;
+    this.cache.delete(`teams:${year}`);
+
+    if (trimmedName !== oldName) {
+      const cascade = await this.repository.cascadeTeamRename(
+        year, teamId, oldName, trimmedName,
+      );
+      if (!cascade.success) return cascade;
+    }
     return result;
   }
 

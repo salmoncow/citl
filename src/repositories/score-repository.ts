@@ -269,6 +269,48 @@ export class ScoreRepository {
     }
   }
 
+  async cascadeTeamRename(
+    year: number,
+    _teamId: string,
+    oldName: string,
+    newName: string,
+  ): Promise<Result<void>> {
+    try {
+      const batch = writeBatch(this.db);
+
+      // 1. Entries: query by teamName field
+      const entriesRef = collection(this.db, 'seasons', String(year), 'entries');
+      const entriesSnap = await getDocs(
+        query(entriesRef, where('teamName', '==', oldName)),
+      );
+      for (const d of entriesSnap.docs) {
+        batch.update(d.ref, { teamName: newName });
+      }
+
+      // 2. Week results: read all weeks, patch the matching teamResults element
+      const weeksRef = collection(this.db, 'seasons', String(year), 'weeks');
+      const weeksSnap = await getDocs(weeksRef);
+      for (const d of weeksSnap.docs) {
+        const data = d.data() as { teamResults?: { teamName: string }[] };
+        const results = data.teamResults ?? [];
+        if (results.some((r) => r.teamName === oldName)) {
+          const updated = results.map((r) =>
+            r.teamName === oldName ? { ...r, teamName: newName } : r,
+          );
+          batch.update(d.ref, { teamResults: updated });
+        }
+      }
+
+      await batch.commit();
+      return success(undefined);
+    } catch (err) {
+      return failure(
+        `Failed to cascade team rename: ${(err as Error).message}`,
+        'FIRESTORE_WRITE_ERROR',
+      );
+    }
+  }
+
   async createTeam(
     year: number,
     teamId: string,
