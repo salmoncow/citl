@@ -1,14 +1,8 @@
 /**
  * rulesView — League rules
- *
- * Migrated from src/spa/rules.html (main content only).
  */
 
-/**
- * Returns the HTML string for the rules view.
- * @returns {string}
- */
-export function rulesView() {
+export function rulesView(): string {
   return `
     <h2>1. General</h2>
     <ol>

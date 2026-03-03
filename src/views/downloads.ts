@@ -1,15 +1,8 @@
 /**
  * downloadsView — Score sheet PDF downloads
- *
- * Migrated from src/spa/downloads.html (main content only).
- * Fixed: date labels corrected from 2024 to 2025.
  */
 
-/**
- * Returns the HTML string for the downloads view.
- * @returns {string}
- */
-export function downloadsView() {
+export function downloadsView(): string {
   return `
     <h2>2025 Score Sheets</h2>
     <table class="scoresheets-table">

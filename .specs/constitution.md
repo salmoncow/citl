@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.0.1
-**Last Updated:** 2026-02-28
+**Version:** 1.1.0
+**Last Updated:** 2026-03-01
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-05-27)
 
@@ -57,7 +57,7 @@ detailed patterns in `.prompts/` for implementation guidance.
 - Document patterns clearly for future AI refactoring
 - Maintain clear migration paths between architectural phases
 - Current technology choices:
-  - Vanilla JS + Web Components → Lit (95% AI-assisted migration)
+  - TypeScript + Web Components → Lit (95% AI-assisted migration)
   - Lit → React (80% AI-assisted migration)
 
 **Reference**: [.prompts/meta/architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md) §II.1
@@ -68,31 +68,33 @@ detailed patterns in `.prompts/` for implementation guidance.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-02-28
-**Last Architecture Review**: 2026-02-27
+**Last Updated**: 2026-03-01
+**Last Architecture Review**: 2026-03-01
 
 | Domain | Current Phase | Target Phase | Status |
 |--------|---------------|--------------|--------|
-| **UI Components** | Phase 1: Vanilla JS views (no Web Components yet) | Phase 2: Web Components | Scorecards + home view are functional; first component is standings-table (Phase 4) |
-| **Security** | Phase 1: No auth; public read only | Phase 2: Firebase Auth (Google) + Firestore rules | Deferred to Phase 5 (admin-only auth) |
-| **Data** | Phase 2: Firestore live reads | Phase 2: Firestore live reads | Firestore live (us-central1); security rules deployed; admin writes + standings in Firestore; scorecards page uses static JSON per §II.5 |
+| **UI Components** | Phase 2: 3 Web Components | Phase 3: Lit migration | `home-standings`, `season-scorecards`, `admin-panel` Web Components live |
+| **Security** | Phase 2: Firebase Auth (Google) + Firestore rules | Phase 2: Complete | Admin-only auth with custom claim `admin: true`; Firestore rules enforce server-side |
+| **Data** | Phase 2: Firestore live reads + writes | Phase 2: Complete | Firestore drives home page and scorecards page; JSON scorecard files remain permanent static assets per §II.5 |
 | **Testing** | Phase 1: Manual browser testing | Phase 2: Vitest unit tests | Trigger: 10+ modules or production launch |
 | **Deployment** | Phase 1: Manual (`npm run deploy`) | Phase 2: GitHub Actions CI/CD | Deferred to Phase 6 (after DNS cutover) |
 | **Monitoring** | Phase 1: Manual Firebase console checks | Phase 2: Firebase Performance Monitoring | Deferred until production launch |
 | **Cost** | Phase 1: Firebase Spark free tier | Phase 2: Optimized free tier | Monitor — currently near 0% usage |
 | **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 | Avoid additions |
 
-**Key Metrics** (as of 2026-02-27):
+**Key Metrics** (as of 2026-03-01):
 - **Active Users**: 0 (pre-launch — still on AWS/CloudFront)
-- **SPA Views**: 5 (`home`, `scorecards`, `rules`, `about`, `downloads`)
+- **SPA Views**: 6 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`)
 - **Modules**: 7 (`main`, `router`, `navigation`, `ui`, `firebase-config`, `score-service`, `standings-service`)
 - **Repositories**: 2 (`score-repository`, `repository-factory`)
-- **Types**: 3 (`score`, `shooter`, `season`)
+- **Types**: 4 (`score`, `shooter`, `season`, `scorecard`)
 - **Data files**: 7 JSON scorecard seasons (2019–2025)
 - **Team Size**: 1 developer
 - **Firebase Usage**: Hosting configured (DNS not yet cutover); Firestore live; Spark free tier usage <5%
 
-**Migration Context** (current as of 2026-02-28):
+**TypeScript migration** (Phase 9): All 22 source `.js` files converted to `.ts`; `allowJs: false`; `strict: true`; `noUncheckedIndexedAccess: true`.
+
+**Migration Context** (current as of 2026-03-01):
 - Hosted on AWS S3 + CloudFront (legacy)
 - Firebase Hosting configured but DNS not yet cut over
 - Firestore enabled and live; security rules deployed; 7 seasons imported
@@ -137,7 +139,7 @@ src/components/    Web Components — rendering, user events, no business logic
 src/modules/       Orchestration — wires components + services, manages app state
 src/services/      Business logic — validation, transformation, caching, rules
 src/repositories/  Data access — Firestore reads/writes only
-src/types/         JSDoc typedefs only — no runtime code
+src/types/         TypeScript interfaces and types — no runtime code
 src/views/         Page-level render functions (transitional — migrate to components)
 src/data/          Static JSON data (scorecard seasons 2019–2025)
 ```
@@ -200,7 +202,6 @@ seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapsh
 - `firebase.json` enforces: `X-Frame-Options`, `X-Content-Type-Options`,
   `Strict-Transport-Security`, `Content-Security-Policy`
 - CSP must allow `maps.google.com` + `www.google.com` (Google Maps embed in about view)
-- CSP must allow `cdnjs.cloudflare.com` (Font Awesome)
 
 **Reference**:
 - [.prompts/core/security/security-principles.md](.prompts/core/security/security-principles.md)
@@ -233,18 +234,22 @@ seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapsh
 
 ### III.4 Code Quality Standards
 
-**JavaScript style**:
+**Language standards (TypeScript):**
 - Always `const` / `let`. Never `var`.
 - Always ES6+ module syntax (`import`/`export`). No global function declarations.
 - Arrow functions for callbacks; named `function` declarations for module-level exports.
 - No inline event handlers in HTML (`onclick=`, `onload=`). Attach listeners in JS.
 - Prefer `textContent` over `innerHTML`. Sanitize before any HTML insertion.
-- Absolute imports using `@/` path alias (configured in `vite.config.js` and `tsconfig.json`)
+- Absolute imports using `@/` path alias (configured in `vite.config.ts` and `tsconfig.json`)
+- `noUncheckedIndexedAccess: true` — array/object access always returns `T | undefined`; use `!= null` not just `!== null` for array guard
+- `strict: true` — no implicit `any`; all parameters and return types must be explicit
+- Prefer `as unknown as T` over `as T` for Firestore snapshot casts
+- TypeScript `interface` and `type` declarations in `src/types/*.ts` — no `@typedef` JSDoc comments
 
 **Naming conventions**:
 | Thing | Convention | Example |
 |-------|-----------|---------|
-| Files | kebab-case | `score-service.js` |
+| Files | kebab-case | `score-service.ts` |
 | Classes / Web Components | PascalCase | `ScoreService` |
 | Functions / methods | camelCase | `getStandings()` |
 | Constants | SCREAMING_SNAKE_CASE | `CACHE_TTL_MS` |
@@ -267,10 +272,10 @@ seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapsh
 
 **Frontend**:
 - **Build Tool**: Vite 7.x (see `.specs/technical/build-system.md`)
-- **Language**: Vanilla JavaScript (ES6+ modules, JSDoc types — no TypeScript emit)
+- **Language**: TypeScript (strict mode, `allowJs: false`; Vite strips types via esbuild — no tsc emit)
 - **UI Pattern**: SPA with hash-based router; views migrating to Web Components
-- **Styling**: Plain CSS with custom properties; no framework
-- **Type checking**: `tsconfig.json` with `allowJs: true`, `checkJs: false` — IDE support only
+- **Styling**: CSS design system — two-layer custom properties (primitive palette `--color-*` + semantic tokens `--c-*`); system-aware dark/light mode via `@media (prefers-color-scheme: dark)`; no framework
+- **Type checking**: `tsconfig.json` with `strict: true`, `allowJs: false`, `noUncheckedIndexedAccess: true` — full strict type checking; `src/vite-env.d.ts` types `ImportMetaEnv` for all VITE_* vars
 
 **Backend / Platform**:
 - **Platform**: Firebase (`citl` project, Spark plan)
@@ -438,7 +443,6 @@ Before cutting DNS, all of the following must be verified:
 - [ ] Admin auth working end-to-end
 - [ ] PDF score sheet downloads work from Firebase Hosting
 - [ ] Google Maps embed loads (requires CSP `frame-src` for `maps.google.com`)
-- [ ] Font Awesome icons load (requires CSP `style-src`/`font-src` for `cdnjs.cloudflare.com`)
 
 ---
 
@@ -536,3 +540,5 @@ Before cutting DNS, all of the following must be verified:
 
 **Version History:**
 - 1.0.0 (2026-02-27): Initial constitution established for CITL
+- 1.0.1 (2026-02-28): Minor metrics update
+- 1.1.0 (2026-03-01): Phase 9 complete — TypeScript migration; CSS design system; dark mode; inline SVGs replacing Font Awesome CDN

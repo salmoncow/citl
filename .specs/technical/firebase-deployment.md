@@ -128,7 +128,6 @@ After every deploy, verify at `https://citl-baed2.web.app` (or preview channel U
 - [ ] Scorecards accordion expands all 7 seasons
 - [ ] PDF score sheet links download correctly
 - [ ] Google Maps embed loads on About page (tests CSP `frame-src`)
-- [ ] Font Awesome icons render (tests CSP `style-src`/`font-src`)
 - [ ] Browser console shows zero errors and zero CSP violations
 
 ---
@@ -172,8 +171,6 @@ Content-Security-Policy: [see firebase.json for full CSP]
 
 **CSP requirements specific to CITL**:
 - `frame-src maps.google.com www.google.com` — Google Maps embed on About page
-- `style-src cdnjs.cloudflare.com` — Font Awesome CSS
-- `font-src cdnjs.cloudflare.com` — Font Awesome fonts
 
 ---
 
@@ -215,7 +212,7 @@ Firebase console → Hosting → Release history → select release → "Rollbac
 
 Roll back immediately if post-deployment verification finds:
 - Any SPA route returns a blank page or 404
-- CSP violations blocking Maps embed or Font Awesome
+- CSP violations blocking Maps embed
 - PDF downloads return 404
 - JavaScript console errors on initial load
 

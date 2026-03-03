@@ -3,34 +3,24 @@
  *
  * Displays a year/week dropdown and standings table driven from Firestore.
  * No shadow DOM; uses global CSS classes.
- *
- * Data sources:
- *   - Year dropdown: getAllSeasons() — newest first
- *   - Week dropdown: season.currentWeek from getSeason()
- *   - Season view: season.standings (cumulative totals)
- *   - Week N view: allWeekResults[N].teamResults + client-side cumulative totals
- *
- * All values inserted via template literals into <td> (no user input;
- * accepted innerHTML pattern per constitution §IV.2 for developer-authored strings).
  */
 
-import { db } from '@/firebase-config.js';
-import { createRepositoryFactory } from '@/repositories/repository-factory.js';
-import { ScoreService } from '@/services/score-service.js';
+import { db } from '@/firebase-config';
+import { createRepositoryFactory } from '@/repositories/repository-factory';
+import { ScoreService } from '@/services/score-service';
+import type { Season } from '@/types/season';
+import type { WeekResult } from '@/types/score';
 
 const factory = createRepositoryFactory({ db });
 const scoreService = new ScoreService(factory.getScoreRepository());
 
 class HomeStandings extends HTMLElement {
-  connectedCallback() {
-    /** @type {import('@/types/season.js').Season[]} */
-    this._seasons = [];
-    this._selectedYear = null;
-    /** @type {import('@/types/season.js').Season|null} */
-    this._season = null;
-    /** @type {import('@/types/score.js').WeekResult[]} */
-    this._allWeekResults = [];
+  private _seasons: Season[] = [];
+  private _selectedYear: number | null = null;
+  private _season: Season | null = null;
+  private _allWeekResults: WeekResult[] = [];
 
+  connectedCallback(): void {
     this.innerHTML = `
       <div class="home-standings">
         <div class="home-standings-controls">
@@ -42,48 +32,48 @@ class HomeStandings extends HTMLElement {
         <div id="hs-table"><p>Loading&hellip;</p></div>
       </div>`;
 
-    this.querySelector('#hs-year').addEventListener('change', (e) => {
-      const year = parseInt(e.target.value, 10);
+    this.querySelector<HTMLSelectElement>('#hs-year')!.addEventListener('change', (e) => {
+      const year = parseInt((e.target as HTMLSelectElement).value, 10);
       this._selectedYear = year;
-      this._loadYear(year);
+      void this._loadYear(year);
     });
 
-    this.querySelector('#hs-week').addEventListener('change', (e) => {
-      this._renderTable(e.target.value);
+    this.querySelector<HTMLSelectElement>('#hs-week')!.addEventListener('change', (e) => {
+      this._renderTable((e.target as HTMLSelectElement).value);
     });
 
-    this._loadSeasons();
+    void this._loadSeasons();
   }
 
-  async _loadSeasons() {
+  private async _loadSeasons(): Promise<void> {
     const result = await scoreService.getAllSeasons();
     if (!result.success) {
-      this.querySelector('#hs-table').innerHTML = '<p>Error loading seasons.</p>';
+      this.querySelector('#hs-table')!.innerHTML = '<p>Error loading seasons.</p>';
       return;
     }
 
     this._seasons = result.data ?? [];
-    const yearSelect = this.querySelector('#hs-year');
+    const yearSelect = this.querySelector<HTMLSelectElement>('#hs-year')!;
 
     for (const season of this._seasons) {
       const opt = document.createElement('option');
-      opt.value = season.year;
-      opt.textContent = season.year;
+      opt.value = String(season.year);
+      opt.textContent = String(season.year);
       yearSelect.appendChild(opt);
     }
 
     if (this._seasons.length > 0) {
-      const defaultYear = this._seasons[0].year;
+      const defaultYear = this._seasons[0]!.year;
       this._selectedYear = defaultYear;
-      yearSelect.value = defaultYear;
+      yearSelect.value = String(defaultYear);
       await this._loadYear(defaultYear);
     } else {
-      this.querySelector('#hs-table').innerHTML = '<p>No seasons available.</p>';
+      this.querySelector('#hs-table')!.innerHTML = '<p>No seasons available.</p>';
     }
   }
 
-  async _loadYear(year) {
-    this.querySelector('#hs-table').innerHTML = '<p>Loading&hellip;</p>';
+  private async _loadYear(year: number): Promise<void> {
+    this.querySelector('#hs-table')!.innerHTML = '<p>Loading&hellip;</p>';
 
     const [weeksResult, seasonResult] = await Promise.all([
       scoreService.getAllWeekResults(year),
@@ -91,15 +81,14 @@ class HomeStandings extends HTMLElement {
     ]);
 
     if (!seasonResult.success || !seasonResult.data) {
-      this.querySelector('#hs-table').innerHTML = `<p>Error loading standings for ${year}.</p>`;
+      this.querySelector('#hs-table')!.innerHTML = `<p>Error loading standings for ${year}.</p>`;
       return;
     }
 
     this._season = seasonResult.data;
     this._allWeekResults = weeksResult.success ? (weeksResult.data ?? []) : [];
 
-    // Populate week dropdown
-    const weekSelect = this.querySelector('#hs-week');
+    const weekSelect = this.querySelector<HTMLSelectElement>('#hs-week')!;
     while (weekSelect.firstChild) weekSelect.removeChild(weekSelect.firstChild);
 
     const seasonOpt = document.createElement('option');
@@ -119,9 +108,17 @@ class HomeStandings extends HTMLElement {
     this._renderTable('season');
   }
 
-  _renderTable(weekKey) {
-    let rows;
-    let subtitle;
+  private _renderTable(weekKey: string): void {
+    let rows: {
+      place: number;
+      teamName: string;
+      targets: number;
+      totalTargets: number;
+      rankPoints: number;
+      bonusPoints: number;
+      total: number;
+    }[];
+    let subtitle: string;
 
     if (weekKey === 'season') {
       const standings = this._season?.standings ?? [];
@@ -139,21 +136,20 @@ class HomeStandings extends HTMLElement {
       const weekNum = parseInt(weekKey, 10);
       const weekResult = this._allWeekResults.find((w) => w.weekNumber === weekNum);
       if (!weekResult) {
-        this.querySelector('#hs-table').innerHTML = `<p>No data for Week ${weekNum}.</p>`;
+        this.querySelector('#hs-table')!.innerHTML = `<p>No data for Week ${weekNum}.</p>`;
         return;
       }
 
-      // Compute cumulative totals through week N for each team
-      const cumulative = {};
+      const cumulative: Record<string, { rankPoints: number; bonusPoints: number; targets: number }> = {};
       for (const wr of this._allWeekResults) {
         if (wr.weekNumber > weekNum) continue;
         for (const tr of wr.teamResults ?? []) {
           if (!cumulative[tr.teamId]) {
             cumulative[tr.teamId] = { rankPoints: 0, bonusPoints: 0, targets: 0 };
           }
-          cumulative[tr.teamId].rankPoints += tr.rankPoints ?? 0;
-          cumulative[tr.teamId].bonusPoints += tr.bonusPoints ?? 0;
-          cumulative[tr.teamId].targets += tr.targets ?? 0;
+          cumulative[tr.teamId]!.rankPoints += tr.rankPoints ?? 0;
+          cumulative[tr.teamId]!.bonusPoints += tr.bonusPoints ?? 0;
+          cumulative[tr.teamId]!.targets += tr.targets ?? 0;
         }
       }
 
@@ -166,19 +162,22 @@ class HomeStandings extends HTMLElement {
           rankPoints: tr.rankPoints,
           bonusPoints: tr.bonusPoints,
           total: cum.rankPoints + cum.bonusPoints,
+          place: 0,
         };
       });
 
-      // Re-rank by cumulative total descending
       rows.sort((a, b) => b.total - a.total);
-      rows = rows.map((r, i) => ({ place: i + 1, ...r }));
+      rows = rows.map((r, i) => ({ ...r, place: i + 1 }));
       subtitle = `Week ${weekNum} results \u00b7 Total reflects season-to-date`;
     }
 
-    this.querySelector('#hs-table').innerHTML = this._buildTable(rows, subtitle);
+    this.querySelector('#hs-table')!.innerHTML = this._buildTable(rows, subtitle);
   }
 
-  _buildTable(rows, subtitle) {
+  private _buildTable(
+    rows: { place: number; teamName: string; targets: number; totalTargets: number; rankPoints: number; bonusPoints: number; total: number }[],
+    subtitle: string,
+  ): string {
     const trs = rows
       .map(
         (r) => `

@@ -7,7 +7,7 @@
 
 ## Overview
 
-citl.club uses Vite 7.x as its build tool. The project is a vanilla-JS SPA with no framework;
+citl.club uses Vite 7.x as its build tool. The project is a TypeScript SPA with no framework;
 Vite handles module bundling, asset fingerprinting, dev-server HMR, and production minification.
 
 **Configuration file**: `vite.config.js` (project root)
@@ -22,8 +22,9 @@ Vite handles module bundling, asset fingerprinting, dev-server HMR, and producti
 citl-static/           ← project root (git repo)
 ├── src/               ← Vite root (index.html lives here)
 │   ├── index.html     ← Vite entry point
-│   ├── main.js        ← Application entry point
-│   ├── firebase-config.js
+│   ├── main.ts        ← Application entry point
+│   ├── firebase-config.ts
+│   ├── vite-env.d.ts
 │   ├── components/
 │   ├── modules/
 │   ├── services/
@@ -89,14 +90,16 @@ citl-static/           ← project root (git repo)
 
 The `@/` alias maps to `src/`. Use it for all internal imports:
 
-```js
+```ts
 // ✅ Correct
-import { ScoreService } from '@/services/score-service.js';
-import { db } from '@/firebase-config.js';
+import { ScoreService } from '@/services/score-service';
+import { db } from '@/firebase-config';
 
 // ❌ Wrong — relative paths break on refactor
-import { ScoreService } from '../../services/score-service.js';
+import { ScoreService } from '../../services/score-service';
 ```
+
+Note: `.ts` extensions are omitted in TypeScript imports — `allowImportingTsExtensions: true` handles resolution.
 
 The alias is also registered in `tsconfig.json` for IDE type resolution:
 ```json
@@ -247,25 +250,36 @@ PDF score sheets in `src/assets/score_sheets/` are processed by Vite but served 
 
 ## TypeScript Configuration
 
-TypeScript is used for **IDE type checking only** — no TypeScript compilation at build time.
-Vite strips types via esbuild (not tsc).
+TypeScript is used for strict compile-time checking. Vite strips types via esbuild at build
+time — tsc never emits; it only type-checks.
 
 ```json
 // tsconfig.json — key settings
 {
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": false,       // No type errors in .js files
-    "strict": false,        // Relaxed — JSDoc types for guidance only
-    "noEmit": true,         // Never emit — Vite handles compilation
+    "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "allowJs": false,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
     "paths": { "@/*": ["./src/*"] }
   }
 }
 ```
 
-JSDoc `@typedef` comments in `src/types/` provide type hints without emitting type code.
+- `allowImportingTsExtensions: true` — enables `.ts` imports without `.js` suffix
+- `strict: true` — all strict checks enabled
+- `allowJs: false` — `.js` source files forbidden
+- `noUncheckedIndexedAccess: true` — `array[i]` returns `T | undefined`
+- `noEmit: true` — Vite (esbuild) handles emit
+
+`src/vite-env.d.ts` types `import.meta.env.VITE_*` for all Firebase config variables.
+Run `npx tsc --noEmit` to type-check the full project without building.
+
+TypeScript `interface` and `type` declarations in `src/types/*.ts` provide full compile-time type safety across all layers.
 
 ---
 

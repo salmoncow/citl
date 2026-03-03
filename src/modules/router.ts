@@ -6,31 +6,15 @@
  */
 
 export class RouterModule {
-  constructor() {
-    /** @type {Map<string, function>} */
-    this._routes = new Map();
+  private readonly _routes = new Map<string, () => void>();
+  private _beforeNavigateCallback: ((path: string) => boolean | void) | null = null;
+  private _currentRoute = '/';
 
-    /** @type {function|null} */
-    this._beforeNavigateCallback = null;
-
-    /** @type {string} */
-    this._currentRoute = '/';
-  }
-
-  /**
-   * Register a route handler.
-   * @param {string} path - e.g. '/' or '/scorecards'
-   * @param {function} handler - called when route is active
-   */
-  register(path, handler) {
+  register(path: string, handler: () => void): void {
     this._routes.set(this._normalizePath(path), handler);
   }
 
-  /**
-   * Navigate to a route programmatically.
-   * @param {string} path - e.g. '/' or '/scorecards'
-   */
-  navigate(path) {
+  navigate(path: string): void {
     const normalized = this._normalizePath(path);
     if (this._beforeNavigateCallback) {
       const allowed = this._beforeNavigateCallback(normalized);
@@ -39,40 +23,27 @@ export class RouterModule {
     window.location.hash = normalized === '/' ? '#/' : `#${normalized}`;
   }
 
-  /**
-   * Register a guard that runs before every navigation.
-   * Return false from the callback to cancel the navigation.
-   * @param {function(string): boolean|void} callback
-   */
-  onBeforeNavigate(callback) {
+  onBeforeNavigate(callback: (path: string) => boolean | void): void {
     this._beforeNavigateCallback = callback;
   }
 
-  /**
-   * Initialize the router: handle the current hash and listen for changes.
-   */
-  init() {
+  init(): void {
     window.addEventListener('hashchange', () => this._handleRouteChange());
     this._handleRouteChange();
   }
 
-  /**
-   * Returns the current active route path (e.g. '/scorecards').
-   * @returns {string}
-   */
-  getCurrentRoute() {
+  getCurrentRoute(): string {
     return this._currentRoute;
   }
 
   // ─── Private ────────────────────────────────────────────────────────────────
 
-  _handleRouteChange() {
+  private _handleRouteChange(): void {
     const path = this._getPathFromHash();
 
     if (this._beforeNavigateCallback) {
       const allowed = this._beforeNavigateCallback(path);
       if (allowed === false) {
-        // Restore previous hash without triggering another hashchange
         window.history.replaceState(null, '', `#${this._currentRoute}`);
         return;
       }
@@ -84,23 +55,20 @@ export class RouterModule {
     if (handler) {
       handler();
     } else {
-      // Unknown route — fall back to home
       const homeHandler = this._routes.get('/');
       if (homeHandler) homeHandler();
     }
   }
 
-  _getPathFromHash() {
+  private _getPathFromHash(): string {
     const hash = window.location.hash;
     if (!hash || hash === '#' || hash === '#/') return '/';
-    // Strip leading '#'
     const path = hash.startsWith('#') ? hash.slice(1) : hash;
     return this._normalizePath(path);
   }
 
-  _normalizePath(path) {
+  private _normalizePath(path: string): string {
     if (!path || path === '/') return '/';
-    // Ensure leading slash, no trailing slash
     const normalized = path.startsWith('/') ? path : `/${path}`;
     return normalized.endsWith('/') && normalized.length > 1
       ? normalized.slice(0, -1)

@@ -1,3 +1,3 @@
-export function homeView() {
+export function homeView(): string {
   return '<home-standings></home-standings>';
 }

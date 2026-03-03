@@ -342,6 +342,108 @@ with a new `localStorage` backend (`src/repositories/localstorage-score-reposito
 
 ---
 
+### ADR-007: Full TypeScript Migration
+
+**Date**: 2026-03-01
+**Status**: Accepted
+**Domains Affected**: UI, Data
+
+**Context**
+
+All source files were vanilla JavaScript with JSDoc @typedef comments for type hints.
+As the codebase grew to 22 source files across 6 layers, JSDoc types provided insufficient
+safety — implicit `any` propagation from Firestore snapshot casts, array index unsafe access,
+and no compile-time feedback on interface mismatches. The scoring engine and repository layer
+had subtle bugs caught only by cross-season JSON validation.
+
+**Decision**
+
+Migrate all 22 .js source files to .ts with strict TypeScript:
+`allowJs: false`, `strict: true`, `noUncheckedIndexedAccess: true`.
+@typedef comments replaced by exported interface/type declarations in `src/types/*.ts`.
+Vite continues to strip types via esbuild — no tsc emit, no build config changes.
+
+**Rationale**
+
+- `noUncheckedIndexedAccess` catches array out-of-bounds at compile time (critical in scoring engine)
+- Generic `Result<T>` type replaces `@typedef Result {success, data, error}` — eliminates `any` propagation
+- `ScorecardShooter` vs `Shooter` disambiguation prevents accidental cross-type assignment
+- `vite-env.d.ts` types `ImportMetaEnv` — eliminates implicit any on `import.meta.env.*`
+- Zero new dependencies; TypeScript was already installed for IDE support
+
+**Alternatives Considered**
+
+- **JSDoc + checkJs**: rejected — `noUncheckedIndexedAccess` not supported in checkJs mode;
+  complex generic types are poorly supported in JSDoc
+- **Gradual migration (allowJs: true)**: rejected — mixed .js/.ts files create confusing import paths;
+  clean cutover is simpler for a single-developer project
+
+**Consequences**
+
+- Enables: compile-time safety across all layers; IDE inline errors; reliable refactoring
+- Constrains: all new files must be `.ts`; no `.js` source files in `src/`
+- Current files: all 22 source files converted; old `.js` files deleted
+
+**Review Date**: 2026-06-01
+
+---
+
+### ADR-008: CSS Design System + Visual Overhaul
+
+**Date**: 2026-03-01
+**Status**: Accepted
+**Domains Affected**: UI, Platform
+
+**Context**
+
+The site used a flat CSS file (~180 lines) with hardcoded color values, a 400px
+logo-only header, and Font Awesome icons loaded via CDN. The CDN dependency created a CSP
+requirement for `cdnjs.cloudflare.com`, added a network round-trip on every page load, and
+was a single-point-of-failure for icon rendering. No dark mode support existed despite
+modern OS preference APIs being widely available.
+
+**Decision**
+
+1. Replace flat CSS with a two-layer custom property design system:
+   - Layer 1: primitive palette (`--color-orange`, `--color-blue-dark`, etc.)
+   - Layer 2: semantic tokens (`--c-bg`, `--c-surface`, `--c-text`, `--c-nav-bg`, etc.)
+   System-aware dark mode via `@media (prefers-color-scheme: dark)` overrides semantic layer only.
+2. Reduce brand strip from 400px to 80px; always-white background (logo has white bg).
+3. Replace Font Awesome CDN with three inline SVGs (hamburger, home, caret-down).
+4. Adopt BEM-style nav class names (`.site-nav`, `.site-nav__link`, `.is-active`, `.is-open`)
+   replacing flat names (`.topnav`, `.active`, `.dropdown-show`, `.responsive`).
+5. Add utility classes: `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.map-container`,
+   `.admin-header`, `.admin-status--success`, `.admin-status--error`.
+
+**Rationale**
+
+- Two-layer token system: primitive palette rarely changes; semantic layer drives dark mode
+  by overriding `--c-*` tokens only — no per-component dark mode rules needed
+- Brand always-white: logo asset has white background; dark mode bg does not apply to brand
+- Inline SVGs: zero network dependency; zero CSP change; accessible (`aria-hidden`, `focusable=false`)
+- BEM nav names: eliminate ambiguous `.active`/`.responsive` collisions with other CSS
+- No new npm packages: native CSS + platform only; aligns with §I.2 Platform Simplification
+
+**Alternatives Considered**
+
+- **CSS framework (Tailwind)**: rejected — adds build complexity, large dependency, overkill for
+  a small site; native CSS custom properties achieve the same theming capability
+- **Separate dark-mode stylesheet**: rejected — two-layer token system is cleaner; single file,
+  single paint; no flash-of-unstyled-content risk
+- **Keep Font Awesome**: rejected — CDN dependency, CSP complexity, network risk; inline SVGs
+  are smaller and zero-dependency for the three icons we use
+
+**Consequences**
+
+- Enables: system-aware dark mode with no JS; per-token overrides; CSP simplified (no CDN)
+- Constrains: color changes must be made to token definitions, not component-level rules;
+  inline SVGs must be manually updated if icons change
+- `firebase.json` CSP: remove `style-src`/`font-src` `cdnjs.cloudflare.com` allowances
+
+**Review Date**: 2026-06-01
+
+---
+
 ## How AI Agents Should Use This Log
 
 1. **Before implementing a new feature**: Check if a relevant decision exists that constrains

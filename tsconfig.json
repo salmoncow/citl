@@ -11,8 +11,8 @@
     "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
-    "allowJs": true,
-    "checkJs": false,
+    "allowJs": false,
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "@/*": ["./src/*"],
       "@modules/*": ["./src/modules/*"],
