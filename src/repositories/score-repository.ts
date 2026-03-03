@@ -291,11 +291,56 @@ export class ScoreRepository {
 
   async deleteTeam(year: number, teamId: string): Promise<Result<void>> {
     try {
-      const ref = doc(this.db, 'seasons', String(year), 'teams', teamId);
-      await deleteDoc(ref);
+      const batch = writeBatch(this.db);
+
+      // Delete the team document
+      batch.delete(doc(this.db, 'seasons', String(year), 'teams', teamId));
+
+      // Delete all entry documents for this team (weeks 1–15)
+      // batch.delete on a non-existent doc is a safe no-op
+      for (let week = 1; week <= 15; week++) {
+        batch.delete(
+          doc(this.db, 'seasons', String(year), 'entries', `${week}_${teamId}`),
+        );
+      }
+
+      await batch.commit();
       return success(undefined);
-    } catch (e) {
-      return failure(String(e), 'FIRESTORE_ERROR');
+    } catch (err) {
+      return failure(`Failed to delete team: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  async removeShooterFromRosterAndEntries(
+    year: number,
+    teamId: string,
+    updatedShooters: Team['shooters'],
+    entryUpdates: SeasonEntry[],
+  ): Promise<Result<void>> {
+    try {
+      const batch = writeBatch(this.db);
+
+      // Update team document's shooters array
+      batch.update(
+        doc(this.db, 'seasons', String(year), 'teams', teamId),
+        { shooters: updatedShooters },
+      );
+
+      // Overwrite each entry that contained the shooter (with shooter filtered out)
+      for (const entry of entryUpdates) {
+        batch.set(
+          doc(this.db, 'seasons', String(year), 'entries', `${entry.weekNumber}_${teamId}`),
+          entry,
+        );
+      }
+
+      await batch.commit();
+      return success(undefined);
+    } catch (err) {
+      return failure(
+        `Failed to remove shooter: ${(err as Error).message}`,
+        'FIRESTORE_WRITE_ERROR',
+      );
     }
   }
 

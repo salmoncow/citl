@@ -25,7 +25,6 @@ interface ShooterState {
   startingAvg: number | '-';
   scores: (number | null)[];
   w0Display?: number;
-  effectiveW0?: number;
   weeksShot?: number | null;
   finalAvg?: number | string;
 }
@@ -241,24 +240,13 @@ class SeasonScorecards extends HTMLElement {
       }
     }
 
-    // DUMMY effective W0 for finalAvg = mean of real teammates' numeric startingAvgs
-    const realNumericStartingAvgs = [...shooterMap.values()]
-      .filter((s) => !s.isDummy && typeof s.startingAvg === 'number')
-      .map((s) => s.startingAvg as number);
-    if (realNumericStartingAvgs.length > 0) {
-      const dummyEffectiveW0 = mean(realNumericStartingAvgs);
-      for (const s of shooterMap.values()) {
-        if (s.isDummy) s.effectiveW0 = dummyEffectiveW0;
-      }
-    }
-
     // Compute weeksShot and finalAvg per shooter
     const shooters: ShooterState[] = [...shooterMap.values()].map((s) => {
       const nonNull = s.scores.filter((v): v is number => v !== null);
       const weeksShot = nonNull.length > 0 ? nonNull.length : null;
-      const w0 = typeof s.startingAvg === 'number'
-        ? s.startingAvg
-        : (nonNull.length > 0 ? (s.effectiveW0 ?? null) : null);
+      const w0 = s.isDummy
+        ? (nonNull.length > 0 ? (s.w0Display ?? null) : null)
+        : (typeof s.startingAvg === 'number' ? s.startingAvg : null);
       const finalAvg = w0 !== null
         ? Math.round(computeShooterAverage(w0, s.scores, 14) * 10) / 10
         : nonNull.length > 0

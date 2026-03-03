@@ -787,11 +787,27 @@ class AdminPanel extends HTMLElement {
     removeBtn.textContent = '✕';
     removeBtn.className = 'ap-remove-shooter';
     removeBtn.addEventListener('click', () => {
-      const name = nameInput.value.trim() || 'this shooter';
+      const name = nameInput.value.trim();
+      if (name && this._namedRosterCount() <= 5) {
+        this._setTeamMgmtStatus('Teams must have at least 5 shooters — cannot remove.', 'error');
+        return;
+      }
+      this._setTeamMgmtStatus('', '');
       if (originalIndex !== undefined) {
-        void this._confirmRemoveShooterRow(row, tbody, name);
+        if (!name) {
+          // No name saved — just remove DOM row, nothing in Firestore to clean up
+          tbody.removeChild(row);
+          return;
+        }
+        const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+        const teamId = this.querySelector<HTMLSelectElement>('#ap-roster-team')?.value ?? '';
+        if (!teamId) {
+          this._setTeamMgmtStatus('No team selected.', 'error');
+          return;
+        }
+        void this._confirmRemoveShooterRow(row, tbody, name, year, teamId);
       } else {
-        tbody.removeChild(row);
+        tbody.removeChild(row); // New unsaved rows need no confirmation or Firestore call
       }
     });
 
@@ -843,6 +859,11 @@ class AdminPanel extends HTMLElement {
         weeksShot: original?.weeksShot ?? null,
         scores: original?.scores ?? [],
       });
+    }
+
+    if (shooters.length < 5) {
+      this._setTeamMgmtStatus('A team must have at least 5 shooters.', 'error');
+      return;
     }
 
     this._setTeamMgmtStatus('', '');
@@ -934,7 +955,7 @@ class AdminPanel extends HTMLElement {
   private async _confirmDeleteTeam(year: number, teamId: string, teamName: string): Promise<void> {
     const confirmed = await this._showConfirmDialog({
       title: 'Delete Team',
-      warning: `This will permanently remove "${teamName}" from the ${year} season. This cannot be undone.`,
+      warning: `This will permanently remove "${teamName}" and all its score entries from the ${year} season. This cannot be undone.`,
       nameToType: teamName,
       deleteLabel: 'Delete Team',
     });
@@ -953,14 +974,32 @@ class AdminPanel extends HTMLElement {
     row: HTMLElement,
     tbody: Element,
     shooterName: string,
+    year: number,
+    teamId: string,
   ): Promise<void> {
     const confirmed = await this._showConfirmDialog({
       title: 'Remove Shooter',
-      warning: `"${shooterName}" will be removed from this roster. Save the roster to apply the change.`,
+      warning: `This will permanently remove "${shooterName}" and all their saved score entries from the ${year} season. This cannot be undone.`,
       nameToType: shooterName,
-      deleteLabel: 'Remove',
+      deleteLabel: 'Remove Shooter',
     });
-    if (confirmed) tbody.removeChild(row);
+    if (!confirmed) return;
+
+    const result = await scoreService.removeShooterFromRoster(year, teamId, shooterName);
+    if (result.success) {
+      tbody.removeChild(row);
+      showToast('success', `"${shooterName}" removed from roster.`);
+    } else {
+      showToast('error', `Failed to remove shooter: ${result.error}`);
+    }
+  }
+
+  // ── Roster helpers ───────────────────────────────────────────────────────
+
+  private _namedRosterCount(): number {
+    return [...this.querySelectorAll<HTMLElement>('.ap-roster-row')]
+      .filter((r) => Boolean(r.querySelector<HTMLInputElement>('.ap-roster-name')?.value.trim()))
+      .length;
   }
 
   // ── Status helpers ───────────────────────────────────────────────────────

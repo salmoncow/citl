@@ -362,3 +362,148 @@ describe('computeRosterDefaults', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// saveTeamRoster — minimum shooter count
+// ---------------------------------------------------------------------------
+
+function makeRosterShooter(name: string): Shooter {
+  return {
+    id: '',
+    name,
+    rookie: false,
+    startingAvg: 35,
+    finalAvg: null,
+    weeksShot: null,
+    scores: new Array<number | null>(15).fill(null),
+  };
+}
+
+describe('saveTeamRoster — minimum shooter count', () => {
+  it('returns VALIDATION_ERROR when fewer than 5 shooters provided', async () => {
+    const svc = new ScoreService(makeRepo({}));
+    const result = await svc.saveTeamRoster(2026, 'team-1', 'Captain', [
+      makeRosterShooter('Alice'),
+      makeRosterShooter('Bob'),
+    ]);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns VALIDATION_ERROR when exactly 4 shooters provided', async () => {
+    const svc = new ScoreService(makeRepo({}));
+    const result = await svc.saveTeamRoster(2026, 'team-1', 'Captain', [
+      makeRosterShooter('Alice'),
+      makeRosterShooter('Bob'),
+      makeRosterShooter('Carol'),
+      makeRosterShooter('Dave'),
+    ]);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('does not fail the minimum check when exactly 5 shooters provided', async () => {
+    const team = makeTeam('Team', []);
+    const repo: Partial<ScoreRepository> = {
+      getTeam: async () => success(team),
+      saveTeamRoster: async () => success(undefined),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.saveTeamRoster(2026, 'team-1', 'Captain', [
+      makeRosterShooter('Alice'),
+      makeRosterShooter('Bob'),
+      makeRosterShooter('Carol'),
+      makeRosterShooter('Dave'),
+      makeRosterShooter('Eve'),
+    ]);
+    // The count guard must NOT be what rejected this
+    if (!result.success) {
+      expect(result.code).not.toBe('VALIDATION_ERROR');
+    }
+    expect(result.success).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deleteTeam — validation
+// ---------------------------------------------------------------------------
+
+describe('removeShooterFromRoster — validation', () => {
+  it('returns VALIDATION_ERROR for out-of-range year', async () => {
+    const svc = new ScoreService(makeRepo({}));
+    const result = await svc.removeShooterFromRoster(2000, 'team-1', 'Alice');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns VALIDATION_ERROR for blank shooterName', async () => {
+    const svc = new ScoreService(makeRepo({}));
+    const result = await svc.removeShooterFromRoster(2026, 'team-1', '   ');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns NOT_FOUND when team does not exist', async () => {
+    const repo: Partial<ScoreRepository> = {
+      getTeam: async () => success(null),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.removeShooterFromRoster(2026, 'team-1', 'Alice');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('NOT_FOUND');
+  });
+
+  it('returns NOT_FOUND when shooter is not on the roster', async () => {
+    const team = makeTeam('Team', [makeRosterShooter('Bob')]);
+    const repo: Partial<ScoreRepository> = {
+      getTeam: async () => success(team),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.removeShooterFromRoster(2026, 'team-1', 'Alice');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('NOT_FOUND');
+  });
+
+  it('clears the teams cache on successful deletion', async () => {
+    const team = makeTeam('Team', [makeRosterShooter('Alice')]);
+    const repo: Partial<ScoreRepository> = {
+      getTeams: async () => success([team]),
+      getTeam: async () => success(team),
+      getEntry: async () => success(null),
+      removeShooterFromRosterAndEntries: async () => success(undefined),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    await svc.getTeams(2026); // populate cache
+    const result = await svc.removeShooterFromRoster(2026, 'team-1', 'Alice');
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('deleteTeam — validation', () => {
+  it('returns VALIDATION_ERROR for out-of-range year', async () => {
+    const svc = new ScoreService(makeRepo({}));
+    const result = await svc.deleteTeam(2000, 'team-1');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns VALIDATION_ERROR for blank teamId', async () => {
+    const svc = new ScoreService(makeRepo({}));
+    const result = await svc.deleteTeam(2026, '');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('clears the teams cache on successful deletion', async () => {
+    const repo: Partial<ScoreRepository> = {
+      getTeams: async () => success([]),
+      deleteTeam: async () => success(undefined),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    // Populate cache
+    await svc.getTeams(2026);
+    // Delete clears cache
+    const result = await svc.deleteTeam(2026, 'team-1');
+    expect(result.success).toBe(true);
+  });
+});

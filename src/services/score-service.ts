@@ -393,6 +393,72 @@ export class ScoreService {
     return result;
   }
 
+  async removeShooterFromRoster(
+    year: number,
+    teamId: string,
+    shooterName: string,
+  ): Promise<Result<void>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+    if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
+    const trimmedName = shooterName.trim();
+    if (!trimmedName) return failure('shooterName is required', 'VALIDATION_ERROR');
+
+    // Verify team exists and shooter is on it
+    const teamResult = await this.repository.getTeam(year, teamId);
+    if (!teamResult.success) return teamResult;
+    if (teamResult.data === null) {
+      return failure(`Team "${teamId}" not found for ${year}`, 'NOT_FOUND');
+    }
+    const normalizedTarget = normalizeShooterName(trimmedName);
+    const team = teamResult.data;
+    const shooterOnRoster = team.shooters.some(
+      (s) => normalizeShooterName(s.name) === normalizedTarget,
+    );
+    if (!shooterOnRoster) {
+      return failure(`Shooter "${trimmedName}" not found on team roster`, 'NOT_FOUND');
+    }
+
+    // Fetch all 15 entry docs in parallel (getDoc on non-existent is a fast null)
+    const entryResults = await Promise.all(
+      Array.from({ length: 15 }, (_, i) =>
+        this.repository.getEntry(year, i + 1, teamId),
+      ),
+    );
+
+    // Filter shooter from team roster
+    const updatedShooters = team.shooters.filter(
+      (s) => normalizeShooterName(s.name) !== normalizedTarget,
+    );
+
+    // Filter shooter from each entry that contains them
+    const entryUpdates: SeasonEntry[] = [];
+    for (const result of entryResults) {
+      if (!result.success || result.data === null) continue;
+      const entry = result.data;
+      const hadShooter = entry.shooters.some(
+        (s) => normalizeShooterName(s.name) === normalizedTarget,
+      );
+      if (!hadShooter) continue;
+      entryUpdates.push({
+        ...entry,
+        shooters: entry.shooters.filter(
+          (s) => normalizeShooterName(s.name) !== normalizedTarget,
+        ),
+      });
+    }
+
+    const writeResult = await this.repository.removeShooterFromRosterAndEntries(
+      year,
+      teamId,
+      updatedShooters,
+      entryUpdates,
+    );
+    if (writeResult.success) this.cache.delete(`teams:${year}`);
+    return writeResult;
+  }
+
   async saveTeamRoster(
     year: number,
     teamId: string,
@@ -405,6 +471,9 @@ export class ScoreService {
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedCaptain = captain.trim();
     if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
+    if (shooters.length < 5) {
+      return failure('A team must have at least 5 shooters', 'VALIDATION_ERROR');
+    }
     for (const s of shooters) {
       if (!s.name.trim()) return failure('All shooter names are required', 'VALIDATION_ERROR');
     }
