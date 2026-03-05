@@ -9,6 +9,7 @@ import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
 import { computeGoingInAverage, getLastWord, isDummyName, normalizeShooterName, sortShootersWithCaptainFirst } from '@/services/scoring-engine';
+import { computeSchedule } from '@/utils/schedule';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult } from '@/types/score';
 
@@ -22,6 +23,8 @@ class ScoresheetGenerator extends HTMLElement {
   private _selectedWeek = 1;
   private _teams: Team[] = [];
   private _weekResults: WeekResult[] = [];
+  /** week number → Date (computed/postponed) or null (cancelled) */
+  private _dateMap = new Map<number, Date | null>();
 
   connectedCallback(): void {
     this.innerHTML = `<p>Loading&hellip;</p>`;
@@ -40,6 +43,7 @@ class ScoresheetGenerator extends HTMLElement {
     this._year = season.year;
     this._maxWeek = Math.min(15, (season.currentWeek ?? 0) + 1);
     this._selectedWeek = this._maxWeek;
+    this._dateMap = this._buildDateMap(this._year, season.weekDateOverrides ?? {});
 
     await this._fetchYearData();
 
@@ -63,6 +67,7 @@ class ScoresheetGenerator extends HTMLElement {
     const season = this._seasons.find((s) => s.year === year);
     this._maxWeek = Math.min(15, (season?.currentWeek ?? 0) + 1);
     this._selectedWeek = this._maxWeek;
+    this._dateMap = this._buildDateMap(year, season?.weekDateOverrides ?? {});
 
     const container = this.querySelector<HTMLElement>('#sg-cards');
     if (container) container.innerHTML = `<p>Loading&hellip;</p>`;
@@ -75,11 +80,34 @@ class ScoresheetGenerator extends HTMLElement {
     this._renderCards();
   }
 
+  /** Build a map from week number → scheduled Date or null (cancelled). */
+  private _buildDateMap(
+    year: number,
+    overrides: Partial<Record<string, string | null>>,
+  ): Map<number, Date | null> {
+    const events = computeSchedule(year).filter((e) => e.type === 'shoot');
+    const map = new Map<number, Date | null>();
+    for (const e of events) {
+      const week = e.week!;
+      const override = overrides[String(week)];
+      if (override === null) {
+        map.set(week, null); // cancelled
+      } else if (override !== undefined) {
+        map.set(week, new Date(override)); // postponed
+      } else {
+        map.set(week, e.date); // computed
+      }
+    }
+    return map;
+  }
+
   private _weekOptions(): string {
     return Array.from({ length: this._maxWeek }, (_, i) => {
       const w = i + 1;
       const selected = w === this._selectedWeek ? ' selected' : '';
-      return `<option value="${w}"${selected}>Week ${w}</option>`;
+      const date = this._dateMap.get(w);
+      const cancelled = date === null ? ' (Cancelled)' : '';
+      return `<option value="${w}"${selected}>Week ${w}${cancelled}</option>`;
     }).join('');
   }
 
@@ -106,6 +134,16 @@ class ScoresheetGenerator extends HTMLElement {
     const container = this.querySelector<HTMLElement>('#sg-cards');
     if (!container) return;
     container.innerHTML = this._teams.map((team) => this._renderCard(team)).join('');
+  }
+
+  /** Format a Date as "Tuesday, Month DD, YYYY". */
+  private _formatShootDate(date: Date): string {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   }
 
   private _renderCard(team: Team): string {
@@ -158,12 +196,20 @@ class ScoresheetGenerator extends HTMLElement {
             <td></td>
           </tr>`;
 
+    const weekDate = this._dateMap.get(this._selectedWeek);
+    const dateLine = weekDate === null
+      ? `<p class="scoresheet-date-label scoresheet-date-cancelled">CANCELLED</p>`
+      : weekDate !== undefined
+        ? `<p class="scoresheet-date-label">${this._formatShootDate(weekDate)}</p>`
+        : '';
+
     return `
       <div class="scoresheet-card">
 
         <div class="scoresheet-print-header">
           <h1 class="scoresheet-league-title">Central Illinois Trap League</h1>
           <p class="scoresheet-week-label">Week ${this._selectedWeek} &middot; ${this._year} Season</p>
+          ${dateLine}
         </div>
 
         <h3 class="scoresheet-team-name">${team.name}</h3>
