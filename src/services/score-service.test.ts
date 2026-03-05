@@ -498,6 +498,7 @@ describe('deleteTeam — validation', () => {
     const repo: Partial<ScoreRepository> = {
       getTeams: async () => success([]),
       deleteTeam: async () => success(undefined),
+      getAllWeekResults: async () => success([]),
     };
     const svc = new ScoreService(repo as unknown as ScoreRepository);
     // Populate cache

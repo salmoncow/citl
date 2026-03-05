@@ -404,6 +404,14 @@ export class ScoreService {
       this.cache.delete(`latest:${year}`);
       this.cache.delete(`season:${year}`);
       for (let w = 1; w <= 15; w++) this.cache.delete(`week:${year}:${w}`);
+
+      // Recompute standings from the updated week docs (deleted team already removed by repo)
+      const weeksResult = await this.repository.getAllWeekResults(year);
+      if (weeksResult.success && weeksResult.data.length > 0) {
+        const newStandings = _recomputeStandingsFromWeeks(weeksResult.data);
+        await this.repository.updateSeason(year, { standings: newStandings } as Partial<Season>);
+        this.cache.delete(`season:${year}`);
+      }
     }
     return result;
   }
@@ -686,6 +694,36 @@ export function buildPriorAvgMap(weekResults: WeekResult[], priorTeams: Team[]):
   return result;
 }
 
+
+/**
+ * Recompute season standings by summing the stored per-week TeamResult values.
+ * Used after team deletion — the deleted team is already absent from weekResults.
+ */
+function _recomputeStandingsFromWeeks(weekResults: WeekResult[]): SeasonStandings[] {
+  const acc = new Map<string, { teamId: string; teamName: string; rankPoints: number; bonusPoints: number; targets: number }>();
+  for (const wr of weekResults) {
+    for (const tr of wr.teamResults ?? []) {
+      const cur = acc.get(tr.teamId) ?? { teamId: tr.teamId, teamName: tr.teamName, rankPoints: 0, bonusPoints: 0, targets: 0 };
+      acc.set(tr.teamId, {
+        ...cur,
+        rankPoints: cur.rankPoints + (tr.rankPoints ?? 0),
+        bonusPoints: cur.bonusPoints + (tr.bonusPoints ?? 0),
+        targets: cur.targets + (tr.targets ?? 0),
+      });
+    }
+  }
+  const rows = [...acc.values()].sort(
+    (a, b) => (b.rankPoints + b.bonusPoints) - (a.rankPoints + a.bonusPoints),
+  );
+  return rows.map((row, i) => ({
+    rank: i + 1,
+    teamId: row.teamId,
+    teamName: row.teamName,
+    totalRankPoints: row.rankPoints,
+    totalBonusPoints: row.bonusPoints,
+    totalTargets: row.targets,
+  }));
+}
 
 function _computeStandings(computed: SeasonData, throughWeek: number): SeasonStandings[] {
   const rows = computed.teams.map((team) => {
