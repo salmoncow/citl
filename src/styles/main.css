@@ -1509,7 +1509,7 @@ input[type="text"].ap-roster-name:focus {
 }
 
 .scoresheet-table td.scoresheet-dummy-note {
-  font-size: var(--text-xs, .75rem);
+  font-size: var(--text-sm, .875rem);
   font-style: italic;
   color: var(--c-text-muted);
   line-height: 1.4;
@@ -1572,7 +1572,7 @@ input[type="text"].ap-roster-name:focus {
   }
   .scoresheet-table td.fill { min-width: 40pt; }
   .scoresheet-table td.scoresheet-dummy-note {
-    font-size: 7pt;
+    font-size: 9pt;
     font-style: italic;
     height: auto;
     padding: 3pt 6pt;
