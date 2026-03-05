@@ -145,14 +145,18 @@ class ScoresheetGenerator extends HTMLElement {
             <td class="fill">&nbsp;</td>
           </tr>`;
 
-    const dummyNote = 'Starting Dummy Score = Avg. of shooters going-in for that day\nEnding Dummy Score is automatically calculated via the tool';
+    const dummyNote = 'Starting Dummy Score = Avg. of shooters going-in for that day<br>Ending Dummy Score is automatically calculated via the tool';
     const prefix = getLastWord(team.name);
-    const dummyRows = [1, 2].map((n) => `
+    const dummyRows = `
           <tr>
-            <td>${prefix} DUMMY${n}</td>
+            <td>${prefix} DUMMY1</td>
             <td></td>
-            <td colspan="3" class="scoresheet-dummy-note">${dummyNote.replace('\n', '<br>')}</td>
-          </tr>`).join('');
+            <td colspan="3" rowspan="2" class="scoresheet-dummy-note">${dummyNote}</td>
+          </tr>
+          <tr>
+            <td>${prefix} DUMMY2</td>
+            <td></td>
+          </tr>`;
 
     return `
       <div class="scoresheet-card">
