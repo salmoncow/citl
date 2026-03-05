@@ -1513,6 +1513,8 @@ input[type="text"].ap-roster-name:focus {
   font-style: italic;
   color: var(--c-text-muted);
   line-height: 1.4;
+  vertical-align: middle;
+  padding: var(--space-2) var(--space-3);
 }
 
 .scoresheet-season-label {
@@ -1575,8 +1577,8 @@ input[type="text"].ap-roster-name:focus {
     font-size: 9pt;
     font-style: italic;
     height: auto;
-    padding: 3pt 6pt;
-    vertical-align: top;
+    padding: 5pt 8pt;
+    vertical-align: middle;
   }
 
   #sg-cards { display: block; }
