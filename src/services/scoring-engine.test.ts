@@ -26,6 +26,7 @@ import {
   computeSeasonAwards,
   computeSeasonTotals,
   computeDummyScore,
+  sortShootersWithCaptainFirst,
 } from './scoring-engine';
 
 // ---------------------------------------------------------------------------
@@ -726,5 +727,41 @@ describe('computeSeasonTotals', () => {
     computeSeasonTotals(seasonData);
     expect(seasonData.teams[0]!.totals.targets).toEqual(originalTargets0);
     expect(seasonData.teams[1]!.totals.targets).toEqual(originalTargets1);
+  });
+});
+
+describe('sortShootersWithCaptainFirst', () => {
+  it('moves captain to index 0', () => {
+    const shooters = [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }];
+    const result = sortShootersWithCaptainFirst(shooters, 'Bob');
+    expect(result[0]?.name).toBe('Bob');
+    expect(result[1]?.name).toBe('Alice');
+    expect(result[2]?.name).toBe('Charlie');
+  });
+
+  it('is a no-op when captain is already first', () => {
+    const shooters = [{ name: 'Bob' }, { name: 'Alice' }];
+    const result = sortShootersWithCaptainFirst(shooters, 'Bob');
+    expect(result[0]?.name).toBe('Bob');
+    expect(result[1]?.name).toBe('Alice');
+  });
+
+  it('is case-insensitive (delegates to normalizeShooterName)', () => {
+    const shooters = [{ name: 'alice' }, { name: 'BOB' }];
+    const result = sortShootersWithCaptainFirst(shooters, 'bob');
+    expect(result[0]?.name).toBe('BOB');
+  });
+
+  it('preserves original order when captain is not found', () => {
+    const shooters = [{ name: 'Alice' }, { name: 'Bob' }];
+    const result = sortShootersWithCaptainFirst(shooters, 'Charlie');
+    expect(result[0]?.name).toBe('Alice');
+    expect(result[1]?.name).toBe('Bob');
+  });
+
+  it('does not mutate the input array', () => {
+    const shooters = [{ name: 'Alice' }, { name: 'Bob' }];
+    sortShootersWithCaptainFirst(shooters, 'Bob');
+    expect(shooters[0]?.name).toBe('Alice');
   });
 });

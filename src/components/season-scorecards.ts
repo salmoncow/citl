@@ -8,7 +8,7 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService, buildPriorAvgMap } from '@/services/score-service';
-import { computeShooterAverage, computeShooterStartingAvg, isShooterRookie, mean, isDummyName, normalizeShooterName, getLastWord } from '@/services/scoring-engine';
+import { computeShooterAverage, computeShooterStartingAvg, isShooterRookie, mean, isDummyName, normalizeShooterName, getLastWord, sortShootersWithCaptainFirst } from '@/services/scoring-engine';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult } from '@/types/score';
 
@@ -255,15 +255,16 @@ class SeasonScorecards extends HTMLElement {
       return { ...s, weeksShot, finalAvg };
     });
 
-    // Sort: real shooters first, dummies last
-    shooters.sort((a, b) => {
+    // Sort: captain first (among real shooters), dummies last
+    const withCaptainFirst = sortShootersWithCaptainFirst(shooters, teamDoc?.captain ?? '');
+    withCaptainFirst.sort((a, b) => {
       if (a.isDummy === b.isDummy) return 0;
       return a.isDummy ? 1 : -1;
     });
 
     const headerCells = WEEK_HEADERS.map((w) => `<th>${w}</th>`).join('');
 
-    const shooterRows = shooters
+    const shooterRows = withCaptainFirst
       .map((s) => {
         const rookieMark = s.rookie ? 'R' : '';
         const scoreCells = s.scores.map((v) => `<td>${fmt(v)}</td>`).join('');
