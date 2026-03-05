@@ -10,6 +10,7 @@ import './components/home-standings';
 import './components/season-scorecards';
 import './components/admin-panel';
 import './components/scoresheet-generator';
+import './components/season-calendar';
 
 import { NavigationModule } from './modules/navigation';
 import { RouterModule } from './modules/router';
