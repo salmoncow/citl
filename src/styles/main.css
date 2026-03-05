@@ -1612,3 +1612,44 @@ input[type="text"].ap-roster-name:focus {
     padding-top: 6pt;
   }
 }
+
+/* ─── Season Calendar ──────────────────────────────────────────────────────── */
+
+/* Layout */
+.season-calendar       { margin-bottom: var(--space-8); }
+.calendar-months       { display: flex; flex-wrap: wrap; gap: var(--space-6); }
+.calendar-month        { flex: 1 1 280px; background: var(--c-surface);
+                         border: 1px solid var(--c-border); border-radius: var(--radius-md);
+                         padding: var(--space-4); }
+.calendar-month-title  { font-size: var(--text-lg); font-weight: 600;
+                         color: var(--c-heading); margin-bottom: var(--space-3); }
+
+/* Grid */
+.calendar-grid         { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.calendar-day-header   { text-align: center; font-size: var(--text-xs);
+                         color: var(--c-text-muted); font-weight: 600;
+                         padding-bottom: var(--space-1); }
+
+/* Cells */
+.calendar-cell         { aspect-ratio: 1; display: flex; align-items: center;
+                         justify-content: center; border-radius: var(--radius-sm);
+                         font-size: var(--text-sm); color: var(--c-text); }
+.calendar-cell--empty  { /* invisible placeholder */ }
+.calendar-cell--shoot  { background: var(--c-table-header-bg); /* navy */
+                         color: #fff; font-weight: 600; }
+.calendar-cell--practice { background: var(--c-accent); /* orange */
+                           color: #fff; font-weight: 600; }
+.calendar-cell--holiday  { background: #dc2626; color: #fff; font-weight: 600; }
+.calendar-cell--today  { outline: 2px solid var(--c-accent); outline-offset: -2px; }
+
+/* Dark mode — shoot day needs lighter treatment on dark bg */
+@media (prefers-color-scheme: dark) {
+  .calendar-cell--shoot { background: #1e5f8e; }
+}
+
+/* Legend */
+.calendar-legend       { display: flex; gap: var(--space-4); flex-wrap: wrap;
+                         margin-top: var(--space-4); font-size: var(--text-sm);
+                         color: var(--c-text-muted); align-items: center; }
+.calendar-legend-item  { display: flex; align-items: center; gap: var(--space-1); }
+.calendar-legend-swatch { width: 14px; height: 14px; border-radius: var(--radius-sm); }
