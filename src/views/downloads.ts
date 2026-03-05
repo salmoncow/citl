@@ -4,7 +4,6 @@
 
 export function downloadsView(): string {
   return `
-    <h2>Score Sheets</h2>
     <scoresheet-generator></scoresheet-generator>
 
     <div class="downloads-static">

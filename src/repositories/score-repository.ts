@@ -347,6 +347,37 @@ export class ScoreRepository {
       }
 
       await batch.commit();
+
+      // Step 2: cascade-remove team from published week results + season standings
+      const [weeksSnap, seasonSnap] = await Promise.all([
+        getDocs(collection(this.db, 'seasons', String(year), 'weeks')),
+        getDoc(doc(this.db, 'seasons', String(year))),
+      ]);
+
+      const batch2 = writeBatch(this.db);
+      let batch2HasOps = false;
+
+      for (const weekDoc of weeksSnap.docs) {
+        const data = weekDoc.data() as { teamResults?: { teamId: string }[] };
+        const before = data.teamResults ?? [];
+        const after = before.filter((tr) => tr.teamId !== teamId);
+        if (after.length !== before.length) {
+          batch2.update(weekDoc.ref, { teamResults: after });
+          batch2HasOps = true;
+        }
+      }
+
+      if (seasonSnap.exists()) {
+        const standings = (seasonSnap.data()['standings'] ?? []) as { teamId: string }[];
+        const filtered = standings.filter((s) => s.teamId !== teamId);
+        if (filtered.length !== standings.length) {
+          batch2.update(seasonSnap.ref, { standings: filtered });
+          batch2HasOps = true;
+        }
+      }
+
+      if (batch2HasOps) await batch2.commit();
+
       return success(undefined);
     } catch (err) {
       return failure(`Failed to delete team: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');

@@ -302,7 +302,7 @@ export class ScoreService {
     const trimmedName = name.trim();
     const trimmedCaptain = captain.trim();
     if (!trimmedName) return failure('Team name is required', 'VALIDATION_ERROR');
-    if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
+    // captain may be empty at creation time; it is set when the first roster is saved
 
     const teamId = _slugify(trimmedName);
 
@@ -315,7 +315,15 @@ export class ScoreService {
     const newTeam: Omit<Team, 'id'> = {
       name: trimmedName,
       captain: trimmedCaptain,
-      shooters: [],
+      shooters: trimmedCaptain ? [{
+        id: '',
+        name: trimmedCaptain,
+        rookie: true,
+        startingAvg: 35,
+        finalAvg: null,
+        weeksShot: null,
+        scores: [],
+      }] : [],
       totals: { targets: [], rankPoints: [], bonusPoints: [] },
     };
 
@@ -398,7 +406,21 @@ export class ScoreService {
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
     const result = await this.repository.deleteTeam(year, teamId);
-    if (result.success) this.cache.delete(`teams:${year}`);
+    if (result.success) {
+      this.cache.delete(`teams:${year}`);
+      this.cache.delete(`weeks:${year}`);
+      this.cache.delete(`latest:${year}`);
+      this.cache.delete(`season:${year}`);
+      for (let w = 1; w <= 15; w++) this.cache.delete(`week:${year}:${w}`);
+
+      // Recompute standings from the updated week docs (deleted team already removed by repo)
+      const weeksResult = await this.repository.getAllWeekResults(year);
+      if (weeksResult.success && weeksResult.data.length > 0) {
+        const newStandings = _recomputeStandingsFromWeeks(weeksResult.data);
+        await this.repository.updateSeason(year, { standings: newStandings } as Partial<Season>);
+        this.cache.delete(`season:${year}`);
+      }
+    }
     return result;
   }
 
@@ -479,7 +501,6 @@ export class ScoreService {
     }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedCaptain = captain.trim();
-    if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
     if (shooters.length < 5) {
       return failure('A team must have at least 5 shooters', 'VALIDATION_ERROR');
     }
@@ -681,6 +702,36 @@ export function buildPriorAvgMap(weekResults: WeekResult[], priorTeams: Team[]):
   return result;
 }
 
+
+/**
+ * Recompute season standings by summing the stored per-week TeamResult values.
+ * Used after team deletion — the deleted team is already absent from weekResults.
+ */
+function _recomputeStandingsFromWeeks(weekResults: WeekResult[]): SeasonStandings[] {
+  const acc = new Map<string, { teamId: string; teamName: string; rankPoints: number; bonusPoints: number; targets: number }>();
+  for (const wr of weekResults) {
+    for (const tr of wr.teamResults ?? []) {
+      const cur = acc.get(tr.teamId) ?? { teamId: tr.teamId, teamName: tr.teamName, rankPoints: 0, bonusPoints: 0, targets: 0 };
+      acc.set(tr.teamId, {
+        ...cur,
+        rankPoints: cur.rankPoints + (tr.rankPoints ?? 0),
+        bonusPoints: cur.bonusPoints + (tr.bonusPoints ?? 0),
+        targets: cur.targets + (tr.targets ?? 0),
+      });
+    }
+  }
+  const rows = [...acc.values()].sort(
+    (a, b) => (b.rankPoints + b.bonusPoints) - (a.rankPoints + a.bonusPoints),
+  );
+  return rows.map((row, i) => ({
+    rank: i + 1,
+    teamId: row.teamId,
+    teamName: row.teamName,
+    totalRankPoints: row.rankPoints,
+    totalBonusPoints: row.bonusPoints,
+    totalTargets: row.targets,
+  }));
+}
 
 function _computeStandings(computed: SeasonData, throughWeek: number): SeasonStandings[] {
   const rows = computed.teams.map((team) => {

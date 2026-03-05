@@ -51,6 +51,7 @@ export function sortShootersWithCaptainFirst<T extends { name: string }>(
   shooters: T[],
   captainName: string,
 ): T[] {
+  if (!captainName) return [...shooters];
   const cap = normalizeShooterName(captainName);
   const idx = shooters.findIndex((s) => normalizeShooterName(s.name) === cap);
   if (idx <= 0) return [...shooters];
