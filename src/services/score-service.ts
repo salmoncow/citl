@@ -315,7 +315,15 @@ export class ScoreService {
     const newTeam: Omit<Team, 'id'> = {
       name: trimmedName,
       captain: trimmedCaptain,
-      shooters: [],
+      shooters: trimmedCaptain ? [{
+        id: '',
+        name: trimmedCaptain,
+        rookie: true,
+        startingAvg: 35,
+        finalAvg: null,
+        weeksShot: null,
+        scores: [],
+      }] : [],
       totals: { targets: [], rankPoints: [], bonusPoints: [] },
     };
 
