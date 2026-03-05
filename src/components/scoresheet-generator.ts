@@ -8,7 +8,7 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
-import { computeGoingInAverage, isDummyName, normalizeShooterName, sortShootersWithCaptainFirst } from '@/services/scoring-engine';
+import { computeGoingInAverage, getLastWord, isDummyName, normalizeShooterName, sortShootersWithCaptainFirst } from '@/services/scoring-engine';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult } from '@/types/score';
 
@@ -145,6 +145,15 @@ class ScoresheetGenerator extends HTMLElement {
             <td class="fill">&nbsp;</td>
           </tr>`;
 
+    const dummyNote = 'Starting Dummy Score = Avg. of shooters going-in for that day\nEnding Dummy Score is automatically calculated via the tool';
+    const prefix = getLastWord(team.name);
+    const dummyRows = [1, 2].map((n) => `
+          <tr>
+            <td>${prefix} DUMMY${n}</td>
+            <td></td>
+            <td colspan="3" class="scoresheet-dummy-note">${dummyNote.replace('\n', '<br>')}</td>
+          </tr>`).join('');
+
     return `
       <div class="scoresheet-card">
 
@@ -164,7 +173,7 @@ class ScoresheetGenerator extends HTMLElement {
               <th>Total</th>
             </tr>
           </thead>
-          <tbody>${rows}${blankRow}${blankRow}</tbody>
+          <tbody>${rows}${blankRow}${blankRow}${dummyRows}</tbody>
         </table>
 
         <div class="scoresheet-print-footer">
