@@ -62,4 +62,9 @@ export interface Season {
   currentWeek: number;
   standings: SeasonStandings[];
   awards: SeasonAwards | null;
+  /** Admin-set date overrides per shoot week.
+   *  key:   weekNumber as string ("1"–"15")
+   *  value: ISO date string (postponed date) | null (cancelled)
+   */
+  weekDateOverrides?: Partial<Record<string, string | null>>;
 }

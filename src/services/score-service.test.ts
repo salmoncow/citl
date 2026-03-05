@@ -18,8 +18,9 @@ import { describe, it, expect } from 'vitest';
 import { ScoreService, buildPriorAvgMap } from './score-service';
 import { success } from '@/repositories/score-repository';
 import type { ScoreRepository } from '@/repositories/score-repository';
-import type { Team, WeekResult } from '@/types/score';
+import type { Team, WeekResult, SeasonEntry } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
+import type { Season, SeasonStandings } from '@/types/season';
 
 // ---------------------------------------------------------------------------
 // Fixture helpers
@@ -506,5 +507,279 @@ describe('deleteTeam — validation', () => {
     // Delete clears cache
     const result = await svc.deleteTeam(2026, 'team-1');
     expect(result.success).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// publishWeek
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a minimal SeasonEntry for publishWeek tests.
+ * Scores default to 20/20 (total 40) per shooter unless overridden.
+ */
+function makeEntry(opts: {
+  weekNumber: number;
+  teamId: string;
+  teamName: string;
+  shooters: { name: string; score1?: number; score2?: number }[];
+}): SeasonEntry {
+  return {
+    year: 2026,
+    weekNumber: opts.weekNumber,
+    teamId: opts.teamId,
+    teamName: opts.teamName,
+    savedAt: '',
+    shooters: opts.shooters.map((s) => {
+      const s1 = s.score1 ?? 20;
+      const s2 = s.score2 ?? 20;
+      return { name: s.name, score1: s1, score2: s2, total: s1 + s2 };
+    }),
+  };
+}
+
+/** Build a team whose shooter names match those in a given entry. */
+function makeTeamFromEntry(entry: SeasonEntry, extraShooters: string[] = []): Team {
+  const names = [...entry.shooters.map((s) => s.name), ...extraShooters];
+  return {
+    id: entry.teamId,
+    name: entry.teamName,
+    captain: '',
+    shooters: names.map((n) => makeShooter(n, 35)),
+    totals: { targets: [], rankPoints: [], bonusPoints: [] },
+  };
+}
+
+/** Minimal repo stub for publishWeek — captures what is written to Firestore. */
+function makePublishRepo(opts: {
+  entries?: SeasonEntry[];
+  teams?: Team[];
+  season?: Season | null;
+  onPublish?: (wr: WeekResult, su: object) => void;
+}): ScoreRepository {
+  const stub: Partial<ScoreRepository> = {
+    getEntries: async () => success(opts.entries ?? []),
+    getTeams: async () => success(opts.teams ?? []),
+    getSeason: async () => success(opts.season ?? null),
+    publishWeek: async (_y, wr, su) => {
+      opts.onPublish?.(wr, su as object);
+      return success(undefined);
+    },
+  };
+  return stub as unknown as ScoreRepository;
+}
+
+describe('publishWeek — input validation', () => {
+  it('returns VALIDATION_ERROR for out-of-range year', async () => {
+    const svc = new ScoreService(makePublishRepo({}));
+    const result = await svc.publishWeek(2000, 1);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns VALIDATION_ERROR for weekNumber 0', async () => {
+    const svc = new ScoreService(makePublishRepo({}));
+    const result = await svc.publishWeek(2026, 0);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns VALIDATION_ERROR for weekNumber 16', async () => {
+    const svc = new ScoreService(makePublishRepo({}));
+    const result = await svc.publishWeek(2026, 16);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns NO_DATA when no entries exist for any week up to weekNumber', async () => {
+    const svc = new ScoreService(makePublishRepo({ entries: [] }));
+    const result = await svc.publishWeek(2026, 1);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('NO_DATA');
+  });
+
+  it('returns VALIDATION_ERROR when a team has 3 dummy shooters in the target week', async () => {
+    const entry = makeEntry({
+      weekNumber: 1,
+      teamId: 'ravens',
+      teamName: 'Ravens',
+      shooters: [
+        { name: 'Alice' },
+        { name: 'Bob' },
+        { name: 'Ravens DUMMY1' }, // isDummyName → true
+        { name: 'Ravens DUMMY2' }, // isDummyName → true
+        { name: 'Ravens DUMMY3' }, // isDummyName → true  ← 3 dummies, over limit
+      ],
+    });
+    const team = makeTeamFromEntry(entry);
+    const svc = new ScoreService(makePublishRepo({ entries: [entry], teams: [team] }));
+    const result = await svc.publishWeek(2026, 1);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+});
+
+describe('publishWeek — happy path: WeekResult structure', () => {
+  it('writes a WeekResult with the correct weekNumber and one result per team', async () => {
+    const entryA = makeEntry({ weekNumber: 1, teamId: 'team-a', teamName: 'Team A',
+      shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] });
+    const entryB = makeEntry({ weekNumber: 1, teamId: 'team-b', teamName: 'Team B',
+      shooters: [{ name: 'V' }, { name: 'W' }, { name: 'X' }, { name: 'Y' }, { name: 'Z' }] });
+
+    let captured: WeekResult | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [entryA, entryB],
+      teams: [makeTeamFromEntry(entryA), makeTeamFromEntry(entryB)],
+      onPublish: (wr) => { captured = wr; },
+    }));
+
+    const result = await svc.publishWeek(2026, 1);
+    expect(result.success).toBe(true);
+    expect(captured?.weekNumber).toBe(1);
+    expect(captured?.teamResults).toHaveLength(2);
+  });
+});
+
+describe('publishWeek — standings computation', () => {
+  it('ranks the higher-scoring team first', async () => {
+    // Team A: 5 shooters × 43 = 215 targets.  Team B: 5 shooters × 35 = 175 targets.
+    // Going-in avg = 35 for all (week 1, no prior scores) → goingInSum = 175 each.
+    // Team A targets (215) > goingInSum (175) → target bonus = 5.
+    // Team B targets (175) = goingInSum (175) → NOT strictly greater → bonus = 0.
+    // Rank points: Team A = 30, Team B = 28.
+    // Final: Team A = 35 pts, Team B = 28 pts → Team A rank 1.
+    const entryA = makeEntry({ weekNumber: 1, teamId: 'team-a', teamName: 'Team A',
+      shooters: [
+        { name: 'A', score1: 21, score2: 22 },
+        { name: 'B', score1: 21, score2: 22 },
+        { name: 'C', score1: 21, score2: 22 },
+        { name: 'D', score1: 21, score2: 22 },
+        { name: 'E', score1: 21, score2: 22 },
+      ],
+    });
+    const entryB = makeEntry({ weekNumber: 1, teamId: 'team-b', teamName: 'Team B',
+      shooters: [
+        { name: 'V', score1: 17, score2: 18 },
+        { name: 'W', score1: 17, score2: 18 },
+        { name: 'X', score1: 17, score2: 18 },
+        { name: 'Y', score1: 17, score2: 18 },
+        { name: 'Z', score1: 17, score2: 18 },
+      ],
+    });
+
+    let capturedStandings: SeasonStandings[] | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [entryA, entryB],
+      teams: [makeTeamFromEntry(entryA), makeTeamFromEntry(entryB)],
+      onPublish: (_, su) => {
+        capturedStandings = (su as { standings: SeasonStandings[] }).standings;
+      },
+    }));
+
+    await svc.publishWeek(2026, 1);
+
+    expect(capturedStandings?.[0]?.teamName).toBe('Team A');
+    expect(capturedStandings?.[0]?.rank).toBe(1);
+    expect(capturedStandings?.[1]?.teamName).toBe('Team B');
+    expect(capturedStandings?.[1]?.rank).toBe(2);
+  });
+
+  it('currentWeek on the season update equals the published weekNumber', async () => {
+    const entry = makeEntry({ weekNumber: 3, teamId: 'team-a', teamName: 'Team A',
+      shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] });
+
+    let capturedUpdate: { currentWeek?: number } | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [entry],
+      teams: [makeTeamFromEntry(entry)],
+      onPublish: (_, su) => { capturedUpdate = su as { currentWeek?: number }; },
+    }));
+
+    await svc.publishWeek(2026, 3);
+    expect(capturedUpdate?.currentWeek).toBe(3);
+  });
+});
+
+describe('publishWeek — dummy auto-injection via _buildSeasonData', () => {
+  it('auto-injects 2 dummies when team entry has only 3 real scorers', async () => {
+    // Real scores: 40, 42, 44.  mean = 42.  dummyScore = floor(42 − 5) = 37.
+    // Total targets = 40 + 42 + 44 + 37 + 37 = 200.
+    const entry = makeEntry({
+      weekNumber: 1, teamId: 'ravens', teamName: 'Ravens',
+      shooters: [
+        { name: 'A', score1: 20, score2: 20 }, // 40
+        { name: 'B', score1: 21, score2: 21 }, // 42
+        { name: 'C', score1: 22, score2: 22 }, // 44
+      ],
+    });
+    // Roster has 5 shooters; entry only covers 3 → 2 dummies auto-injected
+    const team = makeTeamFromEntry(entry, ['D', 'E']);
+
+    let capturedWr: WeekResult | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [entry],
+      teams: [team],
+      onPublish: (wr) => { capturedWr = wr; },
+    }));
+
+    await svc.publishWeek(2026, 1);
+
+    const teamResult = capturedWr?.teamResults[0];
+    expect(teamResult?.targets).toBe(200); // 40+42+44+37+37
+  });
+
+  it('does not inject dummies when team entry already has 5 scorers', async () => {
+    const entry = makeEntry({
+      weekNumber: 1, teamId: 'team-a', teamName: 'Team A',
+      shooters: [
+        { name: 'A', score1: 20, score2: 20 },
+        { name: 'B', score1: 20, score2: 20 },
+        { name: 'C', score1: 20, score2: 20 },
+        { name: 'D', score1: 20, score2: 20 },
+        { name: 'E', score1: 20, score2: 20 },
+      ],
+    });
+    const team = makeTeamFromEntry(entry);
+
+    let capturedWr: WeekResult | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [entry],
+      teams: [team],
+      onPublish: (wr) => { capturedWr = wr; },
+    }));
+
+    await svc.publishWeek(2026, 1);
+
+    const shooterScores = capturedWr?.teamResults[0]?.shooterScores ?? [];
+    const dummies = shooterScores.filter((s) => s.name.toUpperCase().includes('DUMMY'));
+    expect(dummies).toHaveLength(0);
+    expect(capturedWr?.teamResults[0]?.targets).toBe(200); // 5 × 40
+  });
+});
+
+describe('publishWeek — cache invalidation', () => {
+  it('invalidates the season cache so the next getSeason call hits the repository', async () => {
+    const season: Season = {
+      id: '2026', year: 2026, status: 'active', currentWeek: 0, standings: [], awards: null,
+    };
+    const entry = makeEntry({ weekNumber: 1, teamId: 'team-a', teamName: 'Team A',
+      shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] });
+
+    let getSeasonCallCount = 0;
+    const repo: Partial<ScoreRepository> = {
+      getEntries: async () => success([entry]),
+      getTeams: async () => success([makeTeamFromEntry(entry)]),
+      getSeason: async () => { getSeasonCallCount++; return success(season); },
+      publishWeek: async () => success(undefined),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+
+    await svc.getSeason(2026);          // call 1 — populates cache
+    expect(getSeasonCallCount).toBe(1);
+
+    await svc.publishWeek(2026, 1);     // invalidates season cache
+
+    await svc.getSeason(2026);          // call 2 — must bypass cache
+    expect(getSeasonCallCount).toBe(2);
   });
 });

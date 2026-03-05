@@ -2,7 +2,7 @@
  * season-calendar — Custom Element
  *
  * Displays the current season's shoot schedule as a multi-month calendar grid.
- * No shadow DOM; uses global CSS classes. No Firestore calls — year derived from Date.
+ * No shadow DOM; uses global CSS classes.
  *
  * Business rules:
  *  - Practice day:    2nd Tuesday of April
@@ -12,13 +12,17 @@
  *                    is skipped; season extends by one week
  *  - July 4th mark:  July 4 itself shown red when it is a weekday
  *  - Months shown:   April → month containing the 15th shoot Tuesday
+ *  - Overrides:      admin may postpone (new date) or cancel (null) a week
  */
 
-interface ScheduleEvent {
-  date: Date;
-  type: 'practice' | 'shoot' | 'holiday';
-  week?: number; // 1-based, only for shoot days
-}
+import { db } from '@/firebase-config';
+import { createRepositoryFactory } from '@/repositories/repository-factory';
+import { ScoreService } from '@/services/score-service';
+import { computeSchedule } from '@/utils/schedule';
+import type { ScheduleEvent } from '@/utils/schedule';
+
+const factory = createRepositoryFactory({ db });
+const scoreService = new ScoreService(factory.getScoreRepository());
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -28,76 +32,52 @@ const MONTH_NAMES = [
 const DAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 class SeasonCalendar extends HTMLElement {
-  connectedCallback(): void {
+  async connectedCallback(): Promise<void> {
+    this.innerHTML = `<p>Loading&hellip;</p>`;
+
     const year = new Date().getFullYear();
-    const schedule = this._computeSchedule(year);
+
+    // Fetch override data; gracefully degrade on failure
+    let overrides: Partial<Record<string, string | null>> = {};
+    const seasonResult = await scoreService.getSeason(year);
+    if (seasonResult.success && seasonResult.data) {
+      overrides = seasonResult.data.weekDateOverrides ?? {};
+    }
+
+    const baseSchedule = computeSchedule(year);
+    const schedule = this._applyOverrides(baseSchedule, overrides);
     this.innerHTML = this._renderCalendar(year, schedule);
   }
 
-  // ─── Schedule computation ────────────────────────────────────────────────────
+  // ─── Override application ────────────────────────────────────────────────
 
-  /** Returns the date of the Nth Tuesday (1-based) of the given month (0-based). */
-  private _nthTuesdayOfMonth(year: number, month: number, n: number): Date {
-    const firstDay = new Date(year, month, 1);
-    const firstDayOfWeek = firstDay.getDay(); // 0 = Sun, 2 = Tue
-    const daysUntilTuesday = (2 - firstDayOfWeek + 7) % 7;
-    const firstTuesdayDate = 1 + daysUntilTuesday;
-    return new Date(year, month, firstTuesdayDate + (n - 1) * 7);
-  }
-
-  /** Returns all schedule events for the season year. */
-  private _computeSchedule(year: number): ScheduleEvent[] {
-    const practice = this._nthTuesdayOfMonth(year, 3, 2); // April = month 3
-    const week1Start = this._nthTuesdayOfMonth(year, 3, 3);
-
-    const july4 = new Date(year, 6, 4);
-    const july4DayOfWeek = july4.getDay(); // 0 = Sun, 6 = Sat
-    const july4IsWeekday = july4DayOfWeek >= 1 && july4DayOfWeek <= 5;
-
-    // Tuesday of the Sun–Sat week that contains July 4
-    let skippedTuesday: Date | null = null;
-    if (july4IsWeekday) {
-      // Days since Sunday of that week = july4DayOfWeek
-      const sundayOffset = july4DayOfWeek; // days to subtract to reach Sunday
-      const sundayDate = 4 - sundayOffset; // July date of that Sunday
-      skippedTuesday = new Date(year, 6, sundayDate + 2); // +2 to reach Tuesday
-    }
-
-    const events: ScheduleEvent[] = [
-      { date: practice, type: 'practice' },
-    ];
-
-    if (july4IsWeekday) {
-      events.push({ date: july4, type: 'holiday' });
-    }
-
-    // Walk forward, collecting 15 shoot Tuesdays (skipping the July 4 week Tuesday)
-    const current = new Date(week1Start);
-    let shootWeek = 1;
-
-    while (shootWeek <= 15) {
-      const isSkipped =
-        skippedTuesday !== null &&
-        current.getFullYear() === skippedTuesday.getFullYear() &&
-        current.getMonth() === skippedTuesday.getMonth() &&
-        current.getDate() === skippedTuesday.getDate();
-
-      if (!isSkipped) {
-        events.push({ date: new Date(current), type: 'shoot', week: shootWeek });
-        shootWeek++;
+  /**
+   * Apply admin week-date overrides to the base schedule.
+   * - string override: replace the shoot event's date; keep type 'shoot'
+   * - null override:   change the shoot event's type to 'cancelled'
+   */
+  private _applyOverrides(
+    events: ScheduleEvent[],
+    overrides: Partial<Record<string, string | null>>,
+  ): ScheduleEvent[] {
+    return events.map((event) => {
+      if (event.type !== 'shoot' || event.week === undefined) return event;
+      const key = String(event.week);
+      if (!(key in overrides)) return event;
+      const override = overrides[key];
+      if (override === null) {
+        return { ...event, type: 'cancelled' as const };
       }
-
-      current.setDate(current.getDate() + 7);
-    }
-
-    return events;
+      return { ...event, date: new Date(override) };
+    });
   }
 
-  // ─── Rendering ───────────────────────────────────────────────────────────────
+  // ─── Rendering ───────────────────────────────────────────────────────────
 
   private _renderCalendar(year: number, schedule: ScheduleEvent[]): string {
-    // Month range: April (3) → month of last shoot event
-    const shootEvents = schedule.filter((e) => e.type === 'shoot');
+    // Month range: April (3) → month of last non-cancelled shoot event
+    const shootEvents = schedule.filter((e) => e.type === 'shoot' || e.type === 'cancelled');
+    // For determining range use original (cancelled events keep their original date)
     const lastShoot = shootEvents[shootEvents.length - 1];
     const lastMonth = lastShoot?.date.getMonth() ?? 6; // fallback July
 
@@ -106,7 +86,8 @@ class SeasonCalendar extends HTMLElement {
       monthsHtml += this._renderMonth(year, m, schedule);
     }
 
-    const legendHtml = this._renderLegend();
+    const hasCancelled = schedule.some((e) => e.type === 'cancelled');
+    const legendHtml = this._renderLegend(hasCancelled);
 
     return `
       <section class="season-calendar">
@@ -127,10 +108,10 @@ class SeasonCalendar extends HTMLElement {
     const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
 
     // Build lookup: dateKey → CSS class
+    // Priority: holiday > cancelled > shoot > practice
     const scheduleMap = new Map<string, string>();
     for (const event of schedule) {
       const key = `${event.date.getFullYear()}-${event.date.getMonth()}-${event.date.getDate()}`;
-      // Holiday takes priority over any shoot that might share the same date
       if (!scheduleMap.has(key) || event.type === 'holiday') {
         scheduleMap.set(key, `calendar-cell--${event.type}`);
       }
@@ -162,12 +143,16 @@ class SeasonCalendar extends HTMLElement {
       </div>`;
   }
 
-  private _renderLegend(): string {
+  private _renderLegend(hasCancelled: boolean): string {
     const items: Array<{ label: string; style: string }> = [
       { label: 'Shoot Day', style: 'background: var(--c-table-header-bg)' },
       { label: 'Practice Day', style: 'background: var(--c-accent)' },
       { label: 'Holiday', style: 'background: #dc2626' },
     ];
+
+    if (hasCancelled) {
+      items.push({ label: 'Cancelled', style: 'background: var(--c-text-muted); opacity: 0.5' });
+    }
 
     const itemsHtml = items
       .map(

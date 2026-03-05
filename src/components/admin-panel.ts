@@ -15,8 +15,10 @@ import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
 import { showToast } from '@/modules/ui';
 import { normalizeShooterName } from '@/services/scoring-engine';
+import { computeSchedule } from '@/utils/schedule';
 import type { Team } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
+import type { Season } from '@/types/season';
 
 const factory = createRepositoryFactory({ db });
 const scoreService = new ScoreService(factory.getScoreRepository());
@@ -30,6 +32,8 @@ const NEW_TEAM_SENTINEL = '__new__';
 
 const PENCIL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"/></svg>`;
 const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+const LOCK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const WARN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
 
 function buildOptions(min: number, max: number, label: string, selected: number): string {
   let html = '';
@@ -41,11 +45,16 @@ function buildOptions(min: number, max: number, label: string, selected: number)
 
 class AdminPanel extends HTMLElement {
   private _teamsData: Team[] | null = null;
+  private _seasonData: Season | null = null;
   private _rosterOriginalShooters: Shooter[] = [];
   /** null = no edit open; NEW_TEAM_SENTINEL = add row open; else = teamId being edited */
   private _editingTeamId: string | null = null;
   /** Shooter names removed from roster DOM but not yet written to Firestore */
   private _pendingRemovals: string[] = [];
+  /** Whether the date override card is in edit mode */
+  private _dateEditMode = false;
+  /** Whether any entries have been saved for the currently selected week */
+  private _weekHasScores = false;
 
   connectedCallback(): void {
     this.innerHTML = `
@@ -105,6 +114,8 @@ class AdminPanel extends HTMLElement {
             </select>
           </div>
 
+          <div id="ap-date-section"></div>
+
           <h3>Shooters</h3>
           <table class="admin-shooters-table">
             <thead>
@@ -140,12 +151,18 @@ class AdminPanel extends HTMLElement {
     // Shared year listener — reset any open edit when year changes
     this.querySelector('#ap-year')!.addEventListener('change', () => {
       this._editingTeamId = null;
+      this._dateEditMode = false;
+      this._weekHasScores = false;
       void this._fetchTeamsData();
+      void this._fetchSeasonData();
       void this._loadSavedEntries();
     });
 
     // Score entry listeners
     this.querySelector('#ap-week')!.addEventListener('change', () => {
+      this._dateEditMode = false;
+      this._weekHasScores = false;
+      this._updateDateSection();
       void this._populateShooterRows();
       void this._loadSavedEntries();
     });
@@ -159,6 +176,7 @@ class AdminPanel extends HTMLElement {
     this.querySelector('#ap-save-roster')!.addEventListener('click', () => void this._saveRoster());
 
     void this._fetchTeamsData();
+    void this._fetchSeasonData();
     void this._loadSavedEntries();
   }
 
@@ -633,6 +651,10 @@ class AdminPanel extends HTMLElement {
 
     const entries = result.data.filter((e) => e.weekNumber === weekNumber);
 
+    // Update score-presence flag and re-render the date card (locking state may have changed)
+    this._weekHasScores = entries.length > 0;
+    this._updateDateSection();
+
     if (entries.length === 0) {
       const li = document.createElement('li');
       li.textContent = 'No entries saved for this year/week.';
@@ -1021,6 +1043,199 @@ class AdminPanel extends HTMLElement {
       .length;
   }
 
+  // ── Date override ────────────────────────────────────────────────────────
+
+  private async _fetchSeasonData(): Promise<void> {
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+    const result = await scoreService.getSeason(year);
+    this._seasonData = (result.success ? result.data : null) ?? null;
+    this._updateDateSection();
+  }
+
+  /**
+   * Rebuild the date override card. Called whenever week, year, season data,
+   * or entry presence changes. Manages all of: view mode, edit mode, locked state.
+   */
+  private _updateDateSection(): void {
+    const container = this.querySelector<HTMLElement>('#ap-date-section');
+    if (!container) return;
+
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')?.value ?? '0', 10);
+    const weekNumber = parseInt(this.querySelector<HTMLSelectElement>('#ap-week')?.value ?? '1', 10);
+
+    // ── Compute state ──────────────────────────────────────────────────────
+    const overrides = this._seasonData?.weekDateOverrides ?? {};
+    const key = String(weekNumber);
+    const hasOverride = key in overrides;
+    const overrideValue = overrides[key]; // string | null | undefined
+
+    // Scheduled date from the league calendar
+    const shootEvents = computeSchedule(year).filter((e) => e.type === 'shoot');
+    const scheduledEvent = shootEvents.find((e) => e.week === weekNumber);
+    const scheduledDate = scheduledEvent?.date ?? null;
+
+    // Effective date for display + past check
+    let effectiveDate: Date | null;
+    let displayState: 'normal' | 'overridden' | 'cancelled';
+
+    if (hasOverride && overrideValue === null) {
+      displayState = 'cancelled';
+      effectiveDate = scheduledDate; // use original scheduled date for past check
+    } else if (hasOverride && typeof overrideValue === 'string') {
+      displayState = 'overridden';
+      effectiveDate = _parseLocalDate(overrideValue);
+    } else {
+      displayState = 'normal';
+      effectiveDate = scheduledDate;
+    }
+
+    // Lock if past or scores exist
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isInPast = effectiveDate !== null && effectiveDate < today;
+    const isLocked = isInPast || this._weekHasScores;
+    const lockReason = isInPast
+      ? 'This date is in the past'
+      : this._weekHasScores
+        ? 'Scores have been entered for this week'
+        : '';
+
+    // Force back to view mode if we're now locked
+    if (isLocked && this._dateEditMode) this._dateEditMode = false;
+
+    // ── Format display date ────────────────────────────────────────────────
+    const formattedDate = effectiveDate !== null
+      ? effectiveDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
+
+    // ── Badge HTML ─────────────────────────────────────────────────────────
+    const badgeHtml = displayState === 'overridden'
+      ? `<span class="ap-date-badge">overridden</span>`
+      : displayState === 'cancelled'
+        ? `<span class="ap-date-badge ap-date-badge--cancelled">cancelled</span>`
+        : '';
+
+    // ── Date display text ──────────────────────────────────────────────────
+    const dateDisplayHtml = displayState === 'cancelled'
+      ? `<span class="ap-date-display ap-date-display--cancelled">CANCELLED</span>`
+      : `<span class="ap-date-display">${formattedDate || '—'}</span>`;
+
+    // ── View mode ──────────────────────────────────────────────────────────
+    const todayStr = _toInputDate(today);
+
+    if (!this._dateEditMode) {
+      const actionHtml = isLocked
+        ? `<span class="ap-date-lock" title="${lockReason}">${LOCK_SVG} Locked</span>`
+        : `<button class="ap-date-edit-btn btn-secondary" id="ap-date-edit-btn">${PENCIL_SVG} Edit date</button>`;
+
+      container.innerHTML = `
+        <div class="ap-date-card">
+          <div class="ap-date-card__header">
+            <span class="ap-date-card__label">Shoot Date</span>
+            ${badgeHtml}
+          </div>
+          <div class="ap-date-card__body">
+            ${dateDisplayHtml}
+            ${actionHtml}
+          </div>
+        </div>`;
+
+      this.querySelector('#ap-date-edit-btn')
+        ?.addEventListener('click', () => {
+          this._dateEditMode = true;
+          this._updateDateSection();
+        });
+      return;
+    }
+
+    // ── Edit mode ──────────────────────────────────────────────────────────
+    // Pre-fill input: use override date or computed date
+    const inputValue = displayState === 'overridden' && typeof overrideValue === 'string'
+      ? overrideValue.substring(0, 10)
+      : scheduledDate !== null ? _toInputDate(scheduledDate) : '';
+
+    const cancelledChecked = displayState === 'cancelled' ? ' checked' : '';
+
+    container.innerHTML = `
+      <div class="ap-date-card ap-date-card--editing">
+        <div class="ap-date-card__header">
+          <span class="ap-date-card__label">Shoot Date</span>
+          ${badgeHtml}
+        </div>
+        <div class="ap-date-warning">
+          ${WARN_SVG}
+          <span>This overrides the scheduled shoot date on the season calendar and printed scoresheets.</span>
+        </div>
+        <div class="ap-date-edit-row">
+          <input type="date" id="ap-shoot-date" class="ap-date-input" value="${inputValue}" min="${todayStr}" />
+          <label class="ap-cancelled-label">
+            <input type="checkbox" id="ap-cancelled"${cancelledChecked} /> Cancelled
+          </label>
+        </div>
+        <div class="ap-date-edit-actions">
+          <button id="ap-cancel-date-edit" class="btn-secondary">Cancel</button>
+          <button id="ap-save-date" class="btn-primary">Save Date</button>
+        </div>
+      </div>`;
+
+    // Cancelled checkbox toggles the date input
+    const cancelledCb = this.querySelector<HTMLInputElement>('#ap-cancelled')!;
+    const dateInput = this.querySelector<HTMLInputElement>('#ap-shoot-date')!;
+    if (cancelledCb.checked) dateInput.disabled = true;
+
+    cancelledCb.addEventListener('change', () => {
+      dateInput.disabled = cancelledCb.checked;
+      if (cancelledCb.checked) dateInput.value = '';
+    });
+
+    this.querySelector('#ap-cancel-date-edit')?.addEventListener('click', () => {
+      this._dateEditMode = false;
+      this._updateDateSection();
+    });
+
+    this.querySelector('#ap-save-date')?.addEventListener('click', () => {
+      void this._saveDateOverride();
+    });
+  }
+
+  private async _saveDateOverride(): Promise<void> {
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+    const weekNumber = parseInt(this.querySelector<HTMLSelectElement>('#ap-week')!.value, 10);
+    const cancelledCb = this.querySelector<HTMLInputElement>('#ap-cancelled');
+    const dateInput = this.querySelector<HTMLInputElement>('#ap-shoot-date');
+    const saveBtn = this.querySelector<HTMLButtonElement>('#ap-save-date');
+    const cancelBtn = this.querySelector<HTMLButtonElement>('#ap-cancel-date-edit');
+
+    const isCancelled = cancelledCb?.checked ?? false;
+    const dateValue = dateInput?.value ?? '';
+
+    if (!isCancelled && !dateValue) {
+      showToast('error', 'Enter a date or check Cancelled.');
+      return;
+    }
+
+    if (saveBtn) saveBtn.disabled = true;
+    if (cancelBtn) cancelBtn.disabled = true;
+
+    const result = await scoreService.saveWeekDateOverride(
+      year,
+      weekNumber,
+      isCancelled ? null : dateValue,
+    );
+
+    if (result.success) {
+      this._dateEditMode = false;
+      showToast('success', isCancelled
+        ? `Week ${weekNumber} marked as cancelled.`
+        : `Shoot date for Week ${weekNumber} updated.`);
+      await this._fetchSeasonData(); // refreshes _seasonData and re-renders
+    } else {
+      if (saveBtn) saveBtn.disabled = false;
+      if (cancelBtn) cancelBtn.disabled = false;
+      showToast('error', `Failed to save date: ${result.error}`);
+    }
+  }
+
   // ── Status helpers ───────────────────────────────────────────────────────
 
   private _setStatus(message: string, type: '' | 'success' | 'error'): void {
@@ -1046,3 +1261,19 @@ class AdminPanel extends HTMLElement {
 }
 
 customElements.define('admin-panel', AdminPanel);
+
+// ── Module-level helpers ─────────────────────────────────────────────────────
+
+/** Parse a YYYY-MM-DD string as a local date (avoids UTC midnight offset). */
+function _parseLocalDate(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y!, (m ?? 1) - 1, d ?? 1);
+}
+
+/** Format a Date as YYYY-MM-DD for use as an <input type="date"> value. */
+function _toInputDate(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}

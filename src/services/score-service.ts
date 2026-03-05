@@ -521,6 +521,30 @@ export class ScoreService {
     return result;
   }
 
+  async saveWeekDateOverride(
+    year: number,
+    weekNumber: number,
+    date: string | null,
+  ): Promise<Result<void>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
+      return failure(`Invalid weekNumber: ${weekNumber} (must be 1–15)`, 'VALIDATION_ERROR');
+    }
+
+    const seasonResult = await this.getSeason(year);
+    if (!seasonResult.success) return { success: false, error: seasonResult.error, code: seasonResult.code };
+    const existing = seasonResult.data?.weekDateOverrides ?? {};
+    const updated = { ...existing, [String(weekNumber)]: date };
+    const result = await this.repository.updateSeason(year, { weekDateOverrides: updated } as Partial<Season>);
+    if (result.success) {
+      this.cache.delete(`season:${year}`);
+      this.cache.delete('seasons:all');
+    }
+    return result.success ? { success: true, data: undefined } : result;
+  }
+
   // -------------------------------------------------------------------------
   // Cache control
   // -------------------------------------------------------------------------
