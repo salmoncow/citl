@@ -14,6 +14,7 @@ import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
 import { showToast } from '@/modules/ui';
+import { normalizeShooterName } from '@/services/scoring-engine';
 import type { Team } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
 
@@ -43,6 +44,8 @@ class AdminPanel extends HTMLElement {
   private _rosterOriginalShooters: Shooter[] = [];
   /** null = no edit open; NEW_TEAM_SENTINEL = add row open; else = teamId being edited */
   private _editingTeamId: string | null = null;
+  /** Shooter names removed from roster DOM but not yet written to Firestore */
+  private _pendingRemovals: string[] = [];
 
   connectedCallback(): void {
     this.innerHTML = `
@@ -178,6 +181,7 @@ class AdminPanel extends HTMLElement {
 
   private async _fetchTeamsData(): Promise<void> {
     const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+    this._pendingRemovals = [];
     const result = await scoreService.getTeams(year);
     if (result.success) {
       this._teamsData = result.data;
@@ -376,8 +380,8 @@ class AdminPanel extends HTMLElement {
     saveBtn.addEventListener('click', () => {
       const n = nameInput.value.trim();
       const c = captainInput.value.trim();
-      if (!n || !c) {
-        showToast('error', 'Team name and captain are both required.');
+      if (!n || (teamId !== NEW_TEAM_SENTINEL && !c)) {
+        showToast('error', 'Team name is required. Captain is required when editing.');
         nameInput.focus();
         return;
       }
@@ -622,7 +626,7 @@ class AdminPanel extends HTMLElement {
     if (!result.success) {
       console.warn('admin-panel: could not load entries:', result.error);
       const li = document.createElement('li');
-      li.textContent = 'Error loading entries.';
+      li.textContent = 'No entries for this season/week for this team.';
       list.appendChild(li);
       return;
     }
@@ -691,6 +695,7 @@ class AdminPanel extends HTMLElement {
     }
 
     const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+    this._pendingRemovals = [];
 
     this._setTeamMgmtStatus('Loading roster defaults\u2026', 'info');
 
@@ -774,6 +779,19 @@ class AdminPanel extends HTMLElement {
             rookieSpan.textContent = 'Yes';
             return;
           }
+          // Bug 3: cross-team duplicate check
+          const currentTeamId = this.querySelector<HTMLSelectElement>('#ap-roster-team')?.value ?? '';
+          const conflict = this._teamsData?.find(
+            (t) => t.id !== currentTeamId &&
+              t.shooters.some((s) => normalizeShooterName(s.name) === normalizeShooterName(name)),
+          );
+          if (conflict) {
+            showToast('error', `"${name}" is already on team "${conflict.name}".`);
+            nameInput.value = '';
+            avgSpan.textContent = '—';
+            rookieSpan.textContent = '—';
+            return;
+          }
           row.dataset['startingAvg'] = String(result.data.startingAvg);
           row.dataset['rookie']      = String(result.data.rookie);
           avgSpan.textContent   = String(result.data.startingAvg);
@@ -793,22 +811,11 @@ class AdminPanel extends HTMLElement {
         return;
       }
       this._setTeamMgmtStatus('', '');
-      if (originalIndex !== undefined) {
-        if (!name) {
-          // No name saved — just remove DOM row, nothing in Firestore to clean up
-          tbody.removeChild(row);
-          return;
-        }
-        const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
-        const teamId = this.querySelector<HTMLSelectElement>('#ap-roster-team')?.value ?? '';
-        if (!teamId) {
-          this._setTeamMgmtStatus('No team selected.', 'error');
-          return;
-        }
-        void this._confirmRemoveShooterRow(row, tbody, name, year, teamId);
-      } else {
-        tbody.removeChild(row); // New unsaved rows need no confirmation or Firestore call
+      // Existing shooter with a name: defer cascade removal to Save Roster
+      if (originalIndex !== undefined && name) {
+        this._pendingRemovals.push(name);
       }
+      tbody.removeChild(row);
     });
 
     const td = (child: HTMLElement) => {
@@ -833,9 +840,15 @@ class AdminPanel extends HTMLElement {
 
     if (!teamId) { this._setTeamMgmtStatus('No team selected.', 'error'); return; }
 
-    // Captain comes from already-loaded team data (edited separately via the team table)
-    const captain = this._teamsData?.find((t) => t.id === teamId)?.captain ?? '';
-    if (!captain) { this._setTeamMgmtStatus('Team captain not found — please refresh.', 'error'); return; }
+    // Captain comes from team data; for new teams derive it from the first shooter row
+    let captain = this._teamsData?.find((t) => t.id === teamId)?.captain ?? '';
+    if (!captain) {
+      captain = this.querySelector<HTMLInputElement>('.ap-roster-name')?.value.trim() ?? '';
+    }
+    if (!captain) {
+      this._setTeamMgmtStatus('Add at least one shooter to set a captain.', 'error');
+      return;
+    }
 
     const shooters: Shooter[] = [];
     for (const rowEl of this.querySelectorAll<HTMLElement>('.ap-roster-row')) {
@@ -870,6 +883,12 @@ class AdminPanel extends HTMLElement {
     const teamName = this._teamsData?.find((t) => t.id === teamId)?.name ?? teamId;
     const btn = this.querySelector<HTMLButtonElement>('#ap-save-roster')!;
     btn.disabled = true;
+
+    // Bug 2: process deferred shooter removals before saving
+    for (const name of this._pendingRemovals) {
+      await scoreService.removeShooterFromRoster(year, teamId, name);
+    }
+    this._pendingRemovals = [];
 
     const result = await scoreService.saveTeamRoster(year, teamId, captain, shooters);
     btn.disabled = false;

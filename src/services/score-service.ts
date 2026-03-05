@@ -302,7 +302,7 @@ export class ScoreService {
     const trimmedName = name.trim();
     const trimmedCaptain = captain.trim();
     if (!trimmedName) return failure('Team name is required', 'VALIDATION_ERROR');
-    if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
+    // captain may be empty at creation time; it is set when the first roster is saved
 
     const teamId = _slugify(trimmedName);
 
@@ -398,7 +398,13 @@ export class ScoreService {
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
     const result = await this.repository.deleteTeam(year, teamId);
-    if (result.success) this.cache.delete(`teams:${year}`);
+    if (result.success) {
+      this.cache.delete(`teams:${year}`);
+      this.cache.delete(`weeks:${year}`);
+      this.cache.delete(`latest:${year}`);
+      this.cache.delete(`season:${year}`);
+      for (let w = 1; w <= 15; w++) this.cache.delete(`week:${year}:${w}`);
+    }
     return result;
   }
 
@@ -479,7 +485,6 @@ export class ScoreService {
     }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedCaptain = captain.trim();
-    if (!trimmedCaptain) return failure('Captain name is required', 'VALIDATION_ERROR');
     if (shooters.length < 5) {
       return failure('A team must have at least 5 shooters', 'VALIDATION_ERROR');
     }
