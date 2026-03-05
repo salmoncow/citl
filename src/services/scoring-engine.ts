@@ -41,6 +41,25 @@ export function getLastWord(name: string): string {
   return parts[parts.length - 1] ?? name;
 }
 
+/**
+ * Returns a shallow copy of `shooters` with the captain moved to index 0.
+ * All other elements keep their original relative order.
+ * Comparison is case-insensitive via normalizeShooterName.
+ * No-op if captain is already first or not found.
+ */
+export function sortShootersWithCaptainFirst<T extends { name: string }>(
+  shooters: T[],
+  captainName: string,
+): T[] {
+  const cap = normalizeShooterName(captainName);
+  const idx = shooters.findIndex((s) => normalizeShooterName(s.name) === cap);
+  if (idx <= 0) return [...shooters];
+  const result = [...shooters];
+  const [captain] = result.splice(idx, 1);
+  result.unshift(captain!);
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Average computation
 // ---------------------------------------------------------------------------
