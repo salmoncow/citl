@@ -1508,6 +1508,11 @@ input[type="text"].ap-roster-name:focus {
   min-width: 60px;
 }
 
+.scoresheet-table th:nth-child(2),
+.scoresheet-table td:nth-child(2) {
+  text-align: center;
+}
+
 .scoresheet-table td.scoresheet-dummy-note {
   font-size: var(--text-sm, .875rem);
   font-style: italic;
