@@ -9,6 +9,7 @@ import './styles/main.css';
 import './components/home-standings';
 import './components/season-scorecards';
 import './components/admin-panel';
+import './components/scoresheet-generator';
 
 import { NavigationModule } from './modules/navigation';
 import { RouterModule } from './modules/router';

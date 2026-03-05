@@ -1451,6 +1451,75 @@ input[type="text"].ap-roster-name:focus {
 }
 
 /* ============================================================
+   Scoresheet Generator
+   ============================================================ */
+
+.scoresheet-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.scoresheet-controls p {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: var(--text-sm);
+}
+
+.scoresheet-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.scoresheet-team-name {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--c-heading);
+}
+
+.scoresheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.scoresheet-table th {
+  background: var(--c-table-header-bg);
+  color: var(--c-text-inverse);
+  text-transform: uppercase;
+  font-size: var(--text-xs, .75rem);
+  letter-spacing: .05em;
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.scoresheet-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--c-table-border);
+}
+
+.scoresheet-table td.fill {
+  border: 1px solid var(--c-border);
+  min-width: 60px;
+}
+
+.scoresheet-season-label {
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+}
+
+/* Print-only elements are invisible on screen */
+.scoresheet-print-header,
+.scoresheet-print-footer { display: none; }
+
+#sg-cards { display: none; }
+
+/* ============================================================
    Print styles
    ============================================================ */
 
@@ -1481,5 +1550,44 @@ input[type="text"].ap-roster-name:focus {
   .collapsible ~ .scorecard {
     max-height: none !important;
     overflow: visible !important;
+  }
+
+  .downloads-static { display: none; }
+
+  .scoresheet-controls { display: none; }
+  .scoresheet-card     { page-break-after: always; box-shadow: none; }
+  .scoresheet-table td,
+  .scoresheet-table td.fill {
+    border: 1px solid #000 !important;
+    padding: 4pt 6pt;
+    height: 20pt;
+    vertical-align: middle;
+  }
+  .scoresheet-table td.fill { min-width: 40pt; }
+
+  #sg-cards { display: block; }
+
+  .scoresheet-print-header,
+  .scoresheet-print-footer { display: block; }
+
+  .scoresheet-league-title {
+    font-size: 18pt;
+    font-weight: bold;
+    margin: 0 0 4pt 0;
+    text-align: center;
+  }
+
+  .scoresheet-week-label {
+    font-size: 11pt;
+    margin: 0 0 12pt 0;
+    text-align: center;
+  }
+
+  .scoresheet-print-footer {
+    margin-top: 16pt;
+    font-size: 8pt;
+    color: #555;
+    border-top: 1px solid #ccc;
+    padding-top: 6pt;
   }
 }
