@@ -11,6 +11,7 @@
 import {
   collection,
   doc,
+  addDoc,
   getDoc,
   getDocs,
   setDoc,
@@ -21,11 +22,13 @@ import {
   where,
   orderBy,
   limit,
+  serverTimestamp,
   type Firestore,
 } from 'firebase/firestore';
 
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
 import type { Season, SeasonStandings } from '@/types/season';
+import type { Announcement } from '@/types/announcement';
 
 // ---------------------------------------------------------------------------
 // Result type + helpers
@@ -428,6 +431,61 @@ export class ScoreRepository {
       return success(undefined);
     } catch (err) {
       return failure(`Failed to save roster: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Announcements
+  // -------------------------------------------------------------------------
+
+  async getAnnouncements(year: number): Promise<Result<Announcement[]>> {
+    try {
+      const q = query(
+        collection(this.db, 'announcements'),
+        where('year', '==', year),
+      );
+      const snap = await getDocs(q);
+      const announcements = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Announcement));
+      announcements.sort((a, b) => b.postedAt.toMillis() - a.postedAt.toMillis());
+      return success(announcements);
+    } catch (err) {
+      return failure(`Failed to load announcements: ${(err as Error).message}`, 'FIRESTORE_ERROR');
+    }
+  }
+
+  async createAnnouncement(year: number, title: string, body: string): Promise<Result<Announcement>> {
+    try {
+      const ref = await addDoc(collection(this.db, 'announcements'), {
+        year,
+        title,
+        body,
+        postedAt: serverTimestamp(),
+        lastEditedAt: null,
+      });
+      const snap = await getDoc(ref);
+      return success({ id: snap.id, ...snap.data() } as Announcement);
+    } catch (err) {
+      return failure(`Failed to create announcement: ${(err as Error).message}`, 'FIRESTORE_ERROR');
+    }
+  }
+
+  async updateAnnouncement(id: string, title: string, body: string): Promise<Result<Announcement>> {
+    try {
+      const ref = doc(this.db, 'announcements', id);
+      await updateDoc(ref, { title, body, lastEditedAt: serverTimestamp() });
+      const snap = await getDoc(ref);
+      return success({ id: snap.id, ...snap.data() } as Announcement);
+    } catch (err) {
+      return failure(`Failed to update announcement: ${(err as Error).message}`, 'FIRESTORE_ERROR');
+    }
+  }
+
+  async deleteAnnouncement(id: string): Promise<Result<void>> {
+    try {
+      await deleteDoc(doc(this.db, 'announcements', id));
+      return success(undefined);
+    } catch (err) {
+      return failure(`Failed to delete announcement: ${(err as Error).message}`, 'FIRESTORE_ERROR');
     }
   }
 }

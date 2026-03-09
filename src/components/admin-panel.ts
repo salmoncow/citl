@@ -56,6 +56,8 @@ class AdminPanel extends HTMLElement {
   private _dateEditMode = false;
   /** Whether any entries have been saved for the currently selected week */
   private _weekHasScores = false;
+  /** null = not editing; else = announcement id being edited */
+  private _editingAnnouncementId: string | null = null;
 
   // ── Roster modal state ────────────────────────────────────────────────────
   private _rosterDialog: HTMLDialogElement | null = null;
@@ -70,6 +72,7 @@ class AdminPanel extends HTMLElement {
         <div class="admin-tabs">
           <button class="admin-tab-btn is-active" data-tab="team-mgmt">Team Management</button>
           <button class="admin-tab-btn" data-tab="score-entry">Score Entry</button>
+          <button class="admin-tab-btn" data-tab="announcements">Announcements</button>
         </div>
 
         <div class="admin-form-row">
@@ -125,6 +128,28 @@ class AdminPanel extends HTMLElement {
           </div>
 
         </div>
+
+        <!-- ── Announcements Panel ── -->
+        <div id="ap-panel-announcements" class="admin-tab-content admin-tab-panel--hidden">
+          <div class="admin-header"><h2>Announcements</h2></div>
+          <div class="ann-editor">
+            <div class="ann-editor__field">
+              <label for="ann-title">Title</label>
+              <input type="text" id="ann-title" class="ann-editor__input" placeholder="Announcement title" />
+            </div>
+            <div class="ann-editor__field">
+              <label for="ann-body">Message (Markdown)</label>
+              <textarea id="ann-body" class="ann-editor__textarea" rows="6"
+                placeholder="Write your announcement..."></textarea>
+            </div>
+            <div class="ann-editor__actions">
+              <button id="ann-post-btn" class="btn-primary">Post Announcement</button>
+              <button id="ann-cancel-btn" class="btn-secondary" style="display:none">Cancel Edit</button>
+            </div>
+            <p id="ann-status" class="admin-status" aria-live="polite"></p>
+          </div>
+          <div id="ann-list"></div>
+        </div>
       </div>`;
 
     // Tab switching
@@ -154,6 +179,13 @@ class AdminPanel extends HTMLElement {
     this.querySelector('#ap-save')!.addEventListener('click', () => void this._saveEntry());
     this.querySelector('#ap-publish')!.addEventListener('click', () => void this._publishWeek());
 
+    // Announcements listeners
+    this.querySelector('#ann-post-btn')!.addEventListener('click', () => {
+      if (this._editingAnnouncementId) void this._saveEditAnnouncement();
+      else void this._postAnnouncement();
+    });
+    this.querySelector('#ann-cancel-btn')!.addEventListener('click', () => this._clearAnnEditor());
+
     void this._fetchTeamsData();
     void this._fetchSeasonData();
     void this._loadSavedEntries();
@@ -168,10 +200,12 @@ class AdminPanel extends HTMLElement {
     for (const { id, name } of [
       { id: 'ap-panel-team-mgmt', name: 'team-mgmt' },
       { id: 'ap-panel-score-entry', name: 'score-entry' },
+      { id: 'ap-panel-announcements', name: 'announcements' },
     ]) {
       const el = this.querySelector(`#${id}`);
       if (el) el.classList.toggle('admin-tab-panel--hidden', name !== tab);
     }
+    if (tab === 'announcements') void this._loadAnnouncementsTab();
   }
 
   // ── Data loading ─────────────────────────────────────────────────────────
@@ -1294,6 +1328,161 @@ class AdminPanel extends HTMLElement {
       if (cancelBtn) cancelBtn.disabled = false;
       showToast('error', `Failed to save date: ${result.error}`);
     }
+  }
+
+  // ── Announcements ────────────────────────────────────────────────────────
+
+  private _annYear(): number {
+    return parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+  }
+
+  private _setAnnStatus(message: string, type: '' | 'success' | 'error'): void {
+    const el = this.querySelector('#ann-status');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
+  }
+
+  private async _loadAnnouncementsTab(): Promise<void> {
+    const year = this._annYear();
+    const result = await scoreService.getAnnouncements(year);
+    if (!result.success) {
+      this._setAnnStatus(`Error loading announcements: ${result.error}`, 'error');
+      return;
+    }
+    this._renderAnnAdminList(result.data);
+  }
+
+  private _renderAnnAdminList(announcements: import('@/types/announcement').Announcement[]): void {
+    const list = this.querySelector('#ann-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (announcements.length === 0) {
+      list.innerHTML = '<p style="color:var(--c-text-muted);font-size:var(--text-sm)">No announcements for this year.</p>';
+      return;
+    }
+
+    const fmt = (ts: import('firebase/firestore').Timestamp) =>
+      ts.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    for (const ann of announcements) {
+      const card = document.createElement('div');
+      card.className = 'ann-admin-card';
+
+      const editedMeta = ann.lastEditedAt
+        ? `<span> · Edited ${fmt(ann.lastEditedAt)}</span>`
+        : '';
+
+      card.innerHTML = `
+        <div class="ann-admin-card__header">
+          <span class="ann-admin-card__title"></span>
+          <span class="ann-admin-card__meta">Posted ${fmt(ann.postedAt)}${editedMeta}</span>
+        </div>
+        <pre class="ann-admin-card__body"></pre>
+        <div class="ann-admin-card__actions">
+          <button class="btn-secondary ann-edit-btn" data-id="${ann.id}" data-year="${ann.year}">Edit</button>
+          <button class="btn-danger ann-delete-btn" data-id="${ann.id}" data-year="${ann.year}">Delete</button>
+        </div>`;
+
+      card.querySelector('.ann-admin-card__title')!.textContent = ann.title;
+      card.querySelector('.ann-admin-card__body')!.textContent = ann.body;
+
+      list.appendChild(card);
+    }
+
+    for (const btn of list.querySelectorAll<HTMLButtonElement>('.ann-edit-btn')) {
+      btn.addEventListener('click', () => {
+        const ann = announcements.find((a) => a.id === btn.dataset['id']);
+        if (ann) this._startEditAnnouncement(ann.id, ann.title, ann.body);
+      });
+    }
+
+    for (const btn of list.querySelectorAll<HTMLButtonElement>('.ann-delete-btn')) {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset['id'] ?? '';
+        const year = parseInt(btn.dataset['year'] ?? '0', 10);
+        const ann = announcements.find((a) => a.id === id);
+        void this._deleteAnnouncement(id, year, ann?.title ?? id);
+      });
+    }
+  }
+
+  private async _postAnnouncement(): Promise<void> {
+    const year = this._annYear();
+    const title = (this.querySelector<HTMLInputElement>('#ann-title')!.value).trim();
+    const body = (this.querySelector<HTMLTextAreaElement>('#ann-body')!.value).trim();
+
+    if (!title || !body) {
+      this._setAnnStatus('Title and message are required.', 'error');
+      return;
+    }
+
+    this._setAnnStatus('Posting…', '');
+    const result = await scoreService.createAnnouncement(year, title, body);
+    if (!result.success) {
+      this._setAnnStatus(`Error: ${result.error}`, 'error');
+      return;
+    }
+    this._clearAnnEditor();
+    void this._loadAnnouncementsTab();
+  }
+
+  private _startEditAnnouncement(id: string, title: string, body: string): void {
+    this.querySelector<HTMLInputElement>('#ann-title')!.value = title;
+    this.querySelector<HTMLTextAreaElement>('#ann-body')!.value = body;
+    this._editingAnnouncementId = id;
+    this.querySelector<HTMLButtonElement>('#ann-post-btn')!.textContent = 'Save Changes';
+    (this.querySelector<HTMLButtonElement>('#ann-cancel-btn')!).style.display = '';
+    this.querySelector('#ann-status')!.textContent = '';
+    this.querySelector('#ann-title')!.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  private async _saveEditAnnouncement(): Promise<void> {
+    const id = this._editingAnnouncementId!;
+    const year = this._annYear();
+    const title = (this.querySelector<HTMLInputElement>('#ann-title')!.value).trim();
+    const body = (this.querySelector<HTMLTextAreaElement>('#ann-body')!.value).trim();
+
+    if (!title || !body) {
+      this._setAnnStatus('Title and message are required.', 'error');
+      return;
+    }
+
+    this._setAnnStatus('Saving…', '');
+    const result = await scoreService.updateAnnouncement(id, year, title, body);
+    if (!result.success) {
+      this._setAnnStatus(`Error: ${result.error}`, 'error');
+      return;
+    }
+    this._clearAnnEditor();
+    void this._loadAnnouncementsTab();
+  }
+
+  private async _deleteAnnouncement(id: string, year: number, title: string): Promise<void> {
+    const confirmed = await this._showConfirmDialog({
+      title: 'Delete Announcement',
+      warning: `This will permanently delete "${title}". This cannot be undone.`,
+      nameToType: title,
+      deleteLabel: 'Delete Announcement',
+    });
+    if (!confirmed) return;
+    const result = await scoreService.deleteAnnouncement(id, year);
+    if (result.success) {
+      showToast('success', `Announcement "${title}" deleted.`);
+      void this._loadAnnouncementsTab();
+    } else {
+      showToast('error', `Failed to delete announcement: ${result.error}`);
+    }
+  }
+
+  private _clearAnnEditor(): void {
+    this.querySelector<HTMLInputElement>('#ann-title')!.value = '';
+    this.querySelector<HTMLTextAreaElement>('#ann-body')!.value = '';
+    this._editingAnnouncementId = null;
+    this.querySelector<HTMLButtonElement>('#ann-post-btn')!.textContent = 'Post Announcement';
+    (this.querySelector<HTMLButtonElement>('#ann-cancel-btn')!).style.display = 'none';
+    this.querySelector('#ann-status')!.textContent = '';
   }
 
   // ── Status helpers ───────────────────────────────────────────────────────

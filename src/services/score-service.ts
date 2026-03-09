@@ -13,6 +13,7 @@ import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
 import type { SeasonData, ScorecardShooter } from '@/types/scorecard';
+import type { Announcement } from '@/types/announcement';
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -543,6 +544,38 @@ export class ScoreService {
       this.cache.delete('seasons:all');
     }
     return result.success ? { success: true, data: undefined } : result;
+  }
+
+  // -------------------------------------------------------------------------
+  // Announcements
+  // -------------------------------------------------------------------------
+
+  async getAnnouncements(year: number): Promise<Result<Announcement[]>> {
+    const cacheKey = `announcements:${year}`;
+    const cached = getCached<Announcement[]>(this.cache, cacheKey);
+    if (cached !== undefined) return success(cached);
+
+    const result = await this.repository.getAnnouncements(year);
+    if (result.success) setCache(this.cache, cacheKey, result.data);
+    return result;
+  }
+
+  async createAnnouncement(year: number, title: string, body: string): Promise<Result<Announcement>> {
+    const result = await this.repository.createAnnouncement(year, title, body);
+    if (result.success) this.cache.delete(`announcements:${year}`);
+    return result;
+  }
+
+  async updateAnnouncement(id: string, year: number, title: string, body: string): Promise<Result<Announcement>> {
+    const result = await this.repository.updateAnnouncement(id, title, body);
+    if (result.success) this.cache.delete(`announcements:${year}`);
+    return result;
+  }
+
+  async deleteAnnouncement(id: string, year: number): Promise<Result<void>> {
+    const result = await this.repository.deleteAnnouncement(id);
+    if (result.success) this.cache.delete(`announcements:${year}`);
+    return result;
   }
 
   // -------------------------------------------------------------------------

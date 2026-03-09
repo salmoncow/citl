@@ -1,5 +1,3 @@
 export function homeView(): string {
-  return `
-    <home-standings></home-standings>
-    <season-calendar></season-calendar>`;
+  return `<home-announcements></home-announcements><home-standings></home-standings><season-calendar></season-calendar>`;
 }
