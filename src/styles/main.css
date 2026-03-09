@@ -1260,6 +1260,23 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(255, 128, 0, 0.15);
 }
 
+/* ── Announcements (homepage) ─────────────────────────────────────── */
+.ann-section { margin-bottom: var(--space-4); }
+.ann-section__heading { font-size: var(--text-lg); font-weight: 700; color: var(--c-heading); margin: 0 0 var(--space-3); }
+.ann-card-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.ann-card { background: var(--c-bg); border: 1px solid var(--c-table-border); border-radius: var(--radius-md); padding: var(--space-4); }
+.ann-card__header { margin-bottom: var(--space-3); }
+.ann-card__title { font-size: var(--text-base); font-weight: 600; color: var(--c-heading); margin: 0 0 4px; }
+.ann-card__meta { display: flex; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-xs); color: var(--c-text-muted); }
+.ann-card__edited { font-style: italic; }
+.ann-card__body { font-size: var(--text-sm); color: var(--c-text); line-height: 1.6; }
+.ann-card__body p { margin: 0 0 0.5rem; }
+.ann-card__body p:last-child { margin-bottom: 0; }
+.ann-card__body ul, .ann-card__body ol { padding-left: 1.5rem; margin: 0.25rem 0 0.5rem; }
+.ann-card__body strong { font-weight: 600; }
+.ann-card__body a { color: var(--c-accent); }
+.ann-card__body code { font-size: 0.9em; background: var(--c-table-border); padding: 0.1em 0.3em; border-radius: 3px; }
+
 /* Controls containers — label + select row */
 .home-standings-controls,
 .season-scorecards-controls,
@@ -1443,6 +1460,21 @@ input[type="text"].ap-roster-name:focus {
 .roster-dialog .admin-table-wrapper {
   margin-bottom: 0;
 }
+
+/* ── Announcements admin ──────────────────────────────────────────── */
+.ann-editor { border: 1px solid var(--c-table-border); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-4); }
+.ann-editor__field { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-3); }
+.ann-editor__field label { font-size: var(--text-sm); font-weight: 500; color: var(--c-heading); }
+.ann-editor__input,
+.ann-editor__textarea { width: 100%; padding: 6px 10px; border: 1px solid var(--c-table-border); border-radius: var(--radius-md); font-size: var(--text-sm); background: var(--c-bg); color: var(--c-text); box-sizing: border-box; }
+.ann-editor__textarea { resize: vertical; font-family: monospace; min-height: 120px; }
+.ann-editor__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.ann-admin-card { border: 1px solid var(--c-table-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); }
+.ann-admin-card__header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.ann-admin-card__title { font-weight: 600; color: var(--c-heading); }
+.ann-admin-card__meta { font-size: var(--text-xs); color: var(--c-text-muted); }
+.ann-admin-card__body { font-size: var(--text-sm); white-space: pre-wrap; font-family: monospace; background: var(--c-table-border); padding: var(--space-3); border-radius: var(--radius-md); margin-bottom: var(--space-3); overflow-x: auto; }
+.ann-admin-card__actions { display: flex; gap: var(--space-3); }
 
 .admin-team-table {
   width: 100%;
