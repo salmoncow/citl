@@ -255,7 +255,10 @@ class AdminPanel extends HTMLElement {
         this._buildEditRow(tr, '', '', NEW_TEAM_SENTINEL);
       }
 
-      container.appendChild(table);
+      const tableWrapper = document.createElement('div');
+      tableWrapper.className = 'admin-team-table-wrapper';
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
     } else {
       const empty = document.createElement('p');
       empty.className = 'admin-team-empty';
