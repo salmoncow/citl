@@ -32,6 +32,7 @@ const NEW_TEAM_SENTINEL = '__new__';
 
 const PENCIL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"/></svg>`;
 const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+const ROSTER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="M40 48C26.7 48 16 58.7 16 72v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V72c0-13.3-10.7-24-24-24H40zm152 16c-17.7 0-32 14.3-32 32s14.3 32 32 32H488c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H488c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H488c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zM16 232v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V232c0-13.3-10.7-24-24-24H40c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V392c0-13.3-10.7-24-24-24H40z"/></svg>`;
 const LOCK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const WARN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
 
@@ -56,6 +57,13 @@ class AdminPanel extends HTMLElement {
   /** Whether any entries have been saved for the currently selected week */
   private _weekHasScores = false;
 
+  // ── Roster modal state ────────────────────────────────────────────────────
+  private _rosterDialog: HTMLDialogElement | null = null;
+  private _rosterTbody: HTMLTableSectionElement | null = null;
+  private _rosterSaveBtn: HTMLButtonElement | null = null;
+  private _rosterStatusEl: Element | null = null;
+  private _rosterTeamId: string = '';
+
   connectedCallback(): void {
     this.innerHTML = `
       <div class="admin-panel">
@@ -73,32 +81,6 @@ class AdminPanel extends HTMLElement {
         <div id="ap-panel-team-mgmt" class="admin-tab-content">
 
           <div id="ap-team-list"></div>
-
-          <div class="admin-roster-section">
-            <h3>Edit Team Roster</h3>
-            <div class="admin-form-row">
-              <label for="ap-roster-team">Team</label>
-              <select id="ap-roster-team">
-                <option value="">-- Select team --</option>
-              </select>
-            </div>
-            <table id="ap-roster-table" class="admin-roster-table" style="display:none">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>W0 Avg</th>
-                  <th>Rookie</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="ap-roster-body"></tbody>
-            </table>
-            <div id="ap-roster-actions" class="admin-actions" style="display:none">
-              <button id="ap-add-roster-shooter" class="btn-secondary">Add Shooter</button>
-              <button id="ap-save-roster" class="btn-primary">Save Roster</button>
-            </div>
-            <p id="ap-team-mgmt-status" class="admin-status" aria-live="polite"></p>
-          </div>
 
         </div>
 
@@ -170,11 +152,6 @@ class AdminPanel extends HTMLElement {
     this.querySelector('#ap-save')!.addEventListener('click', () => void this._saveEntry());
     this.querySelector('#ap-publish')!.addEventListener('click', () => void this._publishWeek());
 
-    // Roster editor listeners
-    this.querySelector('#ap-roster-team')!.addEventListener('change', () => this._loadRosterForTeam());
-    this.querySelector('#ap-add-roster-shooter')!.addEventListener('click', () => this._addRosterRow());
-    this.querySelector('#ap-save-roster')!.addEventListener('click', () => void this._saveRoster());
-
     void this._fetchTeamsData();
     void this._fetchSeasonData();
     void this._loadSavedEntries();
@@ -209,9 +186,7 @@ class AdminPanel extends HTMLElement {
     }
     this._renderTeamList();
     this._populateTeamSelect('#ap-team');
-    this._populateTeamSelect('#ap-roster-team');
     void this._populateShooterRows();
-    this._loadRosterForTeam();
   }
 
   private _populateTeamSelect(selector: string): void {
@@ -335,6 +310,15 @@ class AdminPanel extends HTMLElement {
       }, 0);
     });
     actionsCell.appendChild(pencilBtn);
+
+    const rosterBtn = document.createElement('button');
+    rosterBtn.type = 'button';
+    rosterBtn.className = 'admin-icon-btn';
+    rosterBtn.setAttribute('aria-label', `Edit roster for ${name}`);
+    rosterBtn.disabled = otherEditOpen;
+    rosterBtn.innerHTML = ROSTER_SVG;
+    rosterBtn.addEventListener('click', () => this._openRosterModal(teamId, name));
+    actionsCell.appendChild(rosterBtn);
 
     const trashBtn = document.createElement('button');
     trashBtn.type = 'button';
@@ -699,36 +683,97 @@ class AdminPanel extends HTMLElement {
     }
   }
 
-  // ── Roster editor ────────────────────────────────────────────────────────
+  // ── Roster modal ─────────────────────────────────────────────────────────
 
-  private _loadRosterForTeam(): void {
-    void this._loadRosterForTeamAsync();
+  private _openRosterModal(teamId: string, teamName: string): void {
+    this._pendingRemovals = [];
+    this._rosterOriginalShooters = [];
+    this._rosterTeamId = teamId;
+
+    // ── Build dialog ──────────────────────────────────────────────────────
+    const dialog = document.createElement('dialog');
+    dialog.className = 'roster-dialog';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'roster-dialog__header';
+    const title = document.createElement('h2');
+    title.className = 'roster-dialog__title';
+    title.textContent = `Edit Roster — ${teamName}`;
+    header.appendChild(title);
+
+    // Roster table (reuses existing .admin-roster-table styles)
+    const table = document.createElement('table');
+    table.className = 'admin-roster-table';
+    const thead = table.createTHead();
+    const hrow = thead.insertRow();
+    for (const label of ['Name', 'W0 Avg', 'Rookie', '']) {
+      const th = document.createElement('th');
+      th.textContent = label;
+      hrow.appendChild(th);
+    }
+    const tbody = table.createTBody();
+    this._rosterTbody = tbody;
+
+    // Footer
+    const footer = document.createElement('div');
+    footer.className = 'roster-dialog__footer';
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-secondary';
+    addBtn.textContent = 'Add Shooter';
+
+    const rightActions = document.createElement('div');
+    rightActions.className = 'admin-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.textContent = 'Cancel';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn-primary';
+    saveBtn.textContent = 'Save Roster';
+    this._rosterSaveBtn = saveBtn;
+
+    rightActions.append(cancelBtn, saveBtn);
+    footer.append(addBtn, rightActions);
+
+    // Status
+    const statusEl = document.createElement('p');
+    statusEl.className = 'admin-status';
+    statusEl.setAttribute('aria-live', 'polite');
+    this._rosterStatusEl = statusEl;
+
+    dialog.append(header, table, footer, statusEl);
+    document.body.appendChild(dialog);
+    this._rosterDialog = dialog;
+
+    // ── Wire events ───────────────────────────────────────────────────────
+    addBtn.addEventListener('click', () => this._addRosterRow());
+    cancelBtn.addEventListener('click', () => this._closeRosterModal());
+    saveBtn.addEventListener('click', () => void this._saveRoster());
+    dialog.addEventListener('cancel', () => this._closeRosterModal());
+
+    dialog.showModal();
+
+    // ── Load roster data (async) ──────────────────────────────────────────
+    void this._loadRosterIntoModal(teamId);
   }
 
-  private async _loadRosterForTeamAsync(): Promise<void> {
-    const teamId = this.querySelector<HTMLSelectElement>('#ap-roster-team')?.value ?? '';
-    const table = this.querySelector<HTMLElement>('#ap-roster-table');
-    const actions = this.querySelector<HTMLElement>('#ap-roster-actions');
-
-    if (!teamId) {
-      if (table) table.style.display = 'none';
-      if (actions) actions.style.display = 'none';
-      return;
-    }
-
+  private async _loadRosterIntoModal(teamId: string): Promise<void> {
     const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
-    this._pendingRemovals = [];
-
-    this._setTeamMgmtStatus('Loading roster defaults\u2026', 'info');
+    this._setRosterStatus('Loading roster\u2026', 'info');
 
     const result = await scoreService.computeRosterDefaults(year, teamId);
-    this._setTeamMgmtStatus('', '');
+    this._setRosterStatus('', '');
 
     let team: Team;
     if (result.success) {
       team = result.data;
     } else {
-      // Graceful fallback: use cached data rather than blocking the UI
       console.warn('computeRosterDefaults failed, using cached data:', result.error);
       const fallback = this._teamsData?.find((t) => t.id === teamId);
       if (!fallback) return;
@@ -736,21 +781,26 @@ class AdminPanel extends HTMLElement {
     }
 
     this._rosterOriginalShooters = [...team.shooters];
-
-    if (table) table.style.display = '';
-    if (actions) actions.style.display = '';
-
-    const tbody = this.querySelector('#ap-roster-body');
-    if (!tbody) return;
-    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
-
     for (let i = 0; i < team.shooters.length; i++) {
       this._addRosterRow(team.shooters[i], i);
     }
   }
 
+  private _closeRosterModal(): void {
+    if (this._rosterDialog) {
+      this._rosterDialog.close();
+      document.body.removeChild(this._rosterDialog);
+    }
+    this._rosterDialog = null;
+    this._rosterTbody = null;
+    this._rosterSaveBtn = null;
+    this._rosterStatusEl = null;
+    this._rosterTeamId = '';
+    this._pendingRemovals = [];
+  }
+
   private _addRosterRow(shooter?: Shooter, originalIndex?: number): void {
-    const tbody = this.querySelector('#ap-roster-body');
+    const tbody = this._rosterTbody;
     if (!tbody) return;
 
     const row = document.createElement('tr');
@@ -801,8 +851,8 @@ class AdminPanel extends HTMLElement {
             rookieSpan.textContent = 'Yes';
             return;
           }
-          // Bug 3: cross-team duplicate check
-          const currentTeamId = this.querySelector<HTMLSelectElement>('#ap-roster-team')?.value ?? '';
+          // cross-team duplicate check
+          const currentTeamId = this._rosterTeamId;
           const conflict = this._teamsData?.find(
             (t) => t.id !== currentTeamId &&
               t.shooters.some((s) => normalizeShooterName(s.name) === normalizeShooterName(name)),
@@ -829,10 +879,10 @@ class AdminPanel extends HTMLElement {
     removeBtn.addEventListener('click', () => {
       const name = nameInput.value.trim();
       if (name && this._namedRosterCount() <= 5) {
-        this._setTeamMgmtStatus('Teams must have at least 5 shooters — cannot remove.', 'error');
+        this._setRosterStatus('Teams must have at least 5 shooters — cannot remove.', 'error');
         return;
       }
-      this._setTeamMgmtStatus('', '');
+      this._setRosterStatus('', '');
       // Existing shooter with a name: defer cascade removal to Save Roster
       if (originalIndex !== undefined && name) {
         this._pendingRemovals.push(name);
@@ -858,22 +908,20 @@ class AdminPanel extends HTMLElement {
 
   private async _saveRoster(): Promise<void> {
     const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
-    const teamId = this.querySelector<HTMLSelectElement>('#ap-roster-team')?.value ?? '';
+    const teamId = this._rosterTeamId;
 
-    if (!teamId) { this._setTeamMgmtStatus('No team selected.', 'error'); return; }
-
-    // Captain comes from team data; for new teams derive it from the first shooter row
+    // Captain comes from team data; derive from first shooter row if blank
     let captain = this._teamsData?.find((t) => t.id === teamId)?.captain ?? '';
     if (!captain) {
-      captain = this.querySelector<HTMLInputElement>('.ap-roster-name')?.value.trim() ?? '';
+      captain = this._rosterTbody?.querySelector<HTMLInputElement>('.ap-roster-name')?.value.trim() ?? '';
     }
     if (!captain) {
-      this._setTeamMgmtStatus('Add at least one shooter to set a captain.', 'error');
+      this._setRosterStatus('Add at least one shooter to set a captain.', 'error');
       return;
     }
 
     const shooters: Shooter[] = [];
-    for (const rowEl of this.querySelectorAll<HTMLElement>('.ap-roster-row')) {
+    for (const rowEl of (this._rosterTbody?.querySelectorAll<HTMLElement>('.ap-roster-row') ?? [])) {
       const name = rowEl.querySelector<HTMLInputElement>('.ap-roster-name')!.value.trim();
       if (!name) continue;
 
@@ -897,26 +945,26 @@ class AdminPanel extends HTMLElement {
     }
 
     if (shooters.length < 5) {
-      this._setTeamMgmtStatus('A team must have at least 5 shooters.', 'error');
+      this._setRosterStatus('A team must have at least 5 shooters.', 'error');
       return;
     }
 
-    this._setTeamMgmtStatus('', '');
+    this._setRosterStatus('', '');
     const teamName = this._teamsData?.find((t) => t.id === teamId)?.name ?? teamId;
-    const btn = this.querySelector<HTMLButtonElement>('#ap-save-roster')!;
-    btn.disabled = true;
+    if (this._rosterSaveBtn) this._rosterSaveBtn.disabled = true;
 
-    // Bug 2: process deferred shooter removals before saving
+    // Process deferred shooter removals before saving
     for (const name of this._pendingRemovals) {
       await scoreService.removeShooterFromRoster(year, teamId, name);
     }
     this._pendingRemovals = [];
 
     const result = await scoreService.saveTeamRoster(year, teamId, captain, shooters);
-    btn.disabled = false;
+    if (this._rosterSaveBtn) this._rosterSaveBtn.disabled = false;
 
     if (result.success) {
       showToast('success', `Roster saved — ${teamName}.`);
+      this._closeRosterModal();
       void this._fetchTeamsData();
     } else {
       showToast('error', `Failed to save roster: ${result.error}`);
@@ -1038,7 +1086,7 @@ class AdminPanel extends HTMLElement {
   // ── Roster helpers ───────────────────────────────────────────────────────
 
   private _namedRosterCount(): number {
-    return [...this.querySelectorAll<HTMLElement>('.ap-roster-row')]
+    return [...(this._rosterTbody?.querySelectorAll<HTMLElement>('.ap-roster-row') ?? [])]
       .filter((r) => Boolean(r.querySelector<HTMLInputElement>('.ap-roster-name')?.value.trim()))
       .length;
   }
@@ -1252,11 +1300,10 @@ class AdminPanel extends HTMLElement {
     el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
   }
 
-  private _setTeamMgmtStatus(message: string, type: '' | 'success' | 'error' | 'info'): void {
-    const el = this.querySelector('#ap-team-mgmt-status');
-    if (!el) return;
-    el.textContent = message;
-    el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
+  private _setRosterStatus(message: string, type: '' | 'success' | 'error' | 'info'): void {
+    if (!this._rosterStatusEl) return;
+    this._rosterStatusEl.textContent = message;
+    this._rosterStatusEl.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
   }
 }
 

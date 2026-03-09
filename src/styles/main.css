@@ -1183,6 +1183,42 @@ a:hover { color: var(--c-link-hover); }
   justify-content: flex-end;
 }
 
+/* ── Roster editor modal ───────────────────────────────────────────────── */
+.roster-dialog {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  background: var(--c-bg);
+  color: var(--c-text);
+}
+
+.roster-dialog::backdrop {
+  background: rgba(0,0,0,0.55);
+}
+
+.roster-dialog__header {
+  margin-bottom: var(--space-4);
+}
+
+.roster-dialog__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-heading);
+  margin: 0;
+}
+
+.roster-dialog__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-4);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 /* Danger variant for the icon button in team list */
 .admin-icon-btn--danger {
   color: var(--c-status-error);
@@ -1409,7 +1445,7 @@ input[type="text"].ap-roster-name:focus {
 
 /* Pin the actions column; name + captain share the rest equally */
 .admin-team-table th:last-child {
-  width: 164px;
+  width: 196px;
 }
 
 .admin-team-table td {
@@ -1500,13 +1536,6 @@ input[type="text"].ap-roster-name:focus {
 /* "Add Team" button below the table */
 .admin-add-team-btn {
   margin-top: var(--space-2);
-}
-
-/* Roster editor section (below team list) */
-.admin-roster-section {
-  margin-top: var(--space-8);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--c-border);
 }
 
 /* ============================================================
