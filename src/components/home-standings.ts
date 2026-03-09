@@ -8,6 +8,7 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
+import type { Team } from '@/types/score';
 import type { Season } from '@/types/season';
 import type { WeekResult } from '@/types/score';
 
@@ -19,6 +20,7 @@ class HomeStandings extends HTMLElement {
   private _selectedYear: number | null = null;
   private _season: Season | null = null;
   private _allWeekResults: WeekResult[] = [];
+  private _teams: Team[] = [];
 
   connectedCallback(): void {
     this.innerHTML = `
@@ -75,9 +77,10 @@ class HomeStandings extends HTMLElement {
   private async _loadYear(year: number): Promise<void> {
     this.querySelector('#hs-table')!.innerHTML = '<p>Loading&hellip;</p>';
 
-    const [weeksResult, seasonResult] = await Promise.all([
+    const [weeksResult, seasonResult, teamsResult] = await Promise.all([
       scoreService.getAllWeekResults(year),
       scoreService.getSeason(year),
+      scoreService.getTeams(year),
     ]);
 
     if (!seasonResult.success || !seasonResult.data) {
@@ -87,6 +90,7 @@ class HomeStandings extends HTMLElement {
 
     this._season = seasonResult.data;
     this._allWeekResults = weeksResult.success ? (weeksResult.data ?? []) : [];
+    this._teams = teamsResult.success ? (teamsResult.data ?? []) : [];
 
     const weekSelect = this.querySelector<HTMLSelectElement>('#hs-week')!;
     while (weekSelect.firstChild) weekSelect.removeChild(weekSelect.firstChild);
@@ -110,28 +114,42 @@ class HomeStandings extends HTMLElement {
 
   private _renderTable(weekKey: string): void {
     let rows: {
-      place: number;
+      place: number | string;
       teamName: string;
-      targets: number;
-      totalTargets: number;
-      rankPoints: number;
-      bonusPoints: number;
-      total: number;
+      targets: number | string;
+      totalTargets: number | string;
+      rankPoints: number | string;
+      bonusPoints: number | string;
+      total: number | string;
     }[];
     let subtitle: string;
 
     if (weekKey === 'season') {
       const standings = this._season?.standings ?? [];
-      rows = standings.map((s) => ({
-        place: s.rank,
-        teamName: s.teamName,
-        targets: s.totalTargets,
-        totalTargets: s.totalTargets,
-        rankPoints: s.totalRankPoints,
-        bonusPoints: s.totalBonusPoints,
-        total: s.totalRankPoints + s.totalBonusPoints,
-      }));
-      subtitle = 'Cumulative season totals';
+
+      if (standings.length > 0) {
+        rows = standings.map((s) => ({
+          place: s.rank,
+          teamName: s.teamName,
+          targets: s.totalTargets,
+          totalTargets: s.totalTargets,
+          rankPoints: s.totalRankPoints,
+          bonusPoints: s.totalBonusPoints,
+          total: s.totalRankPoints + s.totalBonusPoints,
+        }));
+        subtitle = 'Cumulative season totals';
+      } else {
+        rows = this._teams.map((t) => ({
+          place: '—',
+          teamName: t.name,
+          targets: '—',
+          totalTargets: '—',
+          rankPoints: '—',
+          bonusPoints: '—',
+          total: '—',
+        }));
+        subtitle = 'Season has not yet begun — teams registered';
+      }
     } else {
       const weekNum = parseInt(weekKey, 10);
       const weekResult = this._allWeekResults.find((w) => w.weekNumber === weekNum);
@@ -166,7 +184,7 @@ class HomeStandings extends HTMLElement {
         };
       });
 
-      rows.sort((a, b) => b.total - a.total);
+      rows.sort((a, b) => (b.total as number) - (a.total as number));
       rows = rows.map((r, i) => ({ ...r, place: i + 1 }));
       subtitle = `Week ${weekNum} results \u00b7 Total reflects season-to-date`;
     }
@@ -175,7 +193,15 @@ class HomeStandings extends HTMLElement {
   }
 
   private _buildTable(
-    rows: { place: number; teamName: string; targets: number; totalTargets: number; rankPoints: number; bonusPoints: number; total: number }[],
+    rows: {
+      place: number | string;
+      teamName: string;
+      targets: number | string;
+      totalTargets: number | string;
+      rankPoints: number | string;
+      bonusPoints: number | string;
+      total: number | string;
+    }[],
     subtitle: string,
   ): string {
     const trs = rows
