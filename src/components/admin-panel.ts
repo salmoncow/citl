@@ -306,6 +306,7 @@ class AdminPanel extends HTMLElement {
     pencilBtn.className = 'admin-icon-btn';
     pencilBtn.setAttribute('aria-label', `Edit ${name}`);
     pencilBtn.disabled = otherEditOpen;
+    pencilBtn.setAttribute('data-tooltip', 'Edit name & captain');
     pencilBtn.innerHTML = PENCIL_SVG;
     pencilBtn.addEventListener('click', () => {
       this._editingTeamId = teamId;
@@ -321,6 +322,7 @@ class AdminPanel extends HTMLElement {
     rosterBtn.className = 'admin-icon-btn';
     rosterBtn.setAttribute('aria-label', `Edit roster for ${name}`);
     rosterBtn.disabled = otherEditOpen;
+    rosterBtn.setAttribute('data-tooltip', 'Edit roster');
     rosterBtn.innerHTML = ROSTER_SVG;
     rosterBtn.addEventListener('click', () => this._openRosterModal(teamId, name));
     actionsCell.appendChild(rosterBtn);
@@ -330,6 +332,7 @@ class AdminPanel extends HTMLElement {
     trashBtn.className = 'admin-icon-btn admin-icon-btn--danger';
     trashBtn.setAttribute('aria-label', `Delete ${name}`);
     trashBtn.disabled = otherEditOpen;
+    trashBtn.setAttribute('data-tooltip', 'Delete team');
     trashBtn.innerHTML = TRASH_SVG;
     trashBtn.addEventListener('click', () => {
       const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
@@ -1182,7 +1185,7 @@ class AdminPanel extends HTMLElement {
 
     if (!this._dateEditMode) {
       const actionHtml = isLocked
-        ? `<span class="ap-date-lock" title="${lockReason}">${LOCK_SVG} Locked</span>`
+        ? `<span class="ap-date-lock" data-tooltip="${lockReason}">${LOCK_SVG} Locked</span>`
         : `<button class="ap-date-edit-btn btn-secondary" id="ap-date-edit-btn">${PENCIL_SVG} Edit date</button>`;
 
       container.innerHTML = `
