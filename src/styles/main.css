@@ -1481,11 +1481,13 @@ input[type="text"].ap-roster-name:focus {
   margin: var(--space-4) 0;
 }
 
-/* Actions cell — pencil icon + edit controls */
+/* Actions cell — icon buttons + edit controls */
 .admin-team-actions {
-  text-align: right;
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  align-items: center;
   white-space: nowrap;
-  padding-left: var(--space-5);
 }
 
 .admin-team-actions--edit {
