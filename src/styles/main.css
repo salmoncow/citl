@@ -585,6 +585,8 @@ a:hover { color: var(--c-link-hover); }
   display: block;
   overflow-x: auto;
   white-space: nowrap;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-table-border);
 }
 
 .standing-table th {
@@ -608,6 +610,8 @@ a:hover { color: var(--c-link-hover); }
 
 .standing-table td:nth-child(n+2):nth-child(-n+16),
 .standing-table th:nth-child(n+2):nth-child(-n+16) { width: 5%; }
+
+.standing-table tr:last-child td { border-bottom: none; }
 
 /* ============================================================
    Collapsible scorecards — heading-style accordion
@@ -659,10 +663,12 @@ a:hover { color: var(--c-link-hover); }
   border-collapse: collapse;
   table-layout: auto;
   width: 100%;
-  padding-top: var(--space-5);
+  margin-top: var(--space-5);
   display: block;
   overflow-x: auto;
   white-space: nowrap;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-table-border);
 }
 
 .scorecard-tables tr { height: 28px; }
@@ -710,6 +716,8 @@ a:hover { color: var(--c-link-hover); }
   background-color: var(--c-table-hover);
   color: var(--c-text);
 }
+
+.scorecard-tables tr:last-child td { border-bottom: none; }
 
 /* DUMMY shooter rows — italic + muted */
 .scorecard-tables tr.dummy-row td {
@@ -1381,6 +1389,10 @@ input[type="text"].ap-roster-name:focus {
   table-layout: fixed;   /* column widths set by th; never shift on content change */
   border-collapse: collapse;
   font-size: var(--text-sm);
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-table-border);
   margin-bottom: var(--space-4);
 }
 
@@ -1405,6 +1417,8 @@ input[type="text"].ap-roster-name:focus {
   border-bottom: 1px solid var(--c-table-border);
   vertical-align: middle;
 }
+
+.admin-team-table tr:last-child td { border-bottom: none; }
 
 /* Truncate text only in non-actions cells; actions cell must never clip button radii */
 .admin-team-table td:not(.admin-team-actions) {
