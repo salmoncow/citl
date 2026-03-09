@@ -563,7 +563,7 @@ function makePublishRepo(opts: {
     getSeason: async () => success(opts.season ?? null),
     publishWeek: async (_y, wr, su) => {
       opts.onPublish?.(wr, su as object);
-      return success(undefined);
+      return success({ weekResult: wr, seasonUpdates: su });
     },
   };
   return stub as unknown as ScoreRepository;
@@ -770,7 +770,7 @@ describe('publishWeek — cache invalidation', () => {
       getEntries: async () => success([entry]),
       getTeams: async () => success([makeTeamFromEntry(entry)]),
       getSeason: async () => { getSeasonCallCount++; return success(season); },
-      publishWeek: async () => success(undefined),
+      publishWeek: async (_y, wr, su) => success({ weekResult: wr, seasonUpdates: su }),
     };
     const svc = new ScoreService(repo as unknown as ScoreRepository);
 

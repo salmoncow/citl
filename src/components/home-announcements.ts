@@ -23,44 +23,42 @@ class HomeAnnouncements extends HTMLElement {
 
   private async _load(year: number): Promise<void> {
     const result = await scoreService.getAnnouncements(year);
-    if (!result.success || result.data.length === 0) {
+    const latest = result.success ? result.data[0] : undefined;
+    if (!latest) {
       this.innerHTML = '';
       return;
     }
-    this._render(result.data);
+    this._render(latest);
   }
 
-  private _render(announcements: Announcement[]): void {
+  private _render(ann: Announcement): void {
     const fmt = (ts: import('firebase/firestore').Timestamp) =>
       ts.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-    const cards = announcements.map((ann) => {
-      const escapedTitle = ann.title
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    const escapedTitle = ann.title
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
 
-      const editedSpan = ann.lastEditedAt
-        ? `<span class="ann-card__edited">Edited ${fmt(ann.lastEditedAt)}</span>`
-        : '';
-
-      return `
-        <article class="ann-card">
-          <header class="ann-card__header">
-            <h3 class="ann-card__title">${escapedTitle}</h3>
-            <div class="ann-card__meta">
-              <span>Posted ${fmt(ann.postedAt)}</span>
-              ${editedSpan}
-            </div>
-          </header>
-          <div class="ann-card__body">${renderMarkdown(ann.body)}</div>
-        </article>`;
-    }).join('');
+    const editedSpan = ann.lastEditedAt
+      ? `<span class="ann-card__edited">Edited ${fmt(ann.lastEditedAt)}</span>`
+      : '';
 
     this.innerHTML = `
       <section class="ann-section">
         <h2 class="ann-section__heading">Announcements</h2>
-        <div class="ann-card-list">${cards}</div>
+        <div class="ann-card-list">
+          <article class="ann-card">
+            <header class="ann-card__header">
+              <h3 class="ann-card__title">${escapedTitle}</h3>
+              <div class="ann-card__meta">
+                <span>Posted ${fmt(ann.postedAt)}</span>
+                ${editedSpan}
+              </div>
+            </header>
+            <div class="ann-card__body">${renderMarkdown(ann.body)}</div>
+          </article>
+        </div>
       </section>`;
   }
 }
