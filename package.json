@@ -11,11 +11,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy": "npm run build && firebase deploy --only hosting,firestore:rules",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
-    "extract-teams": "node scripts/extract-teams.js",
+    "grant-admin": "node scripts/grant-admin.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -27,6 +30,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "firebase": "^12.9.0"
+    "firebase": "^12.9.0",
+    "marked": "^17.0.4"
   }
 }
