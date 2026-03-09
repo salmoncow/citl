@@ -99,12 +99,14 @@ class AdminPanel extends HTMLElement {
           <div id="ap-date-section"></div>
 
           <h3>Shooters</h3>
-          <table class="admin-shooters-table">
-            <thead>
-              <tr><th>Name</th><th>Score 1 (0–25)</th><th>Score 2 (0–25)</th><th>Total</th><th></th></tr>
-            </thead>
-            <tbody id="ap-shooters-body"></tbody>
-          </table>
+          <div class="admin-table-wrapper">
+            <table class="admin-shooters-table">
+              <thead>
+                <tr><th>Name</th><th>Score 1 (0–25)</th><th>Score 2 (0–25)</th><th>Total</th><th></th></tr>
+              </thead>
+              <tbody id="ap-shooters-body"></tbody>
+            </table>
+          </div>
           <div class="admin-actions">
             <button id="ap-save" class="btn-primary">Save Entry</button>
           </div>
@@ -256,7 +258,7 @@ class AdminPanel extends HTMLElement {
       }
 
       const tableWrapper = document.createElement('div');
-      tableWrapper.className = 'admin-team-table-wrapper';
+      tableWrapper.className = 'admin-table-wrapper';
       tableWrapper.appendChild(table);
       container.appendChild(tableWrapper);
     } else {
@@ -718,6 +720,10 @@ class AdminPanel extends HTMLElement {
     const tbody = table.createTBody();
     this._rosterTbody = tbody;
 
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = 'admin-table-wrapper';
+    tableWrapper.appendChild(table);
+
     // Footer
     const footer = document.createElement('div');
     footer.className = 'roster-dialog__footer';
@@ -750,7 +756,7 @@ class AdminPanel extends HTMLElement {
     statusEl.setAttribute('aria-live', 'polite');
     this._rosterStatusEl = statusEl;
 
-    dialog.append(header, table, footer, statusEl);
+    dialog.append(header, tableWrapper, footer, statusEl);
     document.body.appendChild(dialog);
     this._rosterDialog = dialog;
 

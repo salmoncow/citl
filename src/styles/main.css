@@ -899,7 +899,6 @@ a:hover { color: var(--c-link-hover); }
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
-  margin-bottom: var(--space-2);
 }
 
 .admin-shooters-table th {
@@ -918,6 +917,8 @@ a:hover { color: var(--c-link-hover); }
   border-bottom: 1px solid var(--c-table-border);
   vertical-align: middle;
 }
+
+.admin-shooters-table tr:last-child td { border-bottom: none; }
 
 /* Total column in score entry */
 .ap-shooter-total {
@@ -1326,7 +1327,6 @@ input[type=number] { -moz-appearance: textfield; }
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
-  margin-bottom: var(--space-4);
 }
 
 .admin-roster-table th {
@@ -1344,6 +1344,8 @@ input[type=number] { -moz-appearance: textfield; }
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--c-table-border);
 }
+
+.admin-roster-table tr:last-child td { border-bottom: none; }
 
 /* ============================================================
    Text Inputs (name fields, etc.)
@@ -1420,11 +1422,17 @@ input[type="text"].ap-roster-name:focus {
   margin: 0 0 var(--space-3);
 }
 
-.admin-team-table-wrapper {
+/* Shared wrapper — gives any admin table rounded corners + border */
+.admin-table-wrapper {
   overflow: hidden;
   border-radius: var(--radius-md);
   border: 1px solid var(--c-table-border);
   margin-bottom: var(--space-4);
+}
+
+/* Inside the roster dialog the footer's margin-top handles spacing */
+.roster-dialog .admin-table-wrapper {
+  margin-bottom: 0;
 }
 
 .admin-team-table {
