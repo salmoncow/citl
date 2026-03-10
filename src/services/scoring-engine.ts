@@ -11,7 +11,8 @@
 
 import type { ScorecardShooter, SeasonData } from '@/types/scorecard';
 import type { ComputedAwards } from '@/types/season';
-import type { Team } from '@/types/score';
+import type { Team, TeamResult } from '@/types/score';
+import type { Accolade } from '@/types/shooter';
 
 // ---------------------------------------------------------------------------
 // Primitive helpers — exported for reuse across service and component layers
@@ -59,6 +60,40 @@ export function sortShootersWithCaptainFirst<T extends { name: string }>(
   const [captain] = result.splice(idx, 1);
   result.unshift(captain!);
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Accolades
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute Straight-25 and Straight-50 accolades for a published week.
+ * - Straight 50: score1 === 25 AND score2 === 25
+ * - Straight 25: score1 === 25 XOR score2 === 25
+ * Dummy shooters and entries with null scores (historical) are skipped.
+ * Straight 50 takes precedence — a shooter is not listed twice.
+ * Results are ordered: 50s first, then 25s; alphabetical by name within each tier.
+ */
+export function computeAccolades(teamResults: TeamResult[]): Accolade[] {
+  const straight50: Accolade[] = [];
+  const straight25: Accolade[] = [];
+
+  for (const tr of teamResults) {
+    for (const s of tr.shooterScores) {
+      if (isDummyName(s.name)) continue;
+      if (s.score1 === null && s.score2 === null) continue;
+      if (s.score1 === 25 && s.score2 === 25) {
+        straight50.push({ shooterName: s.name, teamName: tr.teamName, streak: 50 });
+      } else if (s.score1 === 25 || s.score2 === 25) {
+        straight25.push({ shooterName: s.name, teamName: tr.teamName, streak: 25 });
+      }
+    }
+  }
+
+  const byName = (a: Accolade, b: Accolade) =>
+    a.shooterName.localeCompare(b.shooterName);
+
+  return [...straight50.sort(byName), ...straight25.sort(byName)];
 }
 
 // ---------------------------------------------------------------------------

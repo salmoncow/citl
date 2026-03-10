@@ -8,7 +8,7 @@
  */
 
 import { success, failure, type Result } from '@/repositories/score-repository';
-import { computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, normalizeShooterName, getLastWord } from '@/services/scoring-engine';
+import { computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, normalizeShooterName, getLastWord, computeAccolades } from '@/services/scoring-engine';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
@@ -247,6 +247,7 @@ export class ScoreService {
       weekNumber,
       publishedAt: new Date().toISOString(),
       teamResults,
+      accolades: computeAccolades(teamResults),
     };
 
     const standings = _computeStandings(computed, weekNumber);
@@ -481,11 +482,27 @@ export class ScoreService {
       });
     }
 
+    // Compute accolade patches: remove the shooter's accolades from any published weeks
+    const weekAccoladePatches: { weekNumber: number; accolades: NonNullable<WeekResult['accolades']> }[] = [];
+    const weeksResult = await this.repository.getAllWeekResults(year);
+    if (weeksResult.success) {
+      for (const wr of weeksResult.data) {
+        if (!wr.accolades || wr.accolades.length === 0) continue;
+        const filtered = wr.accolades.filter(
+          (a) => normalizeShooterName(a.shooterName) !== normalizedTarget,
+        );
+        if (filtered.length !== wr.accolades.length) {
+          weekAccoladePatches.push({ weekNumber: wr.weekNumber, accolades: filtered });
+        }
+      }
+    }
+
     const writeResult = await this.repository.removeShooterFromRosterAndEntries(
       year,
       teamId,
       updatedShooters,
       entryUpdates,
+      weekAccoladePatches,
     );
     if (writeResult.success) this.cache.delete(`teams:${year}`);
     return writeResult;

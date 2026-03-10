@@ -248,7 +248,13 @@ class ScoresheetGenerator extends HTMLElement {
       });
 
     this.querySelector('.scoresheet-print-btn')
-      ?.addEventListener('click', () => window.print());
+      ?.addEventListener('click', () => {
+        document.body.classList.add('print-scoresheets');
+        window.print();
+        window.addEventListener('afterprint', () => {
+          document.body.classList.remove('print-scoresheets');
+        }, { once: true });
+      });
   }
 }
 

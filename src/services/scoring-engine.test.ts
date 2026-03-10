@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { ScorecardShooter, SeasonData, Team as ScTeam, TeamTotals } from '@/types/scorecard';
-import type { Team as PriorTeam } from '@/types/score';
+import type { Team as PriorTeam, TeamResult } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
 import {
   mean,
@@ -27,6 +27,7 @@ import {
   computeSeasonTotals,
   computeDummyScore,
   sortShootersWithCaptainFirst,
+  computeAccolades,
 } from './scoring-engine';
 
 // ---------------------------------------------------------------------------
@@ -763,5 +764,89 @@ describe('sortShootersWithCaptainFirst', () => {
     const shooters = [{ name: 'Alice' }, { name: 'Bob' }];
     sortShootersWithCaptainFirst(shooters, 'Bob');
     expect(shooters[0]?.name).toBe('Alice');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helper: minimal TeamResult for accolade tests
+// ---------------------------------------------------------------------------
+function mkTeamResult(teamName: string, shooters: { name: string; score1: number | null; score2: number | null }[]): TeamResult {
+  return {
+    teamId: teamName.toLowerCase(),
+    teamName,
+    targets: 0,
+    rankPoints: 0,
+    bonusPoints: 0,
+    shooterScores: shooters.map(({ name, score1, score2 }) => ({
+      name,
+      score1,
+      score2,
+      total: (score1 ?? 0) + (score2 ?? 0),
+    })),
+  };
+}
+
+describe('computeAccolades', () => {
+  it('returns [] for empty teamResults', () => {
+    expect(computeAccolades([])).toEqual([]);
+  });
+
+  it('score1=25, score2=20 → Straight 25', () => {
+    const result = computeAccolades([mkTeamResult('Eagles', [{ name: 'Alice', score1: 25, score2: 20 }])]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ shooterName: 'Alice', teamName: 'Eagles', streak: 25 });
+  });
+
+  it('score1=20, score2=25 → Straight 25', () => {
+    const result = computeAccolades([mkTeamResult('Eagles', [{ name: 'Bob', score1: 20, score2: 25 }])]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ shooterName: 'Bob', teamName: 'Eagles', streak: 25 });
+  });
+
+  it('score1=25, score2=25 → Straight 50', () => {
+    const result = computeAccolades([mkTeamResult('Eagles', [{ name: 'Carol', score1: 25, score2: 25 }])]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ shooterName: 'Carol', teamName: 'Eagles', streak: 50 });
+  });
+
+  it('score1=20, score2=20 → no accolade', () => {
+    const result = computeAccolades([mkTeamResult('Eagles', [{ name: 'Dan', score1: 20, score2: 20 }])]);
+    expect(result).toHaveLength(0);
+  });
+
+  it('dummy shooter → skipped', () => {
+    const result = computeAccolades([mkTeamResult('Eagles', [{ name: 'Eagles DUMMY1', score1: 25, score2: 25 }])]);
+    expect(result).toHaveLength(0);
+  });
+
+  it('both null (historical) → skipped', () => {
+    const result = computeAccolades([mkTeamResult('Eagles', [{ name: 'Eve', score1: null, score2: null }])]);
+    expect(result).toHaveLength(0);
+  });
+
+  it('Straight 50s appear before Straight 25s, alphabetical within each tier', () => {
+    const result = computeAccolades([
+      mkTeamResult('TeamA', [
+        { name: 'Zara', score1: 25, score2: 10 },   // 25
+        { name: 'Alice', score1: 25, score2: 25 },   // 50
+        { name: 'Bob', score1: 25, score2: 10 },     // 25
+        { name: 'Mike', score1: 25, score2: 25 },    // 50
+      ]),
+    ]);
+    expect(result).toHaveLength(4);
+    expect(result[0]?.streak).toBe(50);
+    expect(result[0]?.shooterName).toBe('Alice');
+    expect(result[1]?.streak).toBe(50);
+    expect(result[1]?.shooterName).toBe('Mike');
+    expect(result[2]?.streak).toBe(25);
+    expect(result[2]?.shooterName).toBe('Bob');
+    expect(result[3]?.streak).toBe(25);
+    expect(result[3]?.shooterName).toBe('Zara');
+  });
+
+  it('score1=25, score2=25 produces only one accolade (Straight 50, not also Straight 25)', () => {
+    const result = computeAccolades([mkTeamResult('Eagles', [{ name: 'Frank', score1: 25, score2: 25 }])]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.streak).toBe(50);
   });
 });

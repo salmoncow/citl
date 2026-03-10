@@ -471,6 +471,7 @@ describe('removeShooterFromRoster — validation', () => {
       getTeams: async () => success([team]),
       getTeam: async () => success(team),
       getEntry: async () => success(null),
+      getAllWeekResults: async () => success([]),
       removeShooterFromRosterAndEntries: async () => success(undefined),
     };
     const svc = new ScoreService(repo as unknown as ScoreRepository);
