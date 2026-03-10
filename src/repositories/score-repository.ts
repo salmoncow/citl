@@ -27,6 +27,7 @@ import {
 } from 'firebase/firestore';
 
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
+import type { Accolade } from '@/types/shooter';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Announcement } from '@/types/announcement';
 
@@ -361,11 +362,15 @@ export class ScoreRepository {
       let batch2HasOps = false;
 
       for (const weekDoc of weeksSnap.docs) {
-        const data = weekDoc.data() as { teamResults?: { teamId: string }[] };
+        const data = weekDoc.data() as { teamResults?: { teamId: string; teamName?: string }[]; accolades?: Accolade[] };
         const before = data.teamResults ?? [];
         const after = before.filter((tr) => tr.teamId !== teamId);
         if (after.length !== before.length) {
-          batch2.update(weekDoc.ref, { teamResults: after });
+          const deletedTeamName = before.find((tr) => tr.teamId === teamId)?.teamName;
+          const updatedAccolades = deletedTeamName
+            ? (data.accolades ?? []).filter((a) => a.teamName !== deletedTeamName)
+            : (data.accolades ?? []);
+          batch2.update(weekDoc.ref, { teamResults: after, accolades: updatedAccolades });
           batch2HasOps = true;
         }
       }
@@ -392,6 +397,7 @@ export class ScoreRepository {
     teamId: string,
     updatedShooters: Team['shooters'],
     entryUpdates: SeasonEntry[],
+    weekAccoladePatches?: { weekNumber: number; accolades: Accolade[] }[],
   ): Promise<Result<void>> {
     try {
       const batch = writeBatch(this.db);
@@ -407,6 +413,14 @@ export class ScoreRepository {
         batch.set(
           doc(this.db, 'seasons', String(year), 'entries', `${entry.weekNumber}_${teamId}`),
           entry,
+        );
+      }
+
+      // Patch accolades on any published week docs affected by the removal
+      for (const patch of weekAccoladePatches ?? []) {
+        batch.update(
+          doc(this.db, 'seasons', String(year), 'weeks', String(patch.weekNumber)),
+          { accolades: patch.accolades },
         );
       }
 
