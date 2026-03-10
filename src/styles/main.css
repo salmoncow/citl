@@ -1676,6 +1676,15 @@ input[type="text"].ap-roster-name:focus {
    Scoresheet Generator
    ============================================================ */
 
+.scoresheet-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.scoresheet-heading { margin: 0; font-size: var(--text-xl); }
+
 .scoresheet-controls {
   display: flex;
   align-items: center;
@@ -1810,10 +1819,6 @@ input[type="text"].ap-roster-name:focus {
   text-align: center;
 }
 
-.downloads-section-heading {
-  margin: 0 0 var(--space-4);
-  font-size: var(--text-xl);
-}
 
 /* ============================================================
    Print styles
@@ -1850,7 +1855,7 @@ input[type="text"].ap-roster-name:focus {
 
   /* Print isolation — each button prints only its own section */
   body.print-scoresheets yardage-table              { display: none; }
-  body.print-scoresheets .downloads-section-heading { display: none; }
+  .scoresheet-header                                { display: none; }
   body.print-yardage .downloads-scoresheet-section  { display: none; }
 
   /* Yardage print layout */
