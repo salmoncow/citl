@@ -2,7 +2,7 @@
  * @file Score / standings type definitions
  */
 
-import type { Shooter } from './shooter';
+import type { Shooter, Accolade } from './shooter';
 
 /**
  * A team's cumulative totals across all weeks shot so far.
@@ -75,6 +75,7 @@ export interface WeekResult {
   weekNumber: number;
   publishedAt: string;
   teamResults: TeamResult[];
+  accolades?: Accolade[];
 }
 
 /**
