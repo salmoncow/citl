@@ -45,6 +45,9 @@ public/assets/
 # Vite build output
 dist/
 
+# Vite dev cache
+.vite/
+
 # Optional npm cache directory
 .npm
 

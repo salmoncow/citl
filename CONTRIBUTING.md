@@ -18,8 +18,8 @@ npm run build     # production build
 
 ## Contribution Guidelines
 
-- Branch from `dev`; open PRs against `dev` (`main` = production)
-- No direct commits to `main` or `dev`
+- Branch from `main`; open PRs against `main`
+- No direct commits to `main`
 - Commit message format: `type(scope): description` (feat, fix, docs, refactor, chore, ci)
 - Business logic belongs in `src/services/scoring-engine.ts` — never reinlined elsewhere
 - Schedule logic belongs in `src/utils/schedule.ts` — same rule
