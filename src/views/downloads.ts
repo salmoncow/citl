@@ -4,11 +4,10 @@
 
 export function downloadsView(): string {
   return `
-    <scoresheet-generator></scoresheet-generator>
-
-    <div class="downloads-static">
-      <h2>Yardage Table</h2>
-      <a href="/assets/score_sheets/yardage-table.pdf" target="_blank">Download (PDF)</a>
+    <div class="downloads-scoresheet-section">
+      <h2 class="downloads-section-heading">Scoresheets</h2>
+      <scoresheet-generator></scoresheet-generator>
     </div>
+    <yardage-table></yardage-table>
   `;
 }

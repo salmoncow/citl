@@ -11,6 +11,7 @@ import './components/home-announcements';
 import './components/season-scorecards';
 import './components/admin-panel';
 import './components/scoresheet-generator';
+import './components/yardage-table';
 import './components/season-calendar';
 
 import { NavigationModule } from './modules/navigation';
