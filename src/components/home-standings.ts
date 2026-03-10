@@ -8,9 +8,9 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
-import type { Team } from '@/types/score';
+import type { Team, WeekResult } from '@/types/score';
 import type { Season } from '@/types/season';
-import type { WeekResult } from '@/types/score';
+import type { Accolade } from '@/types/shooter';
 
 const factory = createRepositoryFactory({ db });
 const scoreService = new ScoreService(factory.getScoreRepository());
@@ -108,8 +108,12 @@ class HomeStandings extends HTMLElement {
       weekSelect.appendChild(opt);
     }
 
-    weekSelect.value = 'season';
-    this._renderTable('season');
+    const defaultView =
+      this._season!.status === 'complete' || currentWeek === 0
+        ? 'season'
+        : String(currentWeek);
+    weekSelect.value = defaultView;
+    this._renderTable(defaultView);
   }
 
   private _renderTable(weekKey: string): void {
@@ -123,6 +127,7 @@ class HomeStandings extends HTMLElement {
       total: number | string;
     }[];
     let subtitle: string;
+    let accolades: Accolade[] = [];
 
     if (weekKey === 'season') {
       const standings = this._season?.standings ?? [];
@@ -187,9 +192,35 @@ class HomeStandings extends HTMLElement {
       rows.sort((a, b) => (b.total as number) - (a.total as number));
       rows = rows.map((r, i) => ({ ...r, place: i + 1 }));
       subtitle = `Week ${weekNum} results \u00b7 Total reflects season-to-date`;
+      accolades = weekResult.accolades ?? [];
     }
 
-    this.querySelector('#hs-table')!.innerHTML = this._buildTable(rows, subtitle);
+    this.querySelector('#hs-table')!.innerHTML =
+      this._renderAccolades(accolades) +
+      this._buildTable(rows, subtitle);
+  }
+
+  private _renderAccolades(accolades: Accolade[]): string {
+    if (accolades.length === 0) return '';
+
+    const items = accolades.map((a) => {
+      const badgeClass = a.streak === 50
+        ? 'accolades-badge--50'
+        : 'accolades-badge--25';
+      const label = a.streak === 50 ? 'Straight 50' : 'Straight 25';
+      return `
+      <li class="accolades-item">
+        <span class="accolades-badge ${badgeClass}">${label}</span>
+        <span class="accolades-item__name">${a.shooterName}</span>
+        <span class="accolades-item__team">${a.teamName}</span>
+      </li>`;
+    }).join('');
+
+    return `
+    <div class="accolades-section">
+      <h3 class="accolades-section__heading">Accolades</h3>
+      <ul class="accolades-list">${items}</ul>
+    </div>`;
   }
 
   private _buildTable(
