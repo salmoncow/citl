@@ -1800,13 +1800,14 @@ input[type="text"].ap-roster-name:focus {
   text-transform: uppercase;
   padding: var(--space-2) var(--space-3);
   font-size: 0.75rem;
-  text-align: left;
+  text-align: center;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 .yardage-table td {
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--c-table-border);
+  text-align: center;
 }
 
 .downloads-section-heading {

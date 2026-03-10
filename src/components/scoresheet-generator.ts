@@ -249,6 +249,7 @@ class ScoresheetGenerator extends HTMLElement {
 
     this.querySelector('.scoresheet-print-btn')
       ?.addEventListener('click', () => {
+        document.body.classList.remove('print-yardage');
         document.body.classList.add('print-scoresheets');
         window.print();
         window.addEventListener('afterprint', () => {
