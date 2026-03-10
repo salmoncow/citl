@@ -65,6 +65,7 @@ class SeasonCalendar extends HTMLElement {
       const key = String(event.week);
       if (!(key in overrides)) return event;
       const override = overrides[key];
+      if (override === undefined) return event;
       if (override === null) {
         return { ...event, type: 'cancelled' as const };
       }

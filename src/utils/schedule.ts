@@ -12,7 +12,7 @@
 
 export interface ScheduleEvent {
   date: Date;
-  type: 'practice' | 'shoot' | 'holiday';
+  type: 'practice' | 'shoot' | 'holiday' | 'cancelled';
   week?: number; // 1-based, shoot days only
 }
 
