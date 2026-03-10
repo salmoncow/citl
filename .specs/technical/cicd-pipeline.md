@@ -1,221 +1,157 @@
 # CI/CD Pipeline — citl.club
 
-**Status**: Phase 1 — Manual deployment only
-**Phase 6 target**: GitHub Actions automated deployment (deferred until after DNS cutover)
-**Last Updated**: 2026-02-27
+**Last Updated**: 2026-03-10
 
 ---
 
 ## Overview
 
-citl.club currently uses manual Firebase CLI deployment (`npm run deploy`).
-GitHub Actions CI/CD is intentionally deferred until Phase 6, after the DNS cutover from
-AWS to Firebase Hosting is validated. This avoids automating against a target that is not yet live.
+citl.club uses GitHub Actions for CI/CD. Three workflows cover type checking, unit tests,
+production deploys, and PR preview channels.
 
-See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for current manual
-deployment process.
+See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for hosting configuration.
 
 ---
 
-## Current State (Phase 1: Manual)
-
-```bash
-# Production deploy (manual)
-npm run build && firebase deploy --only hosting
-
-# Preview channel deploy (7-day expiry)
-npm run build && firebase hosting:channel:deploy preview
-```
-
-**Trigger**: Developer runs locally after validating with `npm run preview`.
-**Authentication**: Developer is logged in via `firebase login`.
-
----
-
-## Target State (Phase 6: GitHub Actions)
-
-### Phase 6 Prerequisites
-
-Before implementing GitHub Actions automation:
-
-- [ ] DNS cutover complete — `citl.club` is live on Firebase Hosting
-- [ ] Firebase Hosting validated in production (all routes, CSP, PDFs)
-- [ ] Firebase service account created and stored as GitHub secret
-- [ ] All `VITE_FIREBASE_*` values stored as GitHub secrets
-- [ ] At least one full manual deploy cycle completed successfully post-cutover
-
-### Target Workflow Architecture
+## Workflow Architecture
 
 | Trigger | Workflow | Action |
 |---------|----------|--------|
-| Push to `main` | `deploy-production.yml` | Build → Deploy to Firebase Hosting (live) |
-| PR opened/updated | `deploy-preview.yml` | Build → Firebase preview channel (7-day link in PR) |
-| Manual (`workflow_dispatch`) | Either workflow | On-demand deploy |
+| Push to `main` or PR | `ci.yml` | Typecheck + unit tests (parallel jobs) |
+| Push to `main` | `deploy-production.yml` | Build → Firestore rules → Firebase Hosting (live) |
+| Manual (`workflow_dispatch`) | `deploy-production.yml` | On-demand production deploy |
+| PR opened/updated/reopened | `deploy-preview.yml` | Build → Firebase preview channel (7-day link in PR comment) |
 
 ---
 
-## Phase 6 Implementation Plan
-
-### Workflow Files to Create
+## Workflow Files
 
 ```
 .github/workflows/
-├── deploy-production.yml   # push to main → live site
-└── deploy-preview.yml      # PR → preview channel
+├── ci.yml                  # typecheck + unit tests (parallel jobs)
+├── deploy-production.yml   # push to main → live site + Firestore rules
+└── deploy-preview.yml      # PR → Firebase preview channel (7-day URL in PR comment)
 ```
-
-### `deploy-production.yml` (target)
-
-```yaml
-name: Deploy to Firebase Hosting (Production)
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
-
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: citl
-          channelId: live
-```
-
-### `deploy-preview.yml` (target)
-
-```yaml
-name: Deploy to Firebase Hosting (Preview)
-
-on:
-  pull_request:
-    branches: [main]
-
-jobs:
-  build-and-preview:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
-
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: citl
-          expires: 7d
-```
-
-The preview deploy action automatically posts the preview URL as a PR comment.
 
 ---
 
-## GitHub Secrets Configuration (Phase 6)
+### `ci.yml`
 
-### Required Secrets
+Runs on every push to `main` and every PR targeting `main`. No Firebase credentials needed —
+tests are pure in-memory (`vitest` with `environment: 'node'`). Two parallel jobs:
+`Type Check` and `Unit Tests` — these names are the exact strings used in branch protection
+status checks.
 
-| Secret Name | Value | Source |
-|-------------|-------|--------|
-| `FIREBASE_SERVICE_ACCOUNT` | Firebase service account JSON | Firebase console → Project Settings → Service accounts |
-| `VITE_FIREBASE_API_KEY` | Firebase API key | Firebase console → Project Settings → Your apps |
-| `VITE_FIREBASE_AUTH_DOMAIN` | `citl-baed2.firebaseapp.com` | Firebase console |
-| `VITE_FIREBASE_PROJECT_ID` | `citl-baed2` | Firebase console |
-| `VITE_FIREBASE_STORAGE_BUCKET` | `citl-baed2.firebasestorage.app` | Firebase console |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Sender ID | Firebase console |
-| `VITE_FIREBASE_APP_ID` | App ID | Firebase console |
-| `VITE_FIREBASE_MEASUREMENT_ID` | Measurement ID | Firebase console |
+See [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml).
 
-### Secret Setup Process (Phase 6)
+---
+
+### `deploy-production.yml`
+
+Deploys Firestore security rules first (via `GOOGLE_APPLICATION_CREDENTIALS` written to a
+temp file), then deploys Firebase Hosting via `FirebaseExtended/action-hosting-deploy@v0`.
+`firebase-tools` is in `devDependencies` so `npx firebase` resolves from the local install
+after `npm ci` — no download on every run. Triggers on push to `main` and `workflow_dispatch`.
+
+See [`.github/workflows/deploy-production.yml`](../../.github/workflows/deploy-production.yml).
+
+---
+
+### `deploy-preview.yml`
+
+Firestore rules are NOT deployed in preview — rules changes only go live on production.
+The `permissions` block grants `pull-requests: write` (required for GitHub's restrictive
+default token permissions so the action can post the preview URL as a PR comment). Preview
+channels expire after 7 days. Triggers on PR open, synchronize, and reopen.
+
+See [`.github/workflows/deploy-preview.yml`](../../.github/workflows/deploy-preview.yml).
+
+---
+
+## Firebase Service Account IAM Setup
+
+Minimum IAM roles (principle of least privilege):
+- `roles/firebasehosting.admin` — upload files, create/finalize channels
+- `roles/firebaserulesadmin` — deploy Firestore security rules only (no data access)
 
 ```bash
-# 1. Create Firebase service account
-#    Firebase console → Project Settings → Service accounts → Generate new private key
-#    Download the JSON file
+export PROJECT_ID=citl-baed2
 
-# 2. Add to GitHub repository secrets
-#    GitHub repo → Settings → Secrets and variables → Actions → New repository secret
-#    Name: FIREBASE_SERVICE_ACCOUNT
-#    Value: (paste entire JSON content)
+# Create the service account
+gcloud iam service-accounts create github-actions-deploy \
+  --project=$PROJECT_ID \
+  --display-name="GitHub Actions Deploy" \
+  --description="CI/CD deployments for citl.club"
 
-# 3. Repeat for each VITE_FIREBASE_* variable
+export SA_EMAIL="github-actions-deploy@${PROJECT_ID}.iam.gserviceaccount.com"
 
-# 4. Verify: push a commit to main and check Actions tab
+# Grant minimum roles
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/firebasehosting.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/firebaserulesadmin"
+
+# Download JSON key
+gcloud iam service-accounts keys create ./github-actions-sa.json \
+  --iam-account=$SA_EMAIL --project=$PROJECT_ID
+
+# After uploading to GitHub Secrets, delete the local file:
+rm ./github-actions-sa.json
 ```
 
 ---
 
-## Performance Targets (Phase 6)
+## GitHub Secrets Configuration
+
+Navigate to: `GitHub repo → Settings → Secrets and variables → Actions → New repository secret`
+
+| Secret Name | Value |
+|-------------|-------|
+| `FIREBASE_SERVICE_ACCOUNT` | Full JSON content of `github-actions-sa.json` |
+| `VITE_FIREBASE_API_KEY` | From Firebase console → Project Settings → Your apps |
+| `VITE_FIREBASE_AUTH_DOMAIN` | `citl-baed2.firebaseapp.com` |
+| `VITE_FIREBASE_PROJECT_ID` | `citl-baed2` |
+| `VITE_FIREBASE_STORAGE_BUCKET` | `citl-baed2.firebasestorage.app` |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | From Firebase console |
+| `VITE_FIREBASE_APP_ID` | From Firebase console |
+| `VITE_FIREBASE_MEASUREMENT_ID` | From Firebase console |
+
+Values for `VITE_FIREBASE_*` can be copied from your local `.env` file.
+
+---
+
+## Branch Protection
+
+```
+GitHub repo → Settings → Branches → Add rule → Branch: main
+```
+
+Required status checks (must match job `name:` fields exactly):
+- `Type Check`
+- `Unit Tests`
+- `Build & Deploy (Preview Channel)` — optional (can block merges during Firebase outages)
+
+Also enable:
+- Require a pull request before merging
+- Require branches to be up to date before merging
+- Do not allow bypassing the above settings
+
+---
+
+## Performance Targets
 
 | Metric | Target |
 |--------|--------|
+| CI (typecheck + tests) | <2 minutes |
 | Build time | <2 minutes |
 | Deploy time | <1 minute |
 | Total pipeline time | <3 minutes |
 | Concurrent PR previews | Up to 10 |
 
-GitHub Actions free tier provides 2,000 minutes/month on free plan — well within budget
-for a single-developer project with infrequent deploys.
-
----
-
-## Branch Protection (Phase 6)
-
-When CI/CD is active, enable branch protection on `main`:
-
-```
-GitHub repo → Settings → Branches → Add rule → main
-
-Rules to enable:
-  ✅ Require pull request reviews before merging
-  ✅ Require status checks to pass before merging
-       → Select: build-and-preview (from deploy-preview.yml)
-  ✅ Require branches to be up to date before merging
-  ✅ Do not allow bypassing the above settings
-```
+GitHub Actions free tier provides 2,000 minutes/month — well within budget for infrequent deploys.
 
 ---
 
@@ -236,18 +172,20 @@ Firebase console → Hosting → Release history → select previous release →
 
 ---
 
-## Implementation Checklist (Phase 6)
+## Implementation Checklist
 
-- [ ] DNS cutover complete and validated
-- [ ] Firebase service account created and downloaded
-- [ ] All `VITE_FIREBASE_*` secrets added to GitHub
-- [ ] `FIREBASE_SERVICE_ACCOUNT` secret added to GitHub
-- [ ] `.github/workflows/deploy-production.yml` created
-- [ ] `.github/workflows/deploy-preview.yml` created
+- [x] DNS cutover complete and validated
+- [x] Firebase service account created with least-privilege IAM roles
+- [x] All `VITE_FIREBASE_*` secrets added to GitHub
+- [x] `FIREBASE_SERVICE_ACCOUNT` secret added to GitHub
+- [x] `firebase-tools` added to `devDependencies` in `package.json`
+- [x] `.github/workflows/ci.yml` created
+- [x] `.github/workflows/deploy-production.yml` created
+- [x] `.github/workflows/deploy-preview.yml` created
 - [ ] Branch protection rules enabled on `main`
-- [ ] Test: push to `main` → verify production deploy
-- [ ] Test: open PR → verify preview channel URL in PR comment
-- [ ] Update `constitution.md` §II.1 Deployment phase to Phase 2
+- [ ] Test: push to `main` → verify production deploy in Firebase console
+- [ ] Test: open PR → verify preview channel URL posts as PR comment
+- [ ] Test: typecheck failure on a branch blocks merge
 
 ---
 
@@ -256,5 +194,4 @@ Firebase console → Hosting → Release history → select previous release →
 - [FirebaseExtended/action-hosting-deploy](https://github.com/FirebaseExtended/action-hosting-deploy)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [.specs/technical/firebase-deployment.md](./firebase-deployment.md) — Hosting config
-- [.specs/constitution.md](../constitution.md) — §II.1 Deployment phase, §VII Migration Milestones
-- [.prompts/core/development/git-best-practices.md](../../.prompts/core/development/git-best-practices.md)
+- [.specs/constitution.md](../constitution.md) — §II.1 Current Architectural State

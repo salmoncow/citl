@@ -12,8 +12,7 @@
 citl.club is deployed to Firebase Hosting. The `dist/` folder (Vite build output) is deployed
 as a static SPA with a universal rewrite rule that sends all routes to `index.html`.
 
-**Current deployment state**: Manual via Firebase CLI.
-GitHub Actions CI/CD is deferred to Phase 6 (post-DNS cutover).
+**Deployment**: GitHub Actions CI/CD (automated on push to `main`).
 See [.specs/technical/cicd-pipeline.md](./cicd-pipeline.md).
 
 ---
@@ -26,15 +25,6 @@ See [.specs/technical/cicd-pipeline.md](./cicd-pipeline.md).
 Firebase project ID: citl-baed2
 Default alias:       default → citl-baed2
 Config file:         .firebaserc
-```
-
-`.firebaserc` content:
-```json
-{
-  "projects": {
-    "default": "citl-baed2"
-  }
-}
 ```
 
 ### Authentication Setup
@@ -88,7 +78,7 @@ IAM role on the `citl-baed2` project.
 - **SPA rewrite**: All routes → `index.html`
 - **Cache headers**: Long-lived for fingerprinted assets, no-cache for `index.html`
 - **Security headers**: CSP, X-Frame-Options, HSTS, X-Content-Type-Options
-- **Custom domain**: `citl.club` and `www.citl.club` (pending DNS cutover, Phase 7)
+- **Custom domain**: `citl.club` and `www.citl.club` (see DNS Cutover section below)
 
 See [firebase.json](../../firebase.json) for full configuration.
 
@@ -96,7 +86,7 @@ See [firebase.json](../../firebase.json) for full configuration.
 
 ## Deployment Process
 
-### Manual Deployment (Current — Phase 1)
+### Manual Deployment
 
 ```bash
 # Full deploy: build → deploy
@@ -266,7 +256,7 @@ enforcement layer, not the key.
 
 ---
 
-## DNS Cutover (Phase 7)
+## DNS Cutover
 
 When ready to move `citl.club` from AWS CloudFront to Firebase Hosting:
 
@@ -346,6 +336,6 @@ to a preview channel and verify in browser dev tools before promoting to product
 - [Firebase Hosting Documentation](https://firebase.google.com/docs/hosting)
 - [.specs/constitution.md](../constitution.md) — §VI Cost Constraints, §VII Migration Milestones
 - [.specs/technical/build-system.md](./build-system.md) — Vite build output details
-- [.specs/technical/cicd-pipeline.md](./cicd-pipeline.md) — Automated deployment (Phase 6)
+- [.specs/technical/cicd-pipeline.md](./cicd-pipeline.md) — GitHub Actions CI/CD
 - [.prompts/platforms/firebase/firebase-best-practices.md](../../.prompts/platforms/firebase/firebase-best-practices.md)
 - [.prompts/platforms/firebase/firebase-finops.md](../../.prompts/platforms/firebase/firebase-finops.md)

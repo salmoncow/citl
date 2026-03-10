@@ -77,6 +77,7 @@ Firebase-specific patterns, configurations, and best practices. All Firebase gui
 Documentation about maintaining this prompt library and spec-kit integration.
 
 - [Spec-Kit Integration Guide](./meta/speckit-integration-guide.md) - **START HERE** - Hybrid architecture documentation
+- [Spec Authoring Guidelines](./meta/spec-authoring-guidelines.md) - Rules for writing specs that stay accurate
 - [Prompt Maintenance](./meta/prompt-maintenance.md) - Keeping prompts current and accurate
 - [Architectural Evolution Strategy](./meta/architectural-evolution-strategy.md) - Phase-based evolution framework
 - [Architectural Decision Log](./meta/architectural-decision-log.md) - Historical decisions and current state
