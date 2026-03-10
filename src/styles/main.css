@@ -1774,8 +1774,9 @@ input[type="text"].ap-roster-name:focus {
 
 .yardage-controls {
   display: flex;
-  align-items: center;
-  gap: var(--space-4);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
 
