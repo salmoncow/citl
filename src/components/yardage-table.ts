@@ -5,6 +5,7 @@ class YardageTable extends HTMLElement {
     this.innerHTML = this._render();
     this.querySelector('.yardage-print-btn')
       ?.addEventListener('click', () => {
+        document.body.classList.remove('print-scoresheets');
         document.body.classList.add('print-yardage');
         window.print();
         window.addEventListener('afterprint', () => {
