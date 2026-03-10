@@ -120,12 +120,15 @@ class ScoresheetGenerator extends HTMLElement {
       .join('');
 
     return `
+      <div class="scoresheet-header">
+        <h2 class="scoresheet-heading">Scoresheets</h2>
+      </div>
       <div class="scoresheet-controls">
         <label for="sg-year">Season</label>
         <select id="sg-year">${yearOptions}</select>
         <label for="sg-week">Week</label>
         <select id="sg-week">${this._weekOptions()}</select>
-        <button class="btn-primary scoresheet-print-btn">Print All Scoresheets</button>
+        <button class="btn-primary scoresheet-print-btn">Print Scoresheets</button>
       </div>
       <div id="sg-cards"></div>`;
   }
