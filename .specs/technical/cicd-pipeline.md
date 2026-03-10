@@ -104,22 +104,33 @@ rm ./github-actions-sa.json
 
 ---
 
-## GitHub Secrets Configuration
+## GitHub Secrets and Variables Configuration
 
-Navigate to: `GitHub repo → Settings → Secrets and variables → Actions → New repository secret`
+Navigate to: `GitHub repo → Settings → Secrets and variables → Actions`
+
+**Secrets** (sensitive — not visible after saving):
 
 | Secret Name | Value |
 |-------------|-------|
 | `FIREBASE_SERVICE_ACCOUNT` | Full JSON content of `github-actions-sa.json` |
 | `VITE_FIREBASE_API_KEY` | From Firebase console → Project Settings → Your apps |
 | `VITE_FIREBASE_AUTH_DOMAIN` | `citl-baed2.firebaseapp.com` |
-| `VITE_FIREBASE_PROJECT_ID` | `citl-baed2` |
 | `VITE_FIREBASE_STORAGE_BUCKET` | `citl-baed2.firebasestorage.app` |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | From Firebase console |
 | `VITE_FIREBASE_APP_ID` | From Firebase console |
 | `VITE_FIREBASE_MEASUREMENT_ID` | From Firebase console |
 
-Values for `VITE_FIREBASE_*` can be copied from your local `.env` file.
+**Variables** (non-sensitive — visible in UI and linkable):
+
+| Variable Name | Value |
+|---------------|-------|
+| `VITE_FIREBASE_PROJECT_ID` | `citl-baed2` |
+
+`VITE_FIREBASE_PROJECT_ID` is a variable (not a secret) because the project ID is not
+sensitive and benefits from being visible in the GitHub UI with direct links to the Firebase
+project. Referenced in workflows as `${{ vars.VITE_FIREBASE_PROJECT_ID }}`.
+
+Values can be copied from your local `.env` file.
 
 ---
 
