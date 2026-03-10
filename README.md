@@ -22,7 +22,4 @@ Opens at http://localhost:3000
 
 ## Documentation
 
-- [DEVELOPMENT.md](DEVELOPMENT.md) — Setup, build process, environment variables, deployment
-- [CONTRIBUTING.md](CONTRIBUTING.md) — Git workflow, branch naming, commit conventions, PR guidelines
-- [AGENTS.md](AGENTS.md) — Architectural source of truth for AI-assisted development
-- [PLAN.md](PLAN.md) — AWS → Firebase migration plan and phase checklist
+See [AGENTS.md](AGENTS.md) for architecture, dev commands, and contribution guidelines.

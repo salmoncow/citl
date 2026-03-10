@@ -544,37 +544,6 @@ a:hover { color: var(--c-link-hover); }
 .footer__admin-link:hover { color: var(--c-accent); }
 
 /* ============================================================
-   Warning table
-   ============================================================ */
-
-.warning_table {
-  font-size: var(--text-sm);
-  text-align: center;
-  border-collapse: collapse;
-  table-layout: auto;
-  width: 100%;
-  border-left: 4px solid var(--c-warning-border);
-  margin-top: var(--space-5);
-}
-
-.warning_table th {
-  letter-spacing: var(--tracking-wide);
-  font-size: var(--text-lg);
-  font-weight: bold;
-  text-transform: uppercase;
-  color: var(--c-status-error);
-  background-color: var(--c-warning-bg);
-  padding: var(--space-3) var(--space-4);
-}
-
-.warning_table td {
-  text-align: left;
-  background-color: var(--c-warning-bg);
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--c-warning-border);
-}
-
-/* ============================================================
    Standings table — horizontal lines only
    ============================================================ */
 
@@ -1335,6 +1304,12 @@ select:focus {
   color: var(--c-text-muted);
 }
 
+.hs-subtitle {
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
 /* Controls containers — label + select row */
 .home-standings-controls,
 .season-scorecards-controls,
@@ -1871,8 +1846,6 @@ input[type="text"].ap-roster-name:focus {
     max-height: none !important;
     overflow: visible !important;
   }
-
-  .downloads-static { display: none; }
 
   /* Print isolation — each button prints only its own section */
   body.print-scoresheets yardage-table              { display: none; }
