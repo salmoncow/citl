@@ -18,7 +18,7 @@ See [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) 
 ├── constitution.md          # Project constitutional spec (single source of truth)
 ├── technical/               # Technical configurations
 │   ├── build-system.md     # Vite 7 configuration and optimization
-│   ├── cicd-pipeline.md    # GitHub Actions CI/CD workflows (Phase 6)
+│   ├── cicd-pipeline.md    # GitHub Actions CI/CD workflows
 │   └── firebase-deployment.md  # Firebase Hosting deployment process
 └── features/                # Per-feature specifications (ephemeral)
     └── <feature-name>.md   # Created via /speckit-specify
@@ -40,7 +40,7 @@ See [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) 
 
 Project-specific technical configurations:
 - **build-system.md** — Vite 7 configuration, `@/` alias, Terser minification, env variables
-- **cicd-pipeline.md** — GitHub Actions workflows (deferred to Phase 6, post-DNS cutover)
+- **cicd-pipeline.md** — GitHub Actions CI/CD workflows
 - **firebase-deployment.md** — Firebase Hosting setup, `citl` project, deployment commands
 
 ### Feature Specifications
@@ -98,7 +98,7 @@ Ephemeral specifications for individual features, created via `/speckit-specify`
 - [AGENTS.md](../AGENTS.md) — Agent orientation and quick-start
 - [Prompts Library](../.prompts/README.md) — Foundational patterns
 - [Architectural Decision Log](../.prompts/meta/architectural-decision-log.md) — Historical decisions
-- [Architectural Evolution Strategy](../.prompts/meta/architectural-evolution-strategy.md) — Phase transition framework
+- [Architectural Evolution Strategy](../.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers and decision framework
 
 ---
 

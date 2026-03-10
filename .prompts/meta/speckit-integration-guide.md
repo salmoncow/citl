@@ -22,7 +22,7 @@ This project uses a **hybrid guidance architecture** combining:
 
 **Spec-Kit (`.specs/`)** contains:
 - ✅ Project-specific constraints (free tier limit, 2-platform max)
-- ✅ Current architectural state (Phase 1 for all domains)
+- ✅ Current architectural state per domain
 - ✅ Technology stack decisions (Vanilla WC, Firebase, Vite)
 - ✅ Quality thresholds for THIS project (80% coverage, <3s load time)
 - ✅ Per-feature specifications (requirements, plans, tasks)
@@ -533,6 +533,7 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 - `/speckit-implement` - Execute
 
 **Meta-Guidance**:
+- `.prompts/meta/spec-authoring-guidelines.md` - Rules for writing specs (reference vs. reproduce)
 - `.prompts/meta/architectural-evolution-strategy.md` - Evolution framework
 - `.prompts/meta/architectural-decision-log.md` - Historical decisions
 - `.prompts/meta/prompt-gap-protocol.md` - Gap detection and handling

@@ -45,46 +45,17 @@ citl-static/           ← project root (git repo)
 
 ### Vite Configuration Principles
 
-```js
-// vite.config.js — key settings
-{
-  root: 'src',            // index.html is inside src/
-  publicDir: '../public', // relative to root
-  envDir: '..',           // .env files are at project root, not src/
+See [`vite.config.ts`](../../vite.config.ts) for the full configuration. Key decisions:
 
-  build: {
-    outDir: '../dist',    // relative to root → project root/dist/
-    minify: 'terser',     // Terser for maximum minification
-    sourcemap: true,      // source maps in production (for error debugging)
-    cssCodeSplit: true,   // separate CSS chunk per entry
-
-    rollupOptions: {
-      output: {
-        // Asset routing by type
-        assetFileNames: (assetInfo) => {
-          if (/png|jpe?g|svg|gif/i.test(ext)) return 'assets/images/[name]-[hash][extname]';
-          if (/css/i.test(ext))               return 'assets/styles/[name]-[hash][extname]';
-          return 'assets/[name]-[hash][extname]';
-        },
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-      }
-    }
-  },
-
-  resolve: {
-    alias: {
-      '@':        './src',
-      '@modules': './src/modules',
-      '@assets':  './src/assets',
-      '@views':   './src/views',
-    }
-  },
-
-  server: { port: 3000, open: true },
-  envPrefix: 'VITE_',
-}
-```
+- **`root: 'src'`** — `index.html` lives inside `src/`, so all paths are relative to it
+- **`publicDir: '../public'`** — `public/` is at the project root, not inside `src/`
+- **`envDir: '..'`** — `.env` files are at the project root, not inside `src/`
+- **`build.outDir: '../dist'`** — output resolves to project root `/dist/`
+- **`build.minify: 'terser'`** — Terser for maximum minification (requires `terser` in devDependencies)
+- **`build.sourcemap: true`** — source maps in production for error debugging
+- **`build.cssCodeSplit: true`** — separate CSS chunk, enabling parallel loading
+- **Rollup asset routing** — images to `assets/images/`, styles to `assets/styles/`, JS to `assets/js/`, all content-hashed
+- **`envPrefix: 'VITE_'`** — only variables prefixed `VITE_` are embedded in the client bundle
 
 ### Path Alias (`@/`)
 

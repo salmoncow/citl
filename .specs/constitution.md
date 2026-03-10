@@ -75,7 +75,7 @@ detailed patterns in `.prompts/` for implementation guidance.
 | **Security** | Firebase Auth (Google) + Firestore rules; custom claim `admin: true` | Complete |
 | **Data** | Firestore drives home page and scorecards; JSON scorecard files are permanent static assets per §II.5 | Live |
 | **Testing** | Vitest unit tests for scoring engine, score service, schedule utils | Active |
-| **Deployment** | Manual (`npm run deploy`) via Firebase CLI | Active |
+| **Deployment** | GitHub Actions CI/CD (push to `main` → Firebase Hosting + Firestore rules) | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
 | **Cost** | Firebase Spark free tier | Near 0% usage |
 | **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
@@ -285,7 +285,7 @@ See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md)
 **Development**:
 - **Version Control**: Git + GitHub
 - **Node.js**: 24.x (pinned in `.nvmrc`)
-- **CI/CD**: Manual deploy via Firebase CLI; GitHub Actions when DNS cutover is planned
+- **CI/CD**: GitHub Actions (see `.specs/technical/cicd-pipeline.md`)
 - **Testing**: Vitest (unit tests for business logic)
 
 ### IV.2 Forbidden Patterns
