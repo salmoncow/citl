@@ -122,7 +122,7 @@ class ScoresheetGenerator extends HTMLElement {
     return `
       <div class="scoresheet-header">
         <h2 class="scoresheet-heading">Scoresheets</h2>
-        <button class="btn-primary scoresheet-print-btn">Print All Scoresheets</button>
+        <button class="btn-primary scoresheet-print-btn">Print Scoresheets</button>
       </div>
       <div class="scoresheet-controls">
         <label for="sg-year">Season</label>
