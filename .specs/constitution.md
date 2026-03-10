@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.1.0
-**Last Updated:** 2026-03-01
+**Version:** 1.2.0
+**Last Updated:** 2026-03-10
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-05-27)
 
@@ -27,9 +27,7 @@ detailed patterns in `.prompts/` for implementation guidance.
 **Philosophy**: Start simple, add complexity only when justified by measurable pain.
 
 **Principles:**
-- Follow phase-based evolution (Phase 1 → 2 → 3, never skip phases)
 - Measure before evolving — use decision triggers from `architectural-evolution-strategy.md`
-- Each phase teaches lessons needed for the next
 - Avoid premature optimization and over-engineering
 
 **Reference**: [.prompts/meta/architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md)
@@ -55,7 +53,7 @@ detailed patterns in `.prompts/` for implementation guidance.
 **Requirements:**
 - Select technologies with ≥80% AI migration capability
 - Document patterns clearly for future AI refactoring
-- Maintain clear migration paths between architectural phases
+- Maintain clear migration paths between architectural states
 - Current technology choices:
   - TypeScript + Web Components → Lit (95% AI-assisted migration)
   - Lit → React (80% AI-assisted migration)
@@ -68,21 +66,21 @@ detailed patterns in `.prompts/` for implementation guidance.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-03-01
-**Last Architecture Review**: 2026-03-01
+**Last Updated**: 2026-03-10
+**Last Architecture Review**: 2026-03-10
 
-| Domain | Current Phase | Target Phase | Status |
-|--------|---------------|--------------|--------|
-| **UI Components** | Phase 2: 3 Web Components | Phase 3: Lit migration | `home-standings`, `season-scorecards`, `admin-panel` Web Components live |
-| **Security** | Phase 2: Firebase Auth (Google) + Firestore rules | Phase 2: Complete | Admin-only auth with custom claim `admin: true`; Firestore rules enforce server-side |
-| **Data** | Phase 2: Firestore live reads + writes | Phase 2: Complete | Firestore drives home page and scorecards page; JSON scorecard files remain permanent static assets per §II.5 |
-| **Testing** | Phase 1: Manual browser testing | Phase 2: Vitest unit tests | Trigger: 10+ modules or production launch |
-| **Deployment** | Phase 1: Manual (`npm run deploy`) | Phase 2: GitHub Actions CI/CD | Deferred to Phase 6 (after DNS cutover) |
-| **Monitoring** | Phase 1: Manual Firebase console checks | Phase 2: Firebase Performance Monitoring | Deferred until production launch |
-| **Cost** | Phase 1: Firebase Spark free tier | Phase 2: Optimized free tier | Monitor — currently near 0% usage |
-| **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 | Avoid additions |
+| Domain | Current State | Status |
+|--------|---------------|--------|
+| **UI Components** | 3 Web Components (`home-standings`, `season-scorecards`, `admin-panel`) | Live |
+| **Security** | Firebase Auth (Google) + Firestore rules; custom claim `admin: true` | Complete |
+| **Data** | Firestore drives home page and scorecards; JSON scorecard files are permanent static assets per §II.5 | Live |
+| **Testing** | Vitest unit tests for scoring engine, score service, schedule utils | Active |
+| **Deployment** | Manual (`npm run deploy`) via Firebase CLI | Active |
+| **Monitoring** | Manual Firebase console checks | Active |
+| **Cost** | Firebase Spark free tier | Near 0% usage |
+| **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
 
-**Key Metrics** (as of 2026-03-01):
+**Key Metrics** (as of 2026-03-10):
 - **Active Users**: 0 (pre-launch — still on AWS/CloudFront)
 - **SPA Views**: 6 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`)
 - **Modules**: 7 (`main`, `router`, `navigation`, `ui`, `firebase-config`, `score-service`, `standings-service`)
@@ -92,24 +90,22 @@ detailed patterns in `.prompts/` for implementation guidance.
 - **Team Size**: 1 developer
 - **Firebase Usage**: Hosting configured (DNS not yet cutover); Firestore live; Spark free tier usage <5%
 
-**TypeScript migration** (Phase 9): All 22 source `.js` files converted to `.ts`; `allowJs: false`; `strict: true`; `noUncheckedIndexedAccess: true`.
+**TypeScript**: All source files are `.ts`; `allowJs: false`; `strict: true`; `noUncheckedIndexedAccess: true`.
 
-**Migration Context** (current as of 2026-03-01):
+**Deployment Context** (current):
 - Hosted on AWS S3 + CloudFront (legacy)
 - Firebase Hosting configured but DNS not yet cut over
 - Firestore enabled and live; security rules deployed; 7 seasons imported
-- Target: DNS cutover to `citl.club` → Firebase Hosting (Phase 8)
 
 ### II.2 Evolution Triggers
 
-**Before advancing to next phase**, consult `architectural-evolution-strategy.md` for domain-specific triggers.
+**Before increasing architectural complexity**, consult `architectural-evolution-strategy.md` for domain-specific triggers.
 
-**General Principle**: Don't advance phases until measurable pain justifies the complexity increase.
+**General Principle**: Don't add complexity until measurable pain justifies it.
 
 **CITL-specific thresholds**:
 - **Testing**: Trigger at 10+ modules (currently 7) OR production launch planned
-- **Web Components**: Trigger when `standings-table` component needs reuse in 2+ places
-- **CI/CD**: Trigger at DNS cutover decision (Phase 6 milestone)
+- **CI/CD**: Trigger at DNS cutover decision
 - **Cost optimization**: Alert at 70% of any Firebase free tier limit
 
 **Reference**: [.prompts/meta/architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md)
@@ -148,12 +144,12 @@ src/data/          Static JSON data (scorecard seasons 2019–2025)
 
 ### II.5 CITL-Specific Data Architecture
 
-CITL operates a **dual data layer** during the migration period:
+CITL operates a **dual data layer**:
 
 | Layer | Purpose | Lifecycle |
 |-------|---------|-----------|
 | `src/data/scorecards/*.json` | Historical scorecard display (2019–2025) | Permanent static assets |
-| Firestore `seasons/{year}/weeks/{n}` | Live weekly results for home page | Active from Phase 4 onward |
+| Firestore `seasons/{year}/weeks/{n}` | Live weekly results for home page | Active |
 
 The JSON scorecard data is **never replaced by Firestore** — it serves the Scorecards page
 accordion display. Firestore drives the home page results feed and standings.
@@ -165,31 +161,33 @@ seasons/{year}/teams/{teamId}              → Team roster + totals arrays
 seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapshot + accolades
 ```
 
+See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md) for the full schema reference.
+
 ---
 
 ## III. Quality Standards
 
 ### III.1 Testing Requirements
 
-**Current state**: Phase 1 — manual browser testing only.
+**Current state**: Vitest unit tests for pure business logic functions.
 
-**Test Pyramid target** (when Phase 2 triggered):
+**Test Pyramid target** (when integration testing is triggered):
 - **70% Unit Tests**: Fast, isolated, individual functions / services
 - **20% Integration Tests**: Service ↔ repository interactions
 - **10% E2E Tests**: Full user workflows
 
-**Coverage targets** (Phase 2+):
+**Coverage targets** (when unit testing is adopted broadly):
 - Overall: ≥80% code coverage
 - Auth + Firestore security rule paths: 100%
 
-**Next trigger**: 10+ modules OR production launch planned
+**Trigger**: 10+ modules OR production launch planned
 
 **Reference**: [.prompts/core/testing/testing-principles.md](.prompts/core/testing/testing-principles.md)
 
 ### III.2 Security Standards
 
 **Authentication & Authorization**:
-- CITL uses **admin-only auth** (Google sign-in, Phase 5). Public pages are unauthenticated.
+- CITL uses **admin-only auth** (Google sign-in). Public pages are unauthenticated.
 - Never rely on client-side auth checks alone — enforce with Firestore security rules
 - Scores/standings: public read, admin-only write (custom claim `admin: true`)
 
@@ -224,7 +222,7 @@ seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapsh
 
 **Optimization requirements**:
 - Always use `limit()` + `where()` on Firestore queries — never read entire collections
-- 1-hour in-memory TTL cache for season / team data (already implemented in `score-service.js`)
+- 1-hour in-memory TTL cache for season / team data (already implemented in `score-service.ts`)
 - 5-minute TTL for `getLatestWeekResult()` (active-season data)
 - Store and call `unsubscribe()` on any `onSnapshot()` listener
 
@@ -281,14 +279,14 @@ seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapsh
 - **Platform**: Firebase (`citl` project, Spark plan)
   - Firestore (NoSQL, `us-central1` region, production mode)
   - Hosting (SPA rewrite, security headers, cache rules)
-  - Auth (Google, admin-only — Phase 5)
+  - Auth (Google, admin-only)
 - **SDK**: `firebase` npm package (installed; imported as ES modules)
 
 **Development**:
 - **Version Control**: Git + GitHub
 - **Node.js**: 24.x (pinned in `.nvmrc`)
-- **CI/CD**: Manual deploy via Firebase CLI now; GitHub Actions in Phase 6
-- **Testing**: Manual (Phase 1); Vitest when Phase 2 triggered
+- **CI/CD**: Manual deploy via Firebase CLI; GitHub Actions when DNS cutover is planned
+- **Testing**: Vitest (unit tests for business logic)
 
 ### IV.2 Forbidden Patterns
 
@@ -337,13 +335,13 @@ Before adopting new technology, evaluate:
 
 ### V.1 Feature Development Process
 
-1. **Consult Constitution**: Read this document for project constraints and current phase
+1. **Consult Constitution**: Read this document for project constraints and current state
 2. **Create Specification**: Use `/speckit-specify <feature-name>` to create feature requirements
-   - Reference constitutional constraints (current phases, quality standards, forbidden patterns)
+   - Reference constitutional constraints (current state, quality standards, forbidden patterns)
    - Cite applicable `.prompts/core/*` patterns for architecture approach
 3. **Plan Implementation**: Use `/speckit-plan` to design technical approach
    - Reference `.prompts/platforms/firebase/*` for Firebase guidance
-   - Consider evolution triggers — does this feature push us to next phase?
+   - Consider evolution triggers — does this feature justify increased complexity?
 4. **Break Down Work**: Use `/speckit-tasks` to create actionable task list
 5. **Implement**: Follow patterns from `.prompts/core/` and `.prompts/platforms/firebase/`
 6. **Test**: Validate against constitutional standards (security, performance, Firestore queries)
@@ -402,9 +400,8 @@ If guidance is insufficient for a task:
 ### VI.2 Cost Optimization
 
 **Mandatory optimizations** (already implemented):
-- ✅ `score-service.js` caches reads with 1-hour TTL
-- ✅ All Firestore queries use `limit()` in `score-repository.js`
-- ✅ `repository-factory.js` provides `stub` backend for offline dev (zero Firestore reads)
+- ✅ `score-service.ts` caches reads with 1-hour TTL
+- ✅ All Firestore queries use `limit()` in `score-repository.ts`
 
 **Ongoing monitoring**:
 - Check Firebase console weekly (during active season: April–July)
@@ -413,42 +410,9 @@ If guidance is insufficient for a task:
 
 ---
 
-## VII. Migration Milestones
+## VII. References
 
-The following are CITL-specific milestones that don't exist in a greenfield project:
-
-### VII.1 AWS → Firebase Cutover Sequence
-
-| Step | Phase | Status |
-|------|-------|--------|
-| Vite SPA + static routes | Phase 1–3 | ✅ Complete |
-| Firebase Hosting config | Phase 2 | ✅ Complete |
-| Firestore data layer (code) | Phase 4 | ✅ Complete |
-| Enable Firestore in console | Phase 4 | ✅ Complete |
-| `standings-table` Web Component | Phase 4 | ✅ Complete |
-| Firestore security rules | Phase 4 | ✅ Complete |
-| Admin auth (Google sign-in) | Phase 5 | ✅ Complete |
-| Admin score entry UI | Phase 5 | ✅ Complete |
-| GitHub Actions CI/CD | Phase 6 | ⬜ Deferred until after DNS cutover |
-| DNS cutover (`citl.club` → Firebase) | Phase 7 | ⬜ Deferred |
-| Decommission AWS Terraform | Phase 7 | ⬜ Deferred |
-
-### VII.2 DNS Cutover Prerequisites (Phase 7)
-
-Before cutting DNS, all of the following must be verified:
-- [ ] All 5 SPA routes work correctly on Firebase Hosting URL (`citl-baed2.web.app`)
-- [ ] CSP headers pass browser console with zero violations
-- [ ] Firestore reads/writes functioning correctly with live data
-- [ ] Firestore security rules tested in Local Emulator
-- [ ] Admin auth working end-to-end
-- [ ] PDF score sheet downloads work from Firebase Hosting
-- [ ] Google Maps embed loads (requires CSP `frame-src` for `maps.google.com`)
-
----
-
-## VIII. References
-
-### VIII.1 Foundational Guidance (Always Consult)
+### VII.1 Foundational Guidance (Always Consult)
 
 **Core Architecture**:
 - [code-structure.md](.prompts/core/architecture/code-structure.md) — Separation of concerns, layered architecture
@@ -470,7 +434,7 @@ Before cutting DNS, all of the following must be verified:
 - [git-best-practices.md](.prompts/core/development/git-best-practices.md) — Git workflow, conventional commits
 - [asset-reusability.md](.prompts/core/development/asset-reusability.md) — DRY principles
 
-### VIII.2 Platform Implementation (Reference as Needed)
+### VII.2 Platform Implementation (Reference as Needed)
 
 **Firebase**:
 - [firebase-best-practices.md](.prompts/platforms/firebase/firebase-best-practices.md) — SDK patterns, Firestore, Auth
@@ -480,21 +444,22 @@ Before cutting DNS, all of the following must be verified:
 - [firebase-finops.md](.prompts/platforms/firebase/firebase-finops.md) — Free tier optimization
 - [firebase-resilience.md](.prompts/platforms/firebase/firebase-resilience.md) — Error handling, retry patterns
 
-### VIII.3 Strategic Frameworks
+### VII.3 Strategic Frameworks
 
 **Meta Guidance**:
-- [architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md) — Phase-based evolution, decision triggers
+- [architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers, decision framework
 - [architectural-decision-log.md](.prompts/meta/architectural-decision-log.md) — Historical decisions, current state
 - [prompt-gap-protocol.md](.prompts/meta/prompt-gap-protocol.md) — Handling insufficient guidance
 - [prompt-maintenance.md](.prompts/meta/prompt-maintenance.md) — Keeping prompts current
 
-### VIII.4 Technical Specifications
+### VII.4 Technical Specifications
 
 - [.specs/technical/build-system.md](.specs/technical/build-system.md) — Vite 7 configuration
-- [.specs/technical/cicd-pipeline.md](.specs/technical/cicd-pipeline.md) — GitHub Actions (Phase 6)
+- [.specs/technical/cicd-pipeline.md](.specs/technical/cicd-pipeline.md) — GitHub Actions
 - [.specs/technical/firebase-deployment.md](.specs/technical/firebase-deployment.md) — Firebase Hosting deployment
+- [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md) — Firestore collection/document reference
 
-### VIII.5 Spec-Kit Workflow Commands
+### VII.5 Spec-Kit Workflow Commands
 
 | Command | Description |
 |---------|-------------|
@@ -506,13 +471,13 @@ Before cutting DNS, all of the following must be verified:
 
 ---
 
-## IX. Maintenance & Review
+## VIII. Maintenance & Review
 
-### IX.1 Review Schedule
+### VIII.1 Review Schedule
 
 **Quarterly reviews** (every 3 months):
 - Update §II.1 Current Architectural State with latest metrics
-- Review evolution triggers — any domains approaching phase transition?
+- Review evolution triggers — any domains approaching a complexity increase?
 - Check Firebase free tier quotas (verify limits unchanged)
 
 **When to amend**:
@@ -520,7 +485,7 @@ Before cutting DNS, all of the following must be verified:
 - **Major** (new standards, changed principles): increment minor version (1.0.0 → 1.1.0), document in decision log
 - **Breaking** (removed/incompatible standards): increment major version, migration plan required
 
-### IX.2 Quick Reference
+### VIII.2 Quick Reference
 
 **Mandatory before every commit**:
 - ✅ `const`/`let` only — no `var`
@@ -541,4 +506,5 @@ Before cutting DNS, all of the following must be verified:
 **Version History:**
 - 1.0.0 (2026-02-27): Initial constitution established for CITL
 - 1.0.1 (2026-02-28): Minor metrics update
-- 1.1.0 (2026-03-01): Phase 9 complete — TypeScript migration; CSS design system; dark mode; inline SVGs replacing Font Awesome CDN
+- 1.1.0 (2026-03-01): TypeScript migration complete; CSS design system; dark mode; inline SVGs
+- 1.2.0 (2026-03-10): Removed phase references throughout; constitution is now state-based and timing-agnostic
