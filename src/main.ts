@@ -66,6 +66,7 @@ class App {
     this._renderView(homeView());
     this._navigation!.setActiveLink('/');
     this._navigation!.closeDropdown();
+    this._navigation!.closeBurgerNav();
     window.scrollTo(0, 0);
   }
 
@@ -73,6 +74,7 @@ class App {
     this._renderView(scorecardsView());
     this._navigation!.setActiveLink('/scorecards');
     this._navigation!.closeDropdown();
+    this._navigation!.closeBurgerNav();
     window.scrollTo(0, 0);
   }
 
@@ -80,6 +82,7 @@ class App {
     this._renderView(rulesView());
     this._navigation!.setActiveLink('/rules');
     this._navigation!.closeDropdown();
+    this._navigation!.closeBurgerNav();
     window.scrollTo(0, 0);
   }
 
@@ -87,6 +90,7 @@ class App {
     this._renderView(aboutView());
     this._navigation!.setActiveLink('/about');
     this._navigation!.closeDropdown();
+    this._navigation!.closeBurgerNav();
     window.scrollTo(0, 0);
   }
 
@@ -94,6 +98,7 @@ class App {
     this._renderView(downloadsView());
     this._navigation!.setActiveLink('/downloads');
     this._navigation!.closeDropdown();
+    this._navigation!.closeBurgerNav();
     window.scrollTo(0, 0);
   }
 
@@ -101,6 +106,7 @@ class App {
     this._renderView(adminView());
     this._navigation!.setActiveLink('/admin');
     this._navigation!.closeDropdown();
+    this._navigation!.closeBurgerNav();
     this._initAdminAuth();
     window.scrollTo(0, 0);
   }
