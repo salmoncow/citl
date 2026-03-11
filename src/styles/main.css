@@ -500,6 +500,10 @@ a:hover { color: var(--c-link-hover); }
   }
 
   .site-nav__dropdown-menu.is-open { display: block; }
+
+  .scoresheet-controls {
+    flex-wrap: wrap;
+  }
 }
 
 /* ============================================================
