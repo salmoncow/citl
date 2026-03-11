@@ -72,6 +72,12 @@ export class NavigationModule {
     }
   }
 
+  closeBurgerNav(): void {
+    if (this._topnav) {
+      this._topnav.classList.remove('is-open');
+    }
+  }
+
   updateAuthState(_user: User | null): void {
     // no-op — wired in main.ts for admin sign-in display
   }
