@@ -112,8 +112,13 @@ class AdminPanel extends HTMLElement {
           </div>
           <div class="admin-actions">
             <button id="ap-save" class="btn-primary">Save Entry</button>
+            <span class="tooltip-icon" tabindex="0" role="img" aria-label="Save Entry help"
+              data-tooltip="Stores this team's scores as a draft. You can re-save to overwrite.">?</span>
           </div>
           <p id="ap-status" class="admin-status" aria-live="polite"></p>
+          <p class="admin-publish-note">
+            Save stores a draft for this team. Repeat for each team, then Publish when all entries are in.
+          </p>
 
           <h3>Saved Entries</h3>
           <ul id="ap-saved-list" class="admin-saved-list"></ul>
@@ -123,6 +128,8 @@ class AdminPanel extends HTMLElement {
             <p class="admin-publish-note">Publishing runs the scoring engine over all saved entries and writes computed results to Firestore.</p>
             <div class="admin-actions">
               <button id="ap-publish" class="btn-danger">Publish Week</button>
+              <span class="tooltip-icon" tabindex="0" role="img" aria-label="Publish Week help"
+                data-tooltip="Runs the scoring engine over all saved entries and updates live standings. Cannot be undone.">?</span>
             </div>
             <p id="ap-publish-status" class="admin-status" aria-live="polite"></p>
           </div>

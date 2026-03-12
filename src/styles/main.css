@@ -1633,7 +1633,10 @@ input[type="text"].ap-roster-name:focus {
   bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  white-space: nowrap;
+  white-space: normal;
+  width: max-content;
+  max-width: 320px;
+  text-align: center;
   background: var(--c-heading);
   color: var(--c-bg);
   font-size: var(--text-xs);
@@ -1670,6 +1673,29 @@ input[type="text"].ap-roster-name:focus {
   opacity: 1;
 }
 
+
+/* ── Tooltip help icon (inline ? badge) ──────────────────────────────────── */
+.tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: default;
+  opacity: 0.55;
+  vertical-align: middle;
+  margin-left: 0.35em;
+  user-select: none;
+}
+.tooltip-icon:hover,
+.tooltip-icon:focus-visible {
+  opacity: 1;
+}
 
 /* "Add Team" button below the table */
 .admin-add-team-btn {
