@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.2.0
-**Last Updated:** 2026-03-10
+**Version:** 1.3.0
+**Last Updated:** 2026-03-13
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-05-27)
 
@@ -205,7 +205,49 @@ See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md)
 - [.prompts/core/security/security-principles.md](.prompts/core/security/security-principles.md)
 - [.prompts/platforms/firebase/firebase-security.md](.prompts/platforms/firebase/firebase-security.md)
 
-### III.3 Performance Standards
+### III.3 UX Loading States
+
+**Requirement**: Every async Web Component that fetches Firestore data MUST show a shimmer skeleton placeholder while loading — never plain text such as `<p>Loading…</p>`.
+
+**How to implement**:
+
+1. At the top of any async load method (before the first `await`), set `this.innerHTML` to skeleton HTML built from the utility classes in `src/styles/main.css`.
+2. Write the skeleton as a `private static` method on the component class so it can be called in both `connectedCallback` (initial render) and any year/week-change handler.
+3. Shape the skeleton to match the real content — use the same number of rows, columns, and approximate widths. Exact pixel perfection is not required; structural resemblance is.
+
+**Available CSS utilities** (`src/styles/main.css`):
+
+| Class | Purpose |
+|-------|---------|
+| `.skeleton` | Base shimmer block (apply to every placeholder element) |
+| `.skeleton--sm` | 0.75 rem tall — body text / meta lines |
+| `.skeleton--md` | 1.1 rem tall — normal text rows |
+| `.skeleton--lg` | 1.75 rem tall — headings / table rows |
+| `.skeleton--xl` | 2.5 rem tall — buttons / large controls |
+| `.skeleton-group` | `flex-direction: column` container with consistent gap |
+| `.skeleton-row` | `flex-direction: row` container for inline placeholder groups |
+
+**Example pattern** (inline in `connectedCallback`):
+
+```ts
+connectedCallback(): void {
+  this.innerHTML = MyComponent._skeleton();
+  void this._load();
+}
+
+private static _skeleton(): string {
+  return `
+    <div class="skeleton-group" style="padding-top:var(--space-2)">
+      <span class="skeleton skeleton--lg" style="width:50%"></span>
+      <span class="skeleton skeleton--md" style="width:90%"></span>
+      <span class="skeleton skeleton--md" style="width:75%"></span>
+    </div>`;
+}
+```
+
+**Dark mode**: The shimmer uses `--c-surface` and `--c-border` design tokens, which switch automatically — no additional dark-mode work is needed.
+
+### III.4 Performance Standards
 
 **Targets** (measurable at production launch):
 - Page Load Time: <3 seconds (p95)
@@ -230,7 +272,7 @@ See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md)
 - [.prompts/core/operations/monitoring-principles.md](.prompts/core/operations/monitoring-principles.md)
 - [.prompts/platforms/firebase/firebase-finops.md](.prompts/platforms/firebase/firebase-finops.md)
 
-### III.4 Code Quality Standards
+### III.5 Code Quality Standards
 
 **Language standards (TypeScript):**
 - Always `const` / `let`. Never `var`.
@@ -306,6 +348,7 @@ See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md)
 ❌  God modules > 500 lines                  Split by responsibility
 ❌  Circular imports between modules         Dependencies flow inward only
 ❌  Components importing from firebase/      Go through services → repositories
+❌  <p>Loading…</p> in async components      Use .skeleton shimmer classes (§III.3)
 ```
 
 **Process anti-patterns**:
@@ -494,6 +537,7 @@ If guidance is insufficient for a task:
 - ✅ `onSnapshot()` cleanup stored (if using real-time listeners)
 - ✅ No secrets in code (`.env` only)
 - ✅ Conventional commit format
+- ✅ Any new async Web Component loading state uses `.skeleton` classes — no `<p>Loading…</p>` (§III.3)
 
 **Mandatory before every PR**:
 - ✅ PR description includes Summary, Changes, Testing, Guidance References
@@ -508,3 +552,4 @@ If guidance is insufficient for a task:
 - 1.0.1 (2026-02-28): Minor metrics update
 - 1.1.0 (2026-03-01): TypeScript migration complete; CSS design system; dark mode; inline SVGs
 - 1.2.0 (2026-03-10): Removed phase references throughout; constitution is now state-based and timing-agnostic
+- 1.3.0 (2026-03-13): Added §III.3 UX Loading States — skeleton shimmer placeholders required for all async Web Components; added corresponding forbidden pattern and commit checklist item

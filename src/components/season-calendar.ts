@@ -33,7 +33,7 @@ const DAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 class SeasonCalendar extends HTMLElement {
   async connectedCallback(): Promise<void> {
-    this.innerHTML = `<p>Loading&hellip;</p>`;
+    this.innerHTML = SeasonCalendar._calendarSkeleton();
 
     const year = new Date().getFullYear();
 
@@ -166,6 +166,21 @@ class SeasonCalendar extends HTMLElement {
       .join('');
 
     return `<div class="calendar-legend">${itemsHtml}</div>`;
+  }
+
+  private static _calendarSkeleton(): string {
+    const dayCell = `<span class="skeleton skeleton--md" style="flex:1"></span>`;
+    const weekRow = `<div class="skeleton-row">${dayCell.repeat(7)}</div>`;
+    const month = `
+      <span class="skeleton skeleton--lg" style="width:160px"></span>
+      <div class="skeleton-row">${dayCell.repeat(7)}</div>
+      ${weekRow.repeat(5)}`;
+    return `
+      <div class="skeleton-group" style="padding-top:var(--space-2)">
+        ${month}
+        <div style="height:var(--space-4)"></div>
+        ${month}
+      </div>`;
   }
 }
 

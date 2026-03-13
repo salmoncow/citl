@@ -51,7 +51,7 @@ class SeasonScorecards extends HTMLElement {
           <label for="sc-year">Season</label>
           <select id="sc-year"></select>
         </div>
-        <div id="sc-content"><p>Loading&hellip;</p></div>
+        <div id="sc-content">${SeasonScorecards._scorecardsSkeletonHTML()}</div>
       </div>`;
 
     this.querySelector<HTMLSelectElement>('#sc-year')!.addEventListener('change', (e) => {
@@ -102,8 +102,16 @@ class SeasonScorecards extends HTMLElement {
     }
   }
 
+  private static _scorecardsSkeletonHTML(): string {
+    const pill = `<span class="skeleton skeleton--xl" style="width:100%;border-radius:var(--radius-md)"></span>`;
+    return `
+      <div class="skeleton-group" style="padding-top:var(--space-2)">
+        ${pill.repeat(5)}
+      </div>`;
+  }
+
   private async _loadYear(year: number): Promise<void> {
-    this.querySelector('#sc-content')!.innerHTML = '<p>Loading&hellip;</p>';
+    this.querySelector('#sc-content')!.innerHTML = SeasonScorecards._scorecardsSkeletonHTML();
 
     const [teamsResult, weeksResult, prior1TeamsResult, prior2TeamsResult, prior1WeeksResult] = await Promise.all([
       scoreService.getTeams(year),

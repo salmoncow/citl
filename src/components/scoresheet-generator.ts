@@ -27,7 +27,7 @@ class ScoresheetGenerator extends HTMLElement {
   private _dateMap = new Map<number, Date | null>();
 
   connectedCallback(): void {
-    this.innerHTML = `<p>Loading&hellip;</p>`;
+    this.innerHTML = ScoresheetGenerator._fullSkeleton();
     void this._load();
   }
 
@@ -70,7 +70,7 @@ class ScoresheetGenerator extends HTMLElement {
     this._dateMap = this._buildDateMap(year, season?.weekDateOverrides ?? {});
 
     const container = this.querySelector<HTMLElement>('#sg-cards');
-    if (container) container.innerHTML = `<p>Loading&hellip;</p>`;
+    if (container) container.innerHTML = ScoresheetGenerator._cardsSkeleton();
 
     await this._fetchYearData();
 
@@ -259,6 +259,30 @@ class ScoresheetGenerator extends HTMLElement {
           document.body.classList.remove('print-scoresheets');
         }, { once: true });
       });
+  }
+
+  private static _cardsSkeleton(): string {
+    const card = `
+      <div class="skeleton-group" style="flex:1;min-width:200px">
+        <span class="skeleton skeleton--lg" style="width:70%"></span>
+        <span class="skeleton skeleton--md" style="width:90%"></span>
+        <span class="skeleton skeleton--md" style="width:80%"></span>
+        <span class="skeleton skeleton--md" style="width:85%"></span>
+        <span class="skeleton skeleton--md" style="width:75%"></span>
+        <span class="skeleton skeleton--md" style="width:90%"></span>
+      </div>`;
+    return `<div class="skeleton-row" style="align-items:flex-start;gap:var(--space-4);flex-wrap:wrap">${card.repeat(3)}</div>`;
+  }
+
+  private static _fullSkeleton(): string {
+    return `
+      <div class="skeleton-group" style="padding-top:var(--space-2)">
+        <div class="skeleton-row">
+          <span class="skeleton skeleton--lg" style="width:120px"></span>
+          <span class="skeleton skeleton--lg" style="width:120px"></span>
+        </div>
+        ${ScoresheetGenerator._cardsSkeleton()}
+      </div>`;
   }
 }
 

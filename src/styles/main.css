@@ -1697,6 +1697,35 @@ input[type="text"].ap-roster-name:focus {
   opacity: 1;
 }
 
+/* ── Skeleton loading shimmer ─────────────────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--c-surface) 25%,
+    var(--c-border)  50%,
+    var(--c-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Height modifiers */
+.skeleton--sm  { height: 0.75rem; }
+.skeleton--md  { height: 1.1rem;  }
+.skeleton--lg  { height: 1.75rem; }
+.skeleton--xl  { height: 2.5rem;  }
+
+/* Layout helpers */
+.skeleton-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.skeleton-row   { display: flex; gap: var(--space-2); align-items: center; }
+
 /* "Add Team" button below the table */
 .admin-add-team-btn {
   margin-top: var(--space-2);
