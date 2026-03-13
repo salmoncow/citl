@@ -26,6 +26,7 @@ npm run build     # production build
 - Full TypeScript: `allowJs: false`, `strict: true` — no `any`, no type suppressions
 - Every pure function exported from `scoring-engine.ts` or `schedule.ts` needs a unit test
 - Layer order: components → modules → services → repositories (never reverse)
+- Async Web Components must show shimmer skeleton placeholders while loading — never `<p>Loading…</p>` (see §III.3 of the constitution for the pattern and CSS utilities)
 
 ## Further Reading
 

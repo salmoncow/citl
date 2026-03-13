@@ -31,7 +31,7 @@ class HomeStandings extends HTMLElement {
           <label for="hs-week">Week</label>
           <select id="hs-week"><option value="season">Season</option></select>
         </div>
-        <div id="hs-table"><p>Loading&hellip;</p></div>
+        <div id="hs-table">${HomeStandings._standingsSkeleton()}</div>
       </div>`;
 
     this.querySelector<HTMLSelectElement>('#hs-year')!.addEventListener('change', (e) => {
@@ -75,7 +75,7 @@ class HomeStandings extends HTMLElement {
   }
 
   private async _loadYear(year: number): Promise<void> {
-    this.querySelector('#hs-table')!.innerHTML = '<p>Loading&hellip;</p>';
+    this.querySelector('#hs-table')!.innerHTML = HomeStandings._standingsSkeleton();
 
     const [weeksResult, seasonResult, teamsResult] = await Promise.all([
       scoreService.getAllWeekResults(year),
@@ -221,6 +221,24 @@ class HomeStandings extends HTMLElement {
       <h3 class="accolades-section__heading">Accolades</h3>
       <ul class="accolades-list">${items}</ul>
     </div>`;
+  }
+
+  private static _standingsSkeleton(): string {
+    const dataRow = `
+      <div class="skeleton-row">
+        <span class="skeleton skeleton--lg" style="width:36px;flex-shrink:0"></span>
+        <span class="skeleton skeleton--lg" style="flex:2"></span>
+        <span class="skeleton skeleton--lg" style="flex:1"></span>
+        <span class="skeleton skeleton--lg" style="flex:1"></span>
+        <span class="skeleton skeleton--lg" style="flex:1"></span>
+        <span class="skeleton skeleton--lg" style="flex:1"></span>
+        <span class="skeleton skeleton--lg" style="flex:1"></span>
+      </div>`;
+    return `
+      <div class="skeleton-group" style="padding-top:var(--space-2)">
+        <span class="skeleton skeleton--sm" style="width:45%"></span>
+        ${dataRow.repeat(7)}
+      </div>`;
   }
 
   private _buildTable(

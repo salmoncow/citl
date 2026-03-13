@@ -22,6 +22,13 @@ class HomeAnnouncements extends HTMLElement {
   }
 
   private async _load(year: number): Promise<void> {
+    this.innerHTML = `
+      <div class="skeleton-group" style="padding:var(--space-4) 0">
+        <span class="skeleton skeleton--lg" style="width:55%"></span>
+        <span class="skeleton skeleton--sm" style="width:90%"></span>
+        <span class="skeleton skeleton--sm" style="width:80%"></span>
+        <span class="skeleton skeleton--sm" style="width:65%"></span>
+      </div>`;
     const result = await scoreService.getAnnouncements(year);
     const latest = result.success ? result.data[0] : undefined;
     if (!latest) {
