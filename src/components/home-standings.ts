@@ -120,6 +120,7 @@ class HomeStandings extends HTMLElement {
     let rows: {
       place: number | string;
       teamName: string;
+      captain: string;
       targets: number | string;
       totalTargets: number | string;
       rankPoints: number | string;
@@ -129,6 +130,10 @@ class HomeStandings extends HTMLElement {
     let subtitle: string;
     let accolades: Accolade[] = [];
 
+    const teamCaptainMap: Record<string, string> = Object.fromEntries(
+      this._teams.map((t) => [t.id, t.captain])
+    );
+
     if (weekKey === 'season') {
       const standings = this._season?.standings ?? [];
 
@@ -136,6 +141,7 @@ class HomeStandings extends HTMLElement {
         rows = standings.map((s) => ({
           place: s.rank,
           teamName: s.teamName,
+          captain: teamCaptainMap[s.teamId] ?? '—',
           targets: s.totalTargets,
           totalTargets: s.totalTargets,
           rankPoints: s.totalRankPoints,
@@ -147,6 +153,7 @@ class HomeStandings extends HTMLElement {
         rows = this._teams.map((t) => ({
           place: '—',
           teamName: t.name,
+          captain: t.captain,
           targets: '—',
           totalTargets: '—',
           rankPoints: '—',
@@ -180,6 +187,7 @@ class HomeStandings extends HTMLElement {
         const cum = cumulative[tr.teamId] ?? { rankPoints: 0, bonusPoints: 0, targets: 0 };
         return {
           teamName: tr.teamName,
+          captain: teamCaptainMap[tr.teamId] ?? '—',
           targets: tr.targets,
           totalTargets: cum.targets,
           rankPoints: tr.rankPoints,
@@ -233,6 +241,7 @@ class HomeStandings extends HTMLElement {
         <span class="skeleton skeleton--lg" style="flex:1"></span>
         <span class="skeleton skeleton--lg" style="flex:1"></span>
         <span class="skeleton skeleton--lg" style="flex:1"></span>
+        <span class="skeleton skeleton--lg" style="flex:1"></span>
       </div>`;
     return `
       <div class="skeleton-group" style="padding-top:var(--space-2)">
@@ -245,6 +254,7 @@ class HomeStandings extends HTMLElement {
     rows: {
       place: number | string;
       teamName: string;
+      captain: string;
       targets: number | string;
       totalTargets: number | string;
       rankPoints: number | string;
@@ -259,6 +269,7 @@ class HomeStandings extends HTMLElement {
         <tr>
           <td>${r.place}</td>
           <td>${r.teamName}</td>
+          <td>${r.captain}</td>
           <td>${r.targets}</td>
           <td>${r.totalTargets}</td>
           <td>${r.rankPoints}</td>
@@ -275,6 +286,7 @@ class HomeStandings extends HTMLElement {
           <tr>
             <th>Place</th>
             <th>Team</th>
+            <th>Captain</th>
             <th>Targets</th>
             <th>Total Targets</th>
             <th>Rank Pts</th>

@@ -584,6 +584,12 @@ a:hover { color: var(--c-link-hover); }
 .standing-table td:nth-child(n+2):nth-child(-n+16),
 .standing-table th:nth-child(n+2):nth-child(-n+16) { width: 5%; }
 
+.standing-table th:first-child,
+.standing-table td:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .standing-table tr:last-child td { border-bottom: none; }
 
 /* ============================================================
