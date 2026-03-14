@@ -38,6 +38,9 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: true,
       cors: true,
+      headers: {
+        'Cross-Origin-Opener-Policy': 'unsafe-none',
+      },
     },
 
     preview: {
