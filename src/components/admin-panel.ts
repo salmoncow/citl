@@ -58,6 +58,7 @@ class AdminPanel extends HTMLElement {
   private _weekHasScores = false;
   /** null = not editing; else = announcement id being edited */
   private _editingAnnouncementId: string | null = null;
+  private _bannerLoaded = false;
 
   // ── Roster modal state ────────────────────────────────────────────────────
   private _rosterDialog: HTMLDialogElement | null = null;
@@ -138,7 +139,24 @@ class AdminPanel extends HTMLElement {
 
         <!-- ── Announcements Panel ── -->
         <div id="ap-panel-announcements" class="admin-tab-content admin-tab-panel--hidden">
-          <div class="admin-header"><h2>Announcements</h2></div>
+          <h3>Site Banner</h3>
+          <p class="admin-publish-note">
+            Displays a message to all visitors below the navigation bar. Clear the field and save to remove it.
+          </p>
+          <div class="banner-editor ann-editor">
+            <div class="ann-editor__field">
+              <label for="banner-msg">Banner message</label>
+              <textarea id="banner-msg" class="ann-editor__textarea" rows="3"
+                placeholder="e.g. Tonight&#39;s shoot is cancelled due to severe weather."></textarea>
+            </div>
+            <div class="ann-editor__actions">
+              <button id="banner-save-btn" class="btn-primary">Save Banner</button>
+              <button id="banner-clear-btn" class="btn-secondary">Clear Banner</button>
+            </div>
+            <p id="banner-status" class="admin-status" aria-live="polite"></p>
+          </div>
+          <hr class="admin-divider">
+          <h3>Announcements</h3>
           <div class="ann-editor">
             <div class="ann-editor__field">
               <label for="ann-title">Title</label>
@@ -186,6 +204,10 @@ class AdminPanel extends HTMLElement {
     this.querySelector('#ap-save')!.addEventListener('click', () => void this._saveEntry());
     this.querySelector('#ap-publish')!.addEventListener('click', () => void this._publishWeek());
 
+    // Banner listeners
+    this.querySelector('#banner-save-btn')!.addEventListener('click', () => void this._saveBanner());
+    this.querySelector('#banner-clear-btn')!.addEventListener('click', () => void this._clearBanner());
+
     // Announcements listeners
     this.querySelector('#ann-post-btn')!.addEventListener('click', () => {
       if (this._editingAnnouncementId) void this._saveEditAnnouncement();
@@ -212,7 +234,10 @@ class AdminPanel extends HTMLElement {
       const el = this.querySelector(`#${id}`);
       if (el) el.classList.toggle('admin-tab-panel--hidden', name !== tab);
     }
-    if (tab === 'announcements') void this._loadAnnouncementsTab();
+    if (tab === 'announcements') {
+      void this._loadBannerTab();
+      void this._loadAnnouncementsTab();
+    }
   }
 
   // ── Data loading ─────────────────────────────────────────────────────────
@@ -1341,6 +1366,38 @@ class AdminPanel extends HTMLElement {
 
   private _annYear(): number {
     return parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+  }
+
+  private _setBannerStatus(msg: string, type: '' | 'success' | 'error'): void {
+    const el = this.querySelector('#banner-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
+  }
+
+  private async _loadBannerTab(): Promise<void> {
+    if (this._bannerLoaded) return;
+    const result = await scoreService.getBanner();
+    if (!result.success) { this._setBannerStatus(`Error: ${result.error}`, 'error'); return; }
+    const ta = this.querySelector<HTMLTextAreaElement>('#banner-msg');
+    if (ta) ta.value = result.data ?? '';
+    this._bannerLoaded = true;
+  }
+
+  private async _saveBanner(): Promise<void> {
+    const message = this.querySelector<HTMLTextAreaElement>('#banner-msg')!.value.trim();
+    this._setBannerStatus('Saving…', '');
+    const result = await scoreService.setBanner(message || null);
+    if (!result.success) { this._setBannerStatus(`Error: ${result.error}`, 'error'); return; }
+    this._bannerLoaded = false;
+    showToast('success', message ? 'Banner updated.' : 'Banner cleared.');
+    this._setBannerStatus('', '');
+  }
+
+  private async _clearBanner(): Promise<void> {
+    const ta = this.querySelector<HTMLTextAreaElement>('#banner-msg');
+    if (ta) ta.value = '';
+    await this._saveBanner();
   }
 
   private _setAnnStatus(message: string, type: '' | 'success' | 'error'): void {

@@ -502,4 +502,25 @@ export class ScoreRepository {
       return failure(`Failed to delete announcement: ${(err as Error).message}`, 'FIRESTORE_ERROR');
     }
   }
+
+  async getBanner(): Promise<Result<string | null>> {
+    try {
+      const ref = doc(this.db, 'config', 'banner');
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return success(null);
+      const data = snap.data() as { message?: string | null };
+      return success(data.message ?? null);
+    } catch (err) {
+      return failure(`Failed to load banner: ${(err as Error).message}`, 'FIRESTORE_ERROR');
+    }
+  }
+
+  async setBanner(message: string | null): Promise<Result<void>> {
+    try {
+      await setDoc(doc(this.db, 'config', 'banner'), { message: message ?? null });
+      return success(undefined);
+    } catch (err) {
+      return failure(`Failed to save banner: ${(err as Error).message}`, 'FIRESTORE_ERROR');
+    }
+  }
 }

@@ -8,6 +8,7 @@
 import './styles/main.css';
 import './components/home-standings';
 import './components/home-announcements';
+import './components/site-banner';
 import './components/season-scorecards';
 import './components/admin-panel';
 import './components/scoresheet-generator';

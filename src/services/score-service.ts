@@ -596,6 +596,18 @@ export class ScoreService {
   }
 
   // -------------------------------------------------------------------------
+  // Banner
+  // -------------------------------------------------------------------------
+
+  async getBanner(): Promise<Result<string | null>> {
+    return this.repository.getBanner();
+  }
+
+  async setBanner(message: string | null): Promise<Result<void>> {
+    return this.repository.setBanner(message?.trim() || null);
+  }
+
+  // -------------------------------------------------------------------------
   // Cache control
   // -------------------------------------------------------------------------
 
