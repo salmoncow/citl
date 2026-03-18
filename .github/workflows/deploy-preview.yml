@@ -9,6 +9,7 @@ jobs:
   build-and-preview:
     name: Build & Deploy (Preview Channel)
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
     permissions:
       contents: read
       pull-requests: write
