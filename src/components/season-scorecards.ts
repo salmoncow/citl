@@ -43,6 +43,7 @@ class SeasonScorecards extends HTMLElement {
   private _prior1Teams: Team[] = [];
   private _prior2Teams: Team[] = [];
   private _prior1AvgMap: Map<string, number> = new Map();
+  private _prior2AvgMap: Map<string, number> = new Map();
 
   connectedCallback(): void {
     this.innerHTML = `
@@ -113,12 +114,13 @@ class SeasonScorecards extends HTMLElement {
   private async _loadYear(year: number): Promise<void> {
     this.querySelector('#sc-content')!.innerHTML = SeasonScorecards._scorecardsSkeletonHTML();
 
-    const [teamsResult, weeksResult, prior1TeamsResult, prior2TeamsResult, prior1WeeksResult] = await Promise.all([
+    const [teamsResult, weeksResult, prior1TeamsResult, prior2TeamsResult, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
       scoreService.getTeams(year),
       scoreService.getAllWeekResults(year),
       scoreService.getTeams(year - 1),
       scoreService.getTeams(year - 2),
       scoreService.getAllWeekResults(year - 1),
+      scoreService.getAllWeekResults(year - 2),
     ]);
 
     this._teams = teamsResult.success ? (teamsResult.data ?? []) : [];
@@ -126,7 +128,9 @@ class SeasonScorecards extends HTMLElement {
     this._prior1Teams = prior1TeamsResult.success ? prior1TeamsResult.data : [];
     this._prior2Teams = prior2TeamsResult.success ? prior2TeamsResult.data : [];
     const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
+    const prior2Weeks = prior2WeeksResult.success ? prior2WeeksResult.data : [];
     this._prior1AvgMap = buildPriorAvgMap(prior1Weeks, this._prior1Teams);
+    this._prior2AvgMap = buildPriorAvgMap(prior2Weeks, this._prior2Teams);
 
     if (!weeksResult.success && !teamsResult.success) {
       this.querySelector('#sc-content')!.innerHTML = `<p>Error loading scorecard data for ${year}.</p>`;
@@ -175,8 +179,10 @@ class SeasonScorecards extends HTMLElement {
     if (teamDoc?.shooters?.length) {
       for (const s of teamDoc.shooters) {
         const key = normalizeShooterName(s.name);
-        const computedAvg = this._prior1AvgMap.get(key) ?? computeShooterStartingAvg(s.name, this._prior1Teams);
-        const computedRookie = isShooterRookie(s.name, this._prior1Teams, this._prior2Teams);
+        const computedAvg = this._prior1AvgMap.get(key)
+          ?? this._prior2AvgMap.get(key)
+          ?? computeShooterStartingAvg(s.name, [...this._prior1Teams, ...this._prior2Teams]);
+        const computedRookie = isShooterRookie(s.name, this._prior1Teams, this._prior2Teams, this._prior1AvgMap, this._prior2AvgMap);
         shooterMap.set(s.name, {
           name: s.name,
           rookie: computedRookie,

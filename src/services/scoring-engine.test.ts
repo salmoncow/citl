@@ -487,6 +487,11 @@ describe('computeShooterStartingAvg', () => {
     expect(computeShooterStartingAvg('Alice', teams)).toBe(35);
   });
 
+  it('returns 35 when shooter found but finalAvg is 0 (corrupt/legacy data)', () => {
+    const teams = [makePriorTeam([makePriorShooter('Alice', 0)])];
+    expect(computeShooterStartingAvg('Alice', teams)).toBe(35);
+  });
+
   it('finds shooter on second team when not on first', () => {
     const teams = [
       makePriorTeam([makePriorShooter('Bob', 40)]),
@@ -528,6 +533,27 @@ describe('isShooterRookie', () => {
 
   it('returns true with empty prior years', () => {
     expect(isShooterRookie('Anyone', [], [])).toBe(true);
+  });
+
+  // Bug #140 — Bug A: roster presence without shooting must not prevent rookie status
+  it('returns true when on roster in both years but finalAvg is null in both (never shot)', () => {
+    const prior1 = [makePriorTeam([makePriorShooter('Alice', null)])];
+    const prior2 = [makePriorTeam([makePriorShooter('Alice', null)])];
+    expect(isShooterRookie('Alice', prior1, prior2)).toBe(true);
+  });
+
+  it('returns false when shooter appears in prior1AvgMap (shot in N-1, despite null team-doc finalAvg)', () => {
+    const prior1 = [makePriorTeam([makePriorShooter('Alice', null)])];
+    const prior2 = [makePriorTeam([makePriorShooter('Alice', null)])];
+    const prior1AvgMap = new Map([['alice', 40]]);
+    expect(isShooterRookie('Alice', prior1, prior2, prior1AvgMap)).toBe(false);
+  });
+
+  it('returns false when shooter appears only in prior2AvgMap (shot in N-2, not N-1)', () => {
+    const prior1 = [makePriorTeam([makePriorShooter('Alice', null)])];
+    const prior2 = [makePriorTeam([makePriorShooter('Alice', null)])];
+    const prior2AvgMap = new Map([['alice', 38]]);
+    expect(isShooterRookie('Alice', prior1, prior2, new Map(), prior2AvgMap)).toBe(false);
   });
 });
 

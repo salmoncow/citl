@@ -342,7 +342,7 @@ export function computeShooterStartingAvg(
   const key = normalizeShooterName(shooterName);
   for (const team of priorYearTeams) {
     for (const shooter of team.shooters) {
-      if (normalizeShooterName(shooter.name) === key && shooter.finalAvg !== null) {
+      if (normalizeShooterName(shooter.name) === key && shooter.finalAvg !== null && shooter.finalAvg > 0) {
         return shooter.finalAvg;
       }
     }
@@ -352,29 +352,44 @@ export function computeShooterStartingAvg(
 
 /**
  * Determine if a shooter is a rookie for the upcoming season.
- * Rookie = NOT found on any team roster in BOTH of the two prior years.
- * Presence on a prior-year team roster (regardless of weeksShot) → not a rookie.
+ * Business rule: a shooter who has been a member of a team but has not shot
+ * for 2 consecutive years is considered a Rookie.
+ *
+ * "Shot" is determined by:
+ *   1. Presence in a published avg map (derived from WeekResult documents) — primary
+ *   2. A positive finalAvg in the team document — fallback for historical seasons
+ *      where weeks were not published via the admin panel
+ *
+ * Pass prior1AvgMap / prior2AvgMap (from buildPriorAvgMap) so that roster-only
+ * members who never shot are correctly identified as rookies even when they
+ * appear in both prior-year team documents.
+ *
  * Pure — no I/O.
  */
 export function isShooterRookie(
   shooterName: string,
   prior1YearTeams: Team[],
   prior2YearTeams: Team[],
+  prior1AvgMap: Map<string, number> = new Map(),
+  prior2AvgMap: Map<string, number> = new Map(),
 ): boolean {
   const key = normalizeShooterName(shooterName);
 
-  const shotInYear = (teams: Team[]): boolean => {
+  // Returns true only if the shooter actually shot at least one round in the
+  // given year — not merely appeared on a roster.
+  const shotInYear = (teams: Team[], avgMap: Map<string, number>): boolean => {
+    if (avgMap.has(key)) return true;
     for (const team of teams) {
       for (const shooter of team.shooters) {
         if (normalizeShooterName(shooter.name) === key) {
-          return true;
+          return shooter.finalAvg !== null && shooter.finalAvg > 0;
         }
       }
     }
     return false;
   };
 
-  return !shotInYear(prior1YearTeams) && !shotInYear(prior2YearTeams);
+  return !shotInYear(prior1YearTeams, prior1AvgMap) && !shotInYear(prior2YearTeams, prior2AvgMap);
 }
 
 export function computeMostImprovedScore(startingAvg: number, finalAvg: number): number {
