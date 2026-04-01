@@ -1,0 +1,84 @@
+name: Bug Report
+description: Report incorrect behaviour in the CITL scoring system or admin panel.
+title: "fix: <brief description of the bug>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill in as much detail as possible — especially the **season year** and **data context** — so the issue can be reproduced and verified against live Firestore data.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing what went wrong.
+      placeholder: "e.g. Shooter X shows a starting average of 0 instead of 35 in the roster editor."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What actions lead to the incorrect behaviour?
+      placeholder: |
+        1. Open the admin panel for season year YYYY
+        2. Open the roster editor for team "..."
+        3. Observe the W0 Avg column for shooter "..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened?
+      placeholder: "Shooter X should show a starting average of 35 (non-shooting returner default)."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened?
+      placeholder: "Shooter X shows a starting average of 0."
+    validations:
+      required: true
+
+  - type: input
+    id: season_year
+    attributes:
+      label: Season year
+      description: The league season year where this was observed (e.g. 2026).
+      placeholder: "2026"
+    validations:
+      required: true
+
+  - type: textarea
+    id: data_context
+    attributes:
+      label: Relevant data context
+      description: |
+        Include any data that helps narrow the root cause:
+        - Shooter name(s) and team name(s)
+        - Prior-year roster presence (were they on a team but did not shoot?)
+        - Any scores, averages, or Firestore document values you can share
+      placeholder: |
+        - Shooter: "Jane Doe", Team: "Team A"
+        - Was on Team A roster in 2025 but has no recorded scores
+        - Firestore `seasons/2025/teams/team-a` shows finalAvg: 0 for this shooter
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I have checked the Firestore document for the affected shooter in the prior season year
+        - label: I have verified the issue is reproducible in the admin panel (not just a display glitch)
+        - label: I have searched existing issues to confirm this is not a duplicate
+    validations:
+      required: false

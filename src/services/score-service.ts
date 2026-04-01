@@ -340,12 +340,13 @@ export class ScoreService {
     }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
-    // Fire all four reads in parallel — one round-trip
-    const [currentResult, prior1Result, prior2Result, prior1WeeksResult] = await Promise.all([
+    // Fire all five reads in parallel — one round-trip
+    const [currentResult, prior1Result, prior2Result, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
       this.repository.getTeam(year, teamId),
       this.repository.getTeams(year - 1),
       this.repository.getTeams(year - 2),
       this.repository.getAllWeekResults(year - 1),
+      this.repository.getAllWeekResults(year - 2),
     ]);
 
     if (!currentResult.success) return currentResult;
@@ -357,17 +358,22 @@ export class ScoreService {
     const prior1Teams = prior1Result.success ? prior1Result.data : [];
     const prior2Teams = prior2Result.success ? prior2Result.data : [];
     const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
+    const prior2Weeks = prior2WeeksResult.success ? prior2WeeksResult.data : [];
 
-    // Build name → avg map from prior-year published week results (covers historical seasons)
+    // Build name → avg maps from published week results for both prior years.
+    // prior2AvgMap provides a fallback for shooters who skipped year N-1 but
+    // shot in year N-2, and drives accurate rookie detection for both years.
     const prior1AvgMap = buildPriorAvgMap(prior1Weeks, prior1Teams);
+    const prior2AvgMap = buildPriorAvgMap(prior2Weeks, prior2Teams);
 
     const updatedShooters = currentResult.data.shooters.map((shooter) => {
       const key = normalizeShooterName(shooter.name);
       return {
         ...shooter,
         startingAvg: prior1AvgMap.get(key)
-          ?? computeShooterStartingAvg(shooter.name, prior1Teams),
-        rookie: isShooterRookie(shooter.name, prior1Teams, prior2Teams),
+          ?? prior2AvgMap.get(key)
+          ?? computeShooterStartingAvg(shooter.name, [...prior1Teams, ...prior2Teams]),
+        rookie: isShooterRookie(shooter.name, prior1Teams, prior2Teams, prior1AvgMap, prior2AvgMap),
       };
     });
 
@@ -383,21 +389,26 @@ export class ScoreService {
     if (!shooterName.trim())
       return failure('shooterName is required', 'VALIDATION_ERROR');
 
-    const [prior1Result, prior2Result, prior1WeeksResult] = await Promise.all([
+    const [prior1Result, prior2Result, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
       this.repository.getTeams(year - 1),
       this.repository.getTeams(year - 2),
       this.repository.getAllWeekResults(year - 1),
+      this.repository.getAllWeekResults(year - 2),
     ]);
 
     const prior1Teams = prior1Result.success ? prior1Result.data : [];
     const prior2Teams = prior2Result.success ? prior2Result.data : [];
     const prior1Weeks = prior1WeeksResult.success ? prior1WeeksResult.data : [];
+    const prior2Weeks = prior2WeeksResult.success ? prior2WeeksResult.data : [];
     const prior1AvgMap = buildPriorAvgMap(prior1Weeks, prior1Teams);
+    const prior2AvgMap = buildPriorAvgMap(prior2Weeks, prior2Teams);
 
     const key = normalizeShooterName(shooterName);
     return success({
-      startingAvg: prior1AvgMap.get(key) ?? computeShooterStartingAvg(shooterName, prior1Teams),
-      rookie: isShooterRookie(shooterName, prior1Teams, prior2Teams),
+      startingAvg: prior1AvgMap.get(key)
+        ?? prior2AvgMap.get(key)
+        ?? computeShooterStartingAvg(shooterName, [...prior1Teams, ...prior2Teams]),
+      rookie: isShooterRookie(shooterName, prior1Teams, prior2Teams, prior1AvgMap, prior2AvgMap),
     });
   }
 
@@ -756,7 +767,7 @@ export function buildPriorAvgMap(weekResults: WeekResult[], priorTeams: Team[]):
     for (const shooter of team.shooters) {
       const key = normalizeShooterName(shooter.name);
       if (!startingAvgMap.has(key)) {
-        startingAvgMap.set(key, shooter.startingAvg ?? 35);
+        startingAvgMap.set(key, shooter.startingAvg > 0 ? shooter.startingAvg : 35);
       }
     }
   }

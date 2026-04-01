@@ -86,6 +86,7 @@ function makeRepo(opts: {
   prior1Teams?: Team[];
   prior2Teams?: Team[];
   prior1Weeks?: WeekResult[];
+  prior2Weeks?: WeekResult[];
 }): ScoreRepository {
   const year = opts.currentYear ?? 2026;
   const stub: Partial<ScoreRepository> = {
@@ -95,7 +96,11 @@ function makeRepo(opts: {
       if (y === year - 2) return success(opts.prior2Teams ?? []);
       return success([]);
     },
-    getAllWeekResults: async () => success(opts.prior1Weeks ?? []),
+    getAllWeekResults: async (y) => {
+      if (y === year - 1) return success(opts.prior1Weeks ?? []);
+      if (y === year - 2) return success(opts.prior2Weeks ?? []);
+      return success([]);
+    },
   };
   return stub as unknown as ScoreRepository;
 }
@@ -138,6 +143,15 @@ describe('buildPriorAvgMap', () => {
     ];
     const map = buildPriorAvgMap(weeks, priorTeams);
     expect(map.get('carol')).toBeCloseTo(42, 5);
+  });
+
+  it('startingAvg: 0 in priorTeams is treated as 35 for blending (corrupt/legacy data)', () => {
+    // If a prior-year shooter has startingAvg stored as 0, blending should use 35.
+    // Without the guard: (0 + 38) / 2 = 19. With the guard: (35 + 38) / 2 = 36.5.
+    const priorTeams = [makeTeam('Team', [makeShooter('Eve', 0)])];
+    const weeks = [makeWeekResult([{ name: 'Eve', total: 38 }])];
+    const map = buildPriorAvgMap(weeks, priorTeams);
+    expect(map.get('eve')).toBe(36.5);
   });
 
   it('shooter not in priorTeams gets default startingAvg=35 for the 1-week blend', () => {
@@ -241,19 +255,22 @@ describe('computeShooterDefaults', () => {
     }
   });
 
-  it('shooter in prior2 only — startingAvg=35 (not in prior1), rookie:false', async () => {
+  it('shooter in prior2 roster only with no week results — startingAvg=35, rookie:true', async () => {
+    // On prior2 roster but no shooting record in either year → rookie per business rule.
+    // startingAvg=35 because finalAvg is null (never shot) and no WeekResult entries exist.
     const svc = new ScoreService(
       makeRepo({
         prior1Teams: [],
         prior2Teams: [makeTeam('Old Team', [makeShooter('Veteran', 38)])],
         prior1Weeks: [],
+        prior2Weeks: [],
       }),
     );
     const result = await svc.computeShooterDefaults(2026, 'Veteran');
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.startingAvg).toBe(35); // not in prior1 teams or week results
-      expect(result.data.rookie).toBe(false);
+      expect(result.data.startingAvg).toBe(35);
+      expect(result.data.rookie).toBe(true);
     }
   });
 
@@ -271,6 +288,22 @@ describe('computeShooterDefaults', () => {
     }
   });
 
+  it('returns 35 when prior-year roster has finalAvg: 0 (corrupt/legacy data)', async () => {
+    // Shooter was on prior-year roster with finalAvg stored as 0 instead of null.
+    // Should fall back to the 35 default, not return 0.
+    const svc = new ScoreService(
+      makeRepo({
+        prior1Teams: [makeTeam('Team', [makeShooter('Dave', 35, 0)])],
+        prior1Weeks: [],
+      }),
+    );
+    const result = await svc.computeShooterDefaults(2026, 'Dave');
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.startingAvg).toBe(35);
+    }
+  });
+
   it('falls back to finalAvg on team doc when not in published week results', async () => {
     // Charlie is on the prior-year roster with finalAvg=41 but has no WeekResult entries
     // (e.g. historical season before publish was used).
@@ -284,6 +317,45 @@ describe('computeShooterDefaults', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.startingAvg).toBe(41);
+    }
+  });
+
+  // Bug #140 — Bug B: shooter skipped N-1 but shot in N-2
+  it('falls back to prior2 avg when shooter did not shoot in prior1 but shot in prior2', async () => {
+    const svc = new ScoreService(
+      makeRepo({
+        prior1Teams: [makeTeam('Team', [makeShooter('Eve', 35)])],
+        prior1Weeks: [],  // Eve did not shoot in N-1
+        prior2Teams: [makeTeam('Team', [makeShooter('Eve', 35)])],
+        prior2Weeks: [   // Eve shot twice in N-2 → avg = (40+42)/2 = 41
+          makeWeekResult([{ name: 'Eve', total: 40 }]),
+          { ...makeWeekResult([{ name: 'Eve', total: 42 }]), weekNumber: 2 },
+        ],
+      }),
+    );
+    const result = await svc.computeShooterDefaults(2026, 'Eve');
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.startingAvg).toBe(41);
+      expect(result.data.rookie).toBe(false);
+    }
+  });
+
+  // Bug #140 — Bug A: shooter on roster both years but never shot → rookie
+  it('returns rookie:true when shooter on roster in both prior years but shot in neither', async () => {
+    const svc = new ScoreService(
+      makeRepo({
+        prior1Teams: [makeTeam('Team', [makeShooter('Frank', 35)])],
+        prior1Weeks: [],
+        prior2Teams: [makeTeam('Team', [makeShooter('Frank', 35)])],
+        prior2Weeks: [],
+      }),
+    );
+    const result = await svc.computeShooterDefaults(2026, 'Frank');
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.startingAvg).toBe(35);
+      expect(result.data.rookie).toBe(true);
     }
   });
 });
