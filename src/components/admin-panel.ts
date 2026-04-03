@@ -59,6 +59,8 @@ class AdminPanel extends HTMLElement {
   /** null = not editing; else = announcement id being edited */
   private _editingAnnouncementId: string | null = null;
   private _bannerLoaded = false;
+  private _shooterNameCache: { year: number; names: string[] } | null = null;
+  private _teamNameCache: { year: number; names: string[] } | null = null;
 
   // ── Roster modal state ────────────────────────────────────────────────────
   private _rosterDialog: HTMLDialogElement | null = null;
@@ -187,9 +189,13 @@ class AdminPanel extends HTMLElement {
       this._editingTeamId = null;
       this._dateEditMode = false;
       this._weekHasScores = false;
+      this._shooterNameCache = null;
+      this._teamNameCache = null;
       void this._fetchTeamsData();
       void this._fetchSeasonData();
       void this._loadSavedEntries();
+      const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+      void this._getTeamNameSuggestions(year);
     });
 
     // Score entry listeners
@@ -218,6 +224,7 @@ class AdminPanel extends HTMLElement {
     void this._fetchTeamsData();
     void this._fetchSeasonData();
     void this._loadSavedEntries();
+    void this._getTeamNameSuggestions(CURRENT_YEAR);
   }
 
   // ── Tab switching ────────────────────────────────────────────────────────
@@ -233,6 +240,10 @@ class AdminPanel extends HTMLElement {
     ]) {
       const el = this.querySelector(`#${id}`);
       if (el) el.classList.toggle('admin-tab-panel--hidden', name !== tab);
+    }
+    if (tab === 'score-entry') {
+      const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+      void this._getShooterSuggestions(year);
     }
     if (tab === 'announcements') {
       void this._loadBannerTab();
@@ -423,6 +434,7 @@ class AdminPanel extends HTMLElement {
     nameInput.placeholder = 'Team name';
     nameInput.autocomplete = 'off';
     nameCell.appendChild(nameInput);
+    this._attachAutocomplete(nameInput, () => this._getTeamNames());
 
     const captainCell = tr.insertCell();
     const captainInput = document.createElement('input');
@@ -432,6 +444,7 @@ class AdminPanel extends HTMLElement {
     captainInput.placeholder = 'Captain name';
     captainInput.autocomplete = 'off';
     captainCell.appendChild(captainInput);
+    this._attachAutocomplete(captainInput, () => this._getCurrentYearShooterNames());
 
     const actionsCell = tr.insertCell();
     actionsCell.className = 'admin-team-actions admin-team-actions--edit';
@@ -581,6 +594,7 @@ class AdminPanel extends HTMLElement {
       nameInput.placeholder = 'Shooter name';
       nameInput.autocomplete = 'off';
       nameCell.appendChild(nameInput);
+      this._attachAutocomplete(nameInput, () => this._shooterNameCache?.names ?? []);
     }
 
     const s1 = this._scoreInput();
@@ -837,6 +851,10 @@ class AdminPanel extends HTMLElement {
 
     dialog.showModal();
 
+    // Prefetch shooter name suggestions for autocomplete
+    const year = parseInt(this.querySelector<HTMLSelectElement>('#ap-year')!.value, 10);
+    void this._getShooterSuggestions(year);
+
     // ── Load roster data (async) ──────────────────────────────────────────
     void this._loadRosterIntoModal(teamId);
   }
@@ -974,6 +992,9 @@ class AdminPanel extends HTMLElement {
       return c;
     };
     row.appendChild(td(nameInput));
+    if (shooter === undefined) {
+      this._attachAutocomplete(nameInput, () => this._shooterNameCache?.names ?? []);
+    }
     const avgCell = document.createElement('td');
     avgCell.appendChild(avgSpan);
     row.appendChild(avgCell);
@@ -1569,6 +1590,175 @@ class AdminPanel extends HTMLElement {
     if (!this._rosterStatusEl) return;
     this._rosterStatusEl.textContent = message;
     this._rosterStatusEl.className = `admin-status${type ? ` admin-status--${type}` : ''}`;
+  }
+
+  // ── Autocomplete helpers ────────────────────────────────────────────────
+
+  private _getTeamNames(): string[] {
+    return this._teamNameCache?.names ?? this._teamsData?.map((t) => t.name) ?? [];
+  }
+
+  private async _getTeamNameSuggestions(year: number): Promise<string[]> {
+    if (this._teamNameCache?.year === year) return this._teamNameCache.names;
+
+    const [cur, prior1, prior2] = await Promise.all([
+      scoreService.getTeams(year),
+      scoreService.getTeams(year - 1),
+      scoreService.getTeams(year - 2),
+    ]);
+
+    const seen = new Map<string, string>();
+    for (const result of [cur, prior1, prior2]) {
+      if (!result.success) continue;
+      for (const team of result.data) {
+        const key = team.name.toLowerCase().trim();
+        if (!seen.has(key)) seen.set(key, team.name);
+      }
+    }
+
+    const names = [...seen.values()].sort((a, b) => a.localeCompare(b));
+    this._teamNameCache = { year, names };
+    return names;
+  }
+
+  private _getCurrentYearShooterNames(): string[] {
+    if (!this._teamsData) return [];
+    const seen = new Map<string, string>();
+    for (const team of this._teamsData) {
+      for (const s of team.shooters) {
+        const key = normalizeShooterName(s.name);
+        if (!seen.has(key)) seen.set(key, s.name);
+      }
+    }
+    return [...seen.values()].sort((a, b) => a.localeCompare(b));
+  }
+
+  private async _getShooterSuggestions(year: number): Promise<string[]> {
+    if (this._shooterNameCache?.year === year) return this._shooterNameCache.names;
+
+    const [cur, prior1, prior2] = await Promise.all([
+      scoreService.getTeams(year),
+      scoreService.getTeams(year - 1),
+      scoreService.getTeams(year - 2),
+    ]);
+
+    const seen = new Map<string, string>();
+    // Process most recent year first so its casing wins
+    for (const result of [cur, prior1, prior2]) {
+      if (!result.success) continue;
+      for (const team of result.data) {
+        for (const s of team.shooters) {
+          const key = normalizeShooterName(s.name);
+          if (!seen.has(key)) seen.set(key, s.name);
+        }
+      }
+    }
+
+    const names = [...seen.values()].sort((a, b) => a.localeCompare(b));
+    this._shooterNameCache = { year, names };
+    return names;
+  }
+
+  private _attachAutocomplete(
+    input: HTMLInputElement,
+    getSuggestions: () => string[],
+  ): void {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ac-wrapper';
+    input.parentNode!.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'ac-dropdown';
+    wrapper.appendChild(dropdown);
+
+    let activeIndex = -1;
+
+    const close = () => {
+      dropdown.classList.remove('ac-dropdown--open');
+      dropdown.innerHTML = '';
+      activeIndex = -1;
+    };
+
+    const render = (items: string[]) => {
+      dropdown.innerHTML = '';
+      activeIndex = -1;
+      if (items.length === 0) {
+        close();
+        return;
+      }
+      for (const name of items) {
+        const item = document.createElement('div');
+        item.className = 'ac-dropdown__item';
+        item.textContent = name;
+        item.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // prevent blur from firing before selection
+          input.value = name;
+          close();
+          input.blur(); // trigger any existing blur handlers (e.g. roster defaults)
+        });
+        dropdown.appendChild(item);
+      }
+      dropdown.classList.add('ac-dropdown--open');
+    };
+
+    const update = () => {
+      const query = normalizeShooterName(input.value);
+      if (!query) { close(); return; }
+
+      const all = getSuggestions();
+      const matches = all.filter((n) => {
+        const norm = normalizeShooterName(n);
+        return norm !== query && norm.includes(query);
+      }).slice(0, 8);
+
+      render(matches);
+    };
+
+    const setActive = (idx: number) => {
+      const items = dropdown.querySelectorAll<HTMLElement>('.ac-dropdown__item');
+      for (const it of items) it.classList.remove('ac-dropdown__item--active');
+      activeIndex = idx;
+      if (idx >= 0 && idx < items.length) {
+        items[idx]!.classList.add('ac-dropdown__item--active');
+        items[idx]!.scrollIntoView({ block: 'nearest' });
+      }
+    };
+
+    input.addEventListener('input', update);
+
+    input.addEventListener('keydown', (e: KeyboardEvent) => {
+      const isOpen = dropdown.classList.contains('ac-dropdown--open');
+      if (!isOpen) return;
+
+      const items = dropdown.querySelectorAll('.ac-dropdown__item');
+      const count = items.length;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActive(activeIndex < count - 1 ? activeIndex + 1 : 0);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActive(activeIndex > 0 ? activeIndex - 1 : count - 1);
+      } else if (e.key === 'Enter' && activeIndex >= 0) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const selected = items[activeIndex]?.textContent ?? '';
+        input.value = selected;
+        close();
+        input.blur();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      } else if (e.key === 'Tab') {
+        close();
+      }
+    });
+
+    wrapper.addEventListener('focusout', (e: FocusEvent) => {
+      // Close only if focus left the wrapper entirely
+      if (!wrapper.contains(e.relatedTarget as Node)) close();
+    });
   }
 }
 
