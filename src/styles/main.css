@@ -1475,6 +1475,51 @@ input[type="text"].ap-roster-name:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-accent) 15%, transparent);
 }
 
+/* ── Autocomplete dropdown ─────────────────────────────────────────────── */
+
+.ac-wrapper {
+  position: relative;
+}
+
+.ac-dropdown {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-dropdown);
+  z-index: 400;
+}
+
+.ac-dropdown--open {
+  display: block;
+}
+
+.ac-dropdown__item {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--c-text);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.ac-dropdown__item--active,
+.ac-dropdown__item:hover {
+  background: var(--c-table-hover);
+}
+
+/* Allow dropdown to escape cells that clip overflow */
+td:has(> .ac-wrapper) {
+  overflow: visible !important;
+  white-space: normal;
+}
+
 /* ============================================================
    Add New Team Form
    ============================================================ */
