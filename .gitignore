@@ -77,8 +77,9 @@ dist/
 .claude/user-*
 .claude/.history
 
-# But commit shared project commands
+# But commit shared project commands and agents
 !.claude/commands/
+!.claude/agents/
 
 # OS generated files
 .DS_Store
