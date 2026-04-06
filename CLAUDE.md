@@ -1,4 +1,4 @@
-# AGENTS.md — Central Illinois Trap League (citl.club)
+# CLAUDE.md — Central Illinois Trap League (citl.club)
 
 Agent orientation file. Read this first, then consult the documents below for all
 architectural decisions, standards, and implementation guidance.
@@ -79,22 +79,47 @@ components → modules → services → repositories
 
 ## Agentic Framework
 
-This project uses a hybrid spec-kit + prompts framework:
+This project uses a hybrid spec-kit + prompts framework with Claude Code agents, skills, and hooks:
 
 | System | Directory | Contains |
 |--------|-----------|---------|
 | **Spec-Kit** | `.specs/` | CITL-specific constitution, current phase state, technical configs |
 | **Prompts** | `.prompts/` | Universal patterns: architecture, security, testing, git, Firebase |
+| **Agents** | `.claude/agents/` | Specialized sub-agents for complex workflows |
+| **Skills** | `.claude/commands/` | Slash-command skills for repeatable actions |
+| **Hooks** | `.claude/settings.json` | Automated guardrails (constitutional pattern checks) |
 
-### Spec-Kit Commands
+### Custom Agents
+
+| Agent | Invoke with | Purpose |
+|-------|-------------|---------|
+| **speckit** | `@speckit` | Full feature specification: reads constitution, creates spec in `.specs/features/`, produces implementation plan + task breakdown |
+| **reviewer** | `@reviewer` | Code review: audits branch changes against 12 constitutional checks, drafts PR description |
+| **scoring** | `@scoring` | Scoring engine expert: traces calculations, validates tests against business rules, identifies edge case gaps |
+
+### Slash Commands (Skills)
 
 | Command | Action |
 |---------|--------|
-| `/speckit-specify <feature>` | Create feature requirement spec in `.specs/features/` |
-| `/speckit-plan` | Design technical implementation referencing prompts |
-| `/speckit-tasks` | Break down into actionable tasks |
-| `/speckit-implement` | Execute with constitutional + prompt guidance |
-| `/speckit-constitution` | View `.specs/constitution.md` |
+| `/constitution` | Project state dashboard: architectural state, evolution triggers, forbidden patterns |
+| `/implement <feature>` | Execute a feature spec from `.specs/features/` with constitutional compliance |
+| `/check` | Quick pre-commit compliance check: forbidden patterns, typecheck, tests |
+| `/deploy-preview` | Build + typecheck + test + Firebase preview channel deploy |
+
+### Automated Hooks
+
+| Hook | Trigger | Action |
+|------|---------|--------|
+| Constitutional check | After any file edit/write | Checks `.ts` files for `var`, inline handlers, unfiltered Firestore reads, file size >750 lines |
+
+### Feature Development Workflow
+
+1. **Orient**: Run `/constitution` to see current project state
+2. **Specify**: Invoke `@speckit` with the feature request — creates spec + plan + tasks
+3. **Implement**: Run `/implement <feature>` to execute the spec
+4. **Review**: Invoke `@reviewer` to audit changes and draft PR
+5. **Check**: Run `/check` before committing for a quick compliance pass
+6. **Deploy**: Run `/deploy-preview` to test on a preview channel
 
 ---
 

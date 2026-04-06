@@ -46,7 +46,7 @@ citl-static/
 │   │   ├── cicd-pipeline.md       # GitHub Actions workflows
 │   │   └── firebase-deployment.md # Firebase Hosting deployment
 │   └── features/                   # Per-feature specifications (ephemeral)
-│       └── <feature-name>.md      # Created via /speckit-specify
+│       └── <feature-name>.md      # Created via @speckit agent
 │
 ├── .prompts/                        # Prompts (Foundational Patterns)
 │   ├── core/                       # Platform-agnostic principles
@@ -61,12 +61,17 @@ citl-static/
 │   │   └── firebase-testing.md
 │   └── meta/                       # Library maintenance and protocols
 │
-├── .claude/commands/                # Spec-Kit Slash Commands
-│   ├── speckit-constitution.md
-│   ├── speckit-specify.md
-│   ├── speckit-plan.md
-│   ├── speckit-tasks.md
-│   └── speckit-implement.md
+├── .claude/
+│   ├── agents/                      # Custom Claude Code Agents
+│   │   ├── speckit.md              # Feature specification (specify + plan + tasks)
+│   │   ├── reviewer.md            # Code review + PR preparation
+│   │   └── scoring.md             # Scoring engine domain expert
+│   ├── commands/                    # Slash Command Skills
+│   │   ├── constitution.md        # Project state dashboard
+│   │   ├── implement.md           # Execute a feature spec
+│   │   ├── check.md              # Quick compliance check
+│   │   └── deploy-preview.md     # Preview deployment
+│   └── settings.json               # Hooks (post-edit constitutional checks)
 │
 └── CLAUDE.md                        # Entry point with decision framework
 ```
@@ -78,11 +83,11 @@ citl-static/
 ### II.1 Decision Tree
 
 **Starting a new feature?**
-→ `/speckit-specify` (creates `.specs/features/<feature>.md`)
+→ Invoke `@speckit` agent (creates `.specs/features/<feature>.md` + plan + tasks)
 → References constitution + prompts
 
 **Checking project constraints?**
-→ `/speckit-constitution` (reads `.specs/constitution.md`)
+→ `/constitution` (summarizes `.specs/constitution.md` as a dashboard)
 
 **Understanding architectural patterns?**
 → Read `.prompts/core/architecture/` files
@@ -93,7 +98,7 @@ citl-static/
 **Wondering if you should evolve architecture?**
 → Read `.prompts/meta/architectural-evolution-strategy.md`
 → Check decision triggers
-→ If triggers met: Create spec via `/speckit-specify`
+→ If triggers met: Create spec via `@speckit` agent
 
 **Need to understand Git workflow?**
 → Read `.prompts/core/development/git-best-practices.md`
@@ -102,19 +107,22 @@ citl-static/
 
 **Feature Development Workflow**:
 ```
-1. /speckit-constitution
-   ↓ (read project constraints)
-2. /speckit-specify <feature-name>
-   ↓ (create requirement spec, references constitution + prompts)
-3. /speckit-plan
-   ↓ (design implementation, applies prompt patterns)
-4. /speckit-tasks
-   ↓ (break down work)
-5. /speckit-implement
-   ↓ (execute, following constitutional + prompt guidance)
+1. /constitution
+   ↓ (project state dashboard — current state, triggers, constraints)
+2. @speckit <feature-name>
+   ↓ (creates spec + implementation plan + task breakdown in one conversation)
+3. /implement <feature-name>
+   ↓ (executes the spec with constitutional + prompt compliance)
+4. @reviewer
+   ↓ (audits changes, drafts PR description)
+5. /check
+   ↓ (quick compliance pass before commit)
 6. Git commit (conventional format from prompts/core/development/git-best-practices.md)
-7. Create PR (citing constitutional compliance + prompt references)
+7. Create PR (using @reviewer's drafted description)
 ```
+
+Note: The `@speckit` agent replaces the former `/speckit-specify`, `/speckit-plan`, and
+`/speckit-tasks` workflow — all three steps are now handled in a single agent conversation.
 
 **Architectural Evolution Workflow**:
 ```
@@ -123,7 +131,7 @@ citl-static/
 2. Read .prompts/meta/architectural-evolution-strategy.md
    ↓ (check decision triggers)
 3. If triggers met:
-   a. /speckit-specify architectural-evolution-<domain>
+   a. @speckit architectural-evolution-<domain>
    b. Document in architectural-decision-log.md
    c. Update .specs/constitution.md with new phase
 4. If triggers NOT met:
@@ -327,7 +335,7 @@ Project-specific requirements:
 
 ### VI.3 Feature Specs Lifecycle
 
-**Created**: Via `/speckit-specify`
+**Created**: Via `@speckit` agent
 **Active**: During development
 **Archived**: After feature merged to main
 
@@ -376,7 +384,7 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 
 ### VIII.1 Adoption Metrics (3 months)
 
-- ✅ 100% of new features use `/speckit-specify` workflow
+- ✅ 100% of new features use `@speckit` agent workflow
 - ✅ 80%+ of commits cite constitutional compliance
 - ✅ 100% of PRs include guidance references
 - ✅ Zero features violate forbidden patterns
@@ -405,25 +413,25 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 
 **Answer**:
 ```
-1. /speckit-constitution
-   Read §II.1 (current phase: Security Phase 1 - Basic Auth + Rules)
-   Read §III.2 (security standards: input validation, server-side checks)
+1. /constitution
+   Review project state dashboard — note §II.1 (Security Phase 1) and §III.2 (security standards)
 
-2. /speckit-specify user-authentication
-   Create feature spec at .specs/features/user-authentication.md
-   Reference:
+2. @speckit user-authentication
+   Agent reads constitution, creates spec at .specs/features/user-authentication.md
+   References:
    - Constitutional constraints (§II.1, §III.2)
    - .prompts/core/security/security-principles.md (OAuth, RBAC)
    - .prompts/platforms/firebase/firebase-security.md (Firebase Auth SDK)
+   Produces implementation plan + task breakdown
 
-3. /speckit-plan
-   Design implementation applying Firebase Auth patterns
+3. /implement user-authentication
+   Executes the spec with constitutional + prompt compliance
 
-4. /speckit-tasks
-   Break down: Setup → Auth UI → Firebase integration → Security rules
+4. @reviewer
+   Audits changes, drafts PR description
 
-5. /speckit-implement
-   Execute following constitutional + prompt guidance
+5. /check
+   Quick compliance pass before commit
 ```
 
 ### Scenario 2: Evolving Architecture
@@ -525,12 +533,19 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 - `.specs/constitution.md` - Project constitutional spec
 - `.prompts/README.md` - Prompt library navigation
 
-**Slash Commands**:
-- `/speckit-constitution` - View constitutional spec
-- `/speckit-specify` - Create feature spec
-- `/speckit-plan` - Design implementation
-- `/speckit-tasks` - Break down work
-- `/speckit-implement` - Execute
+**Agents** (`.claude/agents/`):
+- `@speckit` - Feature specification (specify + plan + tasks in one conversation)
+- `@reviewer` - Code review + PR preparation
+- `@scoring` - Scoring engine domain expert
+
+**Slash Commands** (`.claude/commands/`):
+- `/constitution` - Project state dashboard
+- `/implement <feature>` - Execute a feature spec
+- `/check` - Quick constitutional compliance check
+- `/deploy-preview` - Preview deployment with gates
+
+**Hooks** (`.claude/settings.json`):
+- Post-edit constitutional pattern check on `.ts` files
 
 **Meta-Guidance**:
 - `.prompts/meta/spec-authoring-guidelines.md` - Rules for writing specs (reference vs. reproduce)
