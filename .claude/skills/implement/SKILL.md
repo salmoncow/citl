@@ -1,3 +1,8 @@
+---
+name: implement
+description: Execute a feature spec from `.specs/features/`. Triggers on phrases like "implement feature", "execute spec", "build the feature", "run the spec".
+---
+
 Execute a feature spec from `.specs/features/`.
 
 ## Arguments

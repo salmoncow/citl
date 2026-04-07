@@ -1,3 +1,8 @@
+---
+name: deploy-preview
+description: Prepare and execute a Firebase preview channel deployment. Triggers on phrases like "deploy preview", "preview deploy", "test deployment", "Firebase preview".
+---
+
 Prepare and execute a Firebase preview channel deployment.
 
 ## Steps

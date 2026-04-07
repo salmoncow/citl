@@ -1,3 +1,8 @@
+---
+name: constitution
+description: Read `.specs/constitution.md` and present a concise project state dashboard. Triggers on phrases like "project state", "show dashboard", "constitution status", "current state", "orientation".
+---
+
 Read `.specs/constitution.md` and present a concise **project state dashboard**.
 
 ## What to display
