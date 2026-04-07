@@ -86,7 +86,7 @@ This project uses a hybrid spec-kit + prompts framework with Claude Code agents,
 | **Spec-Kit** | `.specs/` | CITL-specific constitution, current phase state, technical configs |
 | **Prompts** | `.prompts/` | Universal patterns: architecture, security, testing, git, Firebase |
 | **Agents** | `.claude/agents/` | Specialized sub-agents for complex workflows |
-| **Skills** | `.claude/commands/` | Slash-command skills for repeatable actions |
+| **Skills** | `.claude/skills/` | Slash-command skills for repeatable actions |
 | **Hooks** | `.claude/settings.json` | Automated guardrails (constitutional pattern checks) |
 
 ### Custom Agents
