@@ -14,8 +14,10 @@ If no argument, use the most recently modified file in `.specs/features/`.
 ### 1. Load the spec
 Read the feature spec file. If it doesn't exist, list available specs in `.specs/features/` and ask the user which one to implement.
 
-### 2. Load referenced guidance
-Read each `.prompts/` file cited in the spec's "Guidance references" or "Architecture Approach" section. Also read `.specs/constitution.md` sections cited in "Constitutional Constraints".
+### 2. Load referenced context
+Read `.specs/constitution.md` sections cited in "Constitutional Constraints". If the spec references project-specific files (`.specs/technical/*`, `.prompts/meta/*`), read those too.
+
+Note: Foundational guidance (architecture, security, testing, Firebase patterns) is provided by global Claude Code skills that auto-activate. You do not need to manually read guidance files.
 
 ### 3. Implement
 Follow the spec's "Implementation Plan" and "Task Breakdown" in order. For each task:

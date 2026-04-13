@@ -66,9 +66,6 @@ Generate a PR description in this format:
 
 ## Constitutional Compliance
 - §<number>: <how this PR complies>
-
-## Guidance References
-- <.prompts/ files that informed the implementation>
 ```
 
 ### Step 5: Recommendations

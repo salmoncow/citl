@@ -321,4 +321,3 @@ nvm use 24
 
 - [Vite Documentation](https://vitejs.dev/guide/)
 - [.specs/constitution.md](../constitution.md) — §III.3 Performance Standards, §IV.1 Tech Stack
-- [.prompts/core/architecture/code-structure.md](../../.prompts/core/architecture/code-structure.md)

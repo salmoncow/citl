@@ -2,17 +2,24 @@
 
 **Status**: Meta-Guidance
 **Created**: 2025-12-11
-**Purpose**: Document the integration between spec-kit (project specifications) and `.prompts/` (foundational patterns)
+**Updated**: 2026-04-12
+**Purpose**: Document the integration between spec-kit (project specifications) and guidance systems
+
+> **Architecture Change (2026-04-12):** Foundational guidance (architecture, security, testing,
+> Firebase) has been migrated to global Claude Code skills at `~/.claude/skills/`. These
+> auto-activate based on context. Only `.prompts/meta/` remains for project-specific strategic
+> frameworks. References to `.prompts/core/` and `.prompts/platforms/` below are historical.
 
 ---
 
 ## Overview
 
-This project uses a **hybrid guidance architecture** combining:
+This project uses a **layered guidance architecture** combining:
 1. **Spec-Kit** (`.specs/`) - Project-specific, executable specifications
-2. **Prompts** (`.prompts/`) - Foundational, universal patterns
+2. **Global Skills** (`~/.claude/skills/`) - Foundational, universal patterns (auto-activated)
+3. **Meta Prompts** (`.prompts/meta/`) - Project-specific strategic frameworks
 
-**Philosophy**: Spec-kit defines **what this project must do**, prompts define **how good software is built**.
+**Philosophy**: Spec-kit defines **what this project must do**, global skills define **how good software is built**, meta prompts define **when and why to evolve**.
 
 ---
 
@@ -28,12 +35,17 @@ This project uses a **hybrid guidance architecture** combining:
 - ✅ Per-feature specifications (requirements, plans, tasks)
 - ✅ Technical configurations (Vite config, CI/CD workflows)
 
-**Prompts (`.prompts/`)** contains:
+**Global Skills (`~/.claude/skills/`)** provide:
 - ✅ Foundational architectural patterns (SOLID, modularity, DRY)
 - ✅ Universal security principles (auth/authz, input validation)
 - ✅ Platform-agnostic best practices (testing pyramid, FinOps)
 - ✅ Firebase implementation guidance (SDK patterns, security rules)
+
+**Meta Prompts (`.prompts/meta/`)** contain:
 - ✅ Strategic frameworks (architectural evolution, platform selection)
+- ✅ Historical decisions and decision log
+- ✅ Gap detection protocol
+- ✅ Guidance maintenance procedures
 
 ### I.2 File Structure
 
@@ -44,34 +56,43 @@ citl-static/
 │   ├── technical/
 │   │   ├── build-system.md        # Vite configuration
 │   │   ├── cicd-pipeline.md       # GitHub Actions workflows
-│   │   └── firebase-deployment.md # Firebase Hosting deployment
+│   │   ├── firebase-deployment.md # Firebase Hosting deployment
+│   │   └── firestore-schema.md    # Firestore collection/document reference
 │   └── features/                   # Per-feature specifications (ephemeral)
 │       └── <feature-name>.md      # Created via @speckit agent
 │
-├── .prompts/                        # Prompts (Foundational Patterns)
-│   ├── core/                       # Platform-agnostic principles
-│   │   ├── architecture/           # Code structure, modularity, extensibility
-│   │   ├── security/               # Auth, data protection, API security
-│   │   ├── testing/                # Testing pyramid, strategies
-│   │   ├── development/            # Git workflow, asset management
-│   │   └── operations/             # Monitoring, budget, platform selection
-│   ├── platforms/firebase/         # Firebase-specific implementations
-│   │   ├── firebase-best-practices.md
-│   │   ├── firebase-security.md
-│   │   └── firebase-testing.md
-│   └── meta/                       # Library maintenance and protocols
+├── .prompts/meta/                   # Project-Specific Strategic Frameworks
+│   ├── architectural-evolution-strategy.md  # Evolution triggers, decision framework
+│   ├── architectural-decision-log.md        # Historical decisions, current state
+│   ├── prompt-gap-protocol.md               # Handling insufficient guidance
+│   ├── prompt-maintenance.md                # Keeping guidance current
+│   ├── speckit-integration-guide.md         # This file
+│   └── spec-authoring-guidelines.md         # Reference, don't reproduce
 │
 ├── .claude/
 │   ├── agents/                      # Custom Claude Code Agents
 │   │   ├── speckit.md              # Feature specification (specify + plan + tasks)
 │   │   ├── reviewer.md            # Code review + PR preparation
 │   │   └── scoring.md             # Scoring engine domain expert
-│   ├── commands/                    # Slash Command Skills
-│   │   ├── constitution.md        # Project state dashboard
-│   │   ├── implement.md           # Execute a feature spec
-│   │   ├── check.md              # Quick compliance check
-│   │   └── deploy-preview.md     # Preview deployment
+│   ├── skills/                      # Slash Command Skills
+│   │   ├── constitution/           # Project state dashboard
+│   │   ├── implement/              # Execute a feature spec
+│   │   ├── check/                  # Quick compliance check
+│   │   └── deploy-preview/         # Preview deployment
 │   └── settings.json               # Hooks (post-edit constitutional checks)
+│
+├── ~/.claude/skills/                # Global Claude Code Skills (auto-activated)
+│   ├── software-architecture/      # SOLID, modular design, extensibility
+│   ├── security-principles/        # Auth, data protection, API security
+│   ├── testing-principles/         # Testing pyramid, strategies
+│   ├── operations-principles/      # Monitoring, budget, platform selection
+│   ├── git-conventions/            # Conventional commits, branching
+│   ├── asset-reusability/          # DRY for resources
+│   ├── firebase-best-practices/    # SDK patterns, Firestore, Auth
+│   ├── firebase-security/          # Security rules, custom claims
+│   ├── firebase-testing/           # Emulator testing, rules testing
+│   ├── firebase-monitoring/        # Performance monitoring, logging
+│   └── firebase-cost-resilience/   # Free tier optimization, retry patterns
 │
 └── CLAUDE.md                        # Entry point with decision framework
 ```
@@ -90,10 +111,10 @@ citl-static/
 → `/constitution` (summarizes `.specs/constitution.md` as a dashboard)
 
 **Understanding architectural patterns?**
-→ Read `.prompts/core/architecture/` files
+→ Global skills auto-activate (`software-architecture`, `security-principles`, etc.)
 
 **Implementing Firebase integration?**
-→ Read `.prompts/platforms/firebase/firebase-best-practices.md`
+→ Global skills auto-activate (`firebase-best-practices`, `firebase-security`, etc.)
 
 **Wondering if you should evolve architecture?**
 → Read `.prompts/meta/architectural-evolution-strategy.md`
@@ -101,7 +122,7 @@ citl-static/
 → If triggers met: Create spec via `@speckit` agent
 
 **Need to understand Git workflow?**
-→ Read `.prompts/core/development/git-best-practices.md`
+→ Global `git-conventions` skill auto-activates
 
 ### II.2 Workflow Integration
 
@@ -153,37 +174,30 @@ Note: The `@speckit` agent replaces the former `/speckit-specify`, `/speckit-pla
 1. Single Responsibility: Each module has one clear purpose
 2. Clear Interfaces: Module contracts documented and stable
 
-**Reference**: [.prompts/core/architecture/modular-architecture-principles.md]
-
-For detailed patterns and examples, see modular-architecture-principles.md.
+**Reference**: See `software-architecture` global skill for detailed patterns and examples.
 ```
 
 ### III.2 In Feature Specs
 
-**Pattern**: Cite constitutional section + prompt pattern
+**Pattern**: Cite constitutional section; global skills provide the patterns automatically
 
 ```markdown
 ## Architecture Approach
 
 **Constitutional Constraints**: §II.3 Modularity Requirements
-**Pattern Reference**: .prompts/core/architecture/modular-architecture-principles.md
 
 This feature follows single-responsibility principle (one service module).
 Dependency direction: Component → Service → Firebase Infrastructure.
 ```
 
-### III.3 In Prompts
+### III.3 In Global Skills
 
-**Pattern**: Reference constitution for project application
-
-```markdown
----
-**Project Application**: See `.specs/constitution.md` for project-specific constraints and current architectural phase.
-```
+Global skills auto-activate based on context. They don't reference project-specific files.
+The constitution provides project-specific constraints; skills provide universal patterns.
 
 ### III.4 In Git Commits
 
-**Pattern**: Cite both constitutional compliance + prompt guidance
+**Pattern**: Cite constitutional compliance
 
 ```markdown
 git commit -m "feat: implement user profile data layer
@@ -191,12 +205,7 @@ git commit -m "feat: implement user profile data layer
 Constitutional compliance:
 - §III.2: Input validation on all boundaries
 - §III.3: Firestore query uses limit(10)
-- §VI.2: 1-hour cache TTL for free tier
-
-Guidance references:
-- .prompts/platforms/firebase/firebase-best-practices.md - Query patterns
-- .prompts/core/security/security-principles.md - Input validation
-- .specs/constitution.md §VI.2 - Caching requirements"
+- §VI.2: 1-hour cache TTL for free tier"
 ```
 
 ---
@@ -214,25 +223,28 @@ Guidance references:
 - Cost constraints (Firebase free tier: 50K reads/day, 20K writes/day)
 
 **Exclude**:
-- Detailed implementation patterns (those go in prompts)
+- Detailed implementation patterns (those go in global skills)
 - Historical decisions (those go in architectural-decision-log.md)
-- Universal principles (those go in .prompts/core/)
-- Platform tutorials (those go in .prompts/platforms/)
+- Universal principles (those go in global skills at ~/.claude/skills/)
+- Platform-specific patterns (those go in global Firebase skills)
 
-### IV.2 What Belongs in Prompts
+### IV.2 What Belongs in Global Skills
 
-**Include**:
-- Foundational patterns applicable to ANY project
-- Universal best practices (SOLID, DRY, testing pyramid)
-- Platform implementation guidance (Firebase SDK patterns)
-- Strategic frameworks (evolution strategy, platform selection)
-- Examples and code snippets illustrating patterns
+Global skills at `~/.claude/skills/` contain universal patterns and are maintained separately.
+They auto-activate based on context — no manual consultation needed.
+
+### IV.3 What Belongs in Meta Prompts
+
+**Include** (`.prompts/meta/`):
+- Strategic frameworks (evolution strategy, platform selection triggers)
+- Historical decisions (architectural decision log)
+- Gap detection protocol
+- Guidance maintenance procedures
 
 **Exclude**:
+- Universal patterns (those go in global skills)
 - Project-specific constraints (those go in constitution)
-- Current architectural state (those go in constitution)
 - Per-feature requirements (those go in .specs/features/)
-- Project-specific configurations (those go in .specs/technical/)
 
 ### IV.3 What Belongs in Feature Specs
 
@@ -257,20 +269,14 @@ Guidance references:
 ### V.1 Duplication Detection
 
 **Quarterly Review** (with architectural review):
-```bash
-# Search for duplicate content
-rg -i "single responsibility" .prompts/ .specs/
-rg -i "test pyramid" .prompts/ .specs/
-
-# Check for similar patterns
-diff .specs/constitution.md .prompts/core/architecture/modular-architecture-principles.md
-```
+- Check that constitutional constraints don't duplicate global skill content
+- Constitution should distill project-specific rules, not re-explain universal patterns
+- Global skills are maintained separately and auto-activate
 
 **If duplication found**:
 1. Identify which is more specific (constitutional constraint vs. universal pattern)
-2. Keep universal pattern in prompts
+2. Keep universal pattern in global skills
 3. Distill project-specific constraint in constitution
-4. Add cross-reference to prevent future duplication
 
 ### V.2 Duplication Prevention
 
@@ -282,7 +288,7 @@ diff .specs/constitution.md .prompts/core/architecture/modular-architecture-prin
 - Single responsibility per module
 - [Condensed version of principles]
 
-**Reference**: [Full details in .prompts/core/architecture/modular-architecture-principles.md]
+**Reference**: See `software-architecture` global skill for full details
 ```
 
 **Cross-Reference Instead of Duplicate**:
@@ -290,7 +296,7 @@ diff .specs/constitution.md .prompts/core/architecture/modular-architecture-prin
 ## Security Standards
 
 For foundational security principles, see:
-[.prompts/core/security/security-principles.md]
+Global `security-principles` and `firebase-security` skills (auto-activated)
 
 Project-specific requirements:
 - Firestore security rules tested in emulator BEFORE deployment
@@ -317,21 +323,24 @@ Project-specific requirements:
 3. Update "Last Updated" date
 4. Document change in architectural-decision-log.md
 
-### VI.2 Prompts Maintenance
+### VI.2 Global Skills Maintenance
+
+Global skills at `~/.claude/skills/` are maintained separately from this project.
+They evolve independently and auto-activate based on context.
+
+### VI.3 Meta Prompts Maintenance
 
 **Frequency**: Bi-annual (reduced from quarterly since more stable)
 
 **Update Triggers**:
-- Firebase SDK version update (major version)
-- GitHub Actions version update (v4 → v5)
-- Node.js LTS version update
-- Deprecated patterns discovered
+- Architectural phase transition
+- New strategic decision made
+- Gap protocol updated
 
 **Process**:
-1. Update technology versions in files
+1. Update relevant meta file
 2. Update "Last Updated" date
-3. Test examples still work
-4. Maintain foundational patterns (rarely change)
+3. Cross-reference with constitution if needed
 
 ### VI.3 Feature Specs Lifecycle
 
@@ -355,15 +364,14 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 
 **Before ANY architectural or implementation decision**:
 1. Read `.specs/constitution.md` for project constraints
-2. Check if prompts provide comprehensive guidance for the task
-3. If prompts insufficient, follow prompt-gap-protocol.md
+2. Global skills auto-activate for universal guidance
+3. If guidance insufficient, follow prompt-gap-protocol.md
 4. Document which guidance influenced the decision
 
 **Priority Order**:
 1. Constitutional spec (project-specific constraints)
-2. Foundational prompts (universal patterns)
-3. Platform prompts (implementation guidance)
-4. Strategic meta-prompts (evolution decisions)
+2. Global Claude Code skills (universal patterns — auto-activated)
+3. Meta prompts (strategic frameworks, evolution decisions)
 
 ### VII.2 Gap Detection
 
@@ -371,7 +379,7 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 1. STOP - don't guess or hallucinate
 2. Identify gap type:
    - Constitutional gap? (update .specs/constitution.md)
-   - Prompt gap? (create/update .prompts/ file)
+   - Skill gap? (update global skill or create new one)
    - Technical spec gap? (create .specs/technical/ file)
 3. Flag gap and recommend creation
 4. Wait for gap to be filled before proceeding
@@ -420,8 +428,7 @@ git commit -m "docs: archive user-profile spec (feature completed)"
    Agent reads constitution, creates spec at .specs/features/user-authentication.md
    References:
    - Constitutional constraints (§II.1, §III.2)
-   - .prompts/core/security/security-principles.md (OAuth, RBAC)
-   - .prompts/platforms/firebase/firebase-security.md (Firebase Auth SDK)
+   - Global skills auto-activate for security and Firebase patterns
    Produces implementation plan + task breakdown
 
 3. /implement user-authentication
@@ -470,7 +477,7 @@ git commit -m "docs: archive user-profile spec (feature completed)"
    This is explicitly forbidden to preserve free tier.
 
 3. Alternative:
-   Read .prompts/platforms/firebase/firebase-best-practices.md
+   Global `firebase-best-practices` skill provides query patterns.
    Use Firestore query with where() clause instead.
 ```
 
@@ -484,11 +491,10 @@ git commit -m "docs: archive user-profile spec (feature completed)"
    Requirement: Implement caching before 70% of read limit
    Pattern: 1-hour TTL
 
-2. Read .prompts/platforms/firebase/firebase-finops.md
-   Example caching pattern with Map and TTL
+2. Global `firebase-cost-resilience` skill auto-activates with caching patterns
 
 3. Implement:
-   Apply pattern from prompts, respect TTL from constitution
+   Apply pattern from skill, respect TTL from constitution
 ```
 
 ---
@@ -501,16 +507,16 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 
 **Solution**:
 1. Start with CLAUDE.md decision framework
-2. Maps task types to specific prompts
+2. Global skills auto-activate for relevant topics
 3. If still unclear, check this integration guide
 
 ### Issue: Conflicting Guidance
 
-**Symptom**: Constitution says X, prompts say Y
+**Symptom**: Constitution says X, global skill says Y
 
 **Resolution**:
 - Constitutional spec takes precedence (project-specific override)
-- Prompts provide default/recommended approach
+- Global skills provide default/recommended approach
 - If constitutional spec contradicts universal best practice, that's intentional (document why in decision log)
 
 ### Issue: Gap in Guidance
@@ -520,7 +526,7 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 **Solution**:
 1. Follow `.prompts/meta/prompt-gap-protocol.md`
 2. STOP - don't guess
-3. Flag gap (constitutional, prompt, or technical spec)
+3. Flag gap (constitutional, skill, or technical spec)
 4. Recommend creation
 5. Proceed only after gap filled
 
@@ -529,16 +535,16 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 ## XI. References
 
 **Entry Points**:
-- `/CLAUDE.md` - Decision framework, mandatory consultation protocol
+- `CLAUDE.md` - Decision framework, mandatory consultation protocol
 - `.specs/constitution.md` - Project constitutional spec
-- `.prompts/README.md` - Prompt library navigation
+- `~/.claude/skills/` - Global Claude Code skills (auto-activated)
 
 **Agents** (`.claude/agents/`):
 - `@speckit` - Feature specification (specify + plan + tasks in one conversation)
 - `@reviewer` - Code review + PR preparation
 - `@scoring` - Scoring engine domain expert
 
-**Slash Commands** (`.claude/commands/`):
+**Slash Commands** (`.claude/skills/`):
 - `/constitution` - Project state dashboard
 - `/implement <feature>` - Execute a feature spec
 - `/check` - Quick constitutional compliance check
@@ -547,15 +553,15 @@ git commit -m "docs: archive user-profile spec (feature completed)"
 **Hooks** (`.claude/settings.json`):
 - Post-edit constitutional pattern check on `.ts` files
 
-**Meta-Guidance**:
-- `.prompts/meta/spec-authoring-guidelines.md` - Rules for writing specs (reference vs. reproduce)
-- `.prompts/meta/architectural-evolution-strategy.md` - Evolution framework
-- `.prompts/meta/architectural-decision-log.md` - Historical decisions
-- `.prompts/meta/prompt-gap-protocol.md` - Gap detection and handling
+**Meta-Guidance** (`.prompts/meta/`):
+- `spec-authoring-guidelines.md` - Rules for writing specs (reference vs. reproduce)
+- `architectural-evolution-strategy.md` - Evolution framework
+- `architectural-decision-log.md` - Historical decisions
+- `prompt-gap-protocol.md` - Gap detection and handling
 
 ---
 
 **Maintained By**: Project lead
 **Review Frequency**: Quarterly (with architectural review)
-**Last Review**: 2025-12-11
-**Next Review**: 2026-03-11
+**Last Review**: 2026-04-12
+**Next Review**: 2026-07-12

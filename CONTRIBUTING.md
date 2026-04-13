@@ -30,6 +30,6 @@ npm run build     # production build
 
 ## Further Reading
 
-- [`AGENTS.md`](AGENTS.md) — architecture overview, key files, agentic framework commands
+- [`CLAUDE.md`](CLAUDE.md) — architecture overview, key files, agentic framework commands
 - [`.specs/constitution.md`](.specs/constitution.md) — single source of truth for project standards
 - [`.prompts/meta/architectural-decision-log.md`](.prompts/meta/architectural-decision-log.md) — why key decisions were made
