@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.3.0
-**Last Updated:** 2026-03-13
+**Version:** 1.4.0
+**Last Updated:** 2026-04-12
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-05-27)
 
@@ -10,13 +10,11 @@
 ## Introduction
 
 This constitutional spec establishes the governing principles, standards, and constraints for
-citl.club. It is the single source of truth for project-specific requirements, and cross-references
-detailed patterns in `.prompts/` for implementation guidance.
+citl.club. It is the single source of truth for project-specific requirements.
 
-**Relationship to `.prompts/` System:**
-- This constitution defines **project-specific** constraints and current state
-- `.prompts/` provides **foundational, universal** patterns and best practices
-- When developing features, consult this constitution first, then reference `.prompts/` for patterns
+Foundational guidance for architecture, security, testing, and Firebase patterns is provided
+by global Claude Code skills (`~/.claude/skills/`) that auto-activate based on context.
+Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 ---
 
@@ -40,11 +38,9 @@ detailed patterns in `.prompts/` for implementation guidance.
 - **Maximum platforms**: 2–3 total
 - **Current platforms**: Firebase + GitHub (2 platforms)
 - **New platform addition requires**:
-  - All decision triggers met from `platform-simplification-principles.md`
+  - All decision triggers met (see `operations-principles` global skill)
   - Explicit justification why existing platforms are insufficient
   - Documented evaluation of extending current platforms first
-
-**Reference**: [.prompts/core/operations/platform-simplification-principles.md](.prompts/core/operations/platform-simplification-principles.md)
 
 ### I.3 AI-Assisted Evolution
 
@@ -125,7 +121,6 @@ detailed patterns in `.prompts/` for implementation guidance.
 - ❌ Components calling Firestore directly (must go through service layer)
 - ❌ Repositories importing from services
 
-**Reference**: [.prompts/core/architecture/modular-architecture-principles.md](.prompts/core/architecture/modular-architecture-principles.md)
 
 ### II.4 Code Structure Standards
 
@@ -140,7 +135,6 @@ src/views/         Page-level render functions (transitional — migrate to comp
 src/data/          Static JSON data (scorecard seasons 2019–2025)
 ```
 
-**Reference**: [.prompts/core/architecture/code-structure.md](.prompts/core/architecture/code-structure.md)
 
 ### II.5 CITL-Specific Data Architecture
 
@@ -182,7 +176,6 @@ See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md)
 
 **Trigger**: 10+ modules OR production launch planned
 
-**Reference**: [.prompts/core/testing/testing-principles.md](.prompts/core/testing/testing-principles.md)
 
 ### III.2 Security Standards
 
@@ -201,9 +194,6 @@ See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md)
   `Strict-Transport-Security`, `Content-Security-Policy`
 - CSP must allow `maps.google.com` + `www.google.com` (Google Maps embed in about view)
 
-**Reference**:
-- [.prompts/core/security/security-principles.md](.prompts/core/security/security-principles.md)
-- [.prompts/platforms/firebase/firebase-security.md](.prompts/platforms/firebase/firebase-security.md)
 
 ### III.3 UX Loading States
 
@@ -268,9 +258,6 @@ private static _skeleton(): string {
 - 5-minute TTL for `getLatestWeekResult()` (active-season data)
 - Store and call `unsubscribe()` on any `onSnapshot()` listener
 
-**Reference**:
-- [.prompts/core/operations/monitoring-principles.md](.prompts/core/operations/monitoring-principles.md)
-- [.prompts/platforms/firebase/firebase-finops.md](.prompts/platforms/firebase/firebase-finops.md)
 
 ### III.5 Code Quality Standards
 
@@ -302,7 +289,6 @@ private static _skeleton(): string {
 - All changes to `main` via Pull Request — no direct commits
 - No force pushes to `main`
 
-**Reference**: [.prompts/core/development/git-best-practices.md](.prompts/core/development/git-best-practices.md)
 
 ---
 
@@ -359,7 +345,6 @@ private static _skeleton(): string {
 ❌  Skipping security rules in Emulator      Test rules before deploying
 ```
 
-**Reference**: [.prompts/platforms/firebase/firebase-best-practices.md](.prompts/platforms/firebase/firebase-best-practices.md)
 
 ### IV.3 Technology Evaluation Criteria
 
@@ -370,7 +355,6 @@ Before adopting new technology, evaluate:
 4. What is AI migration capability? (target: ≥80%)
 5. What are the long-term maintenance implications?
 
-**Reference**: [.prompts/core/operations/platform-simplification-principles.md](.prompts/core/operations/platform-simplification-principles.md)
 
 ---
 
@@ -379,16 +363,15 @@ Before adopting new technology, evaluate:
 ### V.1 Feature Development Process
 
 1. **Consult Constitution**: Read this document for project constraints and current state
-2. **Create Specification**: Use `/speckit-specify <feature-name>` to create feature requirements
-   - Reference constitutional constraints (current state, quality standards, forbidden patterns)
-   - Cite applicable `.prompts/core/*` patterns for architecture approach
-3. **Plan Implementation**: Use `/speckit-plan` to design technical approach
-   - Reference `.prompts/platforms/firebase/*` for Firebase guidance
+2. **Create Specification**: Invoke `@speckit` with the feature request
+   - References constitutional constraints (current state, quality standards, forbidden patterns)
+   - Creates spec + implementation plan + task breakdown
+3. **Implement**: Run `/implement <feature-name>` to execute the spec
+   - Global Claude Code skills auto-activate for architecture, security, testing, and Firebase guidance
    - Consider evolution triggers — does this feature justify increased complexity?
-4. **Break Down Work**: Use `/speckit-tasks` to create actionable task list
-5. **Implement**: Follow patterns from `.prompts/core/` and `.prompts/platforms/firebase/`
-6. **Test**: Validate against constitutional standards (security, performance, Firestore queries)
-7. **Commit**: Conventional commit format with constitutional references
+4. **Review**: Invoke `@reviewer` to audit changes and draft PR description
+5. **Test**: Validate against constitutional standards (security, performance, Firestore queries)
+6. **Commit**: Conventional commit format with constitutional references
 
 **Example commit message**:
 ```
@@ -400,18 +383,14 @@ Constitutional compliance:
 - §III.3: Firestore query uses where() + limit() to stay within free tier
 - §III.2: Admin-write enforced via Firestore rules (not client-side only)
 - §IV.2: onSnapshot() unsubscribed in disconnectedCallback()
-
-Guidance references:
-- .prompts/core/architecture/modular-architecture-principles.md
-- .prompts/platforms/firebase/firebase-best-practices.md
 ```
 
 ### V.2 Prompt Gap Protocol
 
 If guidance is insufficient for a task:
 1. **STOP** — do not guess or proceed without guidance
-2. Flag the gap following `.prompts/meta/prompt-gap-protocol.md`
-3. Determine: constitutional gap, prompt gap, or technical spec gap
+2. Flag the gap following [`.prompts/meta/prompt-gap-protocol.md`](.prompts/meta/prompt-gap-protocol.md)
+3. Determine: constitutional gap, skill gap, or technical spec gap
 4. Recommend creation / update of the appropriate file
 5. **Do NOT proceed** until the gap is addressed
 
@@ -438,7 +417,6 @@ If guidance is insufficient for a task:
 - MUST implement caching before hitting 70% of any limit
 - Cloud Functions require upgrading to Blaze — requires explicit decision + approval
 
-**Reference**: [.prompts/platforms/firebase/firebase-finops.md](.prompts/platforms/firebase/firebase-finops.md)
 
 ### VI.2 Cost Optimization
 
@@ -455,39 +433,16 @@ If guidance is insufficient for a task:
 
 ## VII. References
 
-### VII.1 Foundational Guidance (Always Consult)
+### VII.1 Global Claude Code Skills (Auto-Activated)
 
-**Core Architecture**:
-- [code-structure.md](.prompts/core/architecture/code-structure.md) — Separation of concerns, layered architecture
-- [modular-architecture-principles.md](.prompts/core/architecture/modular-architecture-principles.md) — Modularity, coupling/cohesion
-- [feature-extensibility.md](.prompts/core/architecture/feature-extensibility.md) — Extension patterns
+Foundational guidance for architecture, security, testing, operations, and Firebase is provided
+by global Claude Code skills at `~/.claude/skills/`. These auto-activate based on context — no
+manual consultation needed. Key skills: `software-architecture`, `security-principles`,
+`testing-principles`, `operations-principles`, `git-conventions`, `asset-reusability`,
+`firebase-best-practices`, `firebase-security`, `firebase-testing`, `firebase-monitoring`,
+`firebase-cost-resilience`.
 
-**Core Security**:
-- [security-principles.md](.prompts/core/security/security-principles.md) — Auth/authz, data protection
-
-**Core Testing**:
-- [testing-principles.md](.prompts/core/testing/testing-principles.md) — Testing pyramid, coverage targets
-
-**Core Operations**:
-- [platform-simplification-principles.md](.prompts/core/operations/platform-simplification-principles.md) — Platform selection
-- [budget-principles.md](.prompts/core/operations/budget-principles.md) — FinOps, cost efficiency
-- [monitoring-principles.md](.prompts/core/operations/monitoring-principles.md) — Observability patterns
-
-**Core Development**:
-- [git-best-practices.md](.prompts/core/development/git-best-practices.md) — Git workflow, conventional commits
-- [asset-reusability.md](.prompts/core/development/asset-reusability.md) — DRY principles
-
-### VII.2 Platform Implementation (Reference as Needed)
-
-**Firebase**:
-- [firebase-best-practices.md](.prompts/platforms/firebase/firebase-best-practices.md) — SDK patterns, Firestore, Auth
-- [firebase-security.md](.prompts/platforms/firebase/firebase-security.md) — Security rules, custom claims
-- [firebase-testing.md](.prompts/platforms/firebase/firebase-testing.md) — Emulator usage, rules testing
-- [firebase-monitoring.md](.prompts/platforms/firebase/firebase-monitoring.md) — Performance monitoring, logging
-- [firebase-finops.md](.prompts/platforms/firebase/firebase-finops.md) — Free tier optimization
-- [firebase-resilience.md](.prompts/platforms/firebase/firebase-resilience.md) — Error handling, retry patterns
-
-### VII.3 Strategic Frameworks
+### VII.2 Strategic Frameworks
 
 **Meta Guidance**:
 - [architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers, decision framework
@@ -495,22 +450,24 @@ If guidance is insufficient for a task:
 - [prompt-gap-protocol.md](.prompts/meta/prompt-gap-protocol.md) — Handling insufficient guidance
 - [prompt-maintenance.md](.prompts/meta/prompt-maintenance.md) — Keeping prompts current
 
-### VII.4 Technical Specifications
+### VII.3 Technical Specifications
 
 - [.specs/technical/build-system.md](.specs/technical/build-system.md) — Vite 7 configuration
 - [.specs/technical/cicd-pipeline.md](.specs/technical/cicd-pipeline.md) — GitHub Actions
 - [.specs/technical/firebase-deployment.md](.specs/technical/firebase-deployment.md) — Firebase Hosting deployment
 - [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md) — Firestore collection/document reference
 
-### VII.5 Spec-Kit Workflow Commands
+### VII.4 Agents & Skills
 
 | Command | Description |
 |---------|-------------|
-| `/speckit-specify <feature>` | Create feature requirement spec |
-| `/speckit-plan` | Generate technical implementation plan |
-| `/speckit-tasks` | Break down into actionable tasks |
-| `/speckit-implement` | Execute implementation |
-| `/speckit-constitution` | View this constitutional spec |
+| `@speckit` | Create feature spec + implementation plan + task breakdown |
+| `@reviewer` | Audit branch changes, draft PR description |
+| `@scoring` | Scoring engine domain expert |
+| `/constitution` | Project state dashboard |
+| `/implement <feature>` | Execute a feature spec |
+| `/check` | Quick pre-commit compliance check |
+| `/deploy-preview` | Build + test + Firebase preview deploy |
 
 ---
 
@@ -540,7 +497,7 @@ If guidance is insufficient for a task:
 - ✅ Any new async Web Component loading state uses `.skeleton` classes — no `<p>Loading…</p>` (§III.3)
 
 **Mandatory before every PR**:
-- ✅ PR description includes Summary, Changes, Testing, Guidance References
+- ✅ PR description includes Summary, Changes, Testing, Constitutional Compliance
 - ✅ No force push to main
 - ✅ Build passes (`npm run build`)
 - ✅ No merge conflicts
@@ -553,3 +510,4 @@ If guidance is insufficient for a task:
 - 1.1.0 (2026-03-01): TypeScript migration complete; CSS design system; dark mode; inline SVGs
 - 1.2.0 (2026-03-10): Removed phase references throughout; constitution is now state-based and timing-agnostic
 - 1.3.0 (2026-03-13): Added §III.3 UX Loading States — skeleton shimmer placeholders required for all async Web Components; added corresponding forbidden pattern and commit checklist item
+- 1.4.0 (2026-04-12): Migrated foundational guidance to global Claude Code skills; removed `.prompts/core/` and `.prompts/platforms/` references; retained `.prompts/meta/` for project-specific strategic frameworks; updated §V.1 workflow and §VII references

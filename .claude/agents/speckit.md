@@ -16,15 +16,18 @@ Read `.specs/constitution.md`. Identify:
 - Current architectural state that affects implementation
 - Any forbidden patterns that are relevant
 
-### Step 3: Load relevant guidance
-Based on the feature domain, read the applicable `.prompts/` files:
-- Architecture: `.prompts/core/architecture/code-structure.md`, `modular-architecture-principles.md`
-- Security: `.prompts/core/security/security-principles.md`, `.prompts/platforms/firebase/firebase-security.md`
-- Testing: `.prompts/core/testing/testing-principles.md`
-- Firebase: `.prompts/platforms/firebase/firebase-best-practices.md`
+### Step 3: Load relevant context
+Based on the feature domain, read applicable project-specific files:
 - Firestore schema: `.specs/technical/firestore-schema.md` (if data model changes needed)
+- Evolution strategy: `.prompts/meta/architectural-evolution-strategy.md` (if architectural change)
+- Decision log: `.prompts/meta/architectural-decision-log.md` (if referencing past decisions)
 
-If guidance is insufficient for any aspect, **STOP** and flag the gap per `prompt-gap-protocol.md`. Do not proceed until the user resolves it.
+Note: Foundational guidance for architecture, security, testing, and Firebase patterns is
+provided by global Claude Code skills that auto-activate based on context. No manual file
+reads needed for those topics.
+
+If guidance is insufficient for any aspect, **STOP** and flag the gap per
+`.prompts/meta/prompt-gap-protocol.md`. Do not proceed until the user resolves it.
 
 ### Step 4: Write the feature spec
 Create the spec at `.specs/features/<feature-name>.md` using this template:

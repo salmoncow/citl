@@ -27,10 +27,7 @@ Start with these documents in order:
    Current architectural state, quality standards, forbidden patterns, tech stack,
    and CITL-specific milestones.
 
-2. **[.prompts/README.md](.prompts/README.md)** — Foundational architecture, security,
-   testing, git, and operations principles (platform-agnostic).
-
-3. **[.prompts/meta/architectural-decision-log.md](.prompts/meta/architectural-decision-log.md)**
+2. **[.prompts/meta/architectural-decision-log.md](.prompts/meta/architectural-decision-log.md)**
    — Why key decisions were made (AWS → Firebase, Vite SPA, JSON scorecards, repository pattern).
 
 ---
@@ -79,15 +76,16 @@ components → modules → services → repositories
 
 ## Agentic Framework
 
-This project uses a hybrid spec-kit + prompts framework with Claude Code agents, skills, and hooks:
+This project uses a spec-kit framework with Claude Code agents, skills, hooks, and global skills:
 
 | System | Directory | Contains |
 |--------|-----------|---------|
 | **Spec-Kit** | `.specs/` | CITL-specific constitution, current phase state, technical configs |
-| **Prompts** | `.prompts/` | Universal patterns: architecture, security, testing, git, Firebase |
+| **Meta** | `.prompts/meta/` | Project-specific strategic frameworks (evolution strategy, decision log, gap protocol) |
 | **Agents** | `.claude/agents/` | Specialized sub-agents for complex workflows |
 | **Skills** | `.claude/skills/` | Slash-command skills for repeatable actions |
 | **Hooks** | `.claude/settings.json` | Automated guardrails (constitutional pattern checks) |
+| **Global Skills** | `~/.claude/skills/` | Universal guidance (architecture, security, testing, Firebase) — auto-activated |
 
 ### Custom Agents
 

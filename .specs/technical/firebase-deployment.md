@@ -337,5 +337,3 @@ to a preview channel and verify in browser dev tools before promoting to product
 - [.specs/constitution.md](../constitution.md) — §VI Cost Constraints, §VII Migration Milestones
 - [.specs/technical/build-system.md](./build-system.md) — Vite build output details
 - [.specs/technical/cicd-pipeline.md](./cicd-pipeline.md) — GitHub Actions CI/CD
-- [.prompts/platforms/firebase/firebase-best-practices.md](../../.prompts/platforms/firebase/firebase-best-practices.md)
-- [.prompts/platforms/firebase/firebase-finops.md](../../.prompts/platforms/firebase/firebase-finops.md)
