@@ -1,5 +1,5 @@
-# Compiled JavaScript output
-lib/
+# Compiled JavaScript output (top-level only — keep src/lib/ tracked)
+/lib/
 
 # Local env / config
 .env
