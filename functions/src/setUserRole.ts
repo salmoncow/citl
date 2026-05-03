@@ -10,10 +10,18 @@
  *   4. Inside a single Firestore transaction:
  *      - Target user doc exists.
  *      - Last-owner guard: cannot demote the only `owner`.
- *      - Rate limit: <=20 calls/hour/actor (sliding window).
- *      - Writes: update users/{targetUid} (role + roleChangedAt),
- *        create audit/{auto} entry, bump rateLimits counter.
- *   5. After TX commits: setCustomUserClaims with the new role.
+ *      - Rate limit: <=20 calls/hour/actor (sliding window). Counter
+ *        write is queued in this same TX so a failed commit doesn't
+ *        bump the count.
+ *      - **setCustomUserClaims (Auth API)** — called BEFORE the queued
+ *        Firestore writes. The claim is the security boundary that
+ *        Firestore rules read; ordering it ahead of the mirror+audit
+ *        commit gives fail-closed-on-revocation semantics if the TX
+ *        commit later fails. See spec.md §VI Design Decisions for the
+ *        full failure-mode table and rationale.
+ *      - Queued writes: update users/{targetUid} (role + roleChangedAt
+ *        + updatedAt), create audit/{auto}, bump rateLimits counter.
+ *   5. TX commits → all four Firestore writes apply atomically.
  *
  * Failure modes:
  *   - permission-denied: caller missing or not owner
@@ -21,6 +29,11 @@
  *   - not-found: target user doc doesn't exist
  *   - failed-precondition: would demote last owner
  *   - resource-exhausted: rate limit hit
+ *
+ * TX retry note: Firestore retries the TX function on contention.
+ * setCustomUserClaims is therefore called once per attempt with the
+ * same payload — idempotent, no security impact, marginal extra Auth
+ * API cost only on contention.
  */
 
 import { initializeApp, getApps } from 'firebase-admin/app';
@@ -58,6 +71,7 @@ export const setUserRole = onCall(
     const userRef = db.doc(`users/${targetUid}`);
 
     const result = await db.runTransaction(async (tx) => {
+      // Reads first (Firestore TX rule: all reads before any writes).
       const userSnap = await tx.get(userRef);
       if (!userSnap.exists) {
         throw new HttpsError('not-found', `User ${targetUid} not found.`);
@@ -66,6 +80,17 @@ export const setUserRole = onCall(
 
       await assertNotLastOwner(tx, db, currentRole, newRole);
       await checkAndBumpInTransaction(tx, db, actorUid);
+
+      // Claim-first: set the auth custom claim BEFORE queueing the
+      // Firestore writes. Two failure-mode reasons (see spec §VI):
+      //   - If this throws, the queued writes never apply (TX returns
+      //     before commit). Safe.
+      //   - If this succeeds and the TX commit later fails, the claim
+      //     is set but mirror+audit are not. The claim is the rules-
+      //     engine source of truth, so revocation has already taken
+      //     effect — fail-closed for the security-critical path.
+      //     Mirror+audit drift is recoverable by retry.
+      await getAuth().setCustomUserClaims(targetUid, { role: newRole });
 
       tx.update(userRef, {
         role: newRole,
@@ -83,13 +108,6 @@ export const setUserRole = onCall(
 
       return { fromRole: currentRole, toRole: newRole };
     });
-
-    // Claim is set after the TX commits. If this throws, the mirror has
-    // the new role but the claim is stale; the caller can retry to
-    // resync (the next TX will see currentRole == new role and short-
-    // circuit the duplicate audit entry path is acceptable since the
-    // last-owner guard still holds).
-    await getAuth().setCustomUserClaims(targetUid, { role: newRole });
 
     return { ok: true, ...result };
   },

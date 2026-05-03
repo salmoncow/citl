@@ -202,6 +202,112 @@ sequencing" for the full file-by-file breakdown.
 
 ---
 
+## VI. Design Decisions
+
+This section captures non-obvious implementation choices and the
+reasoning behind them. Self-contained so it can be ported to sibling
+projects (e.g. salmoncow) that share the same architecture.
+
+### VI.1 `setUserRole` write ordering — claim-first
+
+**Problem.** A role change is a *cross-system* write that touches:
+
+1. **Firebase Auth** — the custom claim (`request.auth.token.role`) is
+   the rules-engine source of truth.
+2. **Firestore** — three records:
+   - `users/{uid}` mirror (admin-UI source of truth + `roleChangedAt`
+     watermark for forcing target token refresh)
+   - `audit/{auto}` append-only forensics record
+   - `rateLimits/setUserRole/actors/{actorUid}` abuse counter
+
+There is no native atomic transaction across Firebase Auth and
+Firestore. The Auth API call and the Firestore commit happen
+sequentially. If the second of the two fails, the system ends up in a
+partially-applied state. The **ordering** of the two operations
+determines what that partial state looks like — and crucially,
+whether it fails *open* or *closed* for the security boundary.
+
+**Failure-mode analysis.**
+
+| Ordering | If second op fails | Effect on a *demotion* | Effect on a *promotion* |
+|----------|-------------------|------------------------|--------------------------|
+| TX-first, then claim | Claim stale | User keeps old privileges (**fail-open** for revocation) | User can't use new role yet (fail-closed) |
+| **Claim-first, then TX** | Mirror + audit incomplete | User loses access immediately (**fail-closed** for revocation) | User has new role with stale audit row (recoverable) |
+
+**Decision: claim-first.** The auth custom claim is the rules-engine
+source of truth — Firestore rules read `request.auth.token.role`, not
+the mirror. Therefore:
+
+1. **Revocations take effect immediately even if the TX fails.** This
+   is fail-closed for the security-critical path (an admin or owner
+   losing access is a higher-stakes event than a new admin being
+   granted access).
+2. **Mirror + audit drift is recoverable.** The actor's identity and
+   timestamp are still captured by Cloud Audit Logs. The next
+   `setUserRole` call for the same target reads the now-stale mirror,
+   observes the divergence, and re-writes both atomically.
+3. **No additional infrastructure required for production-readiness.**
+   TX-first ordering would need a separate scheduled reconciliation
+   job (claim-vs-mirror drift scanner) to be production-safe; the
+   security gap on revocation is otherwise unmitigated. Claim-first is
+   production-safe as a code-only solution.
+
+**Implementation pattern.** The Auth API call lives *inside* the
+Firestore transaction function but *before* the queued Firestore
+writes:
+
+```ts
+await db.runTransaction(async (tx) => {
+  const userSnap = await tx.get(userRef);
+  if (!userSnap.exists) throw new HttpsError('not-found', ...);
+  const fromRole = userSnap.data().role;
+
+  await assertNotLastOwner(tx, db, fromRole, newRole);   // TX-internal read
+  await checkAndBumpInTransaction(tx, db, actorUid);     // queues counter write
+
+  // Auth API — committed BEFORE the queued Firestore writes.
+  await getAuth().setCustomUserClaims(targetUid, { role: newRole });
+
+  tx.update(userRef, { role: newRole, roleChangedAt: ... });
+  tx.create(auditRef, { actorUid, targetUid, fromRole, toRole, at: ... });
+});
+```
+
+If the claim throws, the queued writes never apply (TX returns before
+commit). If the claim succeeds and the TX commit later fails, the
+claim has already taken effect.
+
+**Trade-offs accepted:**
+
+- **TX retry under contention re-calls `setCustomUserClaims`** with the
+  same payload. Idempotent in practice; minor extra Auth API cost on
+  contention only.
+- **Rate-limit counter doesn't bump on TX-commit failure** even though
+  the claim was set. A small "rate-limit leak" — acceptable because
+  the counter is a soft control against mass-promotion abuse, and the
+  failure path is rare.
+- **Mirror + audit can lag** the actual auth state when a TX commit
+  fails post-claim. Detectable on the next `setUserRole` call; users
+  with a divergent doc will get an audit entry that records the true
+  fromRole on the next role change.
+
+**Alternative considered: TX-first with reconciliation cron.** Run all
+Firestore writes first; call `setCustomUserClaims` after commit. Add
+a scheduled Cloud Function that periodically scans `users/{uid}` for
+claim-vs-mirror divergence and repairs. Rejected because (a) it adds
+production infrastructure and cost, (b) the security gap window
+between TX commit and reconciliation run is unbounded, and (c)
+revocation is the higher-stakes failure mode and should fail closed
+without external dependencies.
+
+**Future hardening (optional).** A `reconcileClaims` scheduled
+function is a defense-in-depth nicety even with claim-first ordering
+— it would catch any drift across either failure direction. With
+claim-first this is forensics; with TX-first it would be a production
+prerequisite.
+
+---
+
 ## Implementation Plan
 
 The full sequenced plan is in [tasks.md](./tasks.md). Operational
