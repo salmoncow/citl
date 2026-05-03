@@ -21,9 +21,20 @@ audit log. New users get auto-seeded on first sign-in via an
 
 This mirrors the implementation shipped in `~/Developer/salmoncow`,
 adapted to CITL's TypeScript/Vite stack and existing patterns. v1 ships
-a **read-only** Users tab in the existing `<admin-panel>` Custom
-Element; in-app role-change UI is deferred to v2 (the callable exists
-and is tested, just not invoked from the UI).
+a **Users tab** in the existing `<admin-panel>` Custom Element with:
+- a paginated user list visible to owner+admin (read-only fields);
+- an inline **role-change dropdown rendered only for owner**, which
+  invokes the `setUserRole` callable.
+
+The CLI (`scripts/set-role.js`) ships alongside but its end-state
+purpose is **bootstrap + emergency recovery only**, not day-to-day
+role management:
+- **Bootstrap**: the very first owner promotion (no owner exists yet,
+  so the callable cannot authorize anyone) must go through Admin SDK,
+  which is what the script provides.
+- **Recovery**: if all owners are locked out, only an operator with
+  GCP IAM permissions can re-mint an owner via Admin SDK.
+- Day-to-day role management (promote, demote, list) is the dropdown.
 
 **Pre-launch context**: 0 production users today (legacy AWS site still
 serves citl.club). The cutover from `admin: true` → `role` claim is
@@ -34,25 +45,34 @@ free — no backwards-compat shim needed.
 ## User Stories
 
 **Owner** (single seed user, league administrator)
-- As the owner, after the bootstrap CLI sets `role: 'owner'` on my UID,
-  my next ID-token refresh shows the Admin nav link and grants me write
-  access to all admin surfaces.
+- As the owner, after the one-time bootstrap script sets
+  `role: 'owner'` on my UID, my next ID-token refresh shows the Admin
+  nav link and grants me write access to all admin surfaces.
+- As the owner, I open the Admin Portal Users tab and see the full
+  user list with an inline role dropdown next to each row.
+- As the owner, I change another user's role via the dropdown; after
+  the callable returns, the target's next token refresh reflects the
+  new role and the row updates in my view.
 - As the owner, I can read the `audit/` collection to see every role
-  change.
-- As the owner, I can run `npm run set-role list` to see every user
-  + role; `set-role set <email> admin` to promote; `set-role set
-  <email> user` to demote.
-- As the owner, I cannot demote myself if I'm the last owner.
+  change (visible in Firebase Console; not surfaced in the v1 UI).
+- As the owner, I cannot demote myself if I'm the last owner — the
+  callable rejects with `failed-precondition` and the UI surfaces a
+  toast explaining why.
+- As the owner, the CLI (`scripts/set-role.js`) is available for
+  emergency-recovery scenarios (e.g. all owners locked out) but I
+  don't use it day-to-day.
 
 **Admin** (sub-admin, content/score manager)
 - As an admin, I can do everything I can today (team management, score
   entry, announcements, banner) — existing behavior preserved.
-- As an admin, I can see the Users tab read-only (displayName, email,
-  role, lastSignInAt, createdAt).
-- As an admin, I cannot change anyone's role. The `setUserRole` callable
-  rejects non-owner callers with `permission-denied`.
-- As an admin, my role can only be changed by the owner via CLI (v1) or
-  Admin Portal dropdown (v2, deferred).
+- As an admin, I can see the Users tab (displayName, email, role,
+  lastSignInAt, createdAt) but the role dropdown is **not rendered**
+  for me — the column shows the role as plain text.
+- As an admin, I cannot change anyone's role. If I attempt to call
+  `setUserRole` directly (e.g. via devtools), the callable rejects
+  with `permission-denied`.
+- As an admin, my role can only be changed by an owner through the
+  dropdown.
 
 **User** (default)
 - As a new user signing in with Google for the first time, the
@@ -83,9 +103,12 @@ free — no backwards-compat shim needed.
   `role` is `owner` or `admin`.
 - [ ] AC-3: Users tab in admin-panel renders displayName, email,
   photoURL, createdAt, lastSignInAt, role for every user. Paginated at
-  20 per page with cursor.
-- [ ] AC-4: Users tab is read-only in v1 (no role-change controls
-  rendered for any role).
+  20 per page with cursor. Visible to owner + admin.
+- [ ] AC-4: Role-change dropdown is rendered **only for owner**;
+  admin sees role as plain text, no controls. On role-change submit,
+  the dropdown invokes the `setUserRole` callable; success refreshes
+  the row, callable errors (permission-denied, failed-precondition,
+  resource-exhausted, invalid-argument) surface as toast feedback.
 - [ ] AC-5: `setUserRole` callable: non-owner →
   `permission-denied`; invalid role → `invalid-argument`; only-owner
   self-demotion → `failed-precondition`; success → claim, mirror doc,

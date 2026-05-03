@@ -143,15 +143,21 @@ acceptance criteria in [spec.md](./spec.md) §"Acceptance Criteria".
 
 ---
 
-## Group 7 — Read-only Users tab
+## Group 7 — Users tab with owner-only role dropdown
 
-**Goal**: owner+admin see who has access; no role-change controls in v1.
-**Commit**: `feat(rbac): add read-only Users tab to admin panel`
+**Goal**: owner+admin see the user list; **owner** can change roles
+inline via a dropdown that calls the `setUserRole` callable. CLI is
+positioned as bootstrap + emergency-recovery only — the dropdown is
+the day-to-day path.
+**Commit**: `feat(rbac): add Users tab with owner-only role-change dropdown`
 **AC**: AC-3, AC-4, AC-15
 
-- [ ] **7.1 (M)** New `src/views/admin-users-tab.ts` — pure HTML factory: table with displayName / email / role / lastSignInAt / createdAt; "Load more" button for cursor pagination; loading/empty/error states matching existing `<admin-panel>` patterns.
-- [ ] **7.2 (M)** New `src/services/admin-user-service.ts` — `listUsers({ pageSize: 20, cursor })` calls `userRepository.listPaginated`; strips fields to the limited set; `setUserRole({ targetUid, role })` calls the `setUserRole` callable (deferred wiring; not invoked from any UI surface in v1).
-- [ ] **7.3 (M)** Modify [src/components/admin-panel.ts:73–80](../../../src/components/admin-panel.ts:73) — add a "Users" tab button alongside Team Management / Score Entry / Announcements. Render `admin-users-tab.ts` content inside.
+- [ ] **7.1 (M)** New `src/views/admin-users-tab.ts` — pure HTML factory: table with displayName / email / role / lastSignInAt / createdAt; "Load more" button for cursor pagination; loading/empty/error states matching existing `<admin-panel>` patterns. The `role` column renders a `<select>` dropdown ONLY when the current user's role === `'owner'`; otherwise plain text.
+- [ ] **7.2 (M)** New `src/services/admin-user-service.ts` — `listUsers({ pageSize: 20, cursor })` calls `userRepository.listPaginated`; strips to the limited field set. `setUserRole({ targetUid, role })` calls the `setUserRole` callable via the infrastructure helper from Group 5.4. Returns a typed `Result<{ fromRole, toRole }>` so the UI can branch on success vs. each error code.
+- [ ] **7.3 (M)** Modify [src/components/admin-panel.ts:73–80](../../../src/components/admin-panel.ts:73) — add a "Users" tab button alongside Team Management / Score Entry / Announcements. Render `admin-users-tab.ts` content inside; wire change events on the dropdown to `admin-user-service.setUserRole`.
+- [ ] **7.4 (M)** Confirmation flow + toast feedback: dropdown change opens a confirm dialog ("Change Alice's role from admin to user?"). On confirm, invoke the callable and show a toast for success or failure. Map callable error codes to user-facing messages: `permission-denied` → "Only the owner can change roles." (shouldn't happen since the dropdown only renders for owner — defense in depth); `failed-precondition` → "Cannot demote the last owner. Promote another user to owner first."; `resource-exhausted` → "Rate limit reached. Please wait before changing more roles."; `invalid-argument` → generic "Invalid role." (also shouldn't happen via the dropdown).
+- [ ] **7.5 (S)** On successful role change, refresh the local row so the new role + new `lastSignInAt` reflect immediately (re-query that single user, or optimistically update).
+- [ ] **7.6 (S)** Emulator smoke: as owner, change another user's role via dropdown → verify auth claim, mirror, audit entry; as admin, dropdown is absent and devtools call to `setUserRole` is rejected. *(Validation gate)*
 - [ ] **7.4 (S)** Wire fetch + pagination in `admin-panel.ts` (mirror existing patterns for the other tabs — no separate controller needed for v1).
 - [ ] **7.5 (S)** Emulator smoke: owner sees list; admin sees same list; user can't reach the page. *(Validation gate)*
 

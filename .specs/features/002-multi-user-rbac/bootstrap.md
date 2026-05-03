@@ -1,17 +1,24 @@
-# Owner Bootstrap Runbook
+# Owner Bootstrap & Recovery Runbook
 
-**One-time procedure** to grant the first `owner` role on a Firebase Auth
-user in CITL. After this runs, role management can happen via the
-`scripts/set-role.js` CLI (owner-only) or, in v2, via the Admin Portal
-dropdown.
+**This runbook covers the two scenarios where role management happens
+*outside* the Admin Portal Users tab:**
 
-You should only run the bootstrap once, as part of initial RBAC rollout
-or if every owner is locked out and you need to recover.
+1. **Bootstrap**: minting the *first* `owner` so the in-app role
+   dropdown becomes usable. Required exactly once during initial
+   rollout — until at least one owner exists, the `setUserRole`
+   callable rejects every caller, so an Admin-SDK-credentialed
+   operator must seed the first owner manually.
+2. **Recovery**: re-minting an `owner` if every existing owner is
+   locked out (forgotten Google password, deleted account, etc.). The
+   in-app last-owner guard prevents accidental self-lockout, but
+   account-level lockout is outside the app's control.
+
+For everything else — promote, demote, list — use the Admin Portal
+**Users tab** in the Admin Panel. The CLI is intentionally not the
+day-to-day path.
 
 CITL uses **gcloud Application Default Credentials (ADC)** — no
-service-account key download required. This is the same mechanism
-[scripts/grant-admin.js](../../../scripts/grant-admin.js) uses today,
-extended to handle the three-role model.
+service-account key download required.
 
 ---
 
@@ -73,32 +80,22 @@ list every seeded user.
 
 ---
 
-## Day-to-day role management
+## Day-to-day role management — use the Admin Portal
 
-Once at least one owner exists, role changes happen via the same CLI:
+Once at least one owner exists, **all subsequent role management goes
+through the Admin Portal Users tab** (Admin Panel → Users → role
+dropdown next to each row). The dropdown invokes the `setUserRole`
+Cloud Function, which enforces the rate limit, last-owner guard, and
+audit trail server-side and is the canonical path.
 
-```bash
-# Promote a teammate to admin
-node scripts/set-role.js set teammate@example.com admin
+**Do not use the CLI for routine promotions or demotions.** It bypasses
+the rate limit (the CLI uses Admin SDK directly, while the dropdown
+goes through the callable) and creates audit entries with
+`actorUid: 'cli'` rather than the actual operator's UID, which makes
+the audit log harder to interpret.
 
-# Demote (alias for `set <email> user`)
-node scripts/set-role.js revoke teammate@example.com
-
-# Inspect everyone
-node scripts/set-role.js list
-
-# Try a destructive change without committing it
-DRY_RUN=1 node scripts/set-role.js set teammate@example.com owner
-```
-
-Every CLI write is also logged to the `audit/` collection with
-`actorUid: 'cli'`, so the audit trail mirrors what the in-app callable
-would produce.
-
-The CLI enforces the same **last-owner guard** as the
-`setUserRole` callable: it refuses to demote the only `owner`. If you're
-the only owner and the script blocks you from changing yourself, that's
-the safety net working — promote a second owner first.
+The CLI's day-to-day subcommands (`set`, `revoke`, `list`) remain in
+place for the rare operator scenarios documented in this runbook.
 
 ---
 
@@ -166,15 +163,19 @@ IAM permissions**, not to the in-app user.
 
 ## When **not** to use this script
 
-- Day-to-day role changes by an owner who already has access — once v2
-  ships the in-app dropdown, prefer that path. v1 ships read-only, so
-  the CLI is the only path until then.
-- Granting roles to accounts that haven't signed in yet — they have no
-  Firebase Auth record, so the script will fail at `getUserByEmail`. Ask
-  them to sign in once first.
-- Bypassing the rate limit deliberately — the CLI uses Admin SDK and
-  bypasses the callable's 20/hr cap intentionally, but every CLI write
-  shows up in `audit/` for review. Don't use it to mass-promote.
+- **Day-to-day role changes by an owner who already has access** — use
+  the Admin Portal Users tab dropdown instead. It runs the same safety
+  machinery server-side, attributes the audit entry to the operator's
+  actual UID rather than `'cli'`, and respects the rate limit.
+- **Granting roles to accounts that haven't signed in yet** — they have
+  no Firebase Auth record, so the script will fail at
+  `getUserByEmail`. Ask them to sign in once first; the
+  `onUserCreate` trigger will seed their `users/{uid}` doc, and then
+  the dropdown can promote them.
+- **Bypassing the rate limit deliberately** — the CLI uses Admin SDK
+  directly and bypasses the callable's 20/hr cap, but every CLI write
+  shows up in `audit/` with `actorUid: 'cli'`. Treat the CLI as a
+  break-glass tool, not a workflow accelerator.
 
 ---
 
