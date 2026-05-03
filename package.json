@@ -20,6 +20,7 @@
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
     "deploy:rules:dryrun": "firebase deploy --only firestore:rules --dry-run",
     "emulators": "firebase emulators:start --only auth,firestore,functions",
+    "set-role": "node scripts/set-role.js",
     "grant-admin": "node scripts/grant-admin.js",
     "test": "vitest run",
     "test:watch": "vitest",
