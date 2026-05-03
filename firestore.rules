@@ -2,43 +2,79 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+    // ── Role helpers ────────────────────────────────────────────────────────
+    // Source of truth for role checks: request.auth.token.role
+    // (populated by setCustomUserClaims; client cannot forge).
+    function isSignedIn()      { return request.auth != null; }
+    function roleOf()          { return request.auth.token.role; }
+    function isOwner()         { return isSignedIn() && roleOf() == 'owner'; }
+    function isAdmin()         { return isSignedIn() && roleOf() == 'admin'; }
+    function isOwnerOrAdmin()  { return isOwner() || isAdmin(); }
+    function isSelf(uid)       { return isSignedIn() && request.auth.uid == uid; }
+
+    // ── users/{uid} — RBAC mirror ───────────────────────────────────────────
+    // Written server-side by the onUserCreate trigger and the setUserRole
+    // callable / scripts/set-role.js CLI. Clients may read their own doc
+    // and (for owner/admin) read the list. The role field is never client-
+    // writable.
+    match /users/{uid} {
+      allow read:   if isSelf(uid) || isOwnerOrAdmin();
+      // Self-create (defense in depth — onUserCreate normally seeds it)
+      // must not include the role field.
+      allow create: if isSelf(uid) && !('role' in request.resource.data);
+      // Self-update preserves role; the field can never change client-side.
+      // Two paths: either the update doesn't include the role field at all
+      // (typical preferences edit), or it includes it but matches the existing
+      // value. Either way, role is never client-mutable.
+      allow update: if isSelf(uid)
+                    && (!('role' in request.resource.data)
+                        || request.resource.data.role == resource.data.role);
+      allow delete: if false;
     }
 
-    // Banner config — set via setDoc (create or overwrite). Never deleted.
+    // ── audit/{id} — append-only role-change log ────────────────────────────
+    match /audit/{id} {
+      allow read:  if isOwner();
+      allow write: if false;
+    }
+
+    // ── rateLimits/** — Function-internal counters ──────────────────────────
+    match /rateLimits/{path=**} {
+      allow read:  if isOwner();
+      allow write: if false;
+    }
+
+    // ── config/{doc} — banner + site config ─────────────────────────────────
     match /config/{doc} {
-      allow read: if true;
-      allow create, update: if isAdmin();
+      allow read:           if true;
+      allow create, update: if isOwnerOrAdmin();
     }
 
-    // Announcements — full lifecycle: create, edit, and delete are all portal actions.
+    // ── announcements/{docId} ──────────────────────────────────────────────
     match /announcements/{docId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow read:                   if true;
+      allow create, update, delete: if isOwnerOrAdmin();
     }
 
+    // ── seasons/{year} and subcollections ──────────────────────────────────
     match /seasons/{year} {
-      // Season documents — created/updated, never deleted (permanent record).
-      allow read: if true;
-      allow create, update: if isAdmin();
+      allow read:           if true;
+      allow create, update: if isOwnerOrAdmin();
 
       match /teams/{teamId} {
-        // Teams — created, edited, and deleted via portal.
-        allow read: if true;
-        allow create, update, delete: if isAdmin();
+        allow read:                   if true;
+        allow create, update, delete: if isOwnerOrAdmin();
       }
 
       match /weeks/{weekNumber} {
-        // Published week results — created/updated by publish action. Never deleted.
-        allow read: if true;
-        allow create, update: if isAdmin();
+        allow read:           if true;
+        allow create, update: if isOwnerOrAdmin();
       }
 
       match /entries/{entryId} {
-        // Draft entries — created/updated by score entry; deleted only during team deletion cascade.
-        allow read: if isAdmin();
-        allow create, update, delete: if isAdmin();
+        // Drafts are owner/admin-only end-to-end.
+        allow read:                   if isOwnerOrAdmin();
+        allow create, update, delete: if isOwnerOrAdmin();
       }
     }
   }
