@@ -15,6 +15,7 @@ import './components/home-announcements';
 import './components/site-banner';
 import './components/season-scorecards';
 import './components/admin-panel';
+import './components/admin-users-panel';
 import './components/scoresheet-generator';
 import './components/yardage-table';
 import './components/season-calendar';

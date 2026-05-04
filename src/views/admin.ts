@@ -27,6 +27,7 @@ export function adminView(): string {
         <button id="admin-sign-out" class="btn-secondary">Sign out</button>
       </div>
       <admin-panel></admin-panel>
+      <admin-users-panel></admin-users-panel>
     </div>
   `;
 }
