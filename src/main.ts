@@ -15,7 +15,6 @@ import './components/home-announcements';
 import './components/site-banner';
 import './components/season-scorecards';
 import './components/admin-panel';
-import './components/admin-users-panel';
 import './components/scoresheet-generator';
 import './components/yardage-table';
 import './components/season-calendar';
@@ -95,16 +94,18 @@ class App {
       userDisplay.textContent = this._auth!.currentUser?.email ?? '';
     }
 
-    // Lazy-mount admin Custom Elements only when the viewer is
-    // elevated. Web Components run connectedCallback the moment they
-    // exist in the DOM (even inside a hidden parent), and admin-panel
-    // fetches data eagerly — keeping it out of the DOM avoids spurious
-    // rule denials in the console for non-elevated viewers.
+    // Lazy-mount <admin-panel> only when the viewer is elevated. Web
+    // Components run connectedCallback the moment they exist in the
+    // DOM (even inside a hidden parent), and admin-panel fetches data
+    // eagerly — keeping it out of the DOM avoids spurious rule denials
+    // in the console for non-elevated viewers. The Users tab inside
+    // admin-panel hosts <admin-users-panel> as a child element, so it
+    // mounts/unmounts together with the shell.
     const mount = document.getElementById('admin-panel-mount');
     if (mount) {
       const isMounted = mount.querySelector('admin-panel') !== null;
       if (elevated && !isMounted) {
-        mount.innerHTML = '<admin-panel></admin-panel><admin-users-panel></admin-users-panel>';
+        mount.innerHTML = '<admin-panel></admin-panel>';
       } else if (!elevated && isMounted) {
         // Clearing innerHTML disconnects the components, firing their
         // disconnectedCallback so they tear down listeners cleanly.
