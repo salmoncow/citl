@@ -188,7 +188,3 @@ IAM permissions**, not to the in-app user.
   spec
 - [.specs/features/002-multi-user-rbac/tasks.md](./tasks.md) — task
   breakdown
-- Reference implementation:
-  [`~/Developer/salmoncow/.specs/archive/001-multi-user-rbac/bootstrap.md`](~/Developer/salmoncow/.specs/archive/001-multi-user-rbac/bootstrap.md)
-  (uses SA key download instead of gcloud ADC — citl uses the cleaner
-  ADC path)
