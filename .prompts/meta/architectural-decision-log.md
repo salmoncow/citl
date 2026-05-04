@@ -444,6 +444,107 @@ modern OS preference APIs being widely available.
 
 ---
 
+### ADR-009: Adopt Blaze + Multi-User RBAC (Security Phase 1 → Phase 2)
+
+**Date**: 2026-05-03
+**Status**: Accepted
+**Domains Affected**: Security · Cost · Platform · UI · Testing
+
+**Context**
+
+The single `admin: true` boolean custom claim that gated the legacy
+admin portal made it hard to grant access to multiple league
+volunteers without giving every one of them the keys to the kingdom.
+Sub-admins (score keepers, content managers) needed a path to perform
+content writes without being able to grant or revoke access. The
+constitution's stated cost posture (Spark only, no Cloud Functions)
+also drifted from reality: Blaze had been enabled on the project to
+unlock the runtime needed for safe role-write semantics.
+
+**Decision**
+
+Replace the boolean claim with a three-role system
+(`role: 'owner' | 'admin' | 'user'`). The custom claim is the
+rules-engine source of truth (Firestore rules read
+`request.auth.token.role`); a `users/{uid}` Firestore mirror is the
+admin-UI source of truth; an append-only `audit/` collection tracks
+every role change. The `setUserRole` Cloud Function is the sole writer
+of the role claim — it validates input with zod, enforces a
+last-owner guard, rate-limits at 20 calls/hour/owner, and orders the
+auth claim write *before* the queued Firestore writes inside one TX
+so a partial failure fails closed for revocations (see feature spec
+§VI Design Decisions for the full failure-mode analysis). An
+`onUserCreate` auth trigger seeds users/{uid} on first sign-in. A CLI
+(`scripts/set-role.js`) provides bootstrap (first owner) and
+recovery (lockout) paths; day-to-day promote/demote happens through
+an in-app role dropdown rendered for owner only on the Admin Portal
+Users panel.
+
+This advances the **Security domain from Phase 1 to Phase 2** (App
+Check + custom-claim RBAC) per the architectural-evolution-strategy.
+
+**Rationale**
+
+- **Privilege separation**: admins do content; only owner changes
+  trust boundaries. The legacy `admin: true` couldn't represent this.
+- **Security-first ordering**: claim-first inside the TX guarantees
+  fail-closed on revocations even if the second-system write fails —
+  see feature spec §VI for the trade-table.
+- **Server-authoritative writes**: all role mutations go through the
+  callable (or the Admin-SDK CLI for bootstrap). Clients can never
+  write the `role` field — Firestore rules deny it explicitly.
+- **Audit trail**: every role change writes an audit entry with
+  actor, target, from-role, to-role, timestamp. The audit collection
+  is owner-readable only; no client can write it.
+- **Test coverage**: 44 rules-unit-testing cases (the full
+  {owner, admin, user, anon} matrix on every protected collection)
+  + 15 Cloud Function unit cases against the local emulator.
+
+**Alternatives Considered**
+
+- **Stay on Spark, extend the CLI to handle three roles**: rejected
+  because it forces all role writes through a CLI that operators run
+  on their dev machines, with no rate-limiting, no in-app UX, and no
+  end-state path to a self-service admin UI.
+- **TX-first ordering** (set claim *after* the TX commits): rejected
+  because a failed claim write after a successful TX leaves the
+  user with stale privileges (mirror says new role, claim still
+  old) — fail-open on revocation. Would require a scheduled
+  reconciliation job to be production-safe.
+- **Defer the in-app dropdown to v2, ship CLI-only v1**: rejected
+  after user feedback — production-ready end state should not depend
+  on operators running a script for routine role changes.
+
+**Consequences**
+
+- **Enables**:
+  - Granular access for league volunteers (admins) without
+    full owner privileges
+  - Full audit trail of every role change
+  - Cloud Functions runtime for any future server-side privileged
+    operations (only with documented justification per §VI.1)
+  - Emulator-first local dev workflow — `npm run dev` boots the
+    auth+firestore+functions emulators and connects Vite via
+    `VITE_USE_EMULATOR=true`, eliminating accidental writes to
+    production from localhost
+- **Constrains**:
+  - `firestore.rules`, `setUserRole.ts`, `onUserCreate.ts`, and
+    `scripts/set-role.js` are all part of the security-critical
+    surface — changes require running the rules + function test
+    suites and ideally an `@reviewer` pass
+  - Cloud Functions are now a deployable surface; CI must include
+    `firebase deploy --only functions` (see updated
+    `npm run deploy`)
+  - Constitution §VI.1 requires Blaze budget alerts and per-function
+    justification documentation
+  - `admin-panel.ts` is now a known constitution-§II.3 violation
+    (1781 lines); follow-up task tracked to refactor into per-tab
+    modules and integrate `<admin-users-panel>` as a 4th tab
+
+**Review Date**: 2026-08-03
+
+---
+
 ## How AI Agents Should Use This Log
 
 1. **Before implementing a new feature**: Check if a relevant decision exists that constrains

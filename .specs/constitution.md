@@ -1,9 +1,9 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.4.0
-**Last Updated:** 2026-04-12
+**Version:** 1.5.0
+**Last Updated:** 2026-05-03
 **Scope:** All development on the citl-static project
-**Review Frequency:** Quarterly (next review: 2026-05-27)
+**Review Frequency:** Quarterly (next review: 2026-08-03)
 
 ---
 
@@ -62,18 +62,18 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-03-10
-**Last Architecture Review**: 2026-03-10
+**Last Updated**: 2026-05-03
+**Last Architecture Review**: 2026-05-03
 
 | Domain | Current State | Status |
 |--------|---------------|--------|
-| **UI Components** | 3 Web Components (`home-standings`, `season-scorecards`, `admin-panel`) | Live |
-| **Security** | Firebase Auth (Google) + Firestore rules; custom claim `admin: true` | Complete |
-| **Data** | Firestore drives home page and scorecards; JSON scorecard files are permanent static assets per §II.5 | Live |
-| **Testing** | Vitest unit tests for scoring engine, score service, schedule utils | Active |
-| **Deployment** | GitHub Actions CI/CD (push to `main` → Firebase Hosting + Firestore rules) | Active |
+| **UI Components** | 4 Web Components (`home-standings`, `season-scorecards`, `admin-panel`, `admin-users-panel`) | Live |
+| **Security** | Phase 2: Firebase Auth (Google) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim + mirror | Complete |
+| **Data** | Firestore drives home page, scorecards, RBAC user mirror, audit log; JSON scorecard files are permanent static assets per §II.5 | Live |
+| **Testing** | Vitest unit tests for scoring engine, score service, schedule utils; rules-unit-testing matrix (44 cases); function unit tests (15 cases) | Active |
+| **Deployment** | GitHub Actions CI/CD (push to `main` → Firebase Hosting + Firestore rules + Functions) | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
-| **Cost** | Firebase Spark free tier | Near 0% usage |
+| **Cost** | Firebase Blaze (pay-as-you-go); usage discipline targets Spark-equivalent quotas | Near 0% usage |
 | **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
 
 **Key Metrics** (as of 2026-03-10):
@@ -84,7 +84,7 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 - **Types**: 4 (`score`, `shooter`, `season`, `scorecard`)
 - **Data files**: 7 JSON scorecard seasons (2019–2025)
 - **Team Size**: 1 developer
-- **Firebase Usage**: Hosting configured (DNS not yet cutover); Firestore live; Spark free tier usage <5%
+- **Firebase Usage**: Hosting configured (DNS not yet cutover); Firestore live; Cloud Functions deployed (RBAC role-writer + auth trigger); Blaze plan, near-zero spend
 
 **TypeScript**: All source files are `.ts`; `allowJs: false`; `strict: true`; `noUncheckedIndexedAccess: true`.
 
@@ -245,9 +245,9 @@ private static _skeleton(): string {
 - First Contentful Paint (FCP): <1.5 seconds (p95)
 - JS bundle: <250 kB gzipped (currently ~34 kB gzipped ✅)
 
-**Firebase Quota Constraints** (Spark free tier):
-| Resource | Daily Limit | Alert Threshold (70%) |
-|----------|------------|----------------------|
+**Firebase Quota Constraints** (Blaze, with Spark-equivalent discipline — see §VI.1):
+| Resource | Daily target ceiling | Alert Threshold (70%) |
+|----------|---------------------|----------------------|
 | Firestore reads | 50,000 | 35,000 |
 | Firestore writes | 20,000 | 14,000 |
 | Hosting transfer | 360 MB | 252 MB |
@@ -304,11 +304,13 @@ private static _skeleton(): string {
 - **Type checking**: `tsconfig.json` with `strict: true`, `allowJs: false`, `noUncheckedIndexedAccess: true` — full strict type checking; `src/vite-env.d.ts` types `ImportMetaEnv` for all VITE_* vars
 
 **Backend / Platform**:
-- **Platform**: Firebase (`citl` project, Spark plan)
+- **Platform**: Firebase (`citl-baed2` project, Blaze plan with Spark-equivalent usage discipline per §VI.1)
   - Firestore (NoSQL, `us-central1` region, production mode)
   - Hosting (SPA rewrite, security headers, cache rules)
-  - Auth (Google, admin-only)
-- **SDK**: `firebase` npm package (installed; imported as ES modules)
+  - Auth (Google, role-based custom claims)
+  - Cloud Functions (TypeScript, Node 22, us-central1 — RBAC role-writer + auth trigger)
+  - App Check (reCAPTCHA Enterprise, enforced in prod, relaxed under FUNCTIONS_EMULATOR)
+- **SDK**: `firebase` npm package (installed; imported as ES modules); `firebase-admin` + `firebase-functions` in `functions/` package
 
 **Development**:
 - **Version Control**: Git + GitHub
@@ -400,22 +402,36 @@ If guidance is insufficient for a task:
 
 ## VI. Cost Constraints
 
-### VI.1 Firebase Free Tier Limits (Spark Plan)
+### VI.1 Firebase Blaze Plan with Spark-Equivalent Discipline
 
-| Resource | Daily Limit | Alert at 70% |
-|----------|------------|--------------|
+CITL is on Blaze (pay-as-you-go) but operates with usage discipline that
+targets the former Spark free-tier quotas. The plan was upgraded as part
+of the multi-user RBAC feature (002-multi-user-rbac, 2026-05-03) to
+unlock Cloud Functions, which the RBAC role-writer pattern requires.
+
+| Resource | Daily target ceiling | Alert at 70% |
+|----------|---------------------|--------------|
 | Firestore reads | 50,000 | 35,000 |
 | Firestore writes | 20,000 | 14,000 |
 | Firestore deletes | 20,000 | 14,000 |
 | Hosting storage | 10 GB total | — |
 | Hosting transfer | 360 MB/day | 252 MB |
 | Authentication | Unlimited | — |
-| Cloud Functions | Not available (Spark plan) | — |
+| Cloud Functions invocations | 2,000,000/month | 1,400,000/month |
+| Cloud Functions GB-seconds | 400,000/month | 280,000/month |
 
 **Hard constraints**:
-- MUST stay within free tier indefinitely (CITL is a hobby league — no budget for paid tier)
-- MUST implement caching before hitting 70% of any limit
-- Cloud Functions require upgrading to Blaze — requires explicit decision + approval
+- MUST stay within target ceilings above; spend should round to ~$0/mo at
+  CITL's traffic volume. CITL is a hobby league with no operational
+  budget — Blaze is enabled to unlock the Functions runtime, NOT to fund
+  free-spending architecture.
+- MUST implement caching before hitting 70% of any read/write limit.
+- New Cloud Functions require justification documented in this section
+  or a feature spec — they should solve a specific problem (e.g.
+  privileged writes, atomic cross-system operations) that the client
+  SDK + Firestore rules cannot satisfy alone.
+- Set a Blaze budget alert at $5/mo as a safety net; investigate any
+  spend above $1/mo immediately.
 
 
 ### VI.2 Cost Optimization

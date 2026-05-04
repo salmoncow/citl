@@ -80,6 +80,8 @@ dist/
 .claude/settings.local.json
 .claude/user-*
 .claude/.history
+.claude/scheduled_tasks.lock
+.claude/worktrees/
 
 # But commit shared project commands and agents
 !.claude/commands/
