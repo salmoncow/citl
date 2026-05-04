@@ -26,8 +26,14 @@ export function adminView(): string {
         <span id="admin-user-display"></span>
         <button id="admin-sign-out" class="btn-secondary">Sign out</button>
       </div>
-      <admin-panel></admin-panel>
-      <admin-users-panel></admin-users-panel>
+      <!--
+        Admin Custom Elements are mounted lazily by main.ts when the
+        signed-in user's role becomes owner|admin. Keeping them out of
+        the DOM until then avoids their connectedCallback firing with
+        a non-elevated viewer, which would trigger Firestore rule
+        denials for their initial data fetches.
+      -->
+      <div id="admin-panel-mount"></div>
     </div>
   `;
 }

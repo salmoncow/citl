@@ -94,6 +94,23 @@ class App {
     if (userDisplay) {
       userDisplay.textContent = this._auth!.currentUser?.email ?? '';
     }
+
+    // Lazy-mount admin Custom Elements only when the viewer is
+    // elevated. Web Components run connectedCallback the moment they
+    // exist in the DOM (even inside a hidden parent), and admin-panel
+    // fetches data eagerly — keeping it out of the DOM avoids spurious
+    // rule denials in the console for non-elevated viewers.
+    const mount = document.getElementById('admin-panel-mount');
+    if (mount) {
+      const isMounted = mount.querySelector('admin-panel') !== null;
+      if (elevated && !isMounted) {
+        mount.innerHTML = '<admin-panel></admin-panel><admin-users-panel></admin-users-panel>';
+      } else if (!elevated && isMounted) {
+        // Clearing innerHTML disconnects the components, firing their
+        // disconnectedCallback so they tear down listeners cleanly.
+        mount.innerHTML = '';
+      }
+    }
   }
 
   // ─── Routing ────────────────────────────────────────────────────────────────
