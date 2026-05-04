@@ -6,6 +6,7 @@
 
 import type { Firestore } from 'firebase/firestore';
 import { ScoreRepository } from '@/repositories/score-repository';
+import { UserRepository } from '@/repositories/user-repository';
 
 interface FactoryConfig {
   db: Firestore;
@@ -30,6 +31,20 @@ export class RepositoryFactory {
 
     const repo = new ScoreRepository(this.config.db);
     this.instances.set('score', repo);
+    return repo;
+  }
+
+  getUserRepository(): UserRepository {
+    if (this.instances.has('user')) return this.instances.get('user') as UserRepository;
+
+    if (!this.config.db) {
+      throw new Error(
+        'RepositoryFactory: db is required. Pass { db } from firebase-config.ts.',
+      );
+    }
+
+    const repo = new UserRepository(this.config.db);
+    this.instances.set('user', repo);
     return repo;
   }
 

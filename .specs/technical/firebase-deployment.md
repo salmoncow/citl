@@ -1,9 +1,17 @@
 # Firebase Deployment — citl.club
 
 **Firebase Project**: `citl-baed2`
-**Hosting Region**: `us-east1` (Firestore) / Global CDN (Hosting)
-**Plan**: Spark (free tier)
-**Last Updated**: 2026-02-27
+**Project Number**: `983886495824`
+**Hosting Region**: Global CDN (Hosting) / `us-east1` (Firestore + Functions)
+**Plan**: Blaze (pay-as-you-go; usage targets Spark-equivalent quotas)
+**Last Updated**: 2026-05-04
+
+> **First-time deploy to a new Firebase project?** Operational gotchas (IAM
+> propagation for the GCF source bucket, 2nd-gen callable invoker binding,
+> Artifact Registry cleanup policy, reCAPTCHA Enterprise key wildcard caveat)
+> are documented in the global `firebase-deploy-runbook` skill at
+> `~/.claude/skills/firebase-deploy-runbook/SKILL.md`. This file documents
+> only the citl-specific values + decisions.
 
 ---
 
@@ -108,6 +116,139 @@ Before running `npm run deploy` or `npm run deploy:preview`:
 - [ ] All 5 SPA routes load correctly in `npm run preview`
 - [ ] No CSP violations in browser console during preview
 - [ ] Firebase Hosting quota not near 70% of 360 MB/day limit
+
+---
+
+## Cloud Functions Deployment
+
+citl-baed2 has Cloud Functions deployed in `us-east1` (RBAC `setUserRole` callable
+plus the on-create user-mirror trigger). The first deploy occurred on 2026-05-04.
+
+### Subsequent deploys
+
+```bash
+firebase deploy --only functions --project citl-baed2
+```
+
+Routine deploys after the first one require no special handling. The IAM bindings
+applied during the first deploy persist.
+
+### Adding a new callable function
+
+Each new 2nd-gen callable needs one one-time IAM binding after its first deploy
+so the browser can reach it via Firebase's `httpsCallable` path. Use the
+**lowercased** function name (Cloud Run service names are always lowercase):
+
+```bash
+gcloud run services add-iam-policy-binding {function-name} \
+  --region=us-east1 \
+  --member=allUsers \
+  --role=roles/run.invoker \
+  --project=citl-baed2
+```
+
+This is **not** an authorization weakening — the in-function check on
+`req.auth.token.role` is the actual boundary. See the global
+`firebase-deploy-runbook` skill (Gotcha 2) for the full rationale.
+
+### First-time deploy to a different project
+
+If we ever stand up a new Firebase project (preview environment, fork, etc.), the
+first `firebase deploy --only functions` will fail with the well-known
+`gcf-sources-{PROJECT_NUMBER}-{REGION}` permission error. The fix is one
+`gcloud projects add-iam-policy-binding` command + a 30-60s wait, then retry.
+
+**See the global `firebase-deploy-runbook` skill** (`~/.claude/skills/firebase-deploy-runbook/SKILL.md`)
+for the full first-time-deploy checklist (IAM propagation, invoker binding,
+Artifact Registry cleanup policy).
+
+---
+
+## Browser API Key Restrictions
+
+citl-baed2's auto-created Browser API key has **HTTP referrer restrictions
+cleared** (`browserKeyRestrictions: {}`). This is intentional and matches the
+posture salmoncow has been running in production with no incidents.
+
+### Why cleared
+
+The auto-created restrictions only included production domains
+(`https://citl.club/*`, `https://citl-baed2.web.app/*`), which broke:
+
+- Firebase Hosting preview channels (`citl-baed2--*.web.app`) — sign-in
+  failed with `auth/requests-from-referer-...-are-blocked` (HTTP 403 from
+  `identitytoolkit.googleapis.com`)
+- Local-against-prod testing (`npm run dev:prod`) on non-`localhost:3000` ports
+
+Mid-host wildcards like `https://citl-baed2--*.web.app/*` **silently fail to
+match** — Google API key referrer restrictions only support leading-subdomain
+wildcards (`*.example.com`), not mid-host. There is no referrer-restriction
+syntax that covers all preview-channel URLs.
+
+### Why this is safe
+
+The Browser API key is fundamentally public — it's embedded in the JS bundle
+and visible to anyone reading the source. Referrer restrictions are a soft
+control (referrers are client-controlled and trivial to spoof), not a real
+defense. The actual security boundaries for citl are:
+
+- **API target restrictions** on the key (Firestore, Identity Toolkit, App
+  Check — keep these tight as the real boundary)
+- **Firestore security rules** + custom-claim RBAC (`role: owner | admin | user`)
+- **App Check** with reCAPTCHA Enterprise (configured but not yet enforced)
+- **Cloud Functions** in-body `req.auth.token.role` checks
+
+See `security-principles` skill section "Soft controls vs real boundaries"
+and the `firebase-deploy-runbook` skill (Gotcha 4) for the full framing.
+
+### How citl-baed2 was cleared
+
+```bash
+gcloud services api-keys update {KEY_ID} \
+  --allowed-referrers="" \
+  --project=citl-baed2
+```
+
+Find `{KEY_ID}` via `gcloud services api-keys list --project=citl-baed2`
+(look for "Browser key (auto created by Firebase)").
+
+> Note: `--clear-allowed-referrers` is **not** a valid flag despite gcloud's
+> suggestion text. Pass an empty string instead.
+
+---
+
+## App Check Configuration
+
+### Provider
+
+App Check on web for citl-baed2 uses **reCAPTCHA Enterprise (Score-based)**, not
+the legacy reCAPTCHA v3 product.
+
+### Site key env var
+
+The Vite-injected env var is **`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`** (not
+`VITE_APPCHECK_SITE_KEY` — provider-specific naming makes the key format obvious
+in code review).
+
+### Domain registration trade-off
+
+reCAPTCHA Enterprise key registration does **not** support wildcard domains, so
+Firebase preview-channel URLs (`citl-baed2--preview-{hash}.web.app`) cannot be
+covered by a single domain entry.
+
+citl currently uses **Option 1** from the runbook: one key with domain verification
+disabled, valid for prod, dev, and preview channels. The risk (anyone with the key
+can use it from any origin) is acceptable for citl because:
+
+- The actual authorization boundary is Firestore rules + Cloud Functions custom-claim
+  checks, not App Check
+- The site is public-by-design (standings/scorecards are open-read)
+- The user mirror collection is admin-only-write, enforced server-side
+
+If user PII is ever added to the data model, revisit and switch to Option 2 (split
+prod / dev keys with domain verification on the prod key).
+
+**See the `firebase-deploy-runbook` skill** for the full trade-off discussion.
 
 ### Post-Deployment Verification
 

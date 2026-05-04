@@ -3,11 +3,16 @@
  *
  * Reads config values from VITE_FIREBASE_* environment variables.
  * Copy .env.example to .env and fill in values from Firebase console.
+ *
+ * Emulator-aware: when VITE_USE_EMULATOR=true, the Auth and Firestore
+ * SDKs connect to the local emulator suite instead of production.
+ * Set automatically by `npm run dev` (which invokes `firebase
+ * emulators:exec`) — never manually for production builds.
  */
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
+import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,6 +26,7 @@ const firebaseConfig = {
 
 export const isDevelopment = import.meta.env.DEV;
 export const isProduction = import.meta.env.PROD;
+export const useEmulator = import.meta.env['VITE_USE_EMULATOR'] === 'true';
 
 /**
  * Validates that all required Firebase config values are present.
@@ -39,3 +45,10 @@ const app = initializeApp(firebaseConfig);
 
 export const db: Firestore = getFirestore(app);
 export const auth: Auth = getAuth(app);
+
+if (useEmulator) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  // eslint-disable-next-line no-console
+  console.info('[firebase] Connected to local emulator suite (auth:9099, firestore:8080).');
+}

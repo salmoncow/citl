@@ -1,10 +1,27 @@
 /**
- * AuthModule — Firebase Auth wrapper
+ * AuthModule — Firebase Auth wrapper.
  *
- * Provides Google sign-in/out and auth-state observation.
+ * Responsibilities:
+ *   - Google sign-in/out via popup
+ *   - Auth-state observation (onAuthStateChanged)
+ *   - Reading the role custom claim (delegates to modules/role.ts)
+ *   - Forced token refresh in response to server-driven role changes
+ *
+ * Role-change propagation:
+ *   When a user is signed in, AuthModule maintains an internal
+ *   onSnapshot listener on `users/{currentUid}` and watches the
+ *   `roleChangedAt` field. When the server bumps it (because
+ *   setUserRole or set-role.js ran), AuthModule calls refreshRole
+ *   to force a token refresh; the new claim then propagates to all
+ *   subscribers of `onIdTokenChanged` (including modules/role.ts'
+ *   onRoleChange).
+ *
+ *   The snapshot listener is owned by AuthModule and lives only while
+ *   a user is signed in — it tears down on sign-out so we don't leak
+ *   listeners (per constitution §IV.2).
  */
 
-import { auth } from '@/firebase-config';
+import { auth, db } from '@/firebase-config';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -13,10 +30,26 @@ import {
   type User,
   type UserCredential,
 } from 'firebase/auth';
+import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { type Result, success, failure } from '@/repositories/score-repository';
+import { getRole, refreshRole } from '@/modules/role';
+import type { Role } from '@/types/user';
 
 export class AuthModule {
   private readonly _provider = new GoogleAuthProvider();
+  private _snapshotUnsub: Unsubscribe | null = null;
+  private _lastRoleChangedAtMs: number | null = null;
+  private _internalAuthUnsub: () => void;
+
+  constructor() {
+    // Internal: keep the role-change snapshot listener in sync with
+    // sign-in/sign-out lifecycle. Exposed onAuthStateChanged is for
+    // consumers; this internal subscription is independent of it.
+    this._internalAuthUnsub = firebaseOnAuthStateChanged(auth, (user) => {
+      this._teardownSnapshot();
+      if (user) this._setupSnapshot(user.uid);
+    });
+  }
 
   get currentUser(): User | null {
     return auth.currentUser;
@@ -42,13 +75,69 @@ export class AuthModule {
     }
   }
 
-  async isAdmin(): Promise<boolean> {
-    if (!auth.currentUser) return false;
-    const tokenResult = await auth.currentUser.getIdTokenResult();
-    return tokenResult.claims['admin'] === true;
+  /**
+   * Read the current user's role from the ID token claim. Returns
+   * null if signed out or if the claim is missing/invalid.
+   *
+   * @param force pass true to force a token refresh before reading
+   */
+  async getRole(force = false): Promise<Role | null> {
+    return getRole(force);
+  }
+
+  /**
+   * Force a token refresh and return the freshly-read role. Used
+   * imperatively (e.g. after a known role change) when waiting for
+   * the snapshot-driven refresh isn't acceptable.
+   */
+  async refreshTokenAndRole(): Promise<Role | null> {
+    return refreshRole();
   }
 
   onAuthStateChanged(callback: (user: User | null) => void): () => void {
     return firebaseOnAuthStateChanged(auth, callback);
+  }
+
+  /**
+   * Tear down the AuthModule. Currently only useful in tests; the
+   * production app keeps a single AuthModule for the page lifetime.
+   */
+  destroy(): void {
+    this._teardownSnapshot();
+    this._internalAuthUnsub();
+  }
+
+  // ─── Internal: roleChangedAt snapshot listener ──────────────────────────
+
+  private _setupSnapshot(uid: string): void {
+    this._snapshotUnsub = onSnapshot(doc(db, 'users', uid), async (snap) => {
+      if (!snap.exists()) return;
+      const ts = snap.data()?.['roleChangedAt'];
+      const tsMs = (ts && typeof ts.toMillis === 'function') ? (ts.toMillis() as number) : null;
+
+      if (this._lastRoleChangedAtMs === null) {
+        // First snapshot after sign-in — establish baseline. Don't
+        // force-refresh; the token's claim is already up to date.
+        this._lastRoleChangedAtMs = tsMs ?? 0;
+        return;
+      }
+
+      if (tsMs !== null && tsMs !== this._lastRoleChangedAtMs) {
+        // Server bumped the role mid-session. Force token refresh so
+        // the rules engine sees the new claim immediately and
+        // onIdTokenChanged subscribers (modules/role.ts) propagate
+        // the change to UI consumers.
+        await refreshRole();
+        this._lastRoleChangedAtMs = tsMs;
+      }
+    });
+  }
+
+  private _teardownSnapshot(): void {
+    if (this._snapshotUnsub) {
+      this._snapshotUnsub();
+      this._snapshotUnsub = null;
+    }
+    this._lastRoleChangedAtMs = null;
   }
 }

@@ -1,41 +1,38 @@
+#!/usr/bin/env node
 /**
- * grant-admin.js — Firebase Admin SDK utility for managing admin custom claims
+ * grant-admin.js — DEPRECATED shim. Use scripts/set-role.js instead.
  *
- * Uses Application Default Credentials (ADC) — no key file required.
- *
- * One-time setup:
- *   gcloud auth application-default login
- *
- * Usage:
- *   node scripts/grant-admin.js grant user@example.com
- *   node scripts/grant-admin.js revoke user@example.com
- *
- * Required IAM role on your Google account: Firebase Authentication Admin
+ * Behavior change: the old grant-admin.js wrote a boolean
+ * `admin: true` custom claim. The new RBAC model uses
+ * `role: 'owner' | 'admin' | 'user'` and additionally maintains a
+ * Firestore mirror + audit log. This shim delegates to set-role.js so
+ * old invocations continue to work while emitting a deprecation
+ * warning. It will be removed in a future release.
  */
 
-import { initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import { spawn } from 'node:child_process';
 
-const [,, action, email] = process.argv;
+const [, , action, email] = process.argv;
+
+console.warn(
+  '\n[DEPRECATED] scripts/grant-admin.js — use scripts/set-role.js:\n' +
+    '  node scripts/set-role.js set <email> admin     # promote to admin\n' +
+    '  node scripts/set-role.js set <email> user      # demote to user\n' +
+    '  node scripts/set-role.js list                  # list all users\n' +
+    '\nNote: this script now writes role=<value> + Firestore mirror + audit\n' +
+    'log, instead of the old admin:true boolean claim. The legacy claim is\n' +
+    'no longer honored by Firestore rules.\n',
+);
 
 if (!action || !email || !['grant', 'revoke'].includes(action)) {
   console.error('Usage: node scripts/grant-admin.js <grant|revoke> <email>');
   process.exit(1);
 }
 
-initializeApp({ projectId: 'citl-baed2' });
-
-const adminAuth = getAuth();
-
-try {
-  const user = await adminAuth.getUserByEmail(email);
-  const newClaims = action === 'grant' ? { admin: true } : { admin: false };
-
-  await adminAuth.setCustomUserClaims(user.uid, newClaims);
-
-  const verb = action === 'grant' ? 'Granted' : 'Revoked';
-  console.log(`${verb} admin claim for ${email} (uid: ${user.uid})`);
-} catch (error) {
-  console.error('Error:', error.message);
-  process.exit(1);
-}
+const role = action === 'grant' ? 'admin' : 'user';
+const child = spawn(
+  process.execPath,
+  ['scripts/set-role.js', 'set', email, role],
+  { stdio: 'inherit' },
+);
+child.on('exit', (code) => process.exit(code ?? 1));

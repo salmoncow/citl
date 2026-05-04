@@ -1,0 +1,15 @@
+# Compiled JavaScript output (top-level only — keep src/lib/ tracked)
+/lib/
+
+# Local env / config
+.env
+.runtimeconfig.json
+
+# Logs
+firebase-debug.log
+ui-debug.log
+firestore-debug.log
+*-debug.*.log
+
+# Dependencies (covered by root, but keep belt-and-suspenders)
+node_modules/
