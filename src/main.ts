@@ -2,7 +2,11 @@
  * main.ts — Application entry point
  *
  * Initializes navigation, router, and renders the correct view
- * based on the current URL hash.
+ * based on the current URL hash. Maintains a single role observer
+ * (modules/role.ts onRoleChange) for the page lifetime so the
+ * navigation, admin-view DOM toggle, and route guard all react to
+ * sign-in/out and server-driven role changes (via AuthModule's
+ * roleChangedAt snapshot listener — see modules/auth.ts).
  */
 
 import './styles/main.css';
@@ -18,6 +22,8 @@ import './components/season-calendar';
 import { NavigationModule } from './modules/navigation';
 import { RouterModule } from './modules/router';
 import { AuthModule } from './modules/auth';
+import { onRoleChange } from './modules/role';
+import type { Role } from './types/user';
 import { initAppCheck } from './infrastructure/appcheck';
 
 import { homeView } from './views/home';
@@ -27,16 +33,15 @@ import { aboutView } from './views/about';
 import { downloadsView } from './views/downloads';
 import { adminView } from './views/admin';
 
-import type { User } from 'firebase/auth';
-
 class App {
   private _navigation: NavigationModule | null = null;
   private _router: RouterModule | null = null;
   private _mainContent: HTMLElement | null = null;
   private _auth: AuthModule | null = null;
-  private _adminAuthUnsubscribe: (() => void) | null = null;
+  private _roleUnsubscribe: (() => void) | null = null;
+  private _currentRole: Role | null = null;
 
-  init(): void {
+  async init(): Promise<void> {
     initAppCheck();
 
     this._mainContent = document.getElementById('main-content');
@@ -45,9 +50,52 @@ class App {
     this._auth = new AuthModule();
 
     this._navigation.init();
+
+    // Wait for the initial role read (sign-in restore from local
+    // persistence, or null) before registering routes so the /admin
+    // guard sees a valid value on first deep-link.
+    await this._initRoleObserver();
+
     this._setupRoutes();
     this._router.init();
   }
+
+  // ─── Role observation ───────────────────────────────────────────────────────
+
+  private _initRoleObserver(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      let resolved = false;
+      this._roleUnsubscribe = onRoleChange((role) => {
+        this._currentRole = role;
+        this._navigation!.updateAuthState(this._auth!.currentUser, role);
+        this._applyAdminViewState();
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      });
+    });
+  }
+
+  private _isElevated(): boolean {
+    return this._currentRole === 'owner' || this._currentRole === 'admin';
+  }
+
+  private _applyAdminViewState(): void {
+    const elevated = this._isElevated();
+    const signedIn = !!this._auth!.currentUser;
+
+    document.getElementById('admin-login')?.toggleAttribute('hidden', signedIn);
+    document.getElementById('admin-unauthorized')?.toggleAttribute('hidden', !signedIn || elevated);
+    document.getElementById('admin-panel-container')?.toggleAttribute('hidden', !signedIn || !elevated);
+
+    const userDisplay = document.getElementById('admin-user-display');
+    if (userDisplay) {
+      userDisplay.textContent = this._auth!.currentUser?.email ?? '';
+    }
+  }
+
+  // ─── Routing ────────────────────────────────────────────────────────────────
 
   private _setupRoutes(): void {
     this._router!.register('/', () => this._showHome());
@@ -58,9 +106,14 @@ class App {
     this._router!.register('/admin', () => this._showAdmin());
 
     this._router!.onBeforeNavigate((path) => {
-      if (this._router!.getCurrentRoute() === '/admin' && path !== '/admin') {
-        this._cleanupAdmin();
+      // Route guard: /admin requires owner|admin. Non-elevated callers
+      // are redirected to / (rules + the callable still enforce server-
+      // side; this is just a UX nicety).
+      if (path === '/admin' && !this._isElevated()) {
+        window.location.hash = '#/';
+        return false;
       }
+      return true;
     });
   }
 
@@ -111,48 +164,20 @@ class App {
     this._navigation!.setActiveLink('/admin');
     this._navigation!.closeDropdown();
     this._navigation!.closeBurgerNav();
-    this._initAdminAuth();
+    this._wireAdminAuthButtons();
+    this._applyAdminViewState();
     window.scrollTo(0, 0);
   }
 
-  // ─── Admin auth ──────────────────────────────────────────────────────────────
+  // ─── Admin auth buttons (wired each time the view is rendered) ──────────────
 
-  private _initAdminAuth(): void {
-    const applyAuthState = async (user: User | null): Promise<void> => {
-      this._navigation!.updateAuthState(user);
-
-      let isAdmin = false;
-      if (user) {
-        isAdmin = await this._auth!.isAdmin();
-      }
-
-      document.getElementById('admin-login')?.toggleAttribute('hidden', !!user);
-      document.getElementById('admin-unauthorized')?.toggleAttribute('hidden', !user || isAdmin);
-      document.getElementById('admin-panel-container')?.toggleAttribute('hidden', !user || !isAdmin);
-
-      const userDisplay = document.getElementById('admin-user-display');
-      if (userDisplay) {
-        userDisplay.textContent = user ? (user.email ?? '') : '';
-      }
-    };
-
-    void applyAuthState(this._auth!.currentUser);
-
-    this._adminAuthUnsubscribe = this._auth!.onAuthStateChanged((user) => void applyAuthState(user));
-
+  private _wireAdminAuthButtons(): void {
     document.getElementById('admin-sign-in')
       ?.addEventListener('click', () => void this._auth!.signIn());
     document.getElementById('admin-sign-out')
       ?.addEventListener('click', () => void this._auth!.signOut());
     document.getElementById('admin-sign-out-unauth')
       ?.addEventListener('click', () => void this._auth!.signOut());
-  }
-
-  private _cleanupAdmin(): void {
-    if (this._adminAuthUnsubscribe) {
-      this._adminAuthUnsubscribe();
-      this._adminAuthUnsubscribe = null;
-    }
   }
 
   // ─── Private helpers ─────────────────────────────────────────────────────────
@@ -166,5 +191,5 @@ class App {
 
 document.addEventListener('DOMContentLoaded', () => {
   const app = new App();
-  app.init();
+  void app.init();
 });
