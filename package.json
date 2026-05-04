@@ -9,17 +9,19 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "firebase emulators:exec --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data 'VITE_USE_EMULATOR=true vite'",
+    "dev:prod": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "deploy": "npm run build && firebase deploy --only hosting,firestore:rules",
+    "deploy": "npm run build && firebase deploy --only hosting,firestore:rules,firestore:indexes,functions",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:functions": "firebase deploy --only functions",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
     "deploy:rules:dryrun": "firebase deploy --only firestore:rules --dry-run",
-    "emulators": "firebase emulators:start --only auth,firestore,functions",
+    "emulators": "firebase emulators:start --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data",
     "set-role": "node scripts/set-role.js",
     "grant-admin": "node scripts/grant-admin.js",
     "test": "vitest run",
@@ -40,7 +42,7 @@
   },
   "dependencies": {
     "dompurify": "^3.3.2",
-    "firebase": "^12.9.0",
+    "firebase": "^12.12.1",
     "marked": "^17.0.4"
   }
 }

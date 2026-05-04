@@ -18,6 +18,7 @@ import './components/season-calendar';
 import { NavigationModule } from './modules/navigation';
 import { RouterModule } from './modules/router';
 import { AuthModule } from './modules/auth';
+import { initAppCheck } from './infrastructure/appcheck';
 
 import { homeView } from './views/home';
 import { scorecardsView } from './views/scorecards';
@@ -36,6 +37,8 @@ class App {
   private _adminAuthUnsubscribe: (() => void) | null = null;
 
   init(): void {
+    initAppCheck();
+
     this._mainContent = document.getElementById('main-content');
     this._navigation = new NavigationModule();
     this._router = new RouterModule();
