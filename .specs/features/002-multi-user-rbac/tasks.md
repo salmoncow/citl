@@ -110,12 +110,12 @@ acceptance criteria in [spec.md](./spec.md) §"Acceptance Criteria".
 **AC**: AC-9, AC-15
 
 - [ ] **5.1 (M)** `src/infrastructure/functions.ts` — lazy `getFunctions` + `httpsCallable` helper, emulator-aware via `import.meta.env.VITE_USE_EMULATOR`.
-- [ ] **5.2 (M)** `src/infrastructure/appcheck.ts` — `initializeAppCheck` with reCAPTCHA Enterprise site key from `import.meta.env.VITE_APPCHECK_SITE_KEY`; debug token path for `import.meta.env.DEV`.
+- [ ] **5.2 (M)** `src/infrastructure/appcheck.ts` — `initializeAppCheck` with reCAPTCHA Enterprise site key from `import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`; debug token path for `import.meta.env.DEV`.
 - [ ] **5.3 (L)** `src/repositories/user-repository.ts` — `findById(uid): Promise<UserDoc | null>`, `listPaginated({ pageSize: 20, cursor }): Promise<{ users: UserDoc[]; nextCursor: DocumentSnapshot | null }>`, `observeSelf(uid, cb): Unsubscribe` (snapshot listener for `roleChangedAt`). Never writes the `role` field. Type `UserDoc` lives in `src/types/user.ts` (also new).
 - [ ] **5.4 (M)** Extend [src/repositories/repository-factory.ts:22](../../../src/repositories/repository-factory.ts:22) — add `getUserRepository()` next to `getScoreRepository()` with the same caching pattern.
 - [ ] **5.5 (M)** `src/modules/role.ts` — exports `Role` type, `getRole(force?: boolean): Promise<Role | null>`, `onRoleChange(cb): Unsubscribe`. Reads `getIdTokenResult().claims.role`; `force=true` triggers `getIdToken(true)`.
 - [ ] **5.6 (S)** Modify [src/firebase-config.ts](../../../src/firebase-config.ts) — initialize App Check after `initializeApp` when not in test env.
-- [ ] **5.7 (S)** `.env.example` — document `VITE_APPCHECK_SITE_KEY`, `VITE_USE_EMULATOR`.
+- [ ] **5.7 (S)** `.env.example` — document `VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`, `VITE_USE_EMULATOR`.
 - [ ] **5.8 (S)** Manual smoke: sign in via emulator → verify `users/{uid}` doc appears, `role.ts` reports `'user'`. *(Validation gate)*
 
 ---

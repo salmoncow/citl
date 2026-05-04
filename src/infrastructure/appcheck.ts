@@ -5,7 +5,7 @@
  * not implement the App Check exchange endpoint, and the Cloud
  * Function gates enforceAppCheck on FUNCTIONS_EMULATOR server-side).
  *
- * In staging/prod, requires VITE_APPCHECK_SITE_KEY to be a registered
+ * In staging/prod, requires VITE_RECAPTCHA_ENTERPRISE_SITE_KEY to be a registered
  * reCAPTCHA Enterprise site key for the project's hostnames. Without
  * it, App Check init is skipped and a console warning is emitted —
  * the deployed Cloud Function will reject calls without an App Check
@@ -26,11 +26,11 @@ export function initAppCheck(): void {
     return;
   }
 
-  const siteKey = import.meta.env['VITE_APPCHECK_SITE_KEY'];
+  const siteKey = import.meta.env['VITE_RECAPTCHA_ENTERPRISE_SITE_KEY'];
   if (!siteKey) {
     // eslint-disable-next-line no-console
     console.warn(
-      '[appcheck] VITE_APPCHECK_SITE_KEY not set; App Check init skipped. ' +
+      '[appcheck] VITE_RECAPTCHA_ENTERPRISE_SITE_KEY not set; App Check init skipped. ' +
         'setUserRole and other enforced callables will reject this client.',
     );
     initialized = true;
