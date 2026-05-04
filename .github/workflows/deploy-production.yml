@@ -16,6 +16,7 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
+      - run: npm ci --prefix functions
 
       - name: Build
         run: npm run build
@@ -27,12 +28,13 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+          VITE_RECAPTCHA_ENTERPRISE_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY }}
 
       - name: Write service account credentials
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/sa.json
 
-      - name: Deploy Firestore security rules
-        run: npx firebase deploy --only firestore:rules --project citl-baed2
+      - name: Deploy Firestore rules + indexes and Cloud Functions
+        run: npx firebase deploy --only firestore:rules,firestore:indexes,functions --project citl-baed2 --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
 
