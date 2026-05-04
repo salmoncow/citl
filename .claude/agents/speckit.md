@@ -76,6 +76,7 @@ These are non-negotiable for every feature:
 - **File size**: Target <500 lines per file; hard limit 750 lines
 - **Dependency direction**: `components → modules → services → repositories` (never reverse)
 - **Cost discipline**: Firebase Blaze plan (§VI.1); usage targets Spark-equivalent quotas. New Cloud Functions need a documented justification — they should solve a problem the client SDK + rules cannot.
+- **Cloud Functions deploy ops**: When a feature adds a new Cloud Function (especially a 2nd-gen callable), the spec **must** flag the post-deploy operational steps from the `firebase-deploy-runbook` global skill: lowercased Cloud Run service name, one-time `roles/run.invoker` binding for `allUsers` after first deploy, and (for a brand-new project) the GCF source bucket IAM fix. These add ~10 minutes to the first deploy and must be in the implementation plan, not discovered at deploy time.
 - **TypeScript strict**: No implicit `any`; explicit return types; `noUncheckedIndexedAccess: true`
 - **Imports**: Use `@/` absolute path alias, never relative paths across layers
 - **Security**: Admin writes enforced by Firestore rules, not client-side checks alone
