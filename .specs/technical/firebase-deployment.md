@@ -167,8 +167,7 @@ Artifact Registry cleanup policy).
 ## Browser API Key Restrictions
 
 citl-baed2's auto-created Browser API key has **HTTP referrer restrictions
-cleared** (`browserKeyRestrictions: {}`). This is intentional and matches the
-posture salmoncow has been running in production with no incidents.
+cleared** (`browserKeyRestrictions: {}`). This is intentional.
 
 ### Why cleared
 

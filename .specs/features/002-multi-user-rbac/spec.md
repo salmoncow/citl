@@ -4,7 +4,6 @@
 **Created**: 2026-05-03
 **Status**: Approved — implementation in progress
 **Plan of record**: [/Users/ted/.claude/plans/i-recently-implemented-multi-user-partitioned-mochi.md](../../../../.claude/plans/i-recently-implemented-multi-user-partitioned-mochi.md)
-**Reference implementation**: [`~/Developer/salmoncow/.specs/archive/001-multi-user-rbac/`](~/Developer/salmoncow/.specs/archive/001-multi-user-rbac)
 
 ---
 
@@ -19,9 +18,7 @@ enforces rate limits, last-owner protection, and writes an append-only
 audit log. New users get auto-seeded on first sign-in via an
 `onUserCreate` auth trigger.
 
-This mirrors the implementation shipped in `~/Developer/salmoncow`,
-adapted to CITL's TypeScript/Vite stack and existing patterns. v1 ships
-a **Users tab** in the existing `<admin-panel>` Custom Element with:
+v1 ships a **Users tab** in the existing `<admin-panel>` Custom Element with:
 - a paginated user list visible to owner+admin (read-only fields);
 - an inline **role-change dropdown rendered only for owner**, which
   invokes the `setUserRole` callable.
@@ -228,8 +225,8 @@ sequencing" for the full file-by-file breakdown.
 ## VI. Design Decisions
 
 This section captures non-obvious implementation choices and the
-reasoning behind them. Self-contained so it can be ported to sibling
-projects (e.g. salmoncow) that share the same architecture.
+reasoning behind them. Written self-contained so it stands on its
+own without needing context from other projects or feature specs.
 
 ### VI.1 `setUserRole` write ordering — claim-first
 
