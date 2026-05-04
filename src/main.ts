@@ -107,12 +107,18 @@ class App {
     this._router!.register('/admin', () => this._showAdmin());
 
     this._router!.onBeforeNavigate((path) => {
-      // Route guard: /admin requires owner|admin. Non-elevated callers
-      // are redirected to / (rules + the callable still enforce server-
-      // side; this is just a UX nicety).
-      if (path === '/admin' && !this._isElevated()) {
-        window.location.hash = '#/';
-        return false;
+      // Route guard: /admin is the SOLE entry point for sign-in, so
+      // signed-out users must be allowed through (they'll see the
+      // sign-in view via _applyAdminViewState DOM toggle). Only bounce
+      // signed-in users whose role is 'user' — they can't act on
+      // /admin and the redirect avoids a dead-end "unauthorized" view.
+      // Server-side rules + the callable still enforce; this is UX.
+      if (path === '/admin') {
+        const signedIn = !!this._auth!.currentUser;
+        if (signedIn && !this._isElevated()) {
+          window.location.hash = '#/';
+          return false;
+        }
       }
       return true;
     });
