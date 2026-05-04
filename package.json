@@ -23,6 +23,7 @@
     "deploy:rules:dryrun": "firebase deploy --only firestore:rules --dry-run",
     "emulators": "firebase emulators:start --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data",
     "set-role": "node scripts/set-role.js",
+    "set-role:emulator": "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=citl-baed2 node scripts/set-role.js",
     "grant-admin": "node scripts/grant-admin.js",
     "test": "vitest run",
     "test:watch": "vitest",
