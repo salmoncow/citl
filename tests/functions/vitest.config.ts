@@ -8,8 +8,12 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/functions/**/*.test.ts'],
     root: repoRoot,
-    pool: 'forks',
-    poolOptions: { forks: { singleFork: true } },
+    // Run all test files sequentially in a single worker process so they
+    // share — and don't race on — the emulator state started by
+    // `firebase emulators:exec`. Vitest 4 dropped poolOptions.forks.singleFork;
+    // `maxWorkers: 1, isolate: false` is the documented replacement.
+    maxWorkers: 1,
+    isolate: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
     setupFiles: ['tests/functions/_setup.ts'],
