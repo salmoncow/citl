@@ -1421,6 +1421,8 @@ input[type=number] { -moz-appearance: textfield; }
 
 .admin-tab-panel--hidden { display: none; }
 
+.admin-form-row--hidden { display: none; }
+
 /* ============================================================
    Roster Table
    ============================================================ */

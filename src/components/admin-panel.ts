@@ -60,7 +60,7 @@ class AdminPanel extends HTMLElement {
           <button class="admin-tab-btn" data-tab="users">Users</button>
         </div>
 
-        <div class="admin-form-row">
+        <div id="ap-year-row" class="admin-form-row">
           <label for="ap-year">Year</label>
           <select id="ap-year">${buildOptions(2019, 2030, '', CURRENT_YEAR)}</select>
         </div>
@@ -111,6 +111,9 @@ class AdminPanel extends HTMLElement {
       const el = this.querySelector(`#${id}`);
       if (el) el.classList.toggle('admin-tab-panel--hidden', name !== tab);
     }
+
+    const yearRow = this.querySelector<HTMLElement>('#ap-year-row');
+    if (yearRow) yearRow.classList.toggle('admin-form-row--hidden', tab === 'users');
 
     if (tab === 'score-entry') this._scoreEntryTab.onActivate?.();
     else if (tab === 'announcements') this._announcementsTab.onActivate?.();
