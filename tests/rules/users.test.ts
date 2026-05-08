@@ -124,6 +124,18 @@ describe('users/{uid} update — non-role fields', () => {
     );
   });
 
+  it('user can self-update lastSignInAt + updatedAt (touchLastSignIn path)', async () => {
+    // Exercises the rules path that AuthModule.touchLastSignIn relies on:
+    // self-update of timestamp fields with no role field present.
+    const db = asRole(env, USER_UID, 'user');
+    await assertSucceeds(
+      updateDoc(doc(db, 'users', USER_UID), {
+        lastSignInAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+    );
+  });
+
   it('user CANNOT update another user\'s doc', async () => {
     const db = asRole(env, USER_UID, 'user');
     await assertFails(
