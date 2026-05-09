@@ -32,22 +32,31 @@ import {
 } from 'firebase/auth';
 import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { type Result, success, failure } from '@/repositories/score-repository';
+import { createRepositoryFactory } from '@/repositories/repository-factory';
+import type { UserRepository } from '@/repositories/user-repository';
 import { getRole, refreshRole } from '@/modules/role';
 import type { Role } from '@/types/user';
 
 export class AuthModule {
   private readonly _provider = new GoogleAuthProvider();
+  private readonly _userRepo: UserRepository;
   private _snapshotUnsub: Unsubscribe | null = null;
   private _lastRoleChangedAtMs: number | null = null;
   private _internalAuthUnsub: () => void;
 
   constructor() {
+    this._userRepo = createRepositoryFactory({ db }).getUserRepository();
+
     // Internal: keep the role-change snapshot listener in sync with
-    // sign-in/sign-out lifecycle. Exposed onAuthStateChanged is for
+    // sign-in/sign-out lifecycle, and refresh lastSignInAt on every
+    // authenticated session start. Exposed onAuthStateChanged is for
     // consumers; this internal subscription is independent of it.
     this._internalAuthUnsub = firebaseOnAuthStateChanged(auth, (user) => {
       this._teardownSnapshot();
-      if (user) this._setupSnapshot(user.uid);
+      if (user) {
+        this._setupSnapshot(user.uid);
+        void this._userRepo.touchLastSignIn(user.uid);
+      }
     });
   }
 

@@ -50,18 +50,20 @@ class AdminUsersPanel extends HTMLElement {
       <section class="users-panel">
         <h2>Users</h2>
         <div class="users-panel__status" aria-live="polite"></div>
-        <table class="users-table" hidden>
-          <thead>
-            <tr>
-              <th scope="col">Display name</th>
-              <th scope="col">Email</th>
-              <th scope="col">Role</th>
-              <th scope="col">Last sign-in</th>
-              <th scope="col">Created</th>
-            </tr>
-          </thead>
-          <tbody class="users-table__body"></tbody>
-        </table>
+        <div class="admin-table-wrapper users-table-wrapper" hidden>
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th scope="col">Display name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Role</th>
+                <th scope="col">Last sign-in</th>
+                <th scope="col">Created</th>
+              </tr>
+            </thead>
+            <tbody class="users-table__body"></tbody>
+          </table>
+        </div>
         <div class="users-panel__empty" hidden>No users yet.</div>
         <div class="users-panel__error" hidden role="alert"></div>
         <button type="button" class="users-panel__load-more btn-secondary" hidden>Load more</button>
@@ -126,19 +128,19 @@ class AdminUsersPanel extends HTMLElement {
 
   private _renderRows(): void {
     const tbody = this.querySelector<HTMLTableSectionElement>('.users-table__body');
-    const table = this.querySelector<HTMLTableElement>('.users-table');
+    const wrapper = this.querySelector<HTMLElement>('.users-table-wrapper');
     const empty = this.querySelector<HTMLElement>('.users-panel__empty');
     const loadMore = this.querySelector<HTMLButtonElement>('.users-panel__load-more');
-    if (!tbody || !table || !empty || !loadMore) return;
+    if (!tbody || !wrapper || !empty || !loadMore) return;
 
     if (this._users.length === 0) {
-      table.hidden = true;
+      wrapper.hidden = true;
       empty.hidden = false;
       loadMore.hidden = true;
       return;
     }
 
-    table.hidden = false;
+    wrapper.hidden = false;
     empty.hidden = true;
     loadMore.hidden = this._nextCursor === null;
 

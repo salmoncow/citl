@@ -7,10 +7,12 @@
  *     (per constitution §III.3 / §IV.2 — never unbounded reads)
  *   - observeSelf: real-time listener on the current user's doc, used
  *     to detect roleChangedAt bumps and force token refresh
+ *   - touchLastSignIn: self-update of lastSignInAt on each session
+ *     start (skipped on first sign-in to let onUserCreate seed the doc
+ *     with role + custom claims).
  *
  * Never writes the `role` field. Self-update of non-role fields is
- * permitted by rules but currently unused — clients should not write
- * the mirror outside the server-managed flow.
+ * permitted by Firestore rules.
  */
 
 import {
@@ -22,7 +24,9 @@ import {
   onSnapshot,
   orderBy,
   query,
+  serverTimestamp,
   startAfter,
+  updateDoc,
   type DocumentSnapshot,
   type Firestore,
   type Unsubscribe,
@@ -64,5 +68,28 @@ export class UserRepository {
     return onSnapshot(doc(this.db, 'users', uid), (snap) => {
       cb(snap.exists() ? (snap.data() as UserDoc) : null);
     });
+  }
+
+  /**
+   * Update lastSignInAt on the user's mirror doc. Skipped if the doc
+   * doesn't exist yet — onUserCreate races with this on first sign-in
+   * and is idempotent (no-ops if the doc already exists), so beating
+   * it would cause role + custom claims to never be written.
+   *
+   * Errors are swallowed: sign-in must never fail because of a mirror
+   * update.
+   */
+  async touchLastSignIn(uid: string): Promise<void> {
+    try {
+      const ref = doc(this.db, 'users', uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      await updateDoc(ref, {
+        lastSignInAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.warn('[user-repository] touchLastSignIn failed:', e);
+    }
   }
 }
