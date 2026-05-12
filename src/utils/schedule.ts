@@ -72,3 +72,27 @@ export function computeSchedule(year: number): ScheduleEvent[] {
 
   return events;
 }
+
+/**
+ * Returns the appropriate default shoot-week number for the given year,
+ * based on today's date. Used to default the Score Entry "Week" dropdown.
+ *
+ *  - Before Week 1 of the year → 1
+ *  - On/after Week 15 of the year → 15
+ *  - Otherwise → the week of the most recent shoot event whose date ≤ today
+ *
+ * Date-only comparison (time of day is ignored).
+ */
+export function currentShootWeek(year: number, today: Date = new Date()): number {
+  const shootEvents = computeSchedule(year).filter(e => e.type === 'shoot');
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+
+  let result = 1;
+  for (const e of shootEvents) {
+    const eventStart = new Date(e.date.getFullYear(), e.date.getMonth(), e.date.getDate()).getTime();
+    if (eventStart <= todayStart && e.week !== undefined) {
+      result = e.week;
+    }
+  }
+  return result;
+}
