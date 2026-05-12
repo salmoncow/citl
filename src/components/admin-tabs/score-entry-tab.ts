@@ -9,7 +9,7 @@
 
 import { ScoreService } from '@/services/score-service';
 import { showToast } from '@/modules/ui';
-import { computeSchedule } from '@/utils/schedule';
+import { computeSchedule, currentShootWeek } from '@/utils/schedule';
 import {
   LOCK_SVG,
   PENCIL_SVG,
@@ -43,10 +43,12 @@ export class ScoreEntryTab implements AdminTab {
     this._host = host;
     this._ctx = ctx;
 
+    const defaultWeek = currentShootWeek(ctx.getYear());
+
     host.innerHTML = `
       <div class="admin-form-row">
         <label for="ap-week">Week</label>
-        <select id="ap-week">${buildOptions(1, MAX_WEEKS, 'Week', 1)}</select>
+        <select id="ap-week">${buildOptions(1, MAX_WEEKS, 'Week', defaultWeek)}</select>
         <label for="ap-team">Team</label>
         <select id="ap-team">
           <option value="">-- Select team --</option>
@@ -107,6 +109,10 @@ export class ScoreEntryTab implements AdminTab {
   onYearChange(): void {
     this._dateEditMode = false;
     this._weekHasScores = false;
+    const weekSelect = this._host?.querySelector<HTMLSelectElement>('#ap-week');
+    if (weekSelect && this._ctx) {
+      weekSelect.value = String(currentShootWeek(this._ctx.getYear()));
+    }
     void this._loadSavedEntries();
   }
 

@@ -19,7 +19,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { nthTuesdayOfMonth, computeSchedule } from './schedule';
+import { nthTuesdayOfMonth, computeSchedule, currentShootWeek } from './schedule';
 
 // ─── nthTuesdayOfMonth ──────────────────────────────────────────────────────
 
@@ -189,5 +189,59 @@ describe('computeSchedule — no July 4 skip (2026: July 4 = Saturday)', () => {
         (1000 * 60 * 60 * 24);
       expect(diff).toBe(7);
     }
+  });
+});
+
+// ─── currentShootWeek ───────────────────────────────────────────────────────
+
+describe('currentShootWeek — defaults the Score Entry week dropdown', () => {
+  // 2025 reference (Week 1 = Apr 15, Week 3 = Apr 29, Week 4 = May 6;
+  // July 1 skipped → Week 11 = Jun 24, Week 12 = Jul 8)
+
+  it('returns 1 when today is well before Week 1 of the year', () => {
+    expect(currentShootWeek(2025, new Date(2025, 0, 15))).toBe(1);
+  });
+
+  it('returns 1 when today is the day before Week 1', () => {
+    expect(currentShootWeek(2025, new Date(2025, 3, 14))).toBe(1);
+  });
+
+  it('returns 1 on the exact day of Week 1', () => {
+    expect(currentShootWeek(2025, new Date(2025, 3, 15))).toBe(1);
+  });
+
+  it('returns the current week on the exact shoot day (Week 3, Apr 29 2025)', () => {
+    expect(currentShootWeek(2025, new Date(2025, 3, 29))).toBe(3);
+  });
+
+  it('returns the most recent shoot week on a non-Tuesday between shoots', () => {
+    // Thu May 1 2025 falls between Week 3 (Apr 29) and Week 4 (May 6)
+    expect(currentShootWeek(2025, new Date(2025, 4, 1))).toBe(3);
+  });
+
+  it('advances to the next week on its shoot day', () => {
+    expect(currentShootWeek(2025, new Date(2025, 4, 6))).toBe(4);
+  });
+
+  it('handles the July 4 skip correctly (Wed Jul 2 2025 → Week 11)', () => {
+    // 2025: Week 11 is Jun 24; the would-be Week 12 Tuesday (Jul 1) is skipped.
+    // On Jul 2 the most recent shoot is still Jun 24.
+    expect(currentShootWeek(2025, new Date(2025, 6, 2))).toBe(11);
+  });
+
+  it('returns 15 when today is well after Week 15 of the year', () => {
+    expect(currentShootWeek(2025, new Date(2025, 8, 1))).toBe(15);
+  });
+
+  it('returns 15 when the selected year is entirely in the past', () => {
+    expect(currentShootWeek(2024, new Date(2026, 4, 5))).toBe(15);
+  });
+
+  it('returns 1 when the selected year is entirely in the future', () => {
+    expect(currentShootWeek(2027, new Date(2026, 4, 5))).toBe(1);
+  });
+
+  it('ignores time of day (late evening on Week 3 still resolves to Week 3)', () => {
+    expect(currentShootWeek(2025, new Date(2025, 3, 29, 23, 59))).toBe(3);
   });
 });
