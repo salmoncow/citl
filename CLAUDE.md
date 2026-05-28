@@ -39,12 +39,18 @@ Start with these documents in order:
 ```bash
 nvm use 24                           # Node 24 required (.nvmrc)
 npm install                          # Install deps
-npm run dev                          # Dev server → http://localhost:3000
+npm run dev                          # Dev server → http://localhost:3000 (reuses existing .emulator-data)
+npm run dev:seeded                   # Same, but seeds the emulator first (fresh-checkout flow)
+npm run seed:emulator                # Seed running emulators (also: -- clear | -- status)
 npm run build                        # Production build → dist/
 npm run preview                      # Serve dist/ locally
 npm run deploy                       # build + firebase deploy --only hosting
 npm run deploy:preview               # build + Firebase preview channel (7-day URL)
 ```
+
+> **Fresh checkout?** `.emulator-data/` is git-ignored, so `npm run dev` starts an empty
+> Firestore. Use `npm run dev:seeded` once to populate it. See
+> [CONTRIBUTING.md](CONTRIBUTING.md#seeding-the-emulator) for details.
 
 ### Key Files
 
