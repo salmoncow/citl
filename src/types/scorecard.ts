@@ -50,3 +50,41 @@ export interface SeasonData {
   season: number;
   teams: Team[];
 }
+
+/**
+ * A single shooter row, fully computed and ready to render in the
+ * season-scorecards view. Built by ScoreService.buildScorecardData.
+ */
+export interface ScorecardRowShooter {
+  name: string;
+  rookie: boolean;
+  isDummy: boolean;
+  /** Display value for the W0 column: prior avg, dummy display, or '-' when unknown. */
+  w0Display: number | '-';
+  /** 15 weekly scores (W1–W15); null = did not shoot. */
+  scores: (number | null)[];
+  /** Number of weeks actually shot; null when zero. */
+  weeksShot: number | null;
+  /** Display value for the season-average column. */
+  finalAvg: number | string;
+}
+
+/**
+ * A team block ready to render. Shooters are pre-sorted: captain first
+ * among real shooters, dummies last.
+ */
+export interface ScorecardTeamBlock {
+  teamName: string;
+  shooters: ScorecardRowShooter[];
+  targets: (number | null)[];
+  rankPoints: (number | null)[];
+  bonusPoints: (number | null)[];
+}
+
+/**
+ * Aggregate scorecard view data for one season.
+ */
+export interface ScorecardViewData {
+  year: number;
+  teams: ScorecardTeamBlock[];
+}

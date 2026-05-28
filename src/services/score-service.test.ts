@@ -437,6 +437,290 @@ describe('computeRosterDefaults', () => {
 });
 
 // ---------------------------------------------------------------------------
+// buildScorecardData — service-layer data assembly for season-scorecards
+// ---------------------------------------------------------------------------
+
+/**
+ * Repository stub that dispatches by year. `currentYear` resolves the
+ * current season's teams + weeks; the prior 1 and prior 2 years resolve from
+ * their own slots. Anything else returns empty.
+ */
+function makeScorecardRepo(opts: {
+  currentYear: number;
+  currentTeams?: Team[];
+  currentWeeks?: WeekResult[];
+  prior1Teams?: Team[];
+  prior2Teams?: Team[];
+  prior1Weeks?: WeekResult[];
+  prior2Weeks?: WeekResult[];
+}): ScoreRepository {
+  const y = opts.currentYear;
+  const stub: Partial<ScoreRepository> = {
+    getTeams: async (year) => {
+      if (year === y) return success(opts.currentTeams ?? []);
+      if (year === y - 1) return success(opts.prior1Teams ?? []);
+      if (year === y - 2) return success(opts.prior2Teams ?? []);
+      return success([]);
+    },
+    getAllWeekResults: async (year) => {
+      if (year === y) return success(opts.currentWeeks ?? []);
+      if (year === y - 1) return success(opts.prior1Weeks ?? []);
+      if (year === y - 2) return success(opts.prior2Weeks ?? []);
+      return success([]);
+    },
+  };
+  return stub as unknown as ScoreRepository;
+}
+
+function makeFullWeekResult(opts: {
+  weekNumber: number;
+  teamName: string;
+  teamId?: string;
+  targets?: number;
+  rankPoints?: number;
+  bonusPoints?: number;
+  shooterScores: { name: string; total: number }[];
+}): WeekResult {
+  return {
+    weekNumber: opts.weekNumber,
+    publishedAt: '',
+    teamResults: [
+      {
+        teamId: opts.teamId ?? opts.teamName.toLowerCase(),
+        teamName: opts.teamName,
+        targets: opts.targets ?? 0,
+        rankPoints: opts.rankPoints ?? 0,
+        bonusPoints: opts.bonusPoints ?? 0,
+        shooterScores: opts.shooterScores.map((s) => ({
+          name: s.name,
+          score1: null,
+          score2: null,
+          total: s.total,
+        })),
+      },
+    ],
+  };
+}
+
+describe('buildScorecardData', () => {
+  it('returns VALIDATION_ERROR for out-of-range year', async () => {
+    const svc = new ScoreService(makeScorecardRepo({ currentYear: 2026 }));
+    const result = await svc.buildScorecardData(2000);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns an empty teams array when no data exists for the year', async () => {
+    const svc = new ScoreService(makeScorecardRepo({ currentYear: 2026 }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.teams).toEqual([]);
+  });
+
+  it('builds one block per rostered team, in roster order', async () => {
+    const teamA = makeTeam('Alpha', [makeRosterShooter('A1'), makeRosterShooter('A2')]);
+    const teamB = makeTeam('Bravo', [makeRosterShooter('B1'), makeRosterShooter('B2')]);
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [teamA, teamB],
+    }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.teams.map((b) => b.teamName)).toEqual(['Alpha', 'Bravo']);
+    }
+  });
+
+  it('appends teams that appear only in week results (no current roster doc)', async () => {
+    const teamA = makeTeam('Alpha', [makeRosterShooter('A1')]);
+    const orphanWeek = makeFullWeekResult({
+      weekNumber: 1, teamName: 'Ghost', shooterScores: [{ name: 'G1', total: 40 }],
+    });
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [teamA],
+      currentWeeks: [orphanWeek],
+    }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const names = result.data.teams.map((b) => b.teamName);
+      expect(names).toEqual(['Alpha', 'Ghost']);
+    }
+  });
+
+  it('regression #141 — applies prior2AvgMap fallback to scorecard rows (matches computeRosterDefaults)', async () => {
+    // Eve was on the roster both N-1 and N-2, did not shoot in N-1, but shot
+    // twice in N-2 averaging (40+42)/2 = 41. The scorecard view must show 41,
+    // not the new-shooter default of 35.
+    const team = makeTeam('Team', [makeRosterShooter('Eve')]);
+    const prior1Team = makeTeam('Team', [makeShooter('Eve', 35)]);
+    const prior2Team = makeTeam('Team', [makeShooter('Eve', 35)]);
+    const prior2Weeks: WeekResult[] = [
+      makeWeekResult([{ name: 'Eve', total: 40 }]),
+      { ...makeWeekResult([{ name: 'Eve', total: 42 }]), weekNumber: 2 },
+    ];
+
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [team],
+      prior1Teams: [prior1Team],
+      prior1Weeks: [],
+      prior2Teams: [prior2Team],
+      prior2Weeks,
+    }));
+
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const eveRow = result.data.teams[0]!.shooters.find((s) => s.name === 'Eve');
+      expect(eveRow?.w0Display).toBe(41);
+      expect(eveRow?.rookie).toBe(false);
+    }
+  });
+
+  it('regression #141 — flags roster-only shooter as rookie when never shot in prior years', async () => {
+    // Frank on roster both prior years but published no scores → rookie.
+    const team = makeTeam('Team', [makeRosterShooter('Frank')]);
+    const prior1Team = makeTeam('Team', [makeShooter('Frank', 35)]);
+    const prior2Team = makeTeam('Team', [makeShooter('Frank', 35)]);
+
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [team],
+      prior1Teams: [prior1Team],
+      prior2Teams: [prior2Team],
+    }));
+
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const frankRow = result.data.teams[0]!.shooters.find((s) => s.name === 'Frank');
+      expect(frankRow?.rookie).toBe(true);
+    }
+  });
+
+  it('pads each team to 2 DUMMY rows when fewer dummies exist on the roster', async () => {
+    const team = makeTeam('Hawks', [
+      makeRosterShooter('A'),
+      makeRosterShooter('B'),
+      makeRosterShooter('C'),
+    ]);
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [team],
+    }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const dummies = result.data.teams[0]!.shooters.filter((s) => s.isDummy);
+      expect(dummies.map((d) => d.name)).toEqual(['Hawks DUMMY1', 'Hawks DUMMY2']);
+    }
+  });
+
+  it('sorts captain first among real shooters and pushes dummies last', async () => {
+    const team: Team = {
+      id: 'team',
+      name: 'Team',
+      captain: 'Bob',
+      shooters: [
+        makeRosterShooter('Alice'),
+        makeRosterShooter('Bob'),
+        makeRosterShooter('Carol'),
+        makeRosterShooter('Team DUMMY1'),
+        makeRosterShooter('Team DUMMY2'),
+      ],
+      totals: { targets: [], rankPoints: [], bonusPoints: [] },
+    };
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [team],
+    }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const order = result.data.teams[0]!.shooters.map((s) => s.name);
+      expect(order[0]).toBe('Bob');
+      expect(order.slice(-2).every((n) => n.includes('DUMMY'))).toBe(true);
+    }
+  });
+
+  it('computes dummy W0 display = mean of real teammates W1 scores', async () => {
+    // Real W1 scores: 40 and 50 → dummy W0 display = 45
+    const team = makeTeam('Team', [
+      makeRosterShooter('A'),
+      makeRosterShooter('B'),
+      makeRosterShooter('Team DUMMY1'),
+    ]);
+    const week = makeFullWeekResult({
+      weekNumber: 1, teamName: 'Team',
+      targets: 130, rankPoints: 30, bonusPoints: 5,
+      shooterScores: [
+        { name: 'A', total: 40 },
+        { name: 'B', total: 50 },
+        { name: 'Team DUMMY1', total: 40 },
+      ],
+    });
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [team],
+      currentWeeks: [week],
+    }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const dummy = result.data.teams[0]!.shooters.find((s) => s.name === 'Team DUMMY1');
+      expect(dummy?.w0Display).toBe(45);
+    }
+  });
+
+  it('carries through targets, rankPoints, and bonusPoints from week results', async () => {
+    const team = makeTeam('Team', [makeRosterShooter('A')]);
+    const week = makeFullWeekResult({
+      weekNumber: 1, teamName: 'Team',
+      targets: 200, rankPoints: 28, bonusPoints: 3,
+      shooterScores: [{ name: 'A', total: 40 }],
+    });
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [team],
+      currentWeeks: [week],
+    }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const block = result.data.teams[0]!;
+      expect(block.targets[0]).toBe(200);
+      expect(block.rankPoints[0]).toBe(28);
+      expect(block.bonusPoints[0]).toBe(3);
+    }
+  });
+
+  it('does not re-add non-dummy shooters removed from the roster but still in week results', async () => {
+    // Charlie was on a published week but is no longer on the roster — must be dropped.
+    const team = makeTeam('Team', [makeRosterShooter('A')]);
+    const week = makeFullWeekResult({
+      weekNumber: 1, teamName: 'Team',
+      shooterScores: [
+        { name: 'A', total: 40 },
+        { name: 'Charlie', total: 38 },
+      ],
+    });
+    const svc = new ScoreService(makeScorecardRepo({
+      currentYear: 2026,
+      currentTeams: [team],
+      currentWeeks: [week],
+    }));
+    const result = await svc.buildScorecardData(2026);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const names = result.data.teams[0]!.shooters.map((s) => s.name);
+      expect(names).not.toContain('Charlie');
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // saveTeamRoster — minimum shooter count
 // ---------------------------------------------------------------------------
 
