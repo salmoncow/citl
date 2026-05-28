@@ -22,6 +22,8 @@
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
     "deploy:rules:dryrun": "firebase deploy --only firestore:rules --dry-run",
     "emulators": "firebase emulators:start --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data",
+    "dev:seeded": "firebase emulators:exec --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data 'npm run seed:emulator && VITE_USE_EMULATOR=true vite'",
+    "seed:emulator": "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=citl-baed2 node scripts/seed-emulator.js",
     "set-role": "node scripts/set-role.js",
     "set-role:emulator": "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=citl-baed2 node scripts/set-role.js",
     "grant-admin": "node scripts/grant-admin.js",
