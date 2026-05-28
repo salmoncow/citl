@@ -8,11 +8,11 @@
  */
 
 import { success, failure, type Result } from '@/repositories/score-repository';
-import { computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, normalizeShooterName, getLastWord, computeAccolades } from '@/services/scoring-engine';
+import { computeSeasonTotals, computeShooterAverage, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, mean, normalizeShooterName, getLastWord, sortShootersWithCaptainFirst, computeAccolades } from '@/services/scoring-engine';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
-import type { SeasonData, ScorecardShooter } from '@/types/scorecard';
+import type { SeasonData, ScorecardShooter, ScorecardRowShooter, ScorecardTeamBlock, ScorecardViewData } from '@/types/scorecard';
 import type { Announcement } from '@/types/announcement';
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -412,6 +412,76 @@ export class ScoreService {
     });
   }
 
+  /**
+   * Build the full per-team display data for the season-scorecards view.
+   * Returns one ScorecardTeamBlock per team (rostered teams first, in roster
+   * order; then any teams that appear in published week results but not on
+   * the current roster). Each shooter row carries fully computed display
+   * fields: prior-blended starting/W0 value, rookie flag, scores, weeksShot,
+   * and final average. Shooters are pre-sorted (captain first among real
+   * shooters; dummies last).
+   *
+   * Failures fetching current-year data return an empty `teams` array with
+   * `success: true` so the caller can render a "no data" placeholder.
+   */
+  async buildScorecardData(year: number): Promise<Result<ScorecardViewData>> {
+    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    }
+
+    const [teamsResult, weeksResult, prior1TeamsResult, prior2TeamsResult, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
+      this.getTeams(year),
+      this.getAllWeekResults(year),
+      this.getTeams(year - 1),
+      this.getTeams(year - 2),
+      this.getAllWeekResults(year - 1),
+      this.getAllWeekResults(year - 2),
+    ]);
+
+    if (!teamsResult.success && !weeksResult.success) {
+      return failure(`Unable to load scorecard data for ${year}`, 'NO_DATA');
+    }
+
+    const teams: Team[] = teamsResult.success ? (teamsResult.data ?? []) : [];
+    const weekResults: WeekResult[] = weeksResult.success ? (weeksResult.data ?? []) : [];
+    const prior1Teams: Team[] = prior1TeamsResult.success ? prior1TeamsResult.data : [];
+    const prior2Teams: Team[] = prior2TeamsResult.success ? prior2TeamsResult.data : [];
+    const prior1Weeks: WeekResult[] = prior1WeeksResult.success ? prior1WeeksResult.data : [];
+    const prior2Weeks: WeekResult[] = prior2WeeksResult.success ? prior2WeeksResult.data : [];
+
+    const prior1AvgMap = buildPriorAvgMap(prior1Weeks, prior1Teams);
+    const prior2AvgMap = buildPriorAvgMap(prior2Weeks, prior2Teams);
+
+    const teamDocMap = new Map<string, Team>();
+    for (const team of teams) teamDocMap.set(team.name, team);
+
+    const teamNamesFromWeeks = new Set<string>();
+    for (const wr of weekResults) {
+      for (const tr of wr.teamResults ?? []) teamNamesFromWeeks.add(tr.teamName);
+    }
+
+    const orderedTeamNames: string[] = [];
+    for (const team of teams) {
+      orderedTeamNames.push(team.name);
+      teamNamesFromWeeks.delete(team.name);
+    }
+    for (const name of teamNamesFromWeeks) orderedTeamNames.push(name);
+
+    const blocks = orderedTeamNames.map((teamName) =>
+      _buildScorecardTeamBlock({
+        teamName,
+        teamDoc: teamDocMap.get(teamName),
+        weekResults,
+        prior1Teams,
+        prior2Teams,
+        prior1AvgMap,
+        prior2AvgMap,
+      }),
+    );
+
+    return success({ year, teams: blocks });
+  }
+
   async deleteTeam(year: number, teamId: string): Promise<Result<void>> {
     if (!Number.isInteger(year) || year < 2019 || year > 2100) {
       return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
@@ -753,12 +823,156 @@ function _buildSeasonData(
 }
 
 /**
+ * Build one team block for the season-scorecards view. Pure given its inputs
+ * (no I/O), so it can be unit-tested without a repository stub.
+ */
+function _buildScorecardTeamBlock(args: {
+  teamName: string;
+  teamDoc: Team | undefined;
+  weekResults: WeekResult[];
+  prior1Teams: Team[];
+  prior2Teams: Team[];
+  prior1AvgMap: Map<string, number>;
+  prior2AvgMap: Map<string, number>;
+}): ScorecardTeamBlock {
+  const { teamName, teamDoc, weekResults, prior1Teams, prior2Teams, prior1AvgMap, prior2AvgMap } = args;
+  const WEEK_COUNT = 15;
+
+  interface ShooterState {
+    name: string;
+    rookie: boolean;
+    isDummy: boolean;
+    startingAvg: number | '-';
+    scores: (number | null)[];
+    w0Display?: number;
+  }
+
+  const shooterMap = new Map<string, ShooterState>();
+
+  if (teamDoc?.shooters?.length) {
+    for (const s of teamDoc.shooters) {
+      const key = normalizeShooterName(s.name);
+      const computedAvg = prior1AvgMap.get(key)
+        ?? prior2AvgMap.get(key)
+        ?? computeShooterStartingAvg(s.name, [...prior1Teams, ...prior2Teams]);
+      const computedRookie = isShooterRookie(s.name, prior1Teams, prior2Teams, prior1AvgMap, prior2AvgMap);
+      shooterMap.set(s.name, {
+        name: s.name,
+        rookie: computedRookie,
+        isDummy: isDummyName(s.name),
+        startingAvg: computedAvg,
+        scores: new Array<number | null>(WEEK_COUNT).fill(null),
+      });
+    }
+  }
+
+  const targets: (number | null)[] = new Array(WEEK_COUNT).fill(null);
+  const rankPoints: (number | null)[] = new Array(WEEK_COUNT).fill(null);
+  const bonusPoints: (number | null)[] = new Array(WEEK_COUNT).fill(null);
+
+  for (const wr of weekResults) {
+    const wi = wr.weekNumber - 1;
+    if (wi < 0 || wi >= WEEK_COUNT) continue;
+
+    const teamResult = (wr.teamResults ?? []).find((tr) => tr.teamName === teamName);
+    if (!teamResult) continue;
+
+    targets[wi] = teamResult.targets ?? null;
+    rankPoints[wi] = teamResult.rankPoints ?? null;
+    bonusPoints[wi] = teamResult.bonusPoints ?? null;
+
+    for (const ss of teamResult.shooterScores ?? []) {
+      if (!shooterMap.has(ss.name)) {
+        // Only re-add shooters not on the current roster if they are dummies.
+        // Real shooters removed from the roster must not reappear via published data.
+        if (!isDummyName(ss.name)) continue;
+        shooterMap.set(ss.name, {
+          name: ss.name,
+          rookie: false,
+          isDummy: true,
+          startingAvg: '-',
+          scores: new Array<number | null>(WEEK_COUNT).fill(null),
+        });
+      }
+      shooterMap.get(ss.name)!.scores[wi] = ss.total ?? null;
+    }
+  }
+
+  // Pad to 2 DUMMY placeholder rows per team
+  const existingDummies = [...shooterMap.values()].filter((s) => s.isDummy);
+  if (existingDummies.length < 2) {
+    const prefix = getLastWord(teamName);
+    for (let n = existingDummies.length + 1; n <= 2; n++) {
+      const dName = `${prefix} DUMMY${n}`;
+      if (!shooterMap.has(dName)) {
+        shooterMap.set(dName, {
+          name: dName,
+          rookie: false,
+          isDummy: true,
+          startingAvg: '-',
+          scores: new Array<number | null>(WEEK_COUNT).fill(null),
+        });
+      }
+    }
+  }
+
+  // DUMMY W0 display = mean of real teammates' actual W1 scores
+  const realW1Scores = [...shooterMap.values()]
+    .filter((s) => !s.isDummy && s.scores[0] !== null)
+    .map((s) => s.scores[0] as number);
+  if (realW1Scores.length > 0) {
+    const dummyW0Display = Math.round(mean(realW1Scores) * 10) / 10;
+    for (const s of shooterMap.values()) {
+      if (s.isDummy) s.w0Display = dummyW0Display;
+    }
+  }
+
+  // Compute weeksShot, finalAvg, and final w0Display per shooter
+  const rows: ScorecardRowShooter[] = [...shooterMap.values()].map((s) => {
+    const nonNull = s.scores.filter((v): v is number => v !== null);
+    const weeksShot = nonNull.length > 0 ? nonNull.length : null;
+    const w0Num = s.isDummy
+      ? (nonNull.length > 0 ? (s.w0Display ?? null) : null)
+      : (typeof s.startingAvg === 'number' ? s.startingAvg : null);
+    const finalAvg = w0Num !== null
+      ? Math.round(computeShooterAverage(w0Num, s.scores, WEEK_COUNT - 1) * 10) / 10
+      : nonNull.length > 0
+        ? Math.round(mean(nonNull) * 10) / 10
+        : (s.w0Display ?? s.startingAvg);
+    const w0Display: number | '-' = s.w0Display ?? s.startingAvg;
+    return {
+      name: s.name,
+      rookie: s.rookie,
+      isDummy: s.isDummy,
+      w0Display,
+      scores: s.scores,
+      weeksShot,
+      finalAvg,
+    };
+  });
+
+  const withCaptainFirst = sortShootersWithCaptainFirst(rows, teamDoc?.captain ?? '');
+  withCaptainFirst.sort((a, b) => {
+    if (a.isDummy === b.isDummy) return 0;
+    return a.isDummy ? 1 : -1;
+  });
+
+  return {
+    teamName,
+    shooters: withCaptainFirst,
+    targets,
+    rankPoints,
+    bonusPoints,
+  };
+}
+
+/**
  * Build a name→finalAvg map from published WeekResult documents, applying the
  * same business rule as computeShooterAverage: when a shooter has fewer than
  * 2 weeks of actual scores, the starting average is blended into the mean.
  * priorTeams is required for that startingAvg lookup.
  *
- * Exported so the scorecard component can reuse this logic without duplicating it.
+ * Exported so existing tests can exercise the helper directly.
  */
 export function buildPriorAvgMap(weekResults: WeekResult[], priorTeams: Team[]): Map<string, number> {
   // Build startingAvg lookup keyed by lowercased name (first match wins)
