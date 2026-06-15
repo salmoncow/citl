@@ -8,6 +8,7 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
+import { compareStandings } from '@/services/scoring-engine';
 import type { Team, WeekResult } from '@/types/score';
 import type { Season } from '@/types/season';
 import type { Accolade } from '@/types/shooter';
@@ -197,7 +198,12 @@ class HomeStandings extends HTMLElement {
         };
       });
 
-      rows.sort((a, b) => (b.total as number) - (a.total as number));
+      rows.sort((a, b) =>
+        compareStandings(
+          { points: a.total as number, targets: a.totalTargets as number },
+          { points: b.total as number, targets: b.totalTargets as number },
+        ),
+      );
       rows = rows.map((r, i) => ({ ...r, place: i + 1 }));
       subtitle = `Week ${weekNum} results \u00b7 Total reflects season-to-date`;
       accolades = weekResult.accolades ?? [];

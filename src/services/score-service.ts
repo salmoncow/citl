@@ -8,7 +8,7 @@
  */
 
 import { success, failure, type Result } from '@/repositories/score-repository';
-import { computeSeasonTotals, computeShooterAverage, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, mean, normalizeShooterName, getLastWord, sortShootersWithCaptainFirst, computeAccolades } from '@/services/scoring-engine';
+import { computeSeasonTotals, computeShooterAverage, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, mean, normalizeShooterName, getLastWord, sortShootersWithCaptainFirst, computeAccolades, compareStandings } from '@/services/scoring-engine';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
@@ -1031,8 +1031,11 @@ function _recomputeStandingsFromWeeks(weekResults: WeekResult[]): SeasonStanding
       });
     }
   }
-  const rows = [...acc.values()].sort(
-    (a, b) => (b.rankPoints + b.bonusPoints) - (a.rankPoints + a.bonusPoints),
+  const rows = [...acc.values()].sort((a, b) =>
+    compareStandings(
+      { points: a.rankPoints + a.bonusPoints, targets: a.targets },
+      { points: b.rankPoints + b.bonusPoints, targets: b.targets },
+    ),
   );
   return rows.map((row, i) => ({
     rank: i + 1,
@@ -1065,7 +1068,12 @@ function _computeStandings(computed: SeasonData, throughWeek: number): SeasonSta
     };
   });
 
-  rows.sort((a, b) => (b.totalRankPoints + b.totalBonusPoints) - (a.totalRankPoints + a.totalBonusPoints));
+  rows.sort((a, b) =>
+    compareStandings(
+      { points: a.totalRankPoints + a.totalBonusPoints, targets: a.totalTargets },
+      { points: b.totalRankPoints + b.totalBonusPoints, targets: b.totalTargets },
+    ),
+  );
 
   return rows.map((row, i) => ({ rank: i + 1, ...row }));
 }

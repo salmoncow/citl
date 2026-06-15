@@ -264,6 +264,24 @@ export function computeRankPoints(allTeamTargets: (number | null)[]): (number | 
 }
 
 // ---------------------------------------------------------------------------
+// Standings ordering
+// ---------------------------------------------------------------------------
+
+/**
+ * Standings sort comparator: total points (rankPoints + bonusPoints) descending,
+ * then total targets descending as the tie-breaker — a points tie is broken in
+ * favor of the team that broke more targets. Equal on both points and targets
+ * returns 0; Array.prototype.sort is stable, so the existing order is preserved.
+ */
+export function compareStandings(
+  a: { points: number; targets: number },
+  b: { points: number; targets: number },
+): number {
+  if (b.points !== a.points) return b.points - a.points;
+  return b.targets - a.targets;
+}
+
+// ---------------------------------------------------------------------------
 // Full season pass
 // ---------------------------------------------------------------------------
 

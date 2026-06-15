@@ -76,6 +76,8 @@ export function rulesView(): string {
       considered Rookies</li>
       <li>Each week the highest scoring team is awarded 30 points; next highest gets 28, and so
       on. Points will be split for ties</li>
+      <li>In the season standings, a tie on total points is broken in favor of the team that has
+      broken more total targets</li>
       <li>Any team that scores higher than its going-in average receives 5 bonus points</li>
       <li>A team will receive 1 bonus point for each qualifying rookie shooting that week up to
       a maximum of 2 rookie bonus points</li>

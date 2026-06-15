@@ -20,6 +20,7 @@ import {
   computeTargetBonus,
   computeRookieBonus,
   computeRankPoints,
+  compareStandings,
   computeShooterStartingAvg,
   isShooterRookie,
   computeMostImprovedScore,
@@ -459,6 +460,41 @@ describe('computeRankPoints', () => {
 
   it('treats forfeit (0 targets) as last place', () => {
     expect(computeRankPoints([200, 0])).toEqual([30, 28]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Block 7b: compareStandings
+// ---------------------------------------------------------------------------
+
+describe('compareStandings', () => {
+  it('orders by total points descending when points differ', () => {
+    // Higher points wins regardless of targets.
+    expect(
+      compareStandings({ points: 150, targets: 100 }, { points: 174, targets: 9999 }),
+    ).toBeGreaterThan(0);
+    expect(
+      compareStandings({ points: 174, targets: 100 }, { points: 150, targets: 9999 }),
+    ).toBeLessThan(0);
+  });
+
+  it('breaks a points tie in favor of more targets', () => {
+    // The reported week-6 case: both 174 points, Powder Burners broke more targets.
+    const fullChoke = { points: 174, targets: 1143 };
+    const powderBurners = { points: 174, targets: 1162 };
+    expect(compareStandings(powderBurners, fullChoke)).toBeLessThan(0); // PB sorts first
+    expect([fullChoke, powderBurners].sort(compareStandings)).toEqual([
+      powderBurners,
+      fullChoke,
+    ]);
+  });
+
+  it('returns 0 (stable order) when points and targets both tie', () => {
+    const a = { points: 174, targets: 1150 };
+    const b = { points: 174, targets: 1150 };
+    expect(compareStandings(a, b)).toBe(0);
+    // Array.sort is stable, so the original order is preserved.
+    expect([a, b].sort(compareStandings)).toEqual([a, b]);
   });
 });
 
