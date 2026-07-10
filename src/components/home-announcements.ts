@@ -9,6 +9,7 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
+import { escapeHtml } from '@/modules/ui';
 import { renderMarkdown } from '@/utils/markdown';
 import type { Announcement } from '@/types/announcement';
 
@@ -42,10 +43,7 @@ class HomeAnnouncements extends HTMLElement {
     const fmt = (ts: import('firebase/firestore').Timestamp) =>
       ts.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-    const escapedTitle = ann.title
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    const escapedTitle = escapeHtml(ann.title);
 
     const editedSpan = ann.lastEditedAt
       ? `<span class="ann-card__edited">Edited ${fmt(ann.lastEditedAt)}</span>`

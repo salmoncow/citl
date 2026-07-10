@@ -11,8 +11,8 @@
  *     start (skipped on first sign-in to let onUserCreate seed the doc
  *     with role + custom claims).
  *
- * Never writes the `role` field. Self-update of non-role fields is
- * permitted by Firestore rules.
+ * Never writes identity or role fields. Firestore rules restrict client
+ * self-update to lastSignInAt/updatedAt (the touchLastSignIn path).
  */
 
 import {

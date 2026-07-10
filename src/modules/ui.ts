@@ -2,10 +2,19 @@
  * UIModule — shared DOM utilities
  */
 
+const HTML_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
+// Must escape quotes, not just &<>: callers interpolate into attribute
+// positions (e.g. aria-label="..."), where an unescaped quote allows
+// attribute injection.
 export function escapeHtml(str: string): string {
-  const div = document.createElement('div');
-  div.textContent = String(str);
-  return div.innerHTML;
+  return String(str).replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch] ?? ch);
 }
 
 export function showToast(type: 'info' | 'success' | 'error' | 'warning', message: string): void {

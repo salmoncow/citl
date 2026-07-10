@@ -2,8 +2,11 @@
  * Firestore rules: users/{uid}
  *
  * Matrix: {owner, admin, user, anon} × {read self, read other, create
- * self with/without role, update non-role, update role (must deny for
- * every role since it would let clients self-promote), delete}.
+ * (denied for all clients — onUserCreate seeds server-side), update
+ * timestamps (the only allowed self-write), update identity fields
+ * (must deny — client-mutable identity enables impersonation in the
+ * admin Users tab), update role (must deny for every role since it
+ * would let clients self-promote), delete}.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -67,10 +70,10 @@ describe('users/{uid} read', () => {
   });
 });
 
-describe('users/{uid} create (self-create defense)', () => {
-  it('user can create own doc without role field', async () => {
+describe('users/{uid} create (denied for all clients — onUserCreate seeds server-side)', () => {
+  it('user CANNOT create own doc even without role field', async () => {
     const db = asNoRole(env, USER_UID);
-    await assertSucceeds(
+    await assertFails(
       setDoc(doc(db, 'users', USER_UID), {
         uid: USER_UID,
         email: 'u@example.com',
@@ -108,18 +111,36 @@ describe('users/{uid} create (self-create defense)', () => {
   });
 });
 
-describe('users/{uid} update — non-role fields', () => {
+describe('users/{uid} update — timestamps only; identity fields locked', () => {
   beforeEach(async () => {
     await seedUser(env, USER_UID, 'user');
     await seedUser(env, OTHER_UID, 'user');
   });
 
-  it('user can update own non-role fields when preserving role', async () => {
+  it('user CANNOT update own displayName (impersonation guard)', async () => {
+    // The Users tab renders displayName/email as row identity when the
+    // owner grants roles; a self-writable mirror lets any account mimic
+    // a known league member.
     const db = asRole(env, USER_UID, 'user');
-    await assertSucceeds(
+    await assertFails(
+      updateDoc(doc(db, 'users', USER_UID), { displayName: 'New Name' }),
+    );
+  });
+
+  it('user CANNOT update own email mirror', async () => {
+    const db = asRole(env, USER_UID, 'user');
+    await assertFails(
+      updateDoc(doc(db, 'users', USER_UID), { email: 'spoof@example.com' }),
+    );
+  });
+
+  it('user CANNOT smuggle identity fields alongside allowed timestamps', async () => {
+    const db = asRole(env, USER_UID, 'user');
+    await assertFails(
       updateDoc(doc(db, 'users', USER_UID), {
-        displayName: 'New Name',
-        // role unchanged in resource.data after update because client doesn\'t set it
+        lastSignInAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        displayName: 'Sneaky',
       }),
     );
   });
