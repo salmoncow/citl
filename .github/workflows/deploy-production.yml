@@ -1,16 +1,35 @@
 name: Deploy to Firebase Hosting (Production)
 
+# Deploy is gated on CI: it runs only after the CI workflow completes
+# successfully on main (or via manual dispatch). This prevents a
+# test- or build-failing commit — including a dependabot major that
+# breaks the production build — from shipping to production.
 on:
-  push:
+  workflow_run:
+    workflows: ['CI']
     branches: [main]
+    types: [completed]
   workflow_dispatch:
+
+# Never run two production deploys at once; cancel an in-flight deploy
+# if a newer commit's CI passes first.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     name: Build & Deploy (Production)
     runs-on: ubuntu-latest
+    # Manual dispatch always deploys; the CI-triggered path deploys only
+    # on success.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
+      # Deploy the exact commit that passed CI. On manual dispatch this
+      # is empty and checkout falls back to the default branch HEAD.
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'

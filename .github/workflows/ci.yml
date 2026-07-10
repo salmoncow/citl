@@ -63,3 +63,20 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix functions
       - run: npm run test:functions
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm ci --prefix functions
+      # Exercises the production rollup/terser path (which vitest's dev
+      # transform never runs) and the Functions tsc build. No VITE_
+      # secrets needed — the build succeeds with the env vars undefined.
+      - run: npm run build
+      - run: npm --prefix functions run build
