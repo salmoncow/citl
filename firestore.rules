@@ -15,20 +15,22 @@ service cloud.firestore {
     // ── users/{uid} — RBAC mirror ───────────────────────────────────────────
     // Written server-side by the onUserCreate trigger and the setUserRole
     // callable / scripts/set-role.js CLI. Clients may read their own doc
-    // and (for owner/admin) read the list. The role field is never client-
-    // writable.
+    // and (for owner/admin) read the list.
+    //
+    // Client writes are locked to the single legitimate flow: the
+    // touchLastSignIn self-update of session timestamps. Identity fields
+    // (email, displayName, photoURL) and role are server-only — a
+    // client-mutable identity mirror would allow impersonation in the
+    // admin Users tab, the exact UI used to grant roles.
     match /users/{uid} {
       allow read:   if isSelf(uid) || isOwnerOrAdmin();
-      // Self-create (defense in depth — onUserCreate normally seeds it)
-      // must not include the role field.
-      allow create: if isSelf(uid) && !('role' in request.resource.data);
-      // Self-update preserves role; the field can never change client-side.
-      // Two paths: either the update doesn't include the role field at all
-      // (typical preferences edit), or it includes it but matches the existing
-      // value. Either way, role is never client-mutable.
+      // onUserCreate seeds the doc server-side (Admin SDK bypasses rules);
+      // there is no legitimate client create path.
+      allow create: if false;
+      // Self-update may touch only session timestamps.
       allow update: if isSelf(uid)
-                    && (!('role' in request.resource.data)
-                        || request.resource.data.role == resource.data.role);
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['lastSignInAt', 'updatedAt']);
       allow delete: if false;
     }
 
