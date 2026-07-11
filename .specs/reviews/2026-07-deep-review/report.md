@@ -11,14 +11,24 @@
 
 The findings below are a **frozen snapshot as of 2026-07-09**; they are not edited as work lands. This section is the running ledger of what has since been remediated. When a finding is fixed, its write-up in §2 stays as-is for the audit trail — check here for current status.
 
-| Finding | Status | Reference |
-|---------|--------|-----------|
-| F-06 — quote-blind `escapeHtml` | ✅ Fixed & deployed | [PR #195](https://github.com/salmoncow/citl/pull/195) |
-| F-27 — user-mirror impersonation | ✅ Fixed & deployed | [PR #195](https://github.com/salmoncow/citl/pull/195) |
-| F-10 — untested XSS sanitizer | ✅ Fixed & deployed | [PR #195](https://github.com/salmoncow/citl/pull/195) |
-| F-03 — ungated production deploy | ✅ Fixed & deployed | [PR #198](https://github.com/salmoncow/citl/pull/198) |
+**All 13 P1 findings are resolved and deployed** (as of 2026-07-11). Ledger by PR:
 
-All other findings remain open and are tracked in [backlog.md](backlog.md).
+| PR | Workstream | Findings closed |
+|----|-----------|-----------------|
+| [#195](https://github.com/salmoncow/citl/pull/195) | Security trio | F-06, F-27, F-10 |
+| [#198](https://github.com/salmoncow/citl/pull/198) | CI gate | F-03 (+ required status checks on `main`) |
+| [#200](https://github.com/salmoncow/citl/pull/200) | WS-1 truth reconciliation | F-11, F-12, F-13, F-14, F-31, F-32, F-33, F-34, F-35, F-36, F-38, F-57 |
+| [#201](https://github.com/salmoncow/citl/pull/201) | WS-2 framework hygiene | F-16, F-17, F-18, F-37, F-41, F-42, F-43, F-61, F-62, F-63 |
+| [#202](https://github.com/salmoncow/citl/pull/202) | WS-2 enforcement hook | F-19, F-20, F-39, F-40, F-59, F-60 |
+| [#203](https://github.com/salmoncow/citl/pull/203) | WS-3 publish path | F-05, F-08 |
+| [#204](https://github.com/salmoncow/citl/pull/204) | WS-3 blend + boundary | F-02, F-09 |
+| [#205](https://github.com/salmoncow/citl/pull/205) | WS-3 rules | F-53, F-55 |
+| [#206](https://github.com/salmoncow/citl/pull/206) | WS-3 escaping | F-07, F-23 |
+| [#207](https://github.com/salmoncow/citl/pull/207) | WS-3 propagation | F-25, F-30, F-47, F-48, F-51 |
+| [#208](https://github.com/salmoncow/citl/pull/208) | WS-3 announcements | F-24 |
+| [#209](https://github.com/salmoncow/citl/pull/209) | WS-3 cascade tests | F-29 *(partial — repository cascades tested + coverage measurable; UI components remain untested, tracked for WS-4)* |
+
+**Still open** (tracked in [backlog.md](backlog.md)): the WS-4 structural items — F-01/F-21 (composition root + score-service split), F-22 (CSS monolith), F-28 (lint), F-04 (no-cache shell) — and the WS-5 P3 sweep (F-26 awards decision, F-44–F-46, F-49, F-50, F-52, F-54, F-56, F-58, plus the F-15 archive-lifecycle remainder). F-63's meta-consolidation landed in #201; anything not listed above is open.
 
 ---
 
