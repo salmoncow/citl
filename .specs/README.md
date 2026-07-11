@@ -7,9 +7,9 @@ rather than restating them.
 **Note**: This directory works alongside the **Prompts** framework (`.prompts/meta/`) for a
 hybrid architecture:
 - **Spec-Kit** (this directory) = Project-specific constraints, current architectural state, technical configs
-- **Prompts** (`.prompts/meta/`) = Foundational, strategic frameworks and universal patterns
+- **Prompts** (`.prompts/meta/`) = Strategic frameworks (ADR log, evolution strategy) + spec-authoring guidelines
 
-See [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) for full documentation.
+The [constitution](./constitution.md) is the source of truth for project rules; [WORKFLOW-GUIDE.md](../WORKFLOW-GUIDE.md) and [CLAUDE.md](../CLAUDE.md) document the day-to-day agent/skill workflow.
 
 ---
 
@@ -104,7 +104,7 @@ Canonical descriptions of this workflow live in:
 - [Constitution](./constitution.md) — CITL project constitutional spec
 - [WORKFLOW-GUIDE.md](../WORKFLOW-GUIDE.md) — Hands-on agent/skill workflow cheat sheet
 - [CLAUDE.md](../CLAUDE.md) — Agent orientation and quick-start
-- [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) — Hybrid architecture docs
+- [Spec-Authoring Guidelines](../.prompts/meta/spec-authoring-guidelines.md) — Reference the source of truth; never restate rules
 - [Architectural Decision Log](../.prompts/meta/architectural-decision-log.md) — Historical decisions
 - [Architectural Evolution Strategy](../.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers and decision framework
 

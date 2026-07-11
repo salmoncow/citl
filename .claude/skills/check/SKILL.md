@@ -1,6 +1,6 @@
 ---
 name: check
-description: Run a quick constitutional compliance check on the current working tree changes. Triggers on phrases like "check compliance", "pre-commit check", "run checks", "constitutional check", "validate changes".
+description: Run a quick constitutional compliance check on the current working tree changes. Triggers on phrases like "constitutional check", "compliance check", "pre-commit check".
 ---
 
 Run a quick constitutional compliance check on the current working tree changes.
