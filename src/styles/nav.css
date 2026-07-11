@@ -1,0 +1,233 @@
+/* ============================================================
+   Site nav — Minimal Pro (transparent, logo left, links right)
+   ============================================================ */
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--nav-height);
+  padding: 0 var(--space-6);
+  background: var(--c-nav-bg);
+  border-bottom: 1px solid var(--c-nav-border);
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Logo in nav */
+.site-nav__logo-link {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.site-nav__logo-text {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  color: var(--c-text);
+}
+
+/* Links container — pushed to right */
+.site-nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--c-nav-link);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  transition: color var(--t-fast);
+  white-space: nowrap;
+}
+
+.site-nav__link:hover { color: var(--c-nav-link-hover); }
+
+.site-nav__link.is-active {
+  color: var(--c-nav-active);
+  font-weight: 600;
+}
+
+/* Burger button — hidden on desktop */
+.site-nav__burger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--c-nav-link);
+  padding: var(--space-2);
+  cursor: pointer;
+  line-height: 1;
+  margin-left: auto;
+}
+
+/* Theme toggle button */
+.site-nav__theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--c-nav-link);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color var(--t-fast);
+}
+
+.site-nav__theme-toggle:hover { color: var(--c-nav-link-hover); }
+
+/* Resources dropdown */
+.site-nav__dropdown { position: relative; }
+
+.site-nav__dropbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  color: var(--c-nav-link);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--t-fast);
+  white-space: nowrap;
+}
+
+.site-nav__dropbtn:hover,
+.site-nav__dropbtn:focus { color: var(--c-nav-link-hover); }
+
+.site-nav__dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background-color: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  min-width: 240px;
+  box-shadow: var(--shadow-dropdown);
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity var(--t-fast), transform var(--t-fast);
+}
+
+.site-nav__dropdown-menu a {
+  display: block;
+  color: var(--c-text);
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.site-nav__dropdown-menu a:hover {
+  background-color: var(--c-surface);
+  color: var(--c-text);
+}
+
+.site-nav__dropdown-menu.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+
+/* ============================================================
+   Responsive nav — mobile (max-width: 600px)
+   ============================================================ */
+
+@media screen and (max-width: 600px) {
+  .site-nav {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--nav-height);
+    padding: var(--space-3) var(--space-4);
+    align-items: center;
+    gap: 0;
+  }
+
+  /* Logo stays on left */
+  .site-nav__logo-link { order: 1; }
+
+  /* Theme toggle — always visible, pushed right of logo */
+  .site-nav__theme-toggle {
+    order: 2;
+    margin-left: auto;
+  }
+
+  /* Burger shown, right of theme toggle */
+  .site-nav__burger {
+    display: flex;
+    order: 3;
+    margin-left: 0;
+  }
+
+  /* Links hidden by default, full-width below top row when open */
+  .site-nav__links {
+    display: none;
+    order: 4;
+    flex-direction: column;
+    align-items: stretch;
+    flex: 0 0 100%;
+    gap: 0;
+    margin-left: 0;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--c-border);
+    margin-top: var(--space-2);
+  }
+
+  .site-nav.is-open .site-nav__links { display: flex; }
+
+  .site-nav__link {
+    width: 100%;
+    font-size: var(--text-base);
+    padding: var(--space-3) var(--space-2);
+  }
+
+  .site-nav__dropdown { width: 100%; }
+
+  .site-nav__dropbtn {
+    width: 100%;
+    font-size: var(--text-base);
+    padding: var(--space-3) var(--space-2);
+    justify-content: flex-start;
+  }
+
+  /* Mobile dropdown: use display toggle, no opacity animation */
+  .site-nav__dropdown-menu {
+    position: static;
+    display: none;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    box-shadow: none;
+    border: none;
+    border-left: 2px solid var(--c-border);
+    border-radius: 0;
+    margin-left: var(--space-4);
+    transition: none;
+  }
+
+  .site-nav__dropdown-menu.is-open { display: block; }
+
+  .scoresheet-controls {
+    flex-wrap: wrap;
+  }
+}
+
