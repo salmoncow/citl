@@ -312,6 +312,11 @@ export class TeamManagementTab implements AdminTab {
     if (result.success) {
       showToast('success', `Team "${teamName}" deleted from ${year}.`);
       void this._ctx?.refreshTeams();
+    } else if (result.code === 'STANDINGS_RECOMPUTE_FAILED') {
+      // The team is gone; only the standings refresh failed. Republishing a
+      // week (or retrying the delete flow) rebuilds them.
+      showToast('warning', `Team "${teamName}" deleted, but standings recompute failed — republish a week to rebuild standings.`);
+      void this._ctx?.refreshTeams();
     } else {
       showToast('error', `Failed to delete team: ${result.error}`);
     }

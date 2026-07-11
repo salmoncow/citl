@@ -287,7 +287,10 @@ export class ScoreRepository {
       const q = query(
         collection(this.db, 'seasons', String(year), 'entries'),
         where('weekNumber', '<=', maxWeekNumber),
-        limit(maxWeekNumber * 10),
+        // Fixed bound: 15 weeks × the 20-team cap getTeams enforces. The old
+        // maxWeekNumber*10 silently clipped an 11+-team season when
+        // publishing week 1 (F-47).
+        limit(15 * 20),
       );
       const snap = await getDocs(q);
       const entries: SeasonEntry[] = [];

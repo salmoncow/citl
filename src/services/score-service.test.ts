@@ -14,10 +14,10 @@
  * instead of the correct 40.5.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ScoreService } from './score-service';
 import { buildPriorAvgMap, computeShooterAverage } from './scoring-engine';
-import { success } from '@/repositories/score-repository';
+import { success, failure } from '@/repositories/score-repository';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
@@ -846,10 +846,11 @@ describe('removeShooterFromRoster — validation', () => {
     if (!result.success) expect(result.code).toBe('NOT_FOUND');
   });
 
-  it('clears the teams cache on successful deletion', async () => {
+  it('clears the teams cache on successful removal — next getTeams hits the repository', async () => {
     const team = makeTeam('Team', [makeRosterShooter('Alice')]);
+    let getTeamsCalls = 0;
     const repo: Partial<ScoreRepository> = {
-      getTeams: async () => success([team]),
+      getTeams: async () => { getTeamsCalls++; return success([team]); },
       getTeam: async () => success(team),
       getEntry: async () => success(null),
       getAllWeekResults: async () => success([]),
@@ -857,8 +858,28 @@ describe('removeShooterFromRoster — validation', () => {
     };
     const svc = new ScoreService(repo as unknown as ScoreRepository);
     await svc.getTeams(2026); // populate cache
+    await svc.getTeams(2026); // served from cache
+    expect(getTeamsCalls).toBe(1);
     const result = await svc.removeShooterFromRoster(2026, 'team-1', 'Alice');
     expect(result.success).toBe(true);
+    await svc.getTeams(2026); // invalidated — must re-fetch
+    expect(getTeamsCalls).toBe(2);
+  });
+
+  it('returns failure when the accolade-cleanup weeks read fails (nothing written) — F-25', async () => {
+    const team = makeTeam('Team', [makeRosterShooter('Alice')]);
+    let wrote = false;
+    const repo: Partial<ScoreRepository> = {
+      getTeam: async () => success(team),
+      getEntry: async () => success(null),
+      getAllWeekResults: async () => failure('network down', 'FIRESTORE_READ_ERROR'),
+      removeShooterFromRosterAndEntries: async () => { wrote = true; return success(undefined); },
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.removeShooterFromRoster(2026, 'team-1', 'Alice');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('FIRESTORE_READ_ERROR');
+    expect(wrote).toBe(false); // failed before any write — retry is clean
   });
 });
 
@@ -877,18 +898,110 @@ describe('deleteTeam — validation', () => {
     if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
   });
 
-  it('clears the teams cache on successful deletion', async () => {
+  it('clears the teams cache on successful deletion — next getTeams hits the repository', async () => {
+    let getTeamsCalls = 0;
     const repo: Partial<ScoreRepository> = {
-      getTeams: async () => success([]),
+      getTeams: async () => { getTeamsCalls++; return success([]); },
       deleteTeam: async () => success(undefined),
       getAllWeekResults: async () => success([]),
     };
     const svc = new ScoreService(repo as unknown as ScoreRepository);
-    // Populate cache
-    await svc.getTeams(2026);
-    // Delete clears cache
+    await svc.getTeams(2026); // populate cache
+    await svc.getTeams(2026); // served from cache
+    expect(getTeamsCalls).toBe(1);
     const result = await svc.deleteTeam(2026, 'team-1');
     expect(result.success).toBe(true);
+    await svc.getTeams(2026); // invalidated — must re-fetch
+    expect(getTeamsCalls).toBe(2);
+  });
+
+  it('returns STANDINGS_RECOMPUTE_FAILED when the weeks read fails after deletion (F-25)', async () => {
+    const repo: Partial<ScoreRepository> = {
+      deleteTeam: async () => success(undefined),
+      getAllWeekResults: async () => failure('network down', 'FIRESTORE_READ_ERROR'),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.deleteTeam(2026, 'team-1');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('STANDINGS_RECOMPUTE_FAILED');
+  });
+
+  it('returns STANDINGS_RECOMPUTE_FAILED when the standings write fails after deletion (F-25)', async () => {
+    const repo: Partial<ScoreRepository> = {
+      deleteTeam: async () => success(undefined),
+      getAllWeekResults: async () => success([makeWeekResult([{ name: 'A', total: 40 }])]),
+      updateSeason: async () => failure('write denied', 'FIRESTORE_WRITE_ERROR'),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.deleteTeam(2026, 'team-1');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('STANDINGS_RECOMPUTE_FAILED');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cache behavior — hit, TTL expiry, null caching, prior-year routing
+// ---------------------------------------------------------------------------
+
+describe('ScoreService cache (F-30, F-48)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('getTeams: repeated calls within TTL issue exactly one repository read', async () => {
+    let calls = 0;
+    const repo: Partial<ScoreRepository> = {
+      getTeams: async () => { calls++; return success([]); },
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    await svc.getTeams(2026);
+    await svc.getTeams(2026);
+    await svc.getTeams(2026);
+    expect(calls).toBe(1);
+  });
+
+  it('getTeams: re-fetches after CACHE_TTL_MS (1 hr) expires', async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const repo: Partial<ScoreRepository> = {
+      getTeams: async () => { calls++; return success([]); },
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    await svc.getTeams(2026);
+    vi.advanceTimersByTime(60 * 60 * 1000 + 1);
+    await svc.getTeams(2026);
+    expect(calls).toBe(2);
+  });
+
+  it('getSeason: caches null — repeated lookups of a missing season hit the repo once (F-48)', async () => {
+    let calls = 0;
+    const repo: Partial<ScoreRepository> = {
+      getSeason: async () => { calls++; return success(null); },
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const r1 = await svc.getSeason(2030);
+    const r2 = await svc.getSeason(2030);
+    expect(r1.success && r1.data === null).toBe(true);
+    expect(r2.success && r2.data === null).toBe(true);
+    expect(calls).toBe(1);
+  });
+
+  it('computeRosterDefaults: prior-year reads are cached — second call issues no new repo reads (F-48)', async () => {
+    const team = makeTeam('Team', [makeShooter('Alice', 40)]);
+    let teamsCalls = 0;
+    let weeksCalls = 0;
+    const repo: Partial<ScoreRepository> = {
+      getTeam: async () => success(team),
+      getTeams: async () => { teamsCalls++; return success([]); },
+      getAllWeekResults: async () => { weeksCalls++; return success([]); },
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    await svc.computeRosterDefaults(2026, 'team');
+    expect(teamsCalls).toBe(2); // year-1 and year-2
+    expect(weeksCalls).toBe(2);
+    await svc.computeRosterDefaults(2026, 'team');
+    expect(teamsCalls).toBe(2); // served from cache
+    expect(weeksCalls).toBe(2);
   });
 });
 
@@ -1190,6 +1303,48 @@ describe('publishWeek — dummy auto-injection via _buildSeasonData', () => {
     const dummies = shooterScores.filter((s) => s.name.toUpperCase().includes('DUMMY'));
     expect(dummies).toHaveLength(0);
     expect(capturedWr?.teamResults[0]?.targets).toBe(200); // 5 × 40
+  });
+});
+
+describe('publishWeek — shooter-name normalization (F-51)', () => {
+  it('matches a case-variant entry name to the rostered shooter — no phantom 35-avg duplicate', async () => {
+    // Roster spelling is "John Smith" with a 45 going-in average; the saved
+    // entry says "john smith". Pre-fix, the mismatch spawned a phantom
+    // substitute with a fresh 35 average: team targets 220 then beat the
+    // (wrong) going-in sum 4×45+35=215 and awarded a +5 bonus. Post-fix the
+    // going-in sum is 5×45=225 and no bonus is due.
+    const entry = makeEntry({
+      weekNumber: 1,
+      teamId: 'alphas',
+      teamName: 'Alphas',
+      shooters: ['john smith', 'Bob', 'Cal', 'Dan', 'Ed'].map((name) => ({
+        name, score1: 22, score2: 22,
+      })),
+    });
+    const team: Team = {
+      id: 'alphas',
+      name: 'Alphas',
+      captain: '',
+      shooters: ['John Smith', 'Bob', 'Cal', 'Dan', 'Ed'].map((n) => makeShooter(n, 45)),
+      totals: { targets: [], rankPoints: [], bonusPoints: [] },
+    };
+    let captured: WeekResult | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [entry],
+      teams: [team],
+      onPublish: (wr) => { captured = wr; },
+    }));
+    const result = await svc.publishWeek(2026, 1);
+    expect(result.success).toBe(true);
+
+    const tr = captured!.teamResults.find((t) => t.teamName === 'Alphas')!;
+    const johns = tr.shooterScores.filter(
+      (s) => s.name.toLowerCase().trim() === 'john smith',
+    );
+    expect(johns).toHaveLength(1); // no roster+entry duplicate
+    expect(tr.shooterScores).toHaveLength(5); // exactly the 5 entry shooters
+    expect(tr.targets).toBe(220);
+    expect(tr.bonusPoints).toBe(0); // phantom 35-avg shooter would have made this 5
   });
 });
 
