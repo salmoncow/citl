@@ -67,7 +67,9 @@ export class ScoreService {
     if (cached !== undefined) return success(cached);
 
     const result = await this.repository.getSeason(year);
-    if (result.success && result.data) setCache(this.cache, cacheKey, result.data);
+    // Cache nulls too — a nonexistent season is as cacheable as a real one,
+    // and skipping it made every repeat lookup a fresh Firestore read (F-48).
+    if (result.success) setCache(this.cache, cacheKey, result.data);
     return result;
   }
 
@@ -116,7 +118,7 @@ export class ScoreService {
     if (cached !== undefined) return success(cached);
 
     const result = await this.repository.getWeekResult(year, weekNumber);
-    if (result.success && result.data) setCache(this.cache, cacheKey, result.data);
+    if (result.success) setCache(this.cache, cacheKey, result.data);
     return result;
   }
 
@@ -144,7 +146,7 @@ export class ScoreService {
     if (cached !== undefined) return success(cached);
 
     const result = await this.repository.getLatestWeekResult(year);
-    if (result.success && result.data) setCache(this.cache, cacheKey, result.data);
+    if (result.success) setCache(this.cache, cacheKey, result.data);
     return result;
   }
 
@@ -252,9 +254,13 @@ export class ScoreService {
       );
       // DNS shooters and auto-created dummy positions were given computed dummy scores in
       // _buildSeasonData. Include all of them in shooterScores (score1/score2 null = computed).
-      const entryShooterNames = new Set(teamEntry?.shooters.map((s) => s.name) ?? []);
+      // Compare normalized so a case/whitespace variant in the saved entry
+      // doesn't duplicate the roster shooter here (F-51).
+      const entryShooterNames = new Set(
+        teamEntry?.shooters.map((s) => normalizeShooterName(s.name)) ?? [],
+      );
       const extraScores: ShooterScore[] = team.shooters
-        .filter((s) => !entryShooterNames.has(s.name) && s.scores[wi] !== null)
+        .filter((s) => !entryShooterNames.has(normalizeShooterName(s.name)) && s.scores[wi] !== null)
         .map((s) => ({ name: s.name, score1: null, score2: null, total: s.scores[wi] as number }));
       return {
         teamId: resolveTeamId(team.name),
@@ -353,7 +359,13 @@ export class ScoreService {
     };
 
     const result = await this.repository.createTeam(year, teamId, newTeam);
-    if (result.success) this.cache.delete(`teams:${year}`);
+    if (result.success) {
+      this.cache.delete(`teams:${year}`);
+      // createTeam also seeds the season doc; drop any cached null/stale
+      // season so the new year appears without waiting out the TTL (F-48).
+      this.cache.delete(`season:${year}`);
+      this.cache.delete('seasons:all');
+    }
     return result;
   }
 
@@ -363,13 +375,15 @@ export class ScoreService {
     }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
-    // Fire all five reads in parallel — one round-trip
+    // Fire all five reads in parallel — one round-trip. Prior-year reads go
+    // through the cached getters so repeated modal opens don't re-query
+    // immutable history (F-48); year-of-range failures degrade to [] below.
     const [currentResult, prior1Result, prior2Result, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
       this.repository.getTeam(year, teamId),
-      this.repository.getTeams(year - 1),
-      this.repository.getTeams(year - 2),
-      this.repository.getAllWeekResults(year - 1),
-      this.repository.getAllWeekResults(year - 2),
+      this.getTeams(year - 1),
+      this.getTeams(year - 2),
+      this.getAllWeekResults(year - 1),
+      this.getAllWeekResults(year - 2),
     ]);
 
     if (!currentResult.success) return currentResult;
@@ -413,10 +427,10 @@ export class ScoreService {
       return failure('shooterName is required', 'VALIDATION_ERROR');
 
     const [prior1Result, prior2Result, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
-      this.repository.getTeams(year - 1),
-      this.repository.getTeams(year - 2),
-      this.repository.getAllWeekResults(year - 1),
-      this.repository.getAllWeekResults(year - 2),
+      this.getTeams(year - 1),
+      this.getTeams(year - 2),
+      this.getAllWeekResults(year - 1),
+      this.getAllWeekResults(year - 2),
     ]);
 
     const prior1Teams = prior1Result.success ? prior1Result.data : [];
@@ -512,19 +526,35 @@ export class ScoreService {
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
     const result = await this.repository.deleteTeam(year, teamId);
-    if (result.success) {
-      this.cache.delete(`teams:${year}`);
-      this.cache.delete(`weeks:${year}`);
-      this.cache.delete(`latest:${year}`);
-      this.cache.delete(`season:${year}`);
-      for (let w = 1; w <= 15; w++) this.cache.delete(`week:${year}:${w}`);
+    if (!result.success) return result;
 
-      // Recompute standings from the updated week docs (deleted team already removed by repo)
-      const weeksResult = await this.repository.getAllWeekResults(year);
-      if (weeksResult.success && weeksResult.data.length > 0) {
-        const newStandings = _recomputeStandingsFromWeeks(weeksResult.data);
-        await this.repository.updateSeason(year, { standings: newStandings } as Partial<Season>);
-        this.cache.delete(`season:${year}`);
+    this.cache.delete(`teams:${year}`);
+    this.cache.delete(`weeks:${year}`);
+    this.cache.delete(`latest:${year}`);
+    this.cache.delete(`season:${year}`);
+    for (let w = 1; w <= 15; w++) this.cache.delete(`week:${year}:${w}`);
+
+    // Recompute standings from the updated week docs (deleted team already
+    // removed by repo). The team IS deleted at this point, so a follow-up
+    // failure must not read as "delete failed" — it returns the dedicated
+    // STANDINGS_RECOMPUTE_FAILED code so the UI can say "deleted, but
+    // standings are stale — retry" (F-25).
+    const weeksResult = await this.repository.getAllWeekResults(year);
+    if (!weeksResult.success) {
+      return failure(
+        `Team deleted, but standings recompute failed: ${weeksResult.error}`,
+        'STANDINGS_RECOMPUTE_FAILED',
+      );
+    }
+    if (weeksResult.data.length > 0) {
+      const newStandings = _recomputeStandingsFromWeeks(weeksResult.data);
+      const update = await this.repository.updateSeason(year, { standings: newStandings } as Partial<Season>);
+      this.cache.delete(`season:${year}`);
+      if (!update.success) {
+        return failure(
+          `Team deleted, but standings recompute failed: ${update.error}`,
+          'STANDINGS_RECOMPUTE_FAILED',
+        );
       }
     }
     return result;
@@ -586,18 +616,19 @@ export class ScoreService {
       });
     }
 
-    // Compute accolade patches: remove the shooter's accolades from any published weeks
+    // Compute accolade patches: remove the shooter's accolades from any published weeks.
+    // Nothing has been written yet, so a failed read is a clean hard failure —
+    // proceeding would silently skip the accolade cleanup (F-25).
     const weekAccoladePatches: { weekNumber: number; accolades: NonNullable<WeekResult['accolades']> }[] = [];
     const weeksResult = await this.repository.getAllWeekResults(year);
-    if (weeksResult.success) {
-      for (const wr of weeksResult.data) {
-        if (!wr.accolades || wr.accolades.length === 0) continue;
-        const filtered = wr.accolades.filter(
-          (a) => normalizeShooterName(a.shooterName) !== normalizedTarget,
-        );
-        if (filtered.length !== wr.accolades.length) {
-          weekAccoladePatches.push({ weekNumber: wr.weekNumber, accolades: filtered });
-        }
+    if (!weeksResult.success) return weeksResult;
+    for (const wr of weeksResult.data) {
+      if (!wr.accolades || wr.accolades.length === 0) continue;
+      const filtered = wr.accolades.filter(
+        (a) => normalizeShooterName(a.shooterName) !== normalizedTarget,
+      );
+      if (filtered.length !== wr.accolades.length) {
+        weekAccoladePatches.push({ weekNumber: wr.weekNumber, accolades: filtered });
       }
     }
 
@@ -752,14 +783,17 @@ function _buildSeasonData(
   const teams = firestoreTeams.map((firestoreTeam) => {
     const teamEntries = entryMap.get(firestoreTeam.name) ?? new Map<number, SeasonEntry>();
 
-    const seenNames = new Set<string>();
+    // Track entry shooters by normalized name (display spelling as the value)
+    // so a case/whitespace variant of a rostered shooter never spawns a
+    // phantom substitute row with a fresh 35 average (F-51).
+    const seenNames = new Map<string, string>();
     for (const [wn, entry] of teamEntries) {
       if (wn > maxWeek) continue;
-      for (const s of entry.shooters) seenNames.add(s.name);
+      for (const s of entry.shooters) seenNames.set(normalizeShooterName(s.name), s.name);
     }
 
     const rosterShooters: ScorecardShooter[] = (firestoreTeam.shooters ?? []).map((rs) => {
-      seenNames.delete(rs.name);
+      seenNames.delete(normalizeShooterName(rs.name));
       return {
         name: rs.name,
         rookie: rs.rookie ?? false,
@@ -771,7 +805,7 @@ function _buildSeasonData(
       };
     });
 
-    const subShooters: ScorecardShooter[] = [...seenNames].map((name) => ({
+    const subShooters: ScorecardShooter[] = [...seenNames.values()].map((name) => ({
       name,
       rookie: false,
       isDummy: isDummyName(name),
@@ -788,7 +822,8 @@ function _buildSeasonData(
       if (!entry) continue;
       const wi = wn - 1;
       for (const entryShooter of entry.shooters) {
-        const shooter = shooters.find((s) => s.name === entryShooter.name);
+        const entryKey = normalizeShooterName(entryShooter.name);
+        const shooter = shooters.find((s) => normalizeShooterName(s.name) === entryKey);
         if (shooter) shooter.scores[wi] = entryShooter.total;
       }
 

@@ -252,9 +252,16 @@ export function openRosterModal(opts: RosterModalOptions): void {
     const displayName = teams?.find((t) => t.id === teamId)?.name ?? teamId;
     saveBtn.disabled = true;
 
-    // Process deferred shooter removals before saving
+    // Process deferred shooter removals before saving. A failed removal
+    // aborts the save — continuing would silently drop the removal while
+    // the modal reports success (F-25).
     for (const name of pendingRemovals) {
-      await scoreService.removeShooterFromRoster(year, teamId, name);
+      const removal = await scoreService.removeShooterFromRoster(year, teamId, name);
+      if (!removal.success && removal.code !== 'NOT_FOUND') {
+        saveBtn.disabled = false;
+        showToast('error', `Failed to remove ${name}: ${removal.error}`);
+        return;
+      }
     }
     pendingRemovals.length = 0;
 
