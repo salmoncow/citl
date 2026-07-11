@@ -11,7 +11,7 @@
 
 import type { ScorecardShooter, SeasonData } from '@/types/scorecard';
 import type { ComputedAwards } from '@/types/season';
-import type { Team, TeamResult } from '@/types/score';
+import type { Team, TeamResult, WeekResult } from '@/types/score';
 import type { Accolade } from '@/types/shooter';
 
 // ---------------------------------------------------------------------------
@@ -131,6 +131,57 @@ export function computeShooterAverage(startingAvg: number, scores: (number | nul
   if (weeksShot === 0) return startingAvg;
   if (weeksShot < 2) return mean([startingAvg, ...throughScores]);
   return mean(throughScores);
+}
+
+/**
+ * Build a name→finalAvg map from published WeekResult documents. The final
+ * number is delegated to computeShooterAverage so the <2-weeks starting-avg
+ * blend rule has exactly one implementation (deep-review F-02).
+ *
+ * Deliberate adaptations for the prior-season context (kept from the original
+ * score-service implementation so outputs are unchanged):
+ * - startingAvg <= 0 is treated as corrupt data and coerced to 35;
+ * - accumulation is keyed by normalized shooter NAME across teams (a shooter
+ *   who subbed on two teams gets one combined average);
+ * - shooters absent from priorTeams fall back to startingAvg 35;
+ * - dummy shooters are NOT filtered — dummy names are team-scoped
+ *   ("<team> DUMMY1") and only resolve against rosters that contain them,
+ *   matching the pre-refactor behavior;
+ * - the result is rounded to one decimal (display convention).
+ */
+export function buildPriorAvgMap(weekResults: WeekResult[], priorTeams: Team[]): Map<string, number> {
+  // startingAvg lookup keyed by normalized name (first match wins)
+  const startingAvgMap = new Map<string, number>();
+  for (const team of priorTeams) {
+    for (const shooter of team.shooters) {
+      const key = normalizeShooterName(shooter.name);
+      if (!startingAvgMap.has(key)) {
+        startingAvgMap.set(key, shooter.startingAvg > 0 ? shooter.startingAvg : 35);
+      }
+    }
+  }
+
+  // Collect each shooter's actual scores across all published weeks.
+  const scoresByShooter = new Map<string, number[]>();
+  for (const wr of weekResults) {
+    for (const tr of wr.teamResults ?? []) {
+      for (const s of tr.shooterScores ?? []) {
+        if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
+        const key = normalizeShooterName(s.name);
+        const list = scoresByShooter.get(key) ?? [];
+        list.push(s.total);
+        scoresByShooter.set(key, list);
+      }
+    }
+  }
+
+  const result = new Map<string, number>();
+  for (const [key, scores] of scoresByShooter) {
+    const startingAvg = startingAvgMap.get(key) ?? 35;
+    const avg = computeShooterAverage(startingAvg, scores, scores.length - 1);
+    result.set(key, parseFloat(avg.toFixed(1)));
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------

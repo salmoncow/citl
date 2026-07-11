@@ -8,7 +8,7 @@
  */
 
 import { success, failure, type Result } from '@/repositories/score-repository';
-import { computeSeasonTotals, computeShooterAverage, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, mean, normalizeShooterName, getLastWord, sortShootersWithCaptainFirst, computeAccolades, compareStandings } from '@/services/scoring-engine';
+import { buildPriorAvgMap, computeSeasonTotals, computeShooterAverage, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, mean, normalizeShooterName, getLastWord, sortShootersWithCaptainFirst, computeAccolades, compareStandings } from '@/services/scoring-engine';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
@@ -192,7 +192,16 @@ export class ScoreService {
     if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
       return failure(`Invalid weekNumber: ${weekNumber}`, 'VALIDATION_ERROR');
     }
+    // The class contract promises no throws across module boundaries — an
+    // exception here would wedge the admin UI's Publishing… state (F-09).
+    try {
+      return await this._publishWeekInner(year, weekNumber);
+    } catch (err) {
+      return failure(`Publish failed unexpectedly: ${(err as Error).message}`, 'INTERNAL_ERROR');
+    }
+  }
 
+  private async _publishWeekInner(year: number, weekNumber: number): Promise<Result<unknown>> {
     // Determine the true max published week so republishing an earlier week
     // (a supported correction flow) never rewinds standings/currentWeek (F-05).
     const existingSeasonResult = await this.repository.getSeason(year);
@@ -979,54 +988,6 @@ function _buildScorecardTeamBlock(args: {
     bonusPoints,
   };
 }
-
-/**
- * Build a name→finalAvg map from published WeekResult documents, applying the
- * same business rule as computeShooterAverage: when a shooter has fewer than
- * 2 weeks of actual scores, the starting average is blended into the mean.
- * priorTeams is required for that startingAvg lookup.
- *
- * Exported so existing tests can exercise the helper directly.
- */
-export function buildPriorAvgMap(weekResults: WeekResult[], priorTeams: Team[]): Map<string, number> {
-  // Build startingAvg lookup keyed by lowercased name (first match wins)
-  const startingAvgMap = new Map<string, number>();
-  for (const team of priorTeams) {
-    for (const shooter of team.shooters) {
-      const key = normalizeShooterName(shooter.name);
-      if (!startingAvgMap.has(key)) {
-        startingAvgMap.set(key, shooter.startingAvg > 0 ? shooter.startingAvg : 35);
-      }
-    }
-  }
-
-  const acc = new Map<string, { total: number; weeks: number }>();
-  for (const wr of weekResults) {
-    for (const tr of wr.teamResults ?? []) {
-      for (const s of tr.shooterScores ?? []) {
-        if (typeof s.total !== 'number' || !isFinite(s.total)) continue;
-        const key = normalizeShooterName(s.name);
-        const cur = acc.get(key) ?? { total: 0, weeks: 0 };
-        acc.set(key, { total: cur.total + s.total, weeks: cur.weeks + 1 });
-      }
-    }
-  }
-
-  const result = new Map<string, number>();
-  for (const [key, { total, weeks }] of acc) {
-    let avg: number;
-    if (weeks < 2) {
-      // Mirror computeShooterAverage: blend startingAvg into mean until ≥ 2 weeks shot
-      const startingAvg = startingAvgMap.get(key) ?? 35;
-      avg = (startingAvg + total) / (weeks + 1);
-    } else {
-      avg = total / weeks;
-    }
-    result.set(key, parseFloat(avg.toFixed(1)));
-  }
-  return result;
-}
-
 
 /**
  * Recompute season standings by summing the stored per-week TeamResult values.
