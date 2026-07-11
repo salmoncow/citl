@@ -1,6 +1,6 @@
 # Firestore Schema Reference
 
-Last updated: 2026-03-10
+Last updated: 2026-07-10
 
 ---
 
@@ -23,6 +23,89 @@ Cache is invalidated on every write. No exceptions are thrown across module boun
 
 ## Collections
 
+### `users/{uid}` — RBAC mirror
+
+Document ID: Firebase Auth `uid`. Seeded server-side by the `onUserCreate` trigger and
+mutated by the `setUserRole` callable / `scripts/set-role.js` CLI (both use the Admin SDK,
+which bypasses rules).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `uid` | `string` | Same as document ID |
+| `email` | `string \| null` | Server-managed identity mirror |
+| `displayName` | `string \| null` | Server-managed identity mirror |
+| `photoURL` | `string \| null` | Server-managed identity mirror |
+| `role` | `'owner' \| 'admin' \| 'user'` | Server-managed; the source of truth for role checks is the `request.auth.token.role` custom claim, which this doc mirrors |
+| `createdAt` | `Timestamp` | Set by `onUserCreate` |
+| `updatedAt` | `Timestamp` | Bumped on any server or self-update |
+| `lastSignInAt` | `Timestamp \| null` | Self-updated on sign-in via `touchLastSignIn` |
+| `roleChangedAt` | `Timestamp` | Set when `setUserRole` changes the role |
+
+**Access:** Read — self (`request.auth.uid == uid`) or owner/admin. Create/delete —
+disallowed for clients (`if false`); only the Admin SDK seeds/removes docs. Update — a
+client may update **only** its own doc and **only** the `lastSignInAt` / `updatedAt` keys
+(`affectedKeys().hasOnly(['lastSignInAt', 'updatedAt'])`). Role and identity fields
+(`email`, `displayName`, `photoURL`, `role`) are server-only; a client-mutable identity
+mirror would allow impersonation in the admin Users tab, the exact UI used to grant roles.
+
+**TypeScript interface:** `UserDoc`, `Role` — `src/types/user.ts`
+
+---
+
+### `audit/{id}` — append-only role-change log
+
+Auto-ID. Written server-side by `setUserRole` (Admin SDK) inside the same transaction as
+the role change. One document per role change.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `actorUid` | `string` | uid of the owner/admin who made the change |
+| `targetUid` | `string` | uid whose role changed |
+| `fromRole` | `'owner' \| 'admin' \| 'user'` | Previous role |
+| `toRole` | `'owner' \| 'admin' \| 'user'` | New role |
+| `at` | `Timestamp` | Server timestamp of the change |
+
+**Access:** Read — owner only. Write — disallowed for all clients (`if false`); only the
+Admin SDK appends. Append-only by convention (no update/delete path exists).
+
+**TypeScript interface:** none (written and read only in `functions/src/setUserRole.ts`).
+
+---
+
+### `rateLimits/{path}` — function-internal counters
+
+Function-internal sliding-window rate-limit counters. The `setUserRole` limiter stores its
+counter at `rateLimits/setUserRole/actors/{actorUid}`. The rules match the whole subtree via
+`rateLimits/{path=**}`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `windowStart` | `number` | ms epoch marking the start of the current 1-hour window |
+| `count` | `number` | Calls in the current window; limit is 20/hr per actor |
+
+**Access:** Read — owner only. Write — disallowed for all clients (`if false`); counters are
+read and bumped only inside the `setUserRole` transaction via the Admin SDK.
+
+**TypeScript interface:** `RateCounter` (functions-internal) — `functions/src/lib/rateLimit.ts`.
+
+---
+
+### `config/{doc}` — banner + site config
+
+Keyed by config document name. The only doc in use today is `config/banner`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `message` | `string \| null` | Site-wide banner text; `null` (or absent doc) means no banner |
+
+**Access:** Read — public. Create/update — owner/admin only. (No delete rule; the banner is
+cleared by writing `{ message: null }`.)
+
+**TypeScript interface:** none (read/written inline via `getBanner` / `setBanner` in
+`src/repositories/score-repository.ts` as `{ message?: string | null }`).
+
+---
+
 ### `announcements/{docId}`
 
 Auto-ID via `addDoc`.
@@ -37,8 +120,9 @@ Auto-ID via `addDoc`.
 
 **Access:** Read — public. Write — admin only.
 
-**Query:** `where('year', '==', year)` ordered by `postedAt desc`.
-Requires a composite index: `year` (Asc) + `postedAt` (Desc).
+**Query:** `where('year', '==', year)`, then sorted by `postedAt desc` **in memory**
+(`getAnnouncements` in `src/repositories/score-repository.ts`). Sorting client-side is a
+deliberate choice so the query needs no composite index — `firestore.indexes.json` is empty.
 
 **TypeScript interface:** `Announcement` — `src/types/announcement.ts`
 
@@ -172,7 +256,8 @@ overwritten any number of times before the week is published.
 **Composite ID rationale:** `"{weekNumber}_{teamId}"` enables batch deletion and range
 queries by week number (`weekNumber <= maxWeekNumber`) without a composite index.
 
-**Composite index needed:** `weekNumber` (Asc) for range queries on entry pre-fetch.
+**No composite index needed:** range queries on `weekNumber` rely on Firestore's automatic
+single-field index. `firestore.indexes.json` is empty.
 
 **TypeScript interface:** `SeasonEntry` — `src/types/score.ts`
 
@@ -219,13 +304,21 @@ and from `accolades` in any published week.
 
 ## Composite Indexes Required
 
-| Collection | Fields | Direction |
-|------------|--------|-----------|
-| `announcements` | `year`, `postedAt` | Asc, Desc |
-| `seasons/{year}/entries` | `weekNumber` | Asc (range query) |
+**None.** `firestore.indexes.json` is empty by design (`{"indexes": [], "fieldOverrides": []}`),
+and CI deploys it with `--force`.
 
-All other queries use single-field indexes or direct document-ID lookups and require
-no additional index configuration.
+Every query in the codebase is served by a direct document-ID lookup, an automatic
+single-field index, or an equality filter followed by an in-memory sort:
+
+- `announcements` — `where('year', '==', year)` then sorts by `postedAt desc` in memory
+  (`getAnnouncements` in `src/repositories/score-repository.ts`), avoiding a `year` +
+  `postedAt` composite index.
+- `seasons/{year}/entries` — range queries on `weekNumber` use the automatic single-field
+  index; the `"{weekNumber}_{teamId}"` composite ID also lets the repository build entry
+  references directly with no query at all.
+
+If a future query needs a composite index, add it to `firestore.indexes.json` and update
+this section — the two must always match.
 
 ---
 

@@ -2,8 +2,8 @@
 
 **Feature ID**: 002-multi-user-rbac
 **Created**: 2026-05-03
-**Status**: Approved — implementation in progress
-**Plan of record**: [/Users/ted/.claude/plans/i-recently-implemented-multi-user-partitioned-mochi.md](../../../../.claude/plans/i-recently-implemented-multi-user-partitioned-mochi.md)
+**Status**: Shipped (deployed 2026-05-04; see ADR-009)
+**Plan of record**: originally tracked in a local plan file outside the repo; the authoritative record is now this spec plus ADR-009.
 
 ---
 

@@ -45,7 +45,7 @@ What does this decision enable? What does it constrain?
 ### ADR-001: Migrate from AWS S3 + CloudFront to Firebase Hosting
 
 **Date**: 2025-11-01 (estimated — pre-AGENTS.md)
-**Status**: Accepted
+**Status**: Accepted. Superseded in part by ADR-009 (billing: Spark → Blaze, 2026-05-03) — the "Spark free tier / no Cloud Functions" rationale below no longer holds; the Firebase Hosting migration decision itself stands and is complete (site live at citl.club, AWS decommissioned).
 **Domains Affected**: Platform, Deployment, Data, Security
 
 **Context**
@@ -140,7 +140,7 @@ replacing separate HTML files with JS-rendered views mounted at `<main>`.
 ### ADR-003: Static JSON Scorecard Files as Permanent Historical Data Layer
 
 **Date**: 2025-12-01 (estimated — Phase 3 scorecards migration)
-**Status**: Accepted
+**Status**: **Superseded by ADR-010 (2026-02-28)** — scorecards are now Firestore-driven; the `src/data/` static-JSON layer described below no longer exists. The Context/Decision text is retained for historical record only.
 **Domains Affected**: Data
 
 **Context**
@@ -190,7 +190,7 @@ for *live / current season* weekly results (home page results feed).
 ### ADR-004: Repository + Service Layer Pattern for Firestore Data Access
 
 **Date**: 2026-02-27
-**Status**: Accepted
+**Status**: Accepted. **Addendum (2026-07-10)**: the factory is Firestore-only (`src/repositories/repository-factory.ts`) — there is no runtime backend switch, and the `standings-service.js`/localStorage backends referenced in the original text never existed in the `.ts` era.
 **Domains Affected**: Data, UI
 
 **Context**
@@ -294,7 +294,7 @@ prompted to sign in. Admin access is behind a hidden `#/admin` route.
 ### ADR-006: Scoring Engine as Pure Computation Service
 
 **Date**: 2026-02-27
-**Status**: Accepted
+**Status**: Accepted. **Addendum (2026-07-10)**: `csv-parser.js` and `localstorage-score-repository.js` referenced in the original text were removed in the TypeScript migration (ADR-007); the current pure utilities are `src/utils/{markdown,schedule,yardage}.ts` and the engine is `src/services/scoring-engine.ts`.
 **Domains Affected**: Data, UI
 
 **Context**
@@ -537,18 +537,61 @@ Check + custom-claim RBAC) per the architectural-evolution-strategy.
     `npm run deploy`)
   - Constitution §VI.1 requires Blaze budget alerts and per-function
     justification documentation
-  - `admin-panel.ts` is now a known constitution-§II.3 violation
-    (1781 lines); follow-up task tracked to refactor into per-tab
-    modules and integrate `<admin-users-panel>` as a 4th tab
+  - `admin-panel.ts` was refactored into per-tab modules under
+    `src/components/admin-tabs/` with `<admin-users-panel>` integrated
+    as a tab; `admin-panel.ts` is now 232 lines (the 1781-line
+    violation is resolved — completed in 50ae4c8)
 
 **Review Date**: 2026-08-03
+
+---
+
+### ADR-010: Scorecards are Firestore-Driven (Supersedes ADR-003)
+
+**Date**: 2026-02-28 (recorded 2026-07-10)
+**Status**: Accepted (supersedes ADR-003)
+**Domains Affected**: Data
+
+**Context**
+
+ADR-003 kept the 7 historical scorecard seasons (2019–2025) as permanent static JSON
+under `src/data/scorecards/*.json`, separate from the Firestore-backed live results. In
+practice this created a dual data layer: two schemas, two code paths, and a Scorecards page
+that read from bundled JSON while the home page read from Firestore. Maintaining both — and
+keeping them consistent as the scoring engine evolved — was more cost than the read-quota
+savings justified.
+
+**Decision**
+
+Migrate all historical scorecard data into Firestore and drive the Scorecards page from it,
+retiring the `src/data/` static layer entirely. Firestore becomes the single data layer for
+all seasons, live and historical. (Implemented 2026-02-28 in commits `36114d0` — "scorecards
+page driven by Firestore" — and `c1274e1` — post-Firestore cleanup.)
+
+**Rationale**
+
+- One schema and one code path for all scorecard data; no JSON/Firestore drift as the
+  scoring engine changes
+- The 1-hour TTL cache in `score-service.ts` keeps read volume well within free-tier
+  targets even with Firestore-backed scorecards (see the cost analysis in the deep-review
+  report, F-01)
+- Scorecard corrections no longer require a rebuild + redeploy — they are data edits
+
+**Consequences**
+
+- Enables: single data model; web-editable historical data via the admin surface; smaller
+  bundle (no per-season JSON)
+- Supersedes: ADR-003's "permanent static JSON, never replaced by Firestore" decision and
+  the `src/data/` layer described in it
+- Requires: the scorecard read paths to stay cached and query-bounded (§III.4, §VI.1)
 
 ---
 
 ## How AI Agents Should Use This Log
 
 1. **Before implementing a new feature**: Check if a relevant decision exists that constrains
-   the approach (e.g., ADR-003 explains why scorecard data is JSON, not Firestore)
+   the approach (e.g., ADR-010 records that scorecards are Firestore-driven, superseding
+   ADR-003's static-JSON decision)
 
 2. **Before proposing an architectural change**: Check if the change conflicts with an
    existing decision — if so, update this log with a new ADR superseding the old one
