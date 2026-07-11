@@ -16,9 +16,7 @@
  */
 
 import './admin-users-panel';
-import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
+import { getServices } from '@/services/app-services';
 import { normalizeShooterName } from '@/services/scoring-engine';
 import type { Team } from '@/types/score';
 import type { Season } from '@/types/season';
@@ -28,8 +26,7 @@ import { ScoreEntryTab } from './admin-tabs/score-entry-tab';
 import { AnnouncementsTab } from './admin-tabs/announcements-tab';
 import type { AdminTab, AdminTabContext } from './admin-tabs/types';
 
-const factory = createRepositoryFactory({ db });
-const scoreService = new ScoreService(factory.getScoreRepository());
+const { scoreService } = getServices();
 
 const CURRENT_YEAR = new Date().getFullYear();
 

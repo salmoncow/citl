@@ -6,15 +6,12 @@
  * No shadow DOM; uses global CSS classes.
  */
 
-import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
+import { getServices } from '@/services/app-services';
 import { escapeHtml } from '@/modules/ui';
 import type { Season } from '@/types/season';
 import type { ScorecardRowShooter, ScorecardTeamBlock } from '@/types/scorecard';
 
-const factory = createRepositoryFactory({ db });
-const scoreService = new ScoreService(factory.getScoreRepository());
+const { scoreService } = getServices();
 
 const WEEK_HEADERS = ['W0', 'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15'];
 

@@ -5,17 +5,14 @@
  * going-in average for the selected week. No shadow DOM; uses global CSS.
  */
 
-import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
+import { getServices } from '@/services/app-services';
 import { computeGoingInAverage, getLastWord, isDummyName, normalizeShooterName, sortShootersWithCaptainFirst } from '@/services/scoring-engine';
 import { computeSchedule } from '@/utils/schedule';
 import { escapeHtml } from '@/modules/ui';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult } from '@/types/score';
 
-const factory = createRepositoryFactory({ db });
-const scoreService = new ScoreService(factory.getScoreRepository());
+const { scoreService } = getServices();
 
 class ScoresheetGenerator extends HTMLElement {
   private _seasons: Season[] = [];

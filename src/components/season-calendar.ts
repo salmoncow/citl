@@ -15,14 +15,11 @@
  *  - Overrides:      admin may postpone (new date) or cancel (null) a week
  */
 
-import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
+import { getServices } from '@/services/app-services';
 import { computeSchedule } from '@/utils/schedule';
 import type { ScheduleEvent } from '@/utils/schedule';
 
-const factory = createRepositoryFactory({ db });
-const scoreService = new ScoreService(factory.getScoreRepository());
+const { scoreService } = getServices();
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
