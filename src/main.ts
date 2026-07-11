@@ -33,6 +33,12 @@ import { aboutView } from './views/about';
 import { downloadsView } from './views/downloads';
 import { adminView } from './views/admin';
 
+interface RouteDef {
+  path: string;
+  view: () => string;
+  after?: () => void;
+}
+
 class App {
   private _navigation: NavigationModule | null = null;
   private _router: RouterModule | null = null;
@@ -115,14 +121,29 @@ class App {
   }
 
   // ─── Routing ────────────────────────────────────────────────────────────────
+  // Data-driven route table (spec 003 AC-9): every route shares one render
+  // path; `after` covers per-route extra wiring and runs before scrollTo,
+  // matching the old /admin handler's ordering.
 
   private _setupRoutes(): void {
-    this._router!.register('/', () => this._showHome());
-    this._router!.register('/scorecards', () => this._showScorecards());
-    this._router!.register('/rules', () => this._showRules());
-    this._router!.register('/about', () => this._showAbout());
-    this._router!.register('/downloads', () => this._showDownloads());
-    this._router!.register('/admin', () => this._showAdmin());
+    const routes: RouteDef[] = [
+      { path: '/', view: homeView },
+      { path: '/scorecards', view: scorecardsView },
+      { path: '/rules', view: rulesView },
+      { path: '/about', view: aboutView },
+      { path: '/downloads', view: downloadsView },
+      {
+        path: '/admin',
+        view: adminView,
+        after: () => {
+          this._wireAdminAuthButtons();
+          this._applyAdminViewState();
+        },
+      },
+    ];
+    for (const route of routes) {
+      this._router!.register(route.path, () => this._showRoute(route));
+    }
 
     this._router!.onBeforeNavigate((path) => {
       // Route guard: /admin is the SOLE entry point for sign-in, so
@@ -142,55 +163,14 @@ class App {
     });
   }
 
-  // ─── View renderers ─────────────────────────────────────────────────────────
+  // ─── View renderer ──────────────────────────────────────────────────────────
 
-  private _showHome(): void {
-    this._renderView(homeView());
-    this._navigation!.setActiveLink('/');
+  private _showRoute(route: RouteDef): void {
+    this._renderView(route.view());
+    this._navigation!.setActiveLink(route.path);
     this._navigation!.closeDropdown();
     this._navigation!.closeBurgerNav();
-    window.scrollTo(0, 0);
-  }
-
-  private _showScorecards(): void {
-    this._renderView(scorecardsView());
-    this._navigation!.setActiveLink('/scorecards');
-    this._navigation!.closeDropdown();
-    this._navigation!.closeBurgerNav();
-    window.scrollTo(0, 0);
-  }
-
-  private _showRules(): void {
-    this._renderView(rulesView());
-    this._navigation!.setActiveLink('/rules');
-    this._navigation!.closeDropdown();
-    this._navigation!.closeBurgerNav();
-    window.scrollTo(0, 0);
-  }
-
-  private _showAbout(): void {
-    this._renderView(aboutView());
-    this._navigation!.setActiveLink('/about');
-    this._navigation!.closeDropdown();
-    this._navigation!.closeBurgerNav();
-    window.scrollTo(0, 0);
-  }
-
-  private _showDownloads(): void {
-    this._renderView(downloadsView());
-    this._navigation!.setActiveLink('/downloads');
-    this._navigation!.closeDropdown();
-    this._navigation!.closeBurgerNav();
-    window.scrollTo(0, 0);
-  }
-
-  private _showAdmin(): void {
-    this._renderView(adminView());
-    this._navigation!.setActiveLink('/admin');
-    this._navigation!.closeDropdown();
-    this._navigation!.closeBurgerNav();
-    this._wireAdminAuthButtons();
-    this._applyAdminViewState();
+    route.after?.();
     window.scrollTo(0, 0);
   }
 

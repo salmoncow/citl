@@ -60,9 +60,7 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async getSeason(year: number): Promise<Result<Season | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `season:${year}`;
     const cached = getCached<Season | null>(this.cache, cacheKey);
@@ -90,9 +88,7 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async getTeams(year: number): Promise<Result<Team[]>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `teams:${year}`;
     const cached = getCached<Team[]>(this.cache, cacheKey);
@@ -108,12 +104,8 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async getWeekResult(year: number, weekNumber: number): Promise<Result<WeekResult | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber} (must be 1–15)`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber); if (bad) return bad; }
 
     const cacheKey = `week:${year}:${weekNumber}`;
     const cached = getCached<WeekResult | null>(this.cache, cacheKey);
@@ -125,9 +117,7 @@ export class ScoreService {
   }
 
   async getAllWeekResults(year: number): Promise<Result<WeekResult[]>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `weeks:${year}`;
     const cached = getCached<WeekResult[]>(this.cache, cacheKey);
@@ -139,9 +129,7 @@ export class ScoreService {
   }
 
   async getLatestWeekResult(year: number): Promise<Result<WeekResult | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `latest:${year}`;
     const cached = getCached<WeekResult | null>(this.cache, cacheKey, 5 * 60 * 1000);
@@ -157,9 +145,7 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async saveEntry(year: number, entry: SeasonEntry): Promise<Result<SeasonEntry & { id: string }>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!entry || !entry.weekNumber || !entry.teamId || !entry.teamName) {
       return failure('entry.weekNumber, teamId, and teamName are required', 'VALIDATION_ERROR');
     }
@@ -170,19 +156,13 @@ export class ScoreService {
   }
 
   async getEntry(year: number, weekNumber: number, teamId: string): Promise<Result<SeasonEntry | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber, { bare: true }); if (bad) return bad; }
     return this.repository.getEntry(year, weekNumber, teamId);
   }
 
   async getEntries(year: number, maxWeekNumber: number): Promise<Result<SeasonEntry[]>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!Number.isInteger(maxWeekNumber) || maxWeekNumber < 1 || maxWeekNumber > 15) {
       return failure(`Invalid maxWeekNumber: ${maxWeekNumber}`, 'VALIDATION_ERROR');
     }
@@ -190,12 +170,8 @@ export class ScoreService {
   }
 
   async publishWeek(year: number, weekNumber: number): Promise<Result<unknown>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber, { bare: true }); if (bad) return bad; }
     // The class contract promises no throws across module boundaries — an
     // exception here would wedge the admin UI's Publishing… state (F-09).
     try {
@@ -298,9 +274,7 @@ export class ScoreService {
   }
 
   async updateTeamMeta(year: number, teamId: string, name: string, captain: string): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedName = name.trim();
     const trimmedCaptain = captain.trim();
@@ -329,9 +303,7 @@ export class ScoreService {
   }
 
   async createTeam(year: number, name: string, captain: string): Promise<Result<Team>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     const trimmedName = name.trim();
     const trimmedCaptain = captain.trim();
     if (!trimmedName) return failure('Team name is required', 'VALIDATION_ERROR');
@@ -372,9 +344,7 @@ export class ScoreService {
   }
 
   async computeRosterDefaults(year: number, teamId: string): Promise<Result<Team>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
     // Fire all five reads in parallel — one round-trip. Prior-year reads go
@@ -423,8 +393,7 @@ export class ScoreService {
     year: number,
     shooterName: string,
   ): Promise<Result<{ startingAvg: number; rookie: boolean }>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100)
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!shooterName.trim())
       return failure('shooterName is required', 'VALIDATION_ERROR');
 
@@ -464,9 +433,7 @@ export class ScoreService {
    * `success: true` so the caller can render a "no data" placeholder.
    */
   async buildScorecardData(year: number): Promise<Result<ScorecardViewData>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const [teamsResult, weeksResult, prior1TeamsResult, prior2TeamsResult, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
       this.getTeams(year),
@@ -522,9 +489,7 @@ export class ScoreService {
   }
 
   async deleteTeam(year: number, teamId: string): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
     const result = await this.repository.deleteTeam(year, teamId);
@@ -567,9 +532,7 @@ export class ScoreService {
     teamId: string,
     shooterName: string,
   ): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedName = shooterName.trim();
     if (!trimmedName) return failure('shooterName is required', 'VALIDATION_ERROR');
@@ -651,9 +614,7 @@ export class ScoreService {
     captain: string,
     shooters: Team['shooters'],
   ): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedCaptain = captain.trim();
     if (shooters.length < 5) {
@@ -681,12 +642,8 @@ export class ScoreService {
     weekNumber: number,
     date: string | null,
   ): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber} (must be 1–15)`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber); if (bad) return bad; }
 
     const seasonResult = await this.getSeason(year);
     if (!seasonResult.success) return { success: false, error: seasonResult.error, code: seasonResult.code };
@@ -762,6 +719,29 @@ export class ScoreService {
 // ---------------------------------------------------------------------------
 // Private helpers for publishWeek
 // ---------------------------------------------------------------------------
+
+// Validation helpers (spec 003 Group 5). Return a failure Result, or null when
+// valid — callers do `if (bad) return bad;`. Never throw (F-09 no-throw
+// contract). Two call sites historically omit the range suffix in the week
+// message; `bare` preserves those exact strings (byte-identical failures).
+function assertValidYear(year: number): Result<never> | null {
+  if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+    return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+  }
+  return null;
+}
+
+function assertValidWeek(weekNumber: number, opts?: { bare: true }): Result<never> | null {
+  if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
+    return failure(
+      opts?.bare
+        ? `Invalid weekNumber: ${weekNumber}`
+        : `Invalid weekNumber: ${weekNumber} (must be 1–15)`,
+      'VALIDATION_ERROR',
+    );
+  }
+  return null;
+}
 
 function _slugify(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, '-');
