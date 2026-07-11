@@ -1,15 +1,18 @@
 # Feature: Scoring Engine
 
+**Status:** Implemented (`src/services/scoring-engine.ts`)
+
 ## Overview
 
-The CITL scoring engine is a **pure computation service** (`src/services/scoring-engine.js`)
+The CITL scoring engine is a **pure computation service** (`src/services/scoring-engine.ts`)
 that implements all trap league score calculations: averages, bonus points, rank points,
 and season awards. All functions are authoritative — the engine is the single source of
 truth for computed values.
 
-All functions are pure: no I/O, no side effects, no framework dependencies.
-The CSV parser (`src/utils/csv-parser.js`) is a separate unit that converts
-`inputs.csv` → `SeasonData`; the engine then computes all derived values from that.
+All functions are pure: no I/O, no side effects, no framework dependencies. The engine
+consumes a `SeasonData` structure assembled by `src/services/score-service.ts` from
+Firestore (there is no CSV parser; historical scorecards were migrated into Firestore per
+ADR-010), then computes all derived values from it.
 
 **ADR reference**: ADR-006 in `.prompts/meta/architectural-decision-log.md`
 
@@ -40,7 +43,7 @@ Teams may field up to 2 dummies when they cannot fill a full squad.
 - **Naming convention**: last word of team name + `DUMMY1` / `DUMMY2` (no space before number).
   Example: "Full Choke Artists" → "Artists DUMMY1", "Artists DUMMY2"
 - **Max-2 constraint**: a team may have at most 2 dummy shooters per week. This is enforced
-  at publish time in `score-service.js` `publishWeek()`, which returns a `VALIDATION_ERROR`
+  at publish time in `score-service.ts` `publishWeek()`, which returns a `VALIDATION_ERROR`
   if any entry for the published week contains more than 2 shooters matching the DUMMY pattern.
 - **Dummy going-in average**: mean of the real shooters' going-in averages for that week
 - **W0 display**: going-in average shown in scorecard W0 column = mean of the actual
@@ -90,8 +93,13 @@ Tie examples:
 - 3 teams tied for Rank 1 → each gets `(30 + 28 + 26) / 3 = 28`
 - 2 teams tied for Rank 6 → each gets `(20 + 18) / 2 = 19`
 
-Teams that did not participate receive `null` rank points.
-Forfeit teams (targets = 0 but participated) rank last (e.g., Rank 8 in an 8-team league = 16 pts).
+A team is included in the ranking whenever it has a numeric target total for the week —
+**including a no-show/forfeit team recorded with `0` targets**, which sorts last and receives
+last-place rank points (e.g., the trailing team in a 2-team week gets Rank 2 = 28; Rank 8 in
+an 8-team week = 16 pts). `null` rank points are assigned **only** to teams with `null`
+targets — i.e. no entry at all for that week (`computeRankPoints` excludes them from the
+sort). This matches the shipped engine (`computeRankPoints`, `scoring-engine.ts`) and its
+tests (`scoring-engine.test.ts` — "no-show team in W2, 0 targets → rank 2 = 28").
 
 ### Season Awards (min 6 weeks shot; excludes dummies)
 
@@ -169,6 +177,6 @@ from cumulative rank+bonus totals and are returned as `null`.
 
 ## SOLID Compliance
 
-- `scoring-engine.js`: no imports from repository/service/view layers (pure functions only)
-- `repository-factory.js`: adding localStorage backend does not touch existing backends
+- `scoring-engine.ts`: no imports from repository/service/view layers (pure functions only)
+- `repository-factory.ts`: constructs repositories behind an interface; consumers depend on the interface, not the concrete class
 - Views/services: depend on repository interface, not concrete class

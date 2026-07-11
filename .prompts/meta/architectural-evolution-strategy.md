@@ -180,7 +180,7 @@ Move when **2 or more** of these are true:
 ### Decision Triggers: Phase 2 → Phase 3
 
 Move when **2 or more** of these are true:
-- [ ] Approaching Firestore read limits (50K/day on free tier)
+- [ ] Approaching Firestore read limits (see constitution §VI.1 for the daily target ceiling)
 - [ ] High costs from redundant reads
 - [ ] Performance bottlenecks from database
 - [ ] Need offline-first capabilities
@@ -439,10 +439,9 @@ Move when **2 or more** of these are true:
 
 ### Firebase Free Tier Limits
 
-Monitor these monthly:
-- **Firestore**: 50K reads/day, 20K writes/day, 1GB storage
-- **Authentication**: Unlimited
-- **Hosting**: 10GB storage, 360MB/day transfer
+The daily target ceilings and 70% alert thresholds are single-sourced in the project
+constitution — see [`.specs/constitution.md` §VI.1](../../.specs/constitution.md). Do not
+duplicate the figures here; consult that table when monitoring usage.
 - **Functions**: 2M invocations/month (requires Blaze for any functions)
 
 ### Migration Characteristics

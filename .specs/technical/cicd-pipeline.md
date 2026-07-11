@@ -1,13 +1,13 @@
 # CI/CD Pipeline — citl.club
 
-**Last Updated**: 2026-03-10
+**Last Updated**: 2026-07-10
 
 ---
 
 ## Overview
 
-citl.club uses GitHub Actions for CI/CD. Three workflows cover type checking, unit tests,
-production deploys, and PR preview channels.
+citl.club uses GitHub Actions for CI/CD. Three workflows cover type checking, unit/rules/functions
+tests, the production build, CI-gated production deploys, and PR preview channels.
 
 See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for hosting configuration.
 
@@ -17,8 +17,8 @@ See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for host
 
 | Trigger | Workflow | Action |
 |---------|----------|--------|
-| Push to `main` or PR | `ci.yml` | Typecheck + unit tests (parallel jobs) |
-| Push to `main` | `deploy-production.yml` | Build → Firestore rules → Firebase Hosting (live) |
+| Push to `main` or PR | `ci.yml` | Type Check + Unit Tests + Firestore Rules Tests + Cloud Functions Tests + Build (5 parallel jobs) |
+| CI workflow completes successfully on `main` (`workflow_run`) | `deploy-production.yml` | Build → Firestore rules + indexes + Cloud Functions → Firebase Hosting (live) |
 | Manual (`workflow_dispatch`) | `deploy-production.yml` | On-demand production deploy |
 | PR opened/updated/reopened | `deploy-preview.yml` | Build → Firebase preview channel (7-day link in PR comment) |
 
@@ -28,8 +28,8 @@ See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for host
 
 ```
 .github/workflows/
-├── ci.yml                  # typecheck + unit tests (parallel jobs)
-├── deploy-production.yml   # push to main → live site + Firestore rules
+├── ci.yml                  # typecheck + unit/rules/functions tests + build (5 parallel jobs)
+├── deploy-production.yml   # CI success on main (workflow_run) → live site + rules/indexes/functions
 └── deploy-preview.yml      # PR → Firebase preview channel (7-day URL in PR comment)
 ```
 
@@ -37,10 +37,20 @@ See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for host
 
 ### `ci.yml`
 
-Runs on every push to `main` and every PR targeting `main`. No Firebase credentials needed —
-tests are pure in-memory (`vitest` with `environment: 'node'`). Two parallel jobs:
-`Type Check` and `Unit Tests` — these names are the exact strings used in branch protection
-status checks.
+Runs on every push to `main` and every PR targeting `main`. Five parallel jobs, whose `name:`
+fields are the exact strings used in branch protection status checks:
+
+- `Type Check` — `npm run typecheck`
+- `Unit Tests` — `npm run test`
+- `Firestore Rules Tests` — `npm run test:rules` (needs the Firestore emulator via Java/Temurin 21)
+- `Cloud Functions Tests` — `npm run test:functions` (installs `functions/` deps; Java/Temurin 21)
+- `Build` — `npm run build` + `npm --prefix functions run build`, exercising the production
+  rollup/terser path and the Functions `tsc` build
+
+The `Type Check`, `Unit Tests`, and `Build` jobs need no Firebase credentials — the unit tests are
+pure in-memory (`vitest` with `environment: 'node'`) and the build succeeds with the `VITE_` env
+vars undefined. The two emulator-backed test jobs run against the local Firestore emulator, not
+production. (The production deploy job in `deploy-production.yml` *does* require credentials.)
 
 See [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml).
 
@@ -48,10 +58,24 @@ See [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml).
 
 ### `deploy-production.yml`
 
-Deploys Firestore security rules first (via `GOOGLE_APPLICATION_CREDENTIALS` written to a
-temp file), then deploys Firebase Hosting via `FirebaseExtended/action-hosting-deploy@v0`.
-`firebase-tools` is in `devDependencies` so `npx firebase` resolves from the local install
-after `npm ci` — no download on every run. Triggers on push to `main` and `workflow_dispatch`.
+**Does NOT trigger on push to `main`.** It is CI-gated: it runs via `workflow_run` when the `CI`
+workflow completes on `main`, and the `build-and-deploy` job only proceeds when
+`github.event.workflow_run.conclusion == 'success'` (or on manual `workflow_dispatch`). This keeps
+a test- or build-failing commit — including a dependabot major that breaks the production build —
+from shipping. The job checks out the exact commit that passed CI
+(`github.event.workflow_run.head_sha`) and runs under a `deploy-production` concurrency group so
+two deploys never overlap.
+
+Deploy steps, in order:
+
+1. Build the app (`npm run build`) with all `VITE_` values injected from GitHub secrets/vars.
+2. Deploy `firestore:rules`, `firestore:indexes`, and `functions` via the Firebase CLI
+   (`npx firebase deploy --only firestore:rules,firestore:indexes,functions`), authenticated with
+   `GOOGLE_APPLICATION_CREDENTIALS` pointing at the service-account JSON written to a temp file.
+3. Deploy Firebase Hosting to the `live` channel via `FirebaseExtended/action-hosting-deploy@v0`.
+
+`firebase-tools` is in `devDependencies` so `npx firebase` resolves from the local install after
+`npm ci` — no download on every run.
 
 See [`.github/workflows/deploy-production.yml`](../../.github/workflows/deploy-production.yml).
 
@@ -59,10 +83,12 @@ See [`.github/workflows/deploy-production.yml`](../../.github/workflows/deploy-p
 
 ### `deploy-preview.yml`
 
-Firestore rules are NOT deployed in preview — rules changes only go live on production.
-The `permissions` block grants `pull-requests: write` (required for GitHub's restrictive
-default token permissions so the action can post the preview URL as a PR comment). Preview
-channels expire after 7 days. Triggers on PR open, synchronize, and reopen.
+Runs the production vite build on PRs and deploys it to a preview channel. Skipped for dependabot
+PRs (`if: github.actor != 'dependabot[bot]'`). Firestore rules/indexes and Cloud Functions are NOT
+deployed in preview — those changes only go live on production. The `permissions` block grants
+`pull-requests: write` (required for GitHub's restrictive default token permissions so the action
+can post the preview URL as a PR comment). Preview channels expire after 7 days. Triggers on PR
+open, synchronize, and reopen.
 
 See [`.github/workflows/deploy-preview.yml`](../../.github/workflows/deploy-preview.yml).
 
@@ -70,37 +96,18 @@ See [`.github/workflows/deploy-preview.yml`](../../.github/workflows/deploy-prev
 
 ## Firebase Service Account IAM Setup
 
-Minimum IAM roles (principle of least privilege):
-- `roles/firebasehosting.admin` — upload files, create/finalize channels
-- `roles/firebaserulesadmin` — deploy Firestore security rules only (no data access)
+The production deploy service account (`FIREBASE_SERVICE_ACCOUNT`) does more than deploy
+Hosting: `deploy-production.yml` deploys Firestore rules **and indexes** **and Cloud Functions**.
+A Functions deploy pulls in additional Google Cloud surfaces (Cloud Functions / Cloud Run,
+Artifact Registry, the default compute service account, and the Cloud Billing API on the CI
+project) that the two-role least-privilege set previously documented here
+(`firebasehosting.admin` + `firebaserulesadmin`) does **not** cover.
 
-```bash
-export PROJECT_ID=citl-baed2
-
-# Create the service account
-gcloud iam service-accounts create github-actions-deploy \
-  --project=$PROJECT_ID \
-  --display-name="GitHub Actions Deploy" \
-  --description="CI/CD deployments for citl.club"
-
-export SA_EMAIL="github-actions-deploy@${PROJECT_ID}.iam.gserviceaccount.com"
-
-# Grant minimum roles
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:${SA_EMAIL}" \
-  --role="roles/firebasehosting.admin"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:${SA_EMAIL}" \
-  --role="roles/firebaserulesadmin"
-
-# Download JSON key
-gcloud iam service-accounts keys create ./github-actions-sa.json \
-  --iam-account=$SA_EMAIL --project=$PROJECT_ID
-
-# After uploading to GitHub Secrets, delete the local file:
-rm ./github-actions-sa.json
-```
+The exact role set and the first-Functions-deploy IAM gotchas are not duplicated in-repo. Follow
+the **`firebase-deploy-runbook`** global skill, which documents the IAM propagation for the
+default compute service account, the 2nd-gen callable Cloud Run invoker binding, Artifact
+Registry cleanup, and the Cloud Billing API enablement a CI service account needs to deploy
+Functions.
 
 ---
 
@@ -140,10 +147,17 @@ Values can be copied from your local `.env` file.
 GitHub repo → Settings → Branches → Add rule → Branch: main
 ```
 
-Required status checks (must match job `name:` fields exactly):
+Required status checks (must match job `name:` fields exactly) — all five `ci.yml` jobs are
+**required** in the `main` branch protection ruleset as of 2026-07-10; a PR cannot merge until
+they pass:
 - `Type Check`
 - `Unit Tests`
-- `Build & Deploy (Preview Channel)` — optional (can block merges during Firebase outages)
+- `Firestore Rules Tests`
+- `Cloud Functions Tests`
+- `Build`
+
+`Build & Deploy (Preview Channel)` is intentionally NOT a required check (a Firebase outage
+should not block merges).
 
 Also enable:
 - Require a pull request before merging
@@ -171,10 +185,12 @@ GitHub Actions free tier provides 2,000 minutes/month — well within budget for
 ### Via Git (preferred)
 
 ```bash
-# Revert the bad commit
+# Revert the bad commit on a branch, then open a PR (no direct pushes to main)
+git checkout -b revert/bad-commit
 git revert HEAD
-git push origin main
-# GitHub Actions deploys the revert automatically
+git push origin revert/bad-commit
+# Merge the PR → CI runs → a successful CI run triggers the production deploy
+# (deploy-production.yml via workflow_run), shipping the revert automatically
 ```
 
 ### Via Firebase Console
@@ -193,10 +209,10 @@ Firebase console → Hosting → Release history → select previous release →
 - [x] `.github/workflows/ci.yml` created
 - [x] `.github/workflows/deploy-production.yml` created
 - [x] `.github/workflows/deploy-preview.yml` created
-- [ ] Branch protection rules enabled on `main`
-- [ ] Test: push to `main` → verify production deploy in Firebase console
-- [ ] Test: open PR → verify preview channel URL posts as PR comment
-- [ ] Test: typecheck failure on a branch blocks merge
+- [x] Branch protection rules enabled on `main` (all five CI jobs required as of 2026-07-10)
+- [x] Test: merge to `main` → CI passes → `workflow_run` triggers production deploy
+- [x] Test: open PR → verify preview channel URL posts as PR comment
+- [x] Test: typecheck failure on a branch blocks merge
 
 ---
 

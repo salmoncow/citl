@@ -2,8 +2,7 @@
 
 **Feature**: 002-multi-user-rbac
 **Spec**: [spec.md](./spec.md)
-**Plan of record**: [/Users/ted/.claude/plans/i-recently-implemented-multi-user-partitioned-mochi.md](../../../../.claude/plans/i-recently-implemented-multi-user-partitioned-mochi.md)
-**Status**: Ready for implementation
+**Status**: Shipped (deployed 2026-05-04)
 
 Each numbered group below is one prospective commit. Commit only when
 every box is checked and the validation gate passes. AC refs map to

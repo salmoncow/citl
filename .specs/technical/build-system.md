@@ -1,13 +1,13 @@
 # Build System — citl.club
 
-**Stack**: Vite 7.x · Terser · TypeScript (type-check only) · Node 24.x
-**Last Updated**: 2026-02-27
+**Stack**: Vite 8.x · Terser · TypeScript (type-check only) · Node 24.x
+**Last Updated**: 2026-07-10
 
 ---
 
 ## Overview
 
-citl.club uses Vite 7.x as its build tool. The project is a TypeScript SPA with no framework;
+citl.club uses Vite 8.x as its build tool. The project is a TypeScript SPA with no framework;
 Vite handles module bundling, asset fingerprinting, dev-server HMR, and production minification.
 
 **Configuration file**: `vite.config.js` (project root)
@@ -25,13 +25,14 @@ citl-static/           ← project root (git repo)
 │   ├── main.ts        ← Application entry point
 │   ├── firebase-config.ts
 │   ├── vite-env.d.ts
-│   ├── components/
+│   ├── components/    ← includes admin-tabs/
+│   ├── views/
 │   ├── modules/
 │   ├── services/
 │   ├── repositories/
+│   ├── infrastructure/
+│   ├── utils/
 │   ├── types/
-│   ├── views/
-│   ├── data/scorecards/   ← Static JSON (2019–2025)
 │   ├── assets/
 │   └── styles/
 ├── public/            ← Copied verbatim to dist/ (favicon, robots.txt)
@@ -45,7 +46,7 @@ citl-static/           ← project root (git repo)
 
 ### Vite Configuration Principles
 
-See [`vite.config.ts`](../../vite.config.ts) for the full configuration. Key decisions:
+See [`vite.config.js`](../../vite.config.js) for the full configuration. Key decisions:
 
 - **`root: 'src'`** — `index.html` lives inside `src/`, so all paths are relative to it
 - **`publicDir: '../public'`** — `public/` is at the project root, not inside `src/`
@@ -185,8 +186,6 @@ The Firebase SDK (`firebase` npm package) is tree-shaken — only imported modul
 - Terser is the minifier (configured via `"devDependencies": { "terser": "..." }`)
 - `cssCodeSplit: true` creates a separate CSS chunk, enabling parallel loading
 - Source maps enabled in production (`.map` files in `dist/`) for error debugging
-- JSON scorecard files (`src/data/scorecards/*.json`) are bundled inline at build time
-  (imported as ES modules in `scorecards.js` — no runtime fetch required)
 
 ---
 
@@ -201,9 +200,6 @@ import logoUrl from '@/assets/images/logo_full_large_white_bg.png';
 // CSS (imported in JS entry, extracted to CSS chunk)
 import '@/styles/main.css';
 
-// JSON (inline bundled)
-import data2025 from '@/data/scorecards/2025.json';
-
 // PDF score sheets — NOT imported; served directly from public/
 // Reference as: /assets/score_sheets/2025_score_sheet.pdf
 ```
@@ -215,7 +211,7 @@ Files in `public/` are copied to `dist/` as-is with no processing:
 - `public/robots.txt` → `dist/robots.txt`
 
 PDF score sheets in `src/assets/score_sheets/` are processed by Vite but served under
-`/assets/score_sheets/` — the path is referenced directly in `downloads.js`.
+`/assets/score_sheets/` — the path is referenced directly where the score sheets are linked.
 
 ---
 
@@ -286,7 +282,7 @@ routing (`#/about`, `#/scorecards`, etc.) works correctly.
 **Cause**: `dist/` was built with wrong `outDir` or SPA rewrite missing
 **Fix**: Verify `vite.config.js` → `build.outDir: '../dist'`; verify `firebase.json` rewrite
 
-### Issue: JSON scorecard data not updating in production
+### Issue: App bundle not updating in production
 
 **Cause**: Browser caching an old bundle
 **Fix**: Vite content-hashes bundles — a new build always produces new file names. Clear
@@ -310,7 +306,7 @@ nvm use 24
 **Key dependencies**:
 | Package | Role | Version |
 |---------|------|---------|
-| `vite` | Build tool + dev server | `^7.x` |
+| `vite` | Build tool + dev server | `^8.x` (see `package.json`) |
 | `terser` | JS minifier | `^5.x` |
 | `typescript` | Type checking (IDE only) | `^5.x` |
 | `firebase` | Firebase SDK | `^12.x` |

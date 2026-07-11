@@ -1,11 +1,13 @@
 # Spec-Kit: Project Specifications — citl.club
 
 Project-specific specifications, constraints, and technical configurations for citl.club
-(Central Illinois Trap League).
+(Central Illinois Trap League). This is an **index** — it points to the canonical documents
+rather than restating them.
 
-**Note**: This directory works alongside **Prompts** (`.prompts/`) for a hybrid architecture:
+**Note**: This directory works alongside the **Prompts** framework (`.prompts/meta/`) for a
+hybrid architecture:
 - **Spec-Kit** (this directory) = Project-specific constraints, current architectural state, technical configs
-- **Prompts** (`.prompts/`) = Foundational, universal patterns and best practices
+- **Prompts** (`.prompts/meta/`) = Foundational, strategic frameworks and universal patterns
 
 See [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) for full documentation.
 
@@ -15,13 +17,19 @@ See [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) 
 
 ```
 .specs/
-├── constitution.md          # Project constitutional spec (single source of truth)
-├── technical/               # Technical configurations
-│   ├── build-system.md     # Vite 7 configuration and optimization
-│   ├── cicd-pipeline.md    # GitHub Actions CI/CD workflows
-│   └── firebase-deployment.md  # Firebase Hosting deployment process
-└── features/                # Per-feature specifications (ephemeral)
-    └── <feature-name>.md   # Created via /speckit-specify
+├── constitution.md              # Project constitutional spec (single source of truth)
+├── technical/                   # Technical configurations
+│   ├── build-system.md          # Vite 8 configuration and optimization
+│   ├── cicd-pipeline.md         # GitHub Actions CI/CD workflows
+│   ├── firebase-deployment.md   # Firebase Hosting deployment process
+│   └── firestore-schema.md      # Firestore collection/document schema
+├── features/                    # Per-feature specifications
+│   ├── <feature-name>.md        # Small feature: flat single-file spec
+│   ├── NNN-name/                # Large feature: spec directory
+│   │   ├── spec.md              #   User stories + acceptance criteria
+│   │   └── tasks.md             #   Task breakdown
+│   └── archive/                 # Shipped specs moved here after merge
+└── reviews/                     # Review artifacts
 ```
 
 ### Constitution
@@ -39,19 +47,23 @@ See [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) 
 ### Technical Specifications
 
 Project-specific technical configurations:
-- **build-system.md** — Vite 7 configuration, `@/` alias, Terser minification, env variables
+- **build-system.md** — Vite 8 configuration, `@/` alias, minification, env variables
 - **cicd-pipeline.md** — GitHub Actions CI/CD workflows
-- **firebase-deployment.md** — Firebase Hosting setup, `citl` project, deployment commands
+- **firebase-deployment.md** — Firebase Hosting setup, `citl-baed2` project, deployment commands
+- **firestore-schema.md** — Firestore collection/document schema
 
 ### Feature Specifications
 
-Ephemeral specifications for individual features, created via `/speckit-specify`:
-- User stories and acceptance criteria
-- Implementation plans referencing prompts
-- Task breakdowns
-- Testing checklists
+Specs are authored by the **`@speckit` agent** (`.claude/agents/speckit.md`). The repo uses a
+**hybrid convention** based on feature size:
 
-**Lifecycle**: Created → Implemented → Archived to `features/archive/` after merge
+- **Small feature** → a flat single file: `.specs/features/<feature-name>.md`
+  (e.g. `scoring-engine.md`).
+- **Large feature** → a numbered directory: `.specs/features/NNN-name/` containing
+  `spec.md` (user stories + acceptance criteria) and `tasks.md` (task breakdown)
+  (e.g. `002-multi-user-rbac/`).
+
+**Lifecycle**: Created → Implemented → moved to `features/archive/` after the PR merges.
 
 ---
 
@@ -59,44 +71,40 @@ Ephemeral specifications for individual features, created via `/speckit-specify`
 
 **Use Spec-Kit (`.specs/`) for:**
 - Checking project-specific constraints (free tier limits, current phase)
-- Understanding what has been built (§II.1 Current Architectural State in constitution)
+- Understanding what has been built (Current Architectural State in constitution)
 - Creating feature specifications and implementation plans
-- Reviewing technical configurations (Vite, Firebase, CI/CD)
-- Checking the DNS cutover checklist (§VII.2)
+- Reviewing technical configurations (Vite, Firebase, CI/CD, Firestore schema)
 
-**Use Prompts (`.prompts/`) for:**
+**Use Prompts (`.prompts/meta/`) for:**
 - Learning foundational architectural patterns (SOLID, modularity, DRY)
 - Understanding universal security/testing principles
-- Implementing Firebase SDK features (SDK patterns, best practices)
 - Making strategic decisions (architectural evolution, platform selection)
 
 ---
 
 ## Feature Development Workflow
 
-```
-1. /speckit-constitution
-   ↓ Read project constraints and current architectural state
-2. /speckit-specify <feature-name>
-   ↓ Create feature spec (references constitution + prompts)
-3. /speckit-plan
-   ↓ Design implementation (applies prompt patterns)
-4. /speckit-tasks
-   ↓ Break down work into tasks
-5. /speckit-implement
-   ↓ Execute implementation (follows constitutional + prompt guidance)
-6. Git commit with constitutional references
-   ↓ Cite constitutional compliance + prompt guidance
-```
+The workflow is driven by **agents** and **slash-command skills** — there are no `speckit-*`
+slash commands. In order:
+
+1. **`@speckit`** — author the feature spec (reads the constitution, writes to `.specs/features/`)
+2. **`/implement <feature>`** — execute the spec (runs typecheck + tests when done)
+3. **`@reviewer`** — audit the branch against the constitutional checks and draft the PR description
+4. **`/check`** — quick pre-commit compliance pass before committing
+5. **`/deploy-preview`** — build + typecheck + test, then deploy a 7-day Firebase preview channel
+
+Canonical descriptions of this workflow live in:
+- [WORKFLOW-GUIDE.md](../WORKFLOW-GUIDE.md) — hands-on cheat sheet with example prompts
+- [CLAUDE.md](../CLAUDE.md) — "Agentic Framework" and "Feature Development Workflow" sections
 
 ---
 
 ## Cross-References
 
 - [Constitution](./constitution.md) — CITL project constitutional spec
+- [WORKFLOW-GUIDE.md](../WORKFLOW-GUIDE.md) — Hands-on agent/skill workflow cheat sheet
+- [CLAUDE.md](../CLAUDE.md) — Agent orientation and quick-start
 - [Spec-Kit Integration Guide](../.prompts/meta/speckit-integration-guide.md) — Hybrid architecture docs
-- [AGENTS.md](../AGENTS.md) — Agent orientation and quick-start
-- [Prompts Library](../.prompts/README.md) — Foundational patterns
 - [Architectural Decision Log](../.prompts/meta/architectural-decision-log.md) — Historical decisions
 - [Architectural Evolution Strategy](../.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers and decision framework
 
@@ -104,4 +112,4 @@ Ephemeral specifications for individual features, created via `/speckit-specify`
 
 **Maintained By**: Project lead
 **Review Frequency**: Quarterly (with architectural review)
-**Last Updated**: 2026-02-27
+**Last Updated**: 2026-07-10

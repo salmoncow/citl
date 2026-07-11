@@ -4,7 +4,7 @@
 **Project Number**: `983886495824`
 **Hosting Region**: Global CDN (Hosting) / `us-east1` (Firestore + Functions)
 **Plan**: Blaze (pay-as-you-go; usage targets Spark-equivalent quotas)
-**Last Updated**: 2026-05-04
+**Last Updated**: 2026-07-10
 
 > **First-time deploy to a new Firebase project?** Operational gotchas (IAM
 > propagation for the GCF source bucket, 2nd-gen callable invoker binding,
@@ -115,7 +115,7 @@ Before running `npm run deploy` or `npm run deploy:preview`:
 - [ ] `firebase use citl-baed2` is active (`firebase use` to verify)
 - [ ] All 5 SPA routes load correctly in `npm run preview`
 - [ ] No CSP violations in browser console during preview
-- [ ] Firebase Hosting quota not near 70% of 360 MB/day limit
+- [ ] Firebase Hosting daily-transfer usage not near its 70% alert threshold (see constitution [§VI.1](../constitution.md#vi1-firebase-blaze-plan-with-spark-equivalent-discipline))
 
 ---
 
@@ -304,13 +304,13 @@ Content-Security-Policy: [see firebase.json for full CSP]
 
 ---
 
-## Hosting Metrics and Limits (Spark Plan)
+## Hosting Metrics and Limits — Usage targets (Spark-equivalent discipline, on Blaze)
 
-| Resource | Limit | Alert at 70% |
-|----------|-------|--------------|
-| Hosting storage | 10 GB total | 7 GB |
-| Daily transfer | 360 MB/day | 252 MB/day |
-| SSL certificate | Included | — |
+citl-baed2 is on the **Blaze** plan but operates with usage discipline that targets
+the former Spark free-tier quotas. **The authoritative usage ceilings and 70% alert
+thresholds — Firestore reads/writes/deletes, hosting storage/transfer, and Cloud
+Functions invocations — live in the constitution at [§VI.1](../constitution.md#vi1-firebase-blaze-plan-with-spark-equivalent-discipline).**
+That table is the single source of truth; do not duplicate the figures here.
 
 **Seasonal traffic pattern**: CITL traffic peaks April–July (active league season).
 Off-season traffic is near zero.
@@ -354,7 +354,7 @@ Preview channels create isolated deployments with 7-day expiry:
 
 ```bash
 npm run deploy:preview
-# Creates: https://citl--preview-[hash].web.app
+# Creates: https://citl-baed2--preview-[hash].web.app
 ```
 
 **Use preview channels for**:
@@ -396,40 +396,12 @@ enforcement layer, not the key.
 
 ---
 
-## DNS Cutover
+## DNS Cutover (Historical — Completed ~2026-05)
 
-When ready to move `citl.club` from AWS CloudFront to Firebase Hosting:
-
-### Step 1 — Add custom domains in Firebase console
-```
-Firebase console → Hosting → Add custom domain
-  → citl.club
-  → www.citl.club
-```
-
-### Step 2 — Update DNS records
-```
-# Remove: CNAME/A records pointing to CloudFront distribution
-# Add:    A records pointing to Firebase Hosting IPs
-#         (Firebase console provides the IPs during domain setup)
-```
-
-### Step 3 — Wait for SSL provisioning
-Firebase automatically provisions SSL via Let's Encrypt (typically 24–48 hours).
-
-### Step 4 — Verify
-- [ ] `https://citl.club` loads correctly
-- [ ] `https://www.citl.club` redirects to `https://citl.club`
-- [ ] SSL certificate is valid (no browser warnings)
-- [ ] All post-deployment verification steps pass on the live domain
-
-### Step 5 — Decommission AWS
-```bash
-# After confirming citl.club is fully live on Firebase:
-terraform destroy    # in the Terraform directory
-```
-
-**See constitution §VII for the full DNS cutover prerequisite checklist.**
+The DNS cutover is **complete**. `citl.club` and `www.citl.club` moved from AWS
+CloudFront to Firebase Hosting around 2026-05, and the legacy AWS S3 + CloudFront
+stack has been decommissioned (`terraform destroy` was executed at that time). The
+site is live in production at **https://citl.club**. No cutover action remains.
 
 ---
 

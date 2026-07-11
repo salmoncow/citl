@@ -11,7 +11,7 @@ architectural decisions, standards, and implementation guidance.
 shooting league in Central Illinois. The site publishes weekly standings, results, scorecards
 (7 seasons, 2019–2025), league rules, and contact information.
 
-The site is live at **https://citl.club** — a **Vite 7 SPA** hosted on **Firebase Hosting**
+The site is live at **https://citl.club** — a **Vite 8 SPA** hosted on **Firebase Hosting**
 with **Firestore** as the live data backend. The migration from the legacy AWS S3 + raw HTML
 site is complete.
 
@@ -44,7 +44,7 @@ npm run dev:seeded                   # Same, but seeds the emulator first (fresh
 npm run seed:emulator                # Seed running emulators (also: -- clear | -- status)
 npm run build                        # Production build → dist/
 npm run preview                      # Serve dist/ locally
-npm run deploy                       # build + firebase deploy --only hosting
+npm run deploy                       # build + deploy hosting, Firestore rules, indexes, and Functions
 npm run deploy:preview               # build + Firebase preview channel (7-day URL)
 ```
 

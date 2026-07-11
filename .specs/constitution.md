@@ -1,9 +1,9 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.5.0
-**Last Updated:** 2026-05-03
+**Version:** 1.5.1
+**Last Updated:** 2026-07-10
 **Scope:** All development on the citl-static project
-**Review Frequency:** Quarterly (next review: 2026-08-03)
+**Review Frequency:** Quarterly (next review: 2026-10-10)
 
 ---
 
@@ -62,36 +62,33 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-05-03
-**Last Architecture Review**: 2026-05-03
+**Last Updated**: 2026-07-10
+**Last Architecture Review**: 2026-07-10
 
 | Domain | Current State | Status |
 |--------|---------------|--------|
-| **UI Components** | 4 Web Components (`home-standings`, `season-scorecards`, `admin-panel`, `admin-users-panel`) | Live |
-| **Security** | Phase 2: Firebase Auth (Google) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim + mirror | Complete |
-| **Data** | Firestore drives home page, scorecards, RBAC user mirror, audit log; JSON scorecard files are permanent static assets per §II.5 | Live |
-| **Testing** | Vitest unit tests for scoring engine, score service, schedule utils; rules-unit-testing matrix (44 cases); function unit tests (15 cases) | Active |
-| **Deployment** | GitHub Actions CI/CD (push to `main` → Firebase Hosting + Firestore rules + Functions) | Active |
+| **UI Components** | Web Components under `src/components/` (10 components + 6 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
+| **Security** | Firebase Auth (Google) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim + mirror | Complete |
+| **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, and audit log | Live |
+| **Testing** | Vitest unit tests (scoring engine, score service, schedule/yardage/markdown utils); rules-unit-testing matrix (47 cases); function unit tests (15 cases). See §III.1. | Active |
+| **Deployment** | GitHub Actions CI/CD: PR/push runs typecheck + build + three test suites; production deploy is gated on CI success (`workflow_run`) → Firebase Hosting + Firestore rules/indexes + Functions | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
 | **Cost** | Firebase Blaze (pay-as-you-go); usage discipline targets Spark-equivalent quotas | Near 0% usage |
 | **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
 
-**Key Metrics** (as of 2026-03-10):
-- **Active Users**: 0 (pre-launch — still on AWS/CloudFront)
+**Key Metrics** (as of 2026-07-10):
+- **Status**: Live in production at https://citl.club (Firebase Hosting); AWS/CloudFront decommissioned
 - **SPA Views**: 6 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`)
-- **Modules**: 7 (`main`, `router`, `navigation`, `ui`, `firebase-config`, `score-service`, `standings-service`)
-- **Repositories**: 2 (`score-repository`, `repository-factory`)
-- **Types**: 4 (`score`, `shooter`, `season`, `scorecard`)
-- **Data files**: 7 JSON scorecard seasons (2019–2025)
+- **Components**: 10 under `src/components/` + 6 `admin-tabs/` modules
+- **Modules**: 5 (`auth`, `navigation`, `role`, `router`, `ui`)
+- **Repositories**: 3 (`score-repository`, `user-repository`, `repository-factory`)
+- **Types**: 6 (`announcement`, `score`, `scorecard`, `season`, `shooter`, `user`)
 - **Team Size**: 1 developer
-- **Firebase Usage**: Hosting configured (DNS not yet cutover); Firestore live; Cloud Functions deployed (RBAC role-writer + auth trigger); Blaze plan, near-zero spend
+- **Firebase Usage**: Hosting live; Firestore live (scorecards + weekly results); Cloud Functions deployed (RBAC role-writer + auth trigger); Blaze plan, near-zero spend
+
+> Prefer the live `src/` tree over hard counts above — recount at review time rather than trusting these numbers.
 
 **TypeScript**: All source files are `.ts`; `allowJs: false`; `strict: true`; `noUncheckedIndexedAccess: true`.
-
-**Deployment Context** (current):
-- Hosted on AWS S3 + CloudFront (legacy)
-- Firebase Hosting configured but DNS not yet cut over
-- Firestore enabled and live; security rules deployed; 7 seasons imported
 
 ### II.2 Evolution Triggers
 
@@ -100,8 +97,8 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 **General Principle**: Don't add complexity until measurable pain justifies it.
 
 **CITL-specific thresholds**:
-- **Testing**: Trigger at 10+ modules (currently 7) OR production launch planned
-- **CI/CD**: Trigger at DNS cutover decision
+- **Testing**: Broad integration/E2E testing trigger already met (site live, 15+ modules). Current suites documented in §III.1.
+- **CI/CD**: Active — GitHub Actions gates production deploys on CI (see §II.1).
 - **Cost optimization**: Alert at 70% of any Firebase free tier limit
 
 **Reference**: [.prompts/meta/architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md)
@@ -132,21 +129,15 @@ src/services/      Business logic — validation, transformation, caching, rules
 src/repositories/  Data access — Firestore reads/writes only
 src/types/         TypeScript interfaces and types — no runtime code
 src/views/         Page-level render functions (transitional — migrate to components)
-src/data/          Static JSON data (scorecard seasons 2019–2025)
 ```
 
 
 ### II.5 CITL-Specific Data Architecture
 
-CITL operates a **dual data layer**:
-
-| Layer | Purpose | Lifecycle |
-|-------|---------|-----------|
-| `src/data/scorecards/*.json` | Historical scorecard display (2019–2025) | Permanent static assets |
-| Firestore `seasons/{year}/weeks/{n}` | Live weekly results for home page | Active |
-
-The JSON scorecard data is **never replaced by Firestore** — it serves the Scorecards page
-accordion display. Firestore drives the home page results feed and standings.
+Firestore is the **single data layer** (see ADR-010, which supersedes ADR-003). It drives
+the home page results feed, standings, the Scorecards page, the RBAC user mirror, and the
+audit log. There is no static JSON data layer — the historical scorecards were migrated
+into Firestore on 2026-02-28.
 
 **Firestore Schema**:
 ```
@@ -163,18 +154,20 @@ See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md)
 
 ### III.1 Testing Requirements
 
-**Current state**: Vitest unit tests for pure business logic functions.
+**Current state**: three test suites, all run in CI (see `.specs/technical/cicd-pipeline.md`):
+- **Unit** (`src/**/*.test.ts`, Vitest): scoring engine, score service, schedule/yardage/markdown utils, UI helpers.
+- **Firestore rules** (`tests/rules/`, `@firebase/rules-unit-testing` on the emulator): 47 cases covering the RBAC allow/deny matrix.
+- **Cloud Functions** (`tests/functions/`, emulator): 15 cases covering `setUserRole` and `onUserCreate`.
 
-**Test Pyramid target** (when integration testing is triggered):
+**Coverage posture**: business logic (scoring engine, score service) and security surfaces
+(rules, functions, auth-adjacent utilities) are the priority for test coverage. The UI and
+repository layers are largely untested — closing that gap is tracked in the review backlog,
+not a hard gate.
+
+**Test Pyramid target** (aspirational, if the suite grows):
 - **70% Unit Tests**: Fast, isolated, individual functions / services
 - **20% Integration Tests**: Service ↔ repository interactions
 - **10% E2E Tests**: Full user workflows
-
-**Coverage targets** (when unit testing is adopted broadly):
-- Overall: ≥80% code coverage
-- Auth + Firestore security rule paths: 100%
-
-**Trigger**: 10+ modules OR production launch planned
 
 
 ### III.2 Security Standards
@@ -243,14 +236,11 @@ private static _skeleton(): string {
 - Page Load Time: <3 seconds (p95)
 - Time to Interactive (TTI): <5 seconds (p95)
 - First Contentful Paint (FCP): <1.5 seconds (p95)
-- JS bundle: <250 kB gzipped (currently ~34 kB gzipped ✅)
+- JS bundle: <250 kB gzipped (currently ~167 kB gzipped ✅)
 
-**Firebase Quota Constraints** (Blaze, with Spark-equivalent discipline — see §VI.1):
-| Resource | Daily target ceiling | Alert Threshold (70%) |
-|----------|---------------------|----------------------|
-| Firestore reads | 50,000 | 35,000 |
-| Firestore writes | 20,000 | 14,000 |
-| Hosting transfer | 360 MB | 252 MB |
+**Firebase Quota Constraints**: the daily target ceilings and 70% alert thresholds are
+defined once in [§VI.1](#vi1-firebase-blaze-plan-with-spark-equivalent-discipline) — see that
+table (do not duplicate the figures here).
 
 **Optimization requirements**:
 - Always use `limit()` + `where()` on Firestore queries — never read entire collections
@@ -267,7 +257,7 @@ private static _skeleton(): string {
 - Arrow functions for callbacks; named `function` declarations for module-level exports.
 - No inline event handlers in HTML (`onclick=`, `onload=`). Attach listeners in JS.
 - Prefer `textContent` over `innerHTML`. Sanitize before any HTML insertion.
-- Absolute imports using `@/` path alias (configured in `vite.config.ts` and `tsconfig.json`)
+- Absolute imports using `@/` path alias (configured in `vite.config.js` and `tsconfig.json`)
 - `noUncheckedIndexedAccess: true` — array/object access always returns `T | undefined`; use `!= null` not just `!== null` for array guard
 - `strict: true` — no implicit `any`; all parameters and return types must be explicit
 - Prefer `as unknown as T` over `as T` for Firestore snapshot casts
@@ -283,7 +273,7 @@ private static _skeleton(): string {
 | CSS custom properties | `--kebab-case` | `--color-primary` |
 | Custom elements | `kebab-case` | `<standings-table>` |
 
-**Git workflow** (from `git-best-practices.md`):
+**Git workflow** (see the `git-conventions` global skill):
 - Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `perf:`, `ci:`
 - Branch naming: `feat/<desc>`, `fix/<desc>`, `chore/<desc>`, `ci/<desc>`
 - All changes to `main` via Pull Request — no direct commits
@@ -297,7 +287,7 @@ private static _skeleton(): string {
 ### IV.1 Approved Technology Stack
 
 **Frontend**:
-- **Build Tool**: Vite 7.x (see `.specs/technical/build-system.md`)
+- **Build Tool**: Vite 8.x (see `.specs/technical/build-system.md`)
 - **Language**: TypeScript (strict mode, `allowJs: false`; Vite strips types via esbuild — no tsc emit)
 - **UI Pattern**: SPA with hash-based router; views migrating to Web Components
 - **Styling**: CSS design system — two-layer custom properties (primitive palette `--color-*` + semantic tokens `--c-*`); system-aware dark/light mode via `@media (prefers-color-scheme: dark)`; no framework
@@ -468,7 +458,7 @@ manual consultation needed. Key skills: `software-architecture`, `security-princ
 
 ### VII.3 Technical Specifications
 
-- [.specs/technical/build-system.md](.specs/technical/build-system.md) — Vite 7 configuration
+- [.specs/technical/build-system.md](.specs/technical/build-system.md) — Vite 8 configuration
 - [.specs/technical/cicd-pipeline.md](.specs/technical/cicd-pipeline.md) — GitHub Actions
 - [.specs/technical/firebase-deployment.md](.specs/technical/firebase-deployment.md) — Firebase Hosting deployment
 - [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md) — Firestore collection/document reference
@@ -527,3 +517,5 @@ manual consultation needed. Key skills: `software-architecture`, `security-princ
 - 1.2.0 (2026-03-10): Removed phase references throughout; constitution is now state-based and timing-agnostic
 - 1.3.0 (2026-03-13): Added §III.3 UX Loading States — skeleton shimmer placeholders required for all async Web Components; added corresponding forbidden pattern and commit checklist item
 - 1.4.0 (2026-04-12): Migrated foundational guidance to global Claude Code skills; removed `.prompts/core/` and `.prompts/platforms/` references; retained `.prompts/meta/` for project-specific strategic frameworks; updated §V.1 workflow and §VII references
+- 1.5.0 (2026-05-03): Adopted Firebase Blaze plan and multi-user RBAC (002-multi-user-rbac); Cloud Functions role-writer + auth trigger; App Check enforcement; Security marked Complete (see ADR-009)
+- 1.5.1 (2026-07-10): Truth-reconciliation pass (WS-1) — updated §II.1 to live-production state (AWS decommissioned, site live at citl.club); corrected inventory counts; removed the retired static-JSON data-layer narrative (ADR-010 supersedes ADR-003); refreshed §III.1 testing state and §III.4 bundle figure; single-sourced Firebase quota figures to §VI.1

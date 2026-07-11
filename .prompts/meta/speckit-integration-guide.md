@@ -220,7 +220,7 @@ Constitutional compliance:
 - Technology stack decisions (Vanilla WC, Firebase, Vite, GitHub Actions)
 - Forbidden patterns specific to this project (Firebase anti-patterns)
 - Current team size, component count, module count (metrics)
-- Cost constraints (Firebase free tier: 50K reads/day, 20K writes/day)
+- Cost constraints (Firebase usage targets — see constitution §VI.1 for the figures)
 
 **Exclude**:
 - Detailed implementation patterns (those go in global skills)
