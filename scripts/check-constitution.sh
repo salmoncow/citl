@@ -47,15 +47,15 @@ warn_limit=$(jq -r '.sizeLimits.warn' "$RULESET")
 forbid_limit=$(jq -r '.sizeLimits.forbid' "$RULESET")
 
 matches_scope() {
-  # $1 = file, remaining = scope globs (space-separated from jq)
+  # $1 = file (may be absolute or repo-relative), remaining = scope globs.
   local f="$1"; shift
   local g
   for g in "$@"; do
     case "$g" in
       "*.ts")            [[ "$f" == *.ts ]] && return 0 ;;
       "*.html")          [[ "$f" == *.html ]] && return 0 ;;
-      "src/components/**") [[ "$f" == src/components/* ]] && return 0 ;;
-      *)                 [[ "$f" == $g ]] && return 0 ;;
+      "src/components/**") [[ "$f" == src/components/* || "$f" == */src/components/* ]] && return 0 ;;
+      *)                 [[ "$f" == $g || "$f" == *"/$g" ]] && return 0 ;;
     esac
   done
   return 1
@@ -110,10 +110,13 @@ done
 grandfathered=$(jq -r '.grandfathered["file-size"][]? ' "$RULESET")
 is_grandfathered=false
 while IFS= read -r gf; do
-  [[ -n "$gf" && "$FILE" == "$gf" ]] && is_grandfathered=true
+  # $FILE may be absolute; grandfather entries are repo-relative. Match either.
+  [[ -n "$gf" && ( "$FILE" == "$gf" || "$FILE" == *"/$gf" ) ]] && is_grandfathered=true
 done <<< "$grandfathered"
 
-if [[ "$FILE" == *.ts ]]; then
+# File-size (God-module §II.3) applies to production modules, not test files —
+# a comprehensive *.test.ts is not a god module.
+if [[ "$FILE" == *.ts && "$FILE" != *.test.ts && "$FILE" != *.spec.ts ]]; then
   LINES=$(wc -l < "$FILE" | tr -d ' ')
   if [[ "$LINES" -gt "$forbid_limit" ]]; then
     if $is_grandfathered; then
