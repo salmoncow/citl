@@ -113,7 +113,7 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 4. **Module Size**: Target <500 lines per file; split at 750 lines hard limit
 
 **Anti-Patterns (Forbidden)**:
-- ❌ God modules (>500 lines, multiple responsibilities)
+- ❌ God modules (>750 lines hard limit; >500 is the target/warn threshold — multiple responsibilities)
 - ❌ Circular dependencies between modules
 - ❌ Components calling Firestore directly (must go through service layer)
 - ❌ Repositories importing from services
@@ -323,7 +323,7 @@ table (do not duplicate the figures here).
 ❌  var x = ...                              Use const / let
 ❌  onclick="myFunction()"                   Attach listeners in JS
 ❌  element.innerHTML = userInput            Use textContent or escapeHtml()
-❌  God modules > 500 lines                  Split by responsibility
+❌  God modules > 750 lines (target < 500)   Split by responsibility (§II.3)
 ❌  Circular imports between modules         Dependencies flow inward only
 ❌  Components importing from firebase/      Go through services → repositories
 ❌  <p>Loading…</p> in async components      Use .skeleton shimmer classes (§III.3)
@@ -336,6 +336,14 @@ table (do not duplicate the figures here).
 ❌  Force push to main                       Never
 ❌  Skipping security rules in Emulator      Test rules before deploying
 ```
+
+**Enforcement**: this list is the human-readable canon; the machine-readable, executable
+copy is [`scripts/forbidden-patterns.json`](../scripts/forbidden-patterns.json). The
+PostToolUse hook (`scripts/check-constitution.sh`) and the `/check` skill both run that
+ruleset — the hook **blocks** an edit on a hard (`forbid`) violation and warns on the rest.
+Rules it cannot detect by grep (leaked `onSnapshot`, client-side filtering, components
+importing the firebase SDK for runtime use, circular imports) are marked `enforcedBy: review`
+and are checked by `@reviewer`. Change a rule in the JSON, not in a doc copy.
 
 
 ### IV.3 Technology Evaluation Criteria

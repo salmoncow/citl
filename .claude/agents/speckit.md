@@ -85,11 +85,12 @@ Summarize the spec for the user. Highlight any decisions that need their input.
 
 These are non-negotiable for every feature:
 
-- **Forbidden patterns**: Never suggest anything listed in constitution §IV.2
-- **Firestore queries**: All reads must include `where()` + `limit()` — no full collection scans
-- **Loading states**: New async Web Components must use `.skeleton` shimmer classes (§III.3)
-- **File size**: Target <500 lines per file; hard limit 750 lines
+- **Forbidden patterns**: Never design anything that trips the ruleset in constitution §IV.2 /
+  [`scripts/forbidden-patterns.json`](../../scripts/forbidden-patterns.json) — that file (not a
+  copy here) is the source of truth for `var`, inline handlers, unfiltered `getDocs`,
+  unescaped `innerHTML`, God modules (>750 lines), loading text, etc.
 - **Dependency direction**: `components → modules → services → repositories` (never reverse)
+- **Loading states**: New async Web Components must use `.skeleton` shimmer classes (§III.3)
 - **Cost discipline**: Firebase Blaze plan (§VI.1); usage targets Spark-equivalent quotas. New Cloud Functions need a documented justification — they should solve a problem the client SDK + rules cannot.
 - **Cloud Functions deploy ops**: When a feature adds a new Cloud Function (especially a 2nd-gen callable), the spec **must** flag the post-deploy operational steps from the `firebase-deploy-runbook` global skill: lowercased Cloud Run service name, one-time `roles/run.invoker` binding for `allUsers` after first deploy, and (for a brand-new project) the GCF source bucket IAM fix. These add ~10 minutes to the first deploy and must be in the implementation plan, not discovered at deploy time.
 - **TypeScript strict**: No implicit `any`; explicit return types; `noUncheckedIndexedAccess: true`

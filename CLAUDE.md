@@ -114,7 +114,7 @@ This project uses a spec-kit framework with Claude Code agents, skills, hooks, a
 
 | Hook | Trigger | Action |
 |------|---------|--------|
-| Constitutional check | After any file edit/write | Checks `.ts` files for `var`, inline handlers, unfiltered Firestore reads, file size >750 lines |
+| Constitutional check | After any `.ts`/`.html` edit/write | Runs `scripts/check-constitution.sh` against the ruleset in `scripts/forbidden-patterns.json`. **Blocks** the edit on a hard violation (`var`, inline handler, hardcoded config, file >750 lines); warns on the rest. Rules live in that one JSON file — see constitution §IV.2. |
 
 ### Feature Development Workflow
 
