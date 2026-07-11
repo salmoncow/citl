@@ -1,4 +1,15 @@
 {
-  "indexes": [],
+  "$comment": "Source of truth for composite indexes. CI deploys this file with --force, which DELETES any console-created index that is not declared here — always add indexes to this file, never only in the console.",
+  "indexes": [
+    {
+      "$comment": "getAnnouncements: where('year','==',N) + orderBy('postedAt','desc') (score-repository.ts, F-24).",
+      "collectionGroup": "announcements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "year", "order": "ASCENDING" },
+        { "fieldPath": "postedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }
