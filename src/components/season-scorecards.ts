@@ -9,6 +9,7 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
+import { escapeHtml } from '@/modules/ui';
 import type { Season } from '@/types/season';
 import type { ScorecardRowShooter, ScorecardTeamBlock } from '@/types/scorecard';
 
@@ -25,6 +26,8 @@ class SeasonScorecards extends HTMLElement {
   private _seasons: Season[] = [];
   private _selectedYear: number | null = null;
   private _teamBlocks: ScorecardTeamBlock[] = [];
+  /** Re-entrancy guard: only the latest _loadYear call may render (F-23). */
+  private _loadGen = 0;
 
   connectedCallback(): void {
     this.innerHTML = `
@@ -92,9 +95,11 @@ class SeasonScorecards extends HTMLElement {
   }
 
   private async _loadYear(year: number): Promise<void> {
+    const gen = ++this._loadGen;
     this.querySelector('#sc-content')!.innerHTML = SeasonScorecards._scorecardsSkeletonHTML();
 
     const result = await scoreService.buildScorecardData(year);
+    if (gen !== this._loadGen) return; // superseded by a newer selection
     if (!result.success) {
       this.querySelector('#sc-content')!.innerHTML = `<p>Error loading scorecard data for ${year}.</p>`;
       return;
@@ -122,7 +127,7 @@ class SeasonScorecards extends HTMLElement {
         const scoreCells = s.scores.map((v) => `<td>${fmt(v)}</td>`).join('');
         const weeks = s.weeksShot !== null ? s.weeksShot : '-';
         const rowClass = s.isDummy ? ' class="dummy-row"' : '';
-        return `<tr${rowClass}><td>${s.name}</td><td>${rookieMark}</td><td>${fmt(s.w0Display)}</td>${scoreCells}<td>${weeks}</td><td>${fmt(s.finalAvg)}</td></tr>`;
+        return `<tr${rowClass}><td>${escapeHtml(s.name)}</td><td>${rookieMark}</td><td>${fmt(s.w0Display)}</td>${scoreCells}<td>${weeks}</td><td>${fmt(s.finalAvg)}</td></tr>`;
       })
       .join('\n        ');
 
@@ -133,7 +138,7 @@ class SeasonScorecards extends HTMLElement {
     const chevronSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 320 512" class="collapsible__chevron" aria-hidden="true" focusable="false"><path fill="currentColor" d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"/></svg>`;
 
     return `
-    <button class="collapsible"><span class="collapsible__label">${block.teamName}</span>${chevronSvg}</button>
+    <button class="collapsible"><span class="collapsible__label">${escapeHtml(block.teamName)}</span>${chevronSvg}</button>
     <div class="scorecard">
       <table class="scorecard-tables">
         <tr><th></th><th>R</th>${headerCells}<th>Weeks Shot</th><th>Avg</th></tr>

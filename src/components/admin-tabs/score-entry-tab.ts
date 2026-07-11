@@ -34,6 +34,8 @@ export class ScoreEntryTab implements AdminTab {
   private _dateEditMode = false;
   /** Whether any entries have been saved for the currently selected week. */
   private _weekHasScores = false;
+  /** Re-entrancy guard: only the latest _populateShooterRows call may render (F-23). */
+  private _loadGen = 0;
 
   constructor(scoreService: ScoreService) {
     this._scoreService = scoreService;
@@ -155,6 +157,7 @@ export class ScoreEntryTab implements AdminTab {
   // ── Shooter rows ────────────────────────────────────────────────────────
 
   private async _populateShooterRows(): Promise<void> {
+    const gen = ++this._loadGen;
     const host = this._host;
     if (!host) return;
     const year = this._ctx?.getYear() ?? 0;
@@ -168,6 +171,7 @@ export class ScoreEntryTab implements AdminTab {
     // 1. Try to load existing saved entry first
     if (teamId) {
       const entryResult = await this._scoreService.getEntry(year, weekNumber, teamId);
+      if (gen !== this._loadGen) return; // superseded — a newer week/team selection owns the tbody
       if (entryResult.success && entryResult.data !== null) {
         const team = this._ctx?.getTeamsData()?.find((t) => t.id === teamId);
         const rosterNames = team ? new Set(team.shooters.map((s) => s.name)) : null;
