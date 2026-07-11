@@ -48,6 +48,65 @@ export function failure(error: string, code = 'UNKNOWN_ERROR'): Result<never> {
 }
 
 // ---------------------------------------------------------------------------
+// Boundary validation (deep-review F-09)
+//
+// Firestore document shapes are validated at the read boundary so a corrupt
+// or hand-edited doc surfaces as failure('MALFORMED_DOC') instead of flowing
+// silently into scoring math as NaN/undefined. Guards are deliberately
+// tolerant of known legacy variance (null targets/rankPoints/bonusPoints on
+// forfeit or non-participant rows in historical week docs — consumers apply
+// `?? 0`) and strict about genuine type corruption.
+// ---------------------------------------------------------------------------
+
+function isFiniteNumber(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v);
+}
+
+/** Finite number, or the null/undefined legacy variance consumers tolerate. */
+function isFiniteNumberOrNullish(v: unknown): boolean {
+  return v === null || v === undefined || isFiniteNumber(v);
+}
+
+export function isValidWeekResult(v: unknown): v is WeekResult {
+  if (typeof v !== 'object' || v === null) return false;
+  const w = v as Record<string, unknown>;
+  if (!isFiniteNumber(w['weekNumber'])) return false;
+  if (!Array.isArray(w['teamResults'])) return false;
+  return (w['teamResults'] as unknown[]).every((t) => {
+    if (typeof t !== 'object' || t === null) return false;
+    const tr = t as Record<string, unknown>;
+    return (
+      typeof tr['teamId'] === 'string' &&
+      typeof tr['teamName'] === 'string' &&
+      isFiniteNumberOrNullish(tr['targets']) &&
+      isFiniteNumberOrNullish(tr['rankPoints']) &&
+      isFiniteNumberOrNullish(tr['bonusPoints']) &&
+      (tr['shooterScores'] === undefined ||
+        (Array.isArray(tr['shooterScores']) &&
+          (tr['shooterScores'] as unknown[]).every((s) => {
+            if (typeof s !== 'object' || s === null) return false;
+            const sh = s as Record<string, unknown>;
+            return typeof sh['name'] === 'string' && isFiniteNumberOrNullish(sh['total']);
+          })))
+    );
+  });
+}
+
+export function isValidSeasonEntry(v: unknown): v is SeasonEntry {
+  if (typeof v !== 'object' || v === null) return false;
+  const e = v as Record<string, unknown>;
+  if (!isFiniteNumber(e['weekNumber'])) return false;
+  if (typeof e['teamName'] !== 'string' || e['teamName'].length === 0) return false;
+  if (!Array.isArray(e['shooters'])) return false;
+  // Entries feed publish math directly — totals must be real numbers.
+  return (e['shooters'] as unknown[]).every((s) => {
+    if (typeof s !== 'object' || s === null) return false;
+    const sh = s as Record<string, unknown>;
+    return typeof sh['name'] === 'string' && sh['name'].length > 0 && isFiniteNumber(sh['total']);
+  });
+}
+
+// ---------------------------------------------------------------------------
 // ScoreRepository
 // ---------------------------------------------------------------------------
 
@@ -128,7 +187,11 @@ export class ScoreRepository {
       const ref = doc(this.db, 'seasons', String(year), 'weeks', String(weekNumber));
       const snap = await getDoc(ref);
       if (!snap.exists()) return success(null);
-      return success({ id: snap.id, ...snap.data() } as unknown as WeekResult);
+      const wk: unknown = { id: snap.id, ...snap.data() };
+      if (!isValidWeekResult(wk)) {
+        return failure(`Malformed week doc seasons/${year}/weeks/${weekNumber}`, 'MALFORMED_DOC');
+      }
+      return success(wk);
     } catch (err) {
       return failure(
         `Failed to load week ${weekNumber} for ${year}: ${(err as Error).message}`,
@@ -145,7 +208,14 @@ export class ScoreRepository {
         limit(15),
       );
       const snap = await getDocs(q);
-      const weeks = snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as WeekResult));
+      const weeks: WeekResult[] = [];
+      for (const d of snap.docs) {
+        const wk: unknown = { id: d.id, ...d.data() };
+        if (!isValidWeekResult(wk)) {
+          return failure(`Malformed week doc seasons/${year}/weeks/${d.id}`, 'MALFORMED_DOC');
+        }
+        weeks.push(wk);
+      }
       return success(weeks);
     } catch (err) {
       return failure(
@@ -165,7 +235,11 @@ export class ScoreRepository {
       const snap = await getDocs(q);
       if (snap.empty) return success(null);
       const d = snap.docs[0]!;
-      return success({ id: d.id, ...d.data() } as unknown as WeekResult);
+      const wk: unknown = { id: d.id, ...d.data() };
+      if (!isValidWeekResult(wk)) {
+        return failure(`Malformed week doc seasons/${year}/weeks/${d.id}`, 'MALFORMED_DOC');
+      }
+      return success(wk);
     } catch (err) {
       return failure(
         `Failed to load latest week for ${year}: ${(err as Error).message}`,
@@ -198,7 +272,11 @@ export class ScoreRepository {
       const ref = doc(this.db, 'seasons', String(year), 'entries', entryId);
       const snap = await getDoc(ref);
       if (!snap.exists()) return success(null);
-      return success({ id: snap.id, ...snap.data() } as unknown as SeasonEntry);
+      const entry: unknown = { id: snap.id, ...snap.data() };
+      if (!isValidSeasonEntry(entry)) {
+        return failure(`Malformed entry doc seasons/${year}/entries/${entryId}`, 'MALFORMED_DOC');
+      }
+      return success(entry);
     } catch (err) {
       return failure(`Failed to load entry: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
     }
@@ -212,7 +290,14 @@ export class ScoreRepository {
         limit(maxWeekNumber * 10),
       );
       const snap = await getDocs(q);
-      const entries = snap.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as SeasonEntry));
+      const entries: SeasonEntry[] = [];
+      for (const d of snap.docs) {
+        const entry: unknown = { id: d.id, ...d.data() };
+        if (!isValidSeasonEntry(entry)) {
+          return failure(`Malformed entry doc seasons/${year}/entries/${d.id}`, 'MALFORMED_DOC');
+        }
+        entries.push(entry);
+      }
       return success(entries);
     } catch (err) {
       return failure(`Failed to load entries: ${(err as Error).message}`, 'FIRESTORE_READ_ERROR');
