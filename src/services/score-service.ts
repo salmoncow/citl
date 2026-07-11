@@ -193,12 +193,20 @@ export class ScoreService {
       return failure(`Invalid weekNumber: ${weekNumber}`, 'VALIDATION_ERROR');
     }
 
-    const entriesResult = await this.repository.getEntries(year, weekNumber);
+    // Determine the true max published week so republishing an earlier week
+    // (a supported correction flow) never rewinds standings/currentWeek (F-05).
+    const existingSeasonResult = await this.repository.getSeason(year);
+    if (!existingSeasonResult.success) return existingSeasonResult;
+    const maxWeek = Math.max(existingSeasonResult.data?.currentWeek ?? 0, weekNumber);
+
+    // Build through maxWeek so standings reflect every already-published week,
+    // not just the one being (re)published. getEntries returns weeks <= maxWeek.
+    const entriesResult = await this.repository.getEntries(year, maxWeek);
     if (!entriesResult.success) return entriesResult;
     const entries = entriesResult.data;
 
-    if (entries.length === 0) {
-      return failure(`No entries found for ${year} weeks 1–${weekNumber}`, 'NO_DATA');
+    if (!entries.some((e) => e.weekNumber === weekNumber)) {
+      return failure(`No entries found for ${year} week ${weekNumber}`, 'NO_DATA');
     }
 
     for (const entry of entries) {
@@ -218,7 +226,13 @@ export class ScoreService {
     if (!teamsResult.success) return teamsResult;
     const teams = teamsResult.data;
 
-    const seasonData = _buildSeasonData(year, teams, entries, weekNumber);
+    // Resolve teamId from the stable team document id, not a re-slugified
+    // display name — otherwise a mid-season rename corrupts every later
+    // week/standings row keyed by teamId (F-08).
+    const teamIdByName = new Map(teams.map((t) => [t.name, t.id]));
+    const resolveTeamId = (name: string): string => teamIdByName.get(name) ?? _slugify(name);
+
+    const seasonData = _buildSeasonData(year, teams, entries, maxWeek);
 
     const computed = computeSeasonTotals(seasonData);
 
@@ -234,7 +248,7 @@ export class ScoreService {
         .filter((s) => !entryShooterNames.has(s.name) && s.scores[wi] !== null)
         .map((s) => ({ name: s.name, score1: null, score2: null, total: s.scores[wi] as number }));
       return {
-        teamId: _slugify(team.name),
+        teamId: resolveTeamId(team.name),
         teamName: team.name,
         targets: team.totals.targets[wi] ?? 0,
         rankPoints: team.totals.rankPoints[wi] ?? 0,
@@ -250,10 +264,10 @@ export class ScoreService {
       accolades: computeAccolades(teamResults),
     };
 
-    const standings = _computeStandings(computed, weekNumber);
+    const standings = _computeStandings(computed, maxWeek, resolveTeamId);
 
     const publishResult = await this.repository.publishWeek(year, weekResult, {
-      currentWeek: weekNumber,
+      currentWeek: maxWeek,
       standings,
       status: 'active',
     });
@@ -1047,7 +1061,11 @@ function _recomputeStandingsFromWeeks(weekResults: WeekResult[]): SeasonStanding
   }));
 }
 
-function _computeStandings(computed: SeasonData, throughWeek: number): SeasonStandings[] {
+function _computeStandings(
+  computed: SeasonData,
+  throughWeek: number,
+  resolveTeamId: (name: string) => string,
+): SeasonStandings[] {
   const rows = computed.teams.map((team) => {
     let totalRankPoints = 0;
     let totalBonusPoints = 0;
@@ -1060,7 +1078,7 @@ function _computeStandings(computed: SeasonData, throughWeek: number): SeasonSta
     }
 
     return {
-      teamId: _slugify(team.name),
+      teamId: resolveTeamId(team.name),
       teamName: team.name,
       totalRankPoints,
       totalBonusPoints,
