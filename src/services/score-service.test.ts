@@ -15,7 +15,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ScoreService, buildPriorAvgMap } from './score-service';
+import { ScoreService } from './score-service';
+import { buildPriorAvgMap, computeShooterAverage } from './scoring-engine';
 import { success } from '@/repositories/score-repository';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
@@ -143,6 +144,30 @@ describe('buildPriorAvgMap', () => {
     ];
     const map = buildPriorAvgMap(weeks, priorTeams);
     expect(map.get('carol')).toBeCloseTo(42, 5);
+  });
+
+  it('equivalence: single-team shooter output equals computeShooterAverage (F-02)', () => {
+    // Pins that the map and the engine share ONE blend implementation: for a
+    // shooter on a single team, the map value must equal computeShooterAverage
+    // over the same scores (rounded to the map's 1-decimal display convention).
+    const cases: { startingAvg: number; scores: number[] }[] = [
+      { startingAvg: 43, scores: [38] },           // <2 weeks: blend applies
+      { startingAvg: 35, scores: [40, 42] },       // exactly 2: blend phased out
+      { startingAvg: 30, scores: [40, 42, 47] },   // 3+: raw mean
+      { startingAvg: 41, scores: [25] },           // low single score
+    ];
+    for (const { startingAvg, scores } of cases) {
+      const priorTeams = [makeTeam('Team', [makeShooter('Eve', startingAvg)])];
+      const weeks = scores.map((total, i) => ({
+        ...makeWeekResult([{ name: 'Eve', total }]),
+        weekNumber: i + 1,
+      }));
+      const map = buildPriorAvgMap(weeks, priorTeams);
+      const expected = parseFloat(
+        computeShooterAverage(startingAvg, scores, scores.length - 1).toFixed(1),
+      );
+      expect(map.get('eve'), `startingAvg=${startingAvg} scores=[${scores}]`).toBe(expected);
+    }
   });
 
   it('startingAvg: 0 in priorTeams is treated as 35 for blending (corrupt/legacy data)', () => {
@@ -1073,6 +1098,18 @@ describe('publishWeek — standings computation', () => {
     // Correcting week 2 must not drop the season back to week 2.
     await svc.publishWeek(2026, 2);
     expect(capturedUpdate?.currentWeek).toBe(5);
+  });
+
+  it('never throws — a repository that throws yields a failure Result, not a wedged UI (F-09)', async () => {
+    // The class contract promises no throws across module boundaries; the
+    // admin UI relies on it to re-enable the Publishing… button.
+    const throwingRepo: Partial<ScoreRepository> = {
+      getSeason: async () => { throw new Error('boom'); },
+    };
+    const svc = new ScoreService(throwingRepo as unknown as ScoreRepository);
+    const result = await svc.publishWeek(2026, 3);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe('INTERNAL_ERROR');
   });
 
   it('derives teamId from the team document id, not a re-slugified name (F-08)', async () => {
