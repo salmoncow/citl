@@ -120,9 +120,11 @@ Auto-ID via `addDoc`.
 
 **Access:** Read — public. Write — admin only.
 
-**Query:** `where('year', '==', year)`, then sorted by `postedAt desc` **in memory**
-(`getAnnouncements` in `src/repositories/score-repository.ts`). Sorting client-side is a
-deliberate choice so the query needs no composite index — `firestore.indexes.json` is empty.
+**Query:** `where('year', '==', year)` + `orderBy('postedAt', 'desc')` + `limit(20)`
+(`getAnnouncements` in `src/repositories/score-repository.ts`). Backed by the
+`year ASC, postedAt DESC` composite index declared in `firestore.indexes.json` — the only
+composite index in the project. That file is the source of truth: CI deploys it with
+`--force`, which deletes any console-created index absent from it.
 
 **TypeScript interface:** `Announcement` — `src/types/announcement.ts`
 
@@ -257,7 +259,8 @@ overwritten any number of times before the week is published.
 queries by week number (`weekNumber <= maxWeekNumber`) without a composite index.
 
 **No composite index needed:** range queries on `weekNumber` rely on Firestore's automatic
-single-field index. `firestore.indexes.json` is empty.
+single-field index. (The only composite index in `firestore.indexes.json` belongs to
+`announcements` — see above.)
 
 **TypeScript interface:** `SeasonEntry` — `src/types/score.ts`
 
@@ -304,15 +307,16 @@ and from `accolades` in any published week.
 
 ## Composite Indexes Required
 
-**None.** `firestore.indexes.json` is empty by design (`{"indexes": [], "fieldOverrides": []}`),
-and CI deploys it with `--force`.
+**One**, declared in `firestore.indexes.json` (the source of truth — CI deploys it with
+`--force`, which deletes any console-created index absent from the file):
 
-Every query in the codebase is served by a direct document-ID lookup, an automatic
-single-field index, or an equality filter followed by an in-memory sort:
+- `announcements` — `year ASC, postedAt DESC`, backing
+  `where('year', '==', year) + orderBy('postedAt', 'desc') + limit(20)`
+  (`getAnnouncements` in `src/repositories/score-repository.ts`, F-24).
 
-- `announcements` — `where('year', '==', year)` then sorts by `postedAt desc` in memory
-  (`getAnnouncements` in `src/repositories/score-repository.ts`), avoiding a `year` +
-  `postedAt` composite index.
+Every other query is served by a direct document-ID lookup or an automatic single-field
+index:
+
 - `seasons/{year}/entries` — range queries on `weekNumber` use the automatic single-field
   index; the `"{weekNumber}_{teamId}"` composite ID also lets the repository build entry
   references directly with no query at all.

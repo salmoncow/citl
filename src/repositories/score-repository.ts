@@ -540,13 +540,16 @@ export class ScoreRepository {
 
   async getAnnouncements(year: number): Promise<Result<Announcement[]>> {
     try {
+      // Server-side order + bound (F-24). Requires the year+postedAt
+      // composite index declared in firestore.indexes.json.
       const q = query(
         collection(this.db, 'announcements'),
         where('year', '==', year),
+        orderBy('postedAt', 'desc'),
+        limit(20),
       );
       const snap = await getDocs(q);
       const announcements = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Announcement));
-      announcements.sort((a, b) => b.postedAt.toMillis() - a.postedAt.toMillis());
       return success(announcements);
     } catch (err) {
       return failure(`Failed to load announcements: ${(err as Error).message}`, 'FIRESTORE_ERROR');
