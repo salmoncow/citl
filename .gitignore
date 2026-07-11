@@ -76,7 +76,8 @@ dist/
 *~
 
 # Claude Code user settings (personal preferences)
-.claude/settings.json
+# NOTE: .claude/settings.json IS committed — it wires the shared constitutional-
+# compliance hook. Only the personal/local override files stay ignored.
 .claude/settings.local.json
 .claude/user-*
 .claude/.history

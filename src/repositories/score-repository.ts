@@ -354,6 +354,7 @@ export class ScoreRepository {
 
       // Step 2: cascade-remove team from published week results + season standings
       const [weeksSnap, seasonSnap] = await Promise.all([
+        // unbounded-ok: weeks collection is bounded to <=15 docs per season by league schedule
         getDocs(collection(this.db, 'seasons', String(year), 'weeks')),
         getDoc(doc(this.db, 'seasons', String(year))),
       ]);

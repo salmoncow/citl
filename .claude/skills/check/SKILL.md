@@ -10,23 +10,29 @@ Run a quick constitutional compliance check on the current working tree changes.
 ### 1. Identify changed files
 Run `git diff --name-only` and `git diff --cached --name-only` to find all modified files (staged and unstaged). If no changes exist, report "No changes to check" and stop.
 
-### 2. Check each changed `.ts` file for forbidden patterns (§IV.2)
-For each changed TypeScript file, check for:
+### 2. Check each changed `.ts`/`.html` file against the forbidden-pattern ruleset (§IV.2)
+Run the **single-source ruleset** on each changed file — the same one the PostToolUse hook
+uses, so `/check` and the hook can never disagree:
 
-| Pattern | Check | Fix |
-|---------|-------|-----|
-| `var ` declarations | grep for `\bvar\b` (excluding comments) | Use `const` or `let` |
-| Inline event handlers | grep for `onclick=\|onload=\|onerror=` | Attach listeners in JS |
-| Unfiltered Firestore reads | grep for `getDocs(collection(` without nearby `where`/`limit` | Add `where()` + `limit()` |
-| Unsanitized innerHTML | grep for `.innerHTML =` with non-static content | Use `textContent` or `escapeHtml()` |
-| Plain loading text | grep for `Loading…\|Loading...` in HTML strings | Use `.skeleton` shimmer classes (§III.3) |
-| File size | check line count | Target <500, hard limit 750 |
+```bash
+for f in $(git diff --name-only; git diff --cached --name-only | sort -u); do
+  case "$f" in *.ts|*.html)
+    printf '{"tool_input":{"file_path":"%s"}}' "$f" | bash scripts/check-constitution.sh ;;
+  esac
+done
+```
 
-### 3. Check dependency direction (§II.3)
-For changed files only:
-- Files in `src/repositories/` must NOT import from `src/services/` or `src/modules/` or `src/components/`
+A non-zero exit (2) means a **forbid** violation; stdout notes are advisory warnings. The
+rules live in [`scripts/forbidden-patterns.json`](../../../scripts/forbidden-patterns.json) —
+do not restate them here.
+
+### 3. Check dependency direction (§II.3) and the review-only rules
+The hook can't grep these — verify them by eye on the changed files (they are the
+`enforcedBy: review` rules in the ruleset):
+- Files in `src/repositories/` must NOT import from `src/services/`, `src/modules/`, or `src/components/`
 - Files in `src/services/` must NOT import from `src/modules/` or `src/components/`
-- Files in `src/components/` must NOT import directly from `firebase/`
+- Files in `src/components/` must NOT import the firebase SDK for runtime use (type-only imports are fine)
+- `onSnapshot()` listeners store and call their unsubscribe on teardown
 
 ### 4. Run typecheck
 Run `npm run typecheck` and report pass/fail.
@@ -39,7 +45,7 @@ Present results as a checklist:
 ```
 ✅ No var declarations
 ✅ No inline event handlers
-❌ File size: src/components/admin-panel.ts (1781 lines > 750 limit)
+❌ File size: src/services/some-service.ts (812 lines > 750 limit)
 ✅ Dependency direction OK
 ✅ Typecheck passed
 ✅ Tests passed

@@ -1,0 +1,98 @@
+{
+  "$comment": "Single source of truth for CITL forbidden/quality patterns. Constitution §IV.2 is the human-readable canon; this file is what scripts/check-constitution.sh (the PostToolUse hook) and the /check skill execute. Docs (reviewer.md, speckit.md, check/SKILL.md, CLAUDE.md) point here instead of restating rules. To change a rule, edit it HERE.",
+  "version": 1,
+  "sizeLimits": { "warn": 500, "forbid": 750 },
+  "grandfathered": {
+    "$comment": "Pre-existing violators the hook must not block. Remove entries as the underlying debt is fixed (e.g. score-service.ts split in WS-4).",
+    "file-size": ["src/services/score-service.ts"]
+  },
+  "rules": [
+    {
+      "id": "no-var",
+      "ref": "§III.5 / §IV.2",
+      "severity": "forbid",
+      "kind": "regex",
+      "pattern": "(^[[:space:]]*|[;{}][[:space:]]*)var[[:space:]]+[A-Za-z_$]",
+      "scope": ["*.ts"],
+      "excludeComments": true,
+      "enforcedBy": "hook",
+      "message": "'var' declaration — use const/let."
+    },
+    {
+      "id": "inline-handler",
+      "ref": "§III.5 / §IV.2",
+      "severity": "forbid",
+      "kind": "regex",
+      "pattern": "on(click|load|error|submit|change)[[:space:]]*=[[:space:]]*[\"']",
+      "scope": ["*.ts", "*.html"],
+      "enforcedBy": "hook",
+      "message": "Inline HTML event handler (onX=\"...\") — attach listeners in JS. (JS listener assignment el.onclick = fn is fine.)"
+    },
+    {
+      "id": "hardcoded-firebase-config",
+      "ref": "§IV.2",
+      "severity": "forbid",
+      "kind": "regex",
+      "pattern": "apiKey[[:space:]]*:[[:space:]]*[\"']AIza",
+      "scope": ["*.ts"],
+      "enforcedBy": "hook",
+      "message": "Hardcoded Firebase API key — use import.meta.env.VITE_*."
+    },
+    {
+      "id": "loading-text",
+      "ref": "§III.3",
+      "severity": "warn",
+      "kind": "regex",
+      "pattern": ">[[:space:]]*Loading(\\.\\.\\.|…)",
+      "scope": ["*.ts"],
+      "enforcedBy": "hook",
+      "message": "Plain 'Loading…' text in markup — use .skeleton shimmer classes (§III.3)."
+    },
+    {
+      "id": "innerhtml-interpolation",
+      "ref": "§III.5 / §IV.2",
+      "severity": "warn",
+      "kind": "regex",
+      "pattern": "innerHTML[[:space:]]*=.*\\$\\{",
+      "scope": ["*.ts"],
+      "enforcedBy": "hook",
+      "message": "innerHTML assignment with ${...} interpolation — escape Firestore/user values with escapeHtml() or build via textContent (§IV.2, F-07)."
+    },
+    {
+      "id": "unbounded-getdocs",
+      "ref": "§IV.2",
+      "severity": "warn",
+      "kind": "getdocs-unbounded",
+      "scope": ["*.ts"],
+      "enforcedBy": "hook",
+      "message": "getDocs() with no where()/limit() in the file — add a filter/limit, or annotate a deliberate bounded scan with an inline `// unbounded-ok: <reason>` comment."
+    },
+    {
+      "id": "leaked-onsnapshot",
+      "ref": "§IV.2",
+      "severity": "warn",
+      "kind": "manual",
+      "scope": ["*.ts"],
+      "enforcedBy": "review",
+      "message": "onSnapshot() — ensure the returned unsubscribe is stored and called on teardown (not auto-detectable; reviewer/@reviewer checks this)."
+    },
+    {
+      "id": "components-import-firebase",
+      "ref": "§II.3",
+      "severity": "forbid",
+      "kind": "manual",
+      "scope": ["src/components/**"],
+      "enforcedBy": "review",
+      "message": "Component importing the firebase SDK for runtime use — go through services → repositories (type-only imports are fine). Not auto-detected to avoid flagging `import type`."
+    },
+    {
+      "id": "client-side-filtering",
+      "ref": "§IV.2",
+      "severity": "warn",
+      "kind": "manual",
+      "scope": ["*.ts"],
+      "enforcedBy": "review",
+      "message": "Client-side filtering of Firestore data — use where() queries (not auto-detectable)."
+    }
+  ]
+}
