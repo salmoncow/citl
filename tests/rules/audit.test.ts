@@ -5,7 +5,7 @@
  * setUserRole callable / set-role.js CLI).
  */
 
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { asAnon, asRole, seed, setupTestEnv } from './_helpers.js';
