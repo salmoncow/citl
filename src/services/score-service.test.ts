@@ -1041,7 +1041,7 @@ describe('publishWeek — standings computation', () => {
     expect(capturedStandings?.[1]?.rank).toBe(2);
   });
 
-  it('currentWeek on the season update equals the published weekNumber', async () => {
+  it('forward publish sets currentWeek to the published week (no prior season)', async () => {
     const entry = makeEntry({ weekNumber: 3, teamId: 'team-a', teamName: 'Team A',
       shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] });
 
@@ -1054,6 +1054,48 @@ describe('publishWeek — standings computation', () => {
 
     await svc.publishWeek(2026, 3);
     expect(capturedUpdate?.currentWeek).toBe(3);
+  });
+
+  it('republishing an earlier week does NOT rewind currentWeek (F-05)', async () => {
+    const wk = (n: number) => makeEntry({ weekNumber: n, teamId: 'team-a', teamName: 'Team A',
+      shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] });
+    const entries = [wk(1), wk(2), wk(3), wk(4), wk(5)];
+
+    let capturedUpdate: { currentWeek?: number } | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries,
+      teams: [makeTeamFromEntry(wk(1))],
+      // Season already advanced to week 5.
+      season: { currentWeek: 5 } as unknown as Season,
+      onPublish: (_, su) => { capturedUpdate = su as { currentWeek?: number }; },
+    }));
+
+    // Correcting week 2 must not drop the season back to week 2.
+    await svc.publishWeek(2026, 2);
+    expect(capturedUpdate?.currentWeek).toBe(5);
+  });
+
+  it('derives teamId from the team document id, not a re-slugified name (F-08)', async () => {
+    // Team was renamed mid-season: doc id is the original, name is the new display name.
+    const entry = makeEntry({ weekNumber: 1, teamId: 'ignored', teamName: 'Renamed Team',
+      shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] });
+    const team: Team = { ...makeTeamFromEntry(entry), id: 'original-team-id' };
+
+    let capturedWr: WeekResult | undefined;
+    let capturedStandings: SeasonStandings[] | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [entry],
+      teams: [team],
+      onPublish: (wr, su) => {
+        capturedWr = wr;
+        capturedStandings = (su as { standings: SeasonStandings[] }).standings;
+      },
+    }));
+
+    await svc.publishWeek(2026, 1);
+    // Not _slugify('Renamed Team') === 'renamed-team'.
+    expect(capturedWr?.teamResults[0]?.teamId).toBe('original-team-id');
+    expect(capturedStandings?.[0]?.teamId).toBe('original-team-id');
   });
 });
 
@@ -1134,9 +1176,12 @@ describe('publishWeek — cache invalidation', () => {
     await svc.getSeason(2026);          // call 1 — populates cache
     expect(getSeasonCallCount).toBe(1);
 
-    await svc.publishWeek(2026, 1);     // invalidates season cache
+    // publishWeek reads the season doc directly (for the currentWeek high-water
+    // mark, F-05) and then invalidates the season cache.
+    await svc.publishWeek(2026, 1);
+    const afterPublish = getSeasonCallCount;
 
-    await svc.getSeason(2026);          // call 2 — must bypass cache
-    expect(getSeasonCallCount).toBe(2);
+    await svc.getSeason(2026);          // must bypass the invalidated cache → repo hit
+    expect(getSeasonCallCount).toBe(afterPublish + 1);
   });
 });
