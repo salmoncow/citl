@@ -46,8 +46,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── config/{doc} — banner + site config ─────────────────────────────────
-    match /config/{doc} {
+    // ── config/banner — the only config doc that exists ─────────────────────
+    // Scoped to the banner doc rather than /config/{doc} so future config
+    // docs (which may not be public) start implicit-deny; add an explicit
+    // match block when a new config doc ships (F-53).
+    match /config/banner {
       allow read:           if true;
       allow create, update: if isOwnerOrAdmin();
     }

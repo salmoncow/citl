@@ -103,3 +103,26 @@ describe('seasons writes — owner/admin only', () => {
     await assertFails(setDoc(doc(db, 'seasons', YEAR, 'entries', 'x'), {}));
   });
 });
+
+describe('deny gaps — anon writes, anon entry reads, week deletes (F-55)', () => {
+  beforeEach(async () => { await seedSeason(env); });
+
+  it('anon CANNOT write teams, weeks, or entries', async () => {
+    const db = asAnon(env);
+    await assertFails(setDoc(doc(db, 'seasons', YEAR, 'teams', 'x'), { name: 'X' }));
+    await assertFails(setDoc(doc(db, 'seasons', YEAR, 'weeks', 'x'), { weekNumber: 9 }));
+    await assertFails(setDoc(doc(db, 'seasons', YEAR, 'entries', 'x'), { e: 1 }));
+  });
+
+  it('anon CANNOT read entries (drafts are owner/admin-only)', async () => {
+    const db = asAnon(env);
+    await assertFails(getDocs(collection(db, 'seasons', YEAR, 'entries')));
+  });
+
+  it('no role can delete a published week — the rule grants only create/update', async () => {
+    // Deleting a week doc would silently rewind public standings; the rules
+    // deliberately omit delete, so it must stay implicit-deny even for admin/owner.
+    await assertFails(deleteDoc(doc(asRole(env, 'a', 'admin'), 'seasons', YEAR, 'weeks', WEEK_NUM)));
+    await assertFails(deleteDoc(doc(asRole(env, 'o', 'owner'), 'seasons', YEAR, 'weeks', WEEK_NUM)));
+  });
+});
