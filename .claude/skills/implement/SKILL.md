@@ -1,18 +1,28 @@
 ---
 name: implement
-description: Execute a feature spec from `.specs/features/`. Triggers on phrases like "implement feature", "execute spec", "build the feature", "run the spec".
+description: Execute a feature spec from `.specs/features/`. Triggers on phrases like "implement the spec", "execute spec", "run the feature spec".
 ---
 
 Execute a feature spec from `.specs/features/`.
 
 ## Arguments
-If an argument is provided (e.g., `/implement scoring-engine`), look for `.specs/features/<argument>.md`.
-If no argument, use the most recently modified file in `.specs/features/`.
+Feature specs use a hybrid layout: small features are a flat file `<name>.md`; large ones are
+a directory `<nnn>-<name>/` containing `spec.md` (+ `tasks.md`). Resolve an argument in this
+order and use the first that exists:
+1. `.specs/features/<argument>/spec.md`  (directory-style spec, e.g. `002-multi-user-rbac`)
+2. `.specs/features/<argument>.md`        (flat spec, e.g. `scoring-engine`)
+
+If no argument is given, **list** the specs under `.specs/features/` (excluding `archive/`)
+and ask the user which one to implement — do not auto-pick the most recently modified file.
+
+Before editing anything, **state which spec file you resolved** (full path) and confirm it is
+the intended one.
 
 ## Process
 
 ### 1. Load the spec
-Read the feature spec file. If it doesn't exist, list available specs in `.specs/features/` and ask the user which one to implement.
+Read the resolved spec file (and its sibling `tasks.md` if present). If nothing resolves, list
+available specs in `.specs/features/` and ask the user which one to implement.
 
 ### 2. Load referenced context
 Read `.specs/constitution.md` sections cited in "Constitutional Constraints". If the spec references project-specific files (`.specs/technical/*`, `.prompts/meta/*`), read those too.

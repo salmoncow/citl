@@ -159,6 +159,17 @@ Returns a partial `SeasonAwards` with shooter-based awards only.
 Team standings awards (`firstPlaceTeam`, etc.) are computed separately
 from cumulative rank+bonus totals and are returned as `null`.
 
+### Season Standings Order (cumulative)
+
+Cumulative season standings are ordered by **total points** (rank points + bonus points),
+descending. A points tie is broken by **total targets broken**, descending — the team that
+broke more targets ranks higher. Teams equal on both points and targets keep their existing
+order (stable sort).
+
+This is implemented by the shared pure comparator `compareStandings` (`scoring-engine.ts`),
+used at all three standings call sites (`_recomputeStandingsFromWeeks`, `_computeStandings`,
+and the live weekly view in `home-standings.ts`) so every path orders standings identically.
+
 ---
 
 ## Edge Cases

@@ -377,16 +377,20 @@ Constitutional compliance:
 - §IV.2: onSnapshot() unsubscribed in disconnectedCallback()
 ```
 
-### V.2 Prompt Gap Protocol
+### V.2 Guidance Gap Procedure
 
-If guidance is insufficient for a task:
-1. **STOP** — do not guess or proceed without guidance
-2. Flag the gap following [`.prompts/meta/prompt-gap-protocol.md`](.prompts/meta/prompt-gap-protocol.md)
-3. Determine: constitutional gap, skill gap, or technical spec gap
-4. Recommend creation / update of the appropriate file
-5. **Do NOT proceed** until the gap is addressed
+If this constitution, the `.specs/technical/` docs, and the global skills don't cover a
+decision you need to make:
 
-**Reference**: [.prompts/meta/prompt-gap-protocol.md](.prompts/meta/prompt-gap-protocol.md)
+1. **STOP** — do not guess or proceed on an undocumented assumption.
+2. State plainly what's missing and which of these it is:
+   - a **constitutional gap** (a project rule/standard is absent) → propose a constitution section;
+   - a **technical-spec gap** (a config/schema detail is absent) → propose a `.specs/technical/` doc;
+   - a **skill gap** (foundational guidance is absent) → note it, then proceed with documented assumptions.
+3. Ask the maintainer whether to (a) add the constitution section, (b) add the technical doc, or
+   (c) proceed with the assumptions written down in the spec/PR.
+4. Record the resolution where it belongs (constitution, `.specs/technical/`, or the feature spec) so
+   the gap doesn't recur.
 
 ---
 
@@ -443,18 +447,20 @@ unlock Cloud Functions, which the RBAC role-writer pattern requires.
 
 Foundational guidance for architecture, security, testing, operations, and Firebase is provided
 by global Claude Code skills at `~/.claude/skills/`. These auto-activate based on context — no
-manual consultation needed. Key skills: `software-architecture`, `security-principles`,
-`testing-principles`, `operations-principles`, `git-conventions`, `asset-reusability`,
-`firebase-best-practices`, `firebase-security`, `firebase-testing`, `firebase-monitoring`,
-`firebase-cost-resilience`.
+manual consultation needed. Run `ls ~/.claude/skills/` for the current roster; the
+project-critical ones are `firebase-deploy-runbook` (first-deploy + preview-channel gotchas),
+`firebase-cost-resilience`, `firebase-security`, `firebase-testing`, `software-architecture`,
+`security-principles`, `testing-principles`, and `git-conventions`.
 
 ### VII.2 Strategic Frameworks
 
-**Meta Guidance**:
+**Meta Guidance** (`.prompts/meta/`):
+- [architectural-decision-log.md](.prompts/meta/architectural-decision-log.md) — Historical decisions (ADRs) and current-state addenda
 - [architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers, decision framework
-- [architectural-decision-log.md](.prompts/meta/architectural-decision-log.md) — Historical decisions, current state
-- [prompt-gap-protocol.md](.prompts/meta/prompt-gap-protocol.md) — Handling insufficient guidance
-- [prompt-maintenance.md](.prompts/meta/prompt-maintenance.md) — Keeping prompts current
+- [spec-authoring-guidelines.md](.prompts/meta/spec-authoring-guidelines.md) — How to write specs and agent files: reference the source of truth, never restate rules
+
+The guidance-gap procedure lives in §V.2 above (formerly a separate `prompt-gap-protocol.md`).
+Prompt-library maintenance is covered by the review checklist in §VIII.1.
 
 ### VII.3 Technical Specifications
 
@@ -481,10 +487,15 @@ manual consultation needed. Key skills: `software-architecture`, `security-princ
 
 ### VIII.1 Review Schedule
 
-**Quarterly reviews** (every 3 months):
-- Update §II.1 Current Architectural State with latest metrics
-- Review evolution triggers — any domains approaching a complexity increase?
-- Check Firebase free tier quotas (verify limits unchanged)
+**Quarterly reviews** (every 3 months). Walk this checklist against reality (the things that
+actually drift), then set the next "Last Updated"/"next review" dates at the top of this file:
+- §II.1 Current Architectural State — recount from the `src/` tree; fix any stale counts.
+- `.specs/technical/*` — do build-system / cicd-pipeline / firestore-schema still match `package.json`, `.github/workflows/`, `firestore.rules`, and `firestore.indexes.json`?
+- `.specs/README.md` and feature-spec statuses — are shipped specs marked Shipped and archived?
+- Evolution triggers — any domain approaching a complexity increase?
+- Firebase quota targets (§VI.1) — verify the platform's limits are unchanged.
+
+**Next review due**: 2026-10-10.
 
 **When to amend**:
 - **Minor** (metrics, current state): increment patch version (1.0.0 → 1.0.1), update date

@@ -1,6 +1,9 @@
 # Spec Authoring Guidelines
 
-**Purpose**: Rules for writing specs and prompts that stay accurate and maintainable over time.
+**Purpose**: Rules for writing specs, prompts, **and agent files** that stay accurate and
+maintainable over time. The same rule applies to `.claude/agents/*` and `.claude/skills/*`:
+agents reference the source of truth, they never restate rules — a restated rule drifts from
+the spec it copied (e.g. the `@scoring` agent must point at `scoring-engine.md`, not summarize it).
 
 ---
 
@@ -86,4 +89,5 @@ See [`vite.config.ts`](../../vite.config.ts) for the full configuration.
 
 ## References
 
-- [Spec-Kit Integration Guide](./speckit-integration-guide.md) — what belongs in specs vs. prompts
+- [Constitution §VII](../../.specs/constitution.md) — what belongs in the constitution vs. specs vs. global skills
+- [.specs/README.md](../../.specs/README.md) — spec-kit layout and feature-spec conventions

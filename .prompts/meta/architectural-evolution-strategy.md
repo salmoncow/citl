@@ -201,7 +201,7 @@ Move when **3 or more** of these are true:
 | Phase 2 → 3 | 80% automated | Low | None (additive caching) |
 | Phase 3 → 4 | 50% guided | High | Yes (data migration needed) |
 
-**Detailed Guidance**: `firebase-best-practices` global skill
+**Detailed Guidance**: the Firebase global skills (`firebase-cost-resilience`, `firebase-security`, `firebase-testing`)
 
 ---
 
