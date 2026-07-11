@@ -10,6 +10,7 @@ import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
 import { computeGoingInAverage, getLastWord, isDummyName, normalizeShooterName, sortShootersWithCaptainFirst } from '@/services/scoring-engine';
 import { computeSchedule } from '@/utils/schedule';
+import { escapeHtml } from '@/modules/ui';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult } from '@/types/score';
 
@@ -25,6 +26,8 @@ class ScoresheetGenerator extends HTMLElement {
   private _weekResults: WeekResult[] = [];
   /** week number → Date (computed/postponed) or null (cancelled) */
   private _dateMap = new Map<number, Date | null>();
+  /** Re-entrancy guard: only the latest _changeYear call may render (F-23). */
+  private _loadGen = 0;
 
   connectedCallback(): void {
     this.innerHTML = ScoresheetGenerator._fullSkeleton();
@@ -63,6 +66,7 @@ class ScoresheetGenerator extends HTMLElement {
   }
 
   private async _changeYear(year: number): Promise<void> {
+    const gen = ++this._loadGen;
     this._year = year;
     const season = this._seasons.find((s) => s.year === year);
     this._maxWeek = Math.min(15, (season?.currentWeek ?? 0) + 1);
@@ -73,6 +77,7 @@ class ScoresheetGenerator extends HTMLElement {
     if (container) container.innerHTML = ScoresheetGenerator._cardsSkeleton();
 
     await this._fetchYearData();
+    if (gen !== this._loadGen) return; // superseded by a newer selection
 
     const weekSelect = this.querySelector<HTMLSelectElement>('#sg-week');
     if (weekSelect) weekSelect.innerHTML = this._weekOptions();
@@ -168,7 +173,7 @@ class ScoresheetGenerator extends HTMLElement {
         const avg = computeGoingInAverage(shooter.startingAvg, scores, this._selectedWeek - 1);
         return `
           <tr>
-            <td>${shooter.name}</td>
+            <td>${escapeHtml(shooter.name)}</td>
             <td>${avg.toFixed(1)}</td>
             <td class="fill"></td>
             <td class="fill"></td>
@@ -187,7 +192,7 @@ class ScoresheetGenerator extends HTMLElement {
           </tr>`;
 
     const dummyNote = 'Starting Dummy Score = Avg. of shooters going-in for that day<br>Ending Dummy Score is automatically calculated via the tool';
-    const prefix = getLastWord(team.name);
+    const prefix = escapeHtml(getLastWord(team.name));
     const dummyRows = `
           <tr>
             <td>${prefix} DUMMY1</td>
@@ -215,7 +220,7 @@ class ScoresheetGenerator extends HTMLElement {
           ${dateLine}
         </div>
 
-        <h3 class="scoresheet-team-name">${team.name}</h3>
+        <h3 class="scoresheet-team-name">${escapeHtml(team.name)}</h3>
         <table class="scoresheet-table">
           <thead>
             <tr>

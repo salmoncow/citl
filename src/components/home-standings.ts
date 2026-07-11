@@ -9,6 +9,7 @@ import { db } from '@/firebase-config';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
 import { compareStandings } from '@/services/scoring-engine';
+import { escapeHtml } from '@/modules/ui';
 import type { Team, WeekResult } from '@/types/score';
 import type { Season } from '@/types/season';
 import type { Accolade } from '@/types/shooter';
@@ -22,6 +23,8 @@ class HomeStandings extends HTMLElement {
   private _season: Season | null = null;
   private _allWeekResults: WeekResult[] = [];
   private _teams: Team[] = [];
+  /** Re-entrancy guard: only the latest _loadYear call may render (F-23). */
+  private _loadGen = 0;
 
   connectedCallback(): void {
     this.innerHTML = `
@@ -76,6 +79,7 @@ class HomeStandings extends HTMLElement {
   }
 
   private async _loadYear(year: number): Promise<void> {
+    const gen = ++this._loadGen;
     this.querySelector('#hs-table')!.innerHTML = HomeStandings._standingsSkeleton();
 
     const [weeksResult, seasonResult, teamsResult] = await Promise.all([
@@ -83,6 +87,7 @@ class HomeStandings extends HTMLElement {
       scoreService.getSeason(year),
       scoreService.getTeams(year),
     ]);
+    if (gen !== this._loadGen) return; // superseded by a newer selection
 
     if (!seasonResult.success || !seasonResult.data) {
       this.querySelector('#hs-table')!.innerHTML = `<p>Error loading standings for ${year}.</p>`;
@@ -225,8 +230,8 @@ class HomeStandings extends HTMLElement {
       return `
       <li class="accolades-item">
         <span class="accolades-badge ${badgeClass}">${label}</span>
-        <span class="accolades-item__name">${a.shooterName}</span>
-        <span class="accolades-item__team">${a.teamName}</span>
+        <span class="accolades-item__name">${escapeHtml(a.shooterName)}</span>
+        <span class="accolades-item__team">${escapeHtml(a.teamName)}</span>
       </li>`;
     }).join('');
 
@@ -274,8 +279,8 @@ class HomeStandings extends HTMLElement {
         (r) => `
         <tr>
           <td>${r.place}</td>
-          <td>${r.teamName}</td>
-          <td>${r.captain}</td>
+          <td>${escapeHtml(r.teamName)}</td>
+          <td>${escapeHtml(r.captain)}</td>
           <td>${r.targets}</td>
           <td>${r.totalTargets}</td>
           <td>${r.rankPoints}</td>
