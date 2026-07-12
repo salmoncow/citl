@@ -2,7 +2,7 @@
 
 **Feature**: 003-service-decomposition
 **Spec**: [spec.md](./spec.md)
-**Status**: Approved (maintainer, 2026-07-11) — implementation in progress
+**Status**: Shipped (PR [#214](https://github.com/salmoncow/citl/pull/214) / PR [#215](https://github.com/salmoncow/citl/pull/215), merged 2026-07-12)
 
 Each numbered group below is one prospective commit. Commit only when every box is checked
 and the group's validation gate passes. AC refs map to [spec.md](./spec.md) §"Acceptance

@@ -4,7 +4,7 @@ Every Web Component in this directory follows these five rules. Canon lives in
 [.specs/constitution.md](../../.specs/constitution.md) (§ refs below) and
 [scripts/forbidden-patterns.json](../../scripts/forbidden-patterns.json) (rule ids below) —
 this file states the contract and points there; it does not restate full rules.
-Adopted by spec [003-service-decomposition](../../.specs/features/003-service-decomposition/spec.md).
+Adopted by spec [003-service-decomposition](../../.specs/features/archive/003-service-decomposition/spec.md).
 
 ## 1. Shared services via the composition root
 

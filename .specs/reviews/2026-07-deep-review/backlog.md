@@ -329,3 +329,19 @@ Per the promotion bar (L-effort AND cross-cutting AND needs design decisions), t
 2. **Forbidden-pattern ruleset single-sourcing (WS2-07)** — borderline (M-effort) but cross-cutting across six locations (constitution ×2, hook, /check, reviewer, speckit) and needs design decisions: the machine-readable schema, warn-vs-block semantics per rule, the grandfathering/allowlist mechanism, and how /check and the hook share one detector without diverging again. Findings: F-40 (P2), enabling F-19/F-20 fixes to stay fixed.
 
 Everything else in this backlog is S/M-effort and executable directly from the acceptance criteria above.
+
+---
+
+## Post-WS-4 follow-ups (added 2026-07-12, at spec 003 close-out)
+
+Spec 003 ([archive/003-service-decomposition](../../features/archive/003-service-decomposition/spec.md), shipped in PRs [#214](https://github.com/salmoncow/citl/pull/214)/[#215](https://github.com/salmoncow/citl/pull/215)) deferred two items into this backlog:
+
+### FU-01 · L · Unify the standings derivations in `src/services/standings.ts`; decide whether publish rewrites week docs — **requires its own spec**
+Per spec 003 **DD-4** (deferral rationale recorded there): the two server-side derivations (`computeStandings` from entries in the publish path; `recomputeStandingsFromWeeks` in the deleteTeam/removeShooterFromRoster path) now sit side-by-side in `src/services/standings.ts` behind a shared header note documenting their invariant, and `home-standings.ts`'s client-side cumulative sum over week docs remains a third derivation. True unification (e.g., rewriting all previously published week docs on every publish so one derivation feeds both stored representations) is a **storage-model behavior change** — it alters write volume per publish and the stored shape — so it cannot ship as a pure refactor. Absorbs the WS3-01 follow-up note. Run @speckit when picked up; the design decisions are which derivation becomes canonical, whether publish rewrites week docs, and how the home-page historical-week view is fed afterward.
+
+**Acceptance** (for the eventual spec): identical season states can never yield disagreeing `season.standings` vs. week-doc standings rows; the number of standings derivations in src/ drops from three to one (or a spec documents why a client-side view derivation intentionally remains).
+
+### FU-02 · M · Optional API-splitting spec for `score-service.ts` (accepted at 749 lines, >500 advisory)
+Per spec 003 **Open Question 1 resolution** (maintainer, 2026-07-11): PR-2's pure moves landed `score-service.ts` at 749 lines — under the 750 hard cap and de-grandfathered, but still in >500 warn territory. Going meaningfully lower requires extracting I/O-bearing service methods — announcements/banner into an `announcement-service.ts` and the roster-defaults orchestration into its own service — which changes the class's public API surface used by components (beyond pure moves), so it was deliberately kept out of PR-2. Decide whether the warn state is acceptable long-term or run @speckit for the API split; the extraction would take the file well under 500 lines.
+
+**Acceptance** (if pursued): `wc -l src/services/score-service.ts` < 500; hook reports no size advisory; component call sites migrate to the new services via the composition root with no behavior change.
