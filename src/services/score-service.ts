@@ -8,11 +8,13 @@
  */
 
 import { success, failure, type Result } from '@/repositories/score-repository';
-import { buildPriorAvgMap, computeSeasonTotals, computeShooterAverage, computeShooterStartingAvg, isShooterRookie, computeDummyScore, isDummyName, mean, normalizeShooterName, getLastWord, sortShootersWithCaptainFirst, computeAccolades, compareStandings } from '@/services/scoring-engine';
+import { buildPriorAvgMap, computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, isDummyName, normalizeShooterName, computeAccolades } from '@/services/scoring-engine';
+import { buildSeasonData, buildScorecardTeamBlock } from '@/services/scorecard-builder';
+import { computeStandings, recomputeStandingsFromWeeks } from '@/services/standings';
 import type { ScoreRepository } from '@/repositories/score-repository';
-import type { Season, SeasonStandings } from '@/types/season';
+import type { Season } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
-import type { SeasonData, ScorecardShooter, ScorecardRowShooter, ScorecardTeamBlock, ScorecardViewData } from '@/types/scorecard';
+import type { ScorecardViewData } from '@/types/scorecard';
 import type { Announcement } from '@/types/announcement';
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -58,9 +60,7 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async getSeason(year: number): Promise<Result<Season | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `season:${year}`;
     const cached = getCached<Season | null>(this.cache, cacheKey);
@@ -88,9 +88,7 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async getTeams(year: number): Promise<Result<Team[]>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `teams:${year}`;
     const cached = getCached<Team[]>(this.cache, cacheKey);
@@ -106,12 +104,8 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async getWeekResult(year: number, weekNumber: number): Promise<Result<WeekResult | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber} (must be 1–15)`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber); if (bad) return bad; }
 
     const cacheKey = `week:${year}:${weekNumber}`;
     const cached = getCached<WeekResult | null>(this.cache, cacheKey);
@@ -123,9 +117,7 @@ export class ScoreService {
   }
 
   async getAllWeekResults(year: number): Promise<Result<WeekResult[]>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `weeks:${year}`;
     const cached = getCached<WeekResult[]>(this.cache, cacheKey);
@@ -137,9 +129,7 @@ export class ScoreService {
   }
 
   async getLatestWeekResult(year: number): Promise<Result<WeekResult | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const cacheKey = `latest:${year}`;
     const cached = getCached<WeekResult | null>(this.cache, cacheKey, 5 * 60 * 1000);
@@ -155,9 +145,7 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async saveEntry(year: number, entry: SeasonEntry): Promise<Result<SeasonEntry & { id: string }>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!entry || !entry.weekNumber || !entry.teamId || !entry.teamName) {
       return failure('entry.weekNumber, teamId, and teamName are required', 'VALIDATION_ERROR');
     }
@@ -168,19 +156,13 @@ export class ScoreService {
   }
 
   async getEntry(year: number, weekNumber: number, teamId: string): Promise<Result<SeasonEntry | null>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber, { bare: true }); if (bad) return bad; }
     return this.repository.getEntry(year, weekNumber, teamId);
   }
 
   async getEntries(year: number, maxWeekNumber: number): Promise<Result<SeasonEntry[]>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!Number.isInteger(maxWeekNumber) || maxWeekNumber < 1 || maxWeekNumber > 15) {
       return failure(`Invalid maxWeekNumber: ${maxWeekNumber}`, 'VALIDATION_ERROR');
     }
@@ -188,12 +170,8 @@ export class ScoreService {
   }
 
   async publishWeek(year: number, weekNumber: number): Promise<Result<unknown>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber, { bare: true }); if (bad) return bad; }
     // The class contract promises no throws across module boundaries — an
     // exception here would wedge the admin UI's Publishing… state (F-09).
     try {
@@ -243,7 +221,7 @@ export class ScoreService {
     const teamIdByName = new Map(teams.map((t) => [t.name, t.id]));
     const resolveTeamId = (name: string): string => teamIdByName.get(name) ?? _slugify(name);
 
-    const seasonData = _buildSeasonData(year, teams, entries, maxWeek);
+    const seasonData = buildSeasonData(year, teams, entries, maxWeek);
 
     const computed = computeSeasonTotals(seasonData);
 
@@ -253,7 +231,7 @@ export class ScoreService {
         (e) => e.weekNumber === weekNumber && e.teamName === team.name,
       );
       // DNS shooters and auto-created dummy positions were given computed dummy scores in
-      // _buildSeasonData. Include all of them in shooterScores (score1/score2 null = computed).
+      // buildSeasonData. Include all of them in shooterScores (score1/score2 null = computed).
       // Compare normalized so a case/whitespace variant in the saved entry
       // doesn't duplicate the roster shooter here (F-51).
       const entryShooterNames = new Set(
@@ -279,7 +257,7 @@ export class ScoreService {
       accolades: computeAccolades(teamResults),
     };
 
-    const standings = _computeStandings(computed, maxWeek, resolveTeamId);
+    const standings = computeStandings(computed, maxWeek, resolveTeamId);
 
     const publishResult = await this.repository.publishWeek(year, weekResult, {
       currentWeek: maxWeek,
@@ -296,9 +274,7 @@ export class ScoreService {
   }
 
   async updateTeamMeta(year: number, teamId: string, name: string, captain: string): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedName = name.trim();
     const trimmedCaptain = captain.trim();
@@ -327,9 +303,7 @@ export class ScoreService {
   }
 
   async createTeam(year: number, name: string, captain: string): Promise<Result<Team>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     const trimmedName = name.trim();
     const trimmedCaptain = captain.trim();
     if (!trimmedName) return failure('Team name is required', 'VALIDATION_ERROR');
@@ -370,9 +344,7 @@ export class ScoreService {
   }
 
   async computeRosterDefaults(year: number, teamId: string): Promise<Result<Team>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
     // Fire all five reads in parallel — one round-trip. Prior-year reads go
@@ -421,8 +393,7 @@ export class ScoreService {
     year: number,
     shooterName: string,
   ): Promise<Result<{ startingAvg: number; rookie: boolean }>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100)
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!shooterName.trim())
       return failure('shooterName is required', 'VALIDATION_ERROR');
 
@@ -462,9 +433,7 @@ export class ScoreService {
    * `success: true` so the caller can render a "no data" placeholder.
    */
   async buildScorecardData(year: number): Promise<Result<ScorecardViewData>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
 
     const [teamsResult, weeksResult, prior1TeamsResult, prior2TeamsResult, prior1WeeksResult, prior2WeeksResult] = await Promise.all([
       this.getTeams(year),
@@ -505,7 +474,7 @@ export class ScoreService {
     for (const name of teamNamesFromWeeks) orderedTeamNames.push(name);
 
     const blocks = orderedTeamNames.map((teamName) =>
-      _buildScorecardTeamBlock({
+      buildScorecardTeamBlock({
         teamName,
         teamDoc: teamDocMap.get(teamName),
         weekResults,
@@ -520,9 +489,7 @@ export class ScoreService {
   }
 
   async deleteTeam(year: number, teamId: string): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
 
     const result = await this.repository.deleteTeam(year, teamId);
@@ -547,7 +514,7 @@ export class ScoreService {
       );
     }
     if (weeksResult.data.length > 0) {
-      const newStandings = _recomputeStandingsFromWeeks(weeksResult.data);
+      const newStandings = recomputeStandingsFromWeeks(weeksResult.data);
       const update = await this.repository.updateSeason(year, { standings: newStandings } as Partial<Season>);
       this.cache.delete(`season:${year}`);
       if (!update.success) {
@@ -565,9 +532,7 @@ export class ScoreService {
     teamId: string,
     shooterName: string,
   ): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedName = shooterName.trim();
     if (!trimmedName) return failure('shooterName is required', 'VALIDATION_ERROR');
@@ -649,9 +614,7 @@ export class ScoreService {
     captain: string,
     shooters: Team['shooters'],
   ): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
     if (!teamId) return failure('teamId is required', 'VALIDATION_ERROR');
     const trimmedCaptain = captain.trim();
     if (shooters.length < 5) {
@@ -679,12 +642,8 @@ export class ScoreService {
     weekNumber: number,
     date: string | null,
   ): Promise<Result<void>> {
-    if (!Number.isInteger(year) || year < 2019 || year > 2100) {
-      return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
-    }
-    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
-      return failure(`Invalid weekNumber: ${weekNumber} (must be 1–15)`, 'VALIDATION_ERROR');
-    }
+    { const bad = assertValidYear(year); if (bad) return bad; }
+    { const bad = assertValidWeek(weekNumber); if (bad) return bad; }
 
     const seasonResult = await this.getSeason(year);
     if (!seasonResult.success) return { success: false, error: seasonResult.error, code: seasonResult.code };
@@ -761,333 +720,30 @@ export class ScoreService {
 // Private helpers for publishWeek
 // ---------------------------------------------------------------------------
 
+// Validation helpers (spec 003 Group 5). Return a failure Result, or null when
+// valid — callers do `if (bad) return bad;`. Never throw (F-09 no-throw
+// contract). Two call sites historically omit the range suffix in the week
+// message; `bare` preserves those exact strings (byte-identical failures).
+function assertValidYear(year: number): Result<never> | null {
+  if (!Number.isInteger(year) || year < 2019 || year > 2100) {
+    return failure(`Invalid year: ${year}`, 'VALIDATION_ERROR');
+  }
+  return null;
+}
+
+function assertValidWeek(weekNumber: number, opts?: { bare: true }): Result<never> | null {
+  if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 15) {
+    return failure(
+      opts?.bare
+        ? `Invalid weekNumber: ${weekNumber}`
+        : `Invalid weekNumber: ${weekNumber} (must be 1–15)`,
+      'VALIDATION_ERROR',
+    );
+  }
+  return null;
+}
+
 function _slugify(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, '-');
 }
 
-
-function _buildSeasonData(
-  year: number,
-  firestoreTeams: Team[],
-  entries: SeasonEntry[],
-  maxWeek: number,
-): SeasonData {
-  const WEEK_COUNT = 15;
-
-  const entryMap = new Map<string, Map<number, SeasonEntry>>();
-  for (const entry of entries) {
-    if (!entryMap.has(entry.teamName)) entryMap.set(entry.teamName, new Map());
-    entryMap.get(entry.teamName)!.set(entry.weekNumber, entry);
-  }
-
-  const teams = firestoreTeams.map((firestoreTeam) => {
-    const teamEntries = entryMap.get(firestoreTeam.name) ?? new Map<number, SeasonEntry>();
-
-    // Track entry shooters by normalized name (display spelling as the value)
-    // so a case/whitespace variant of a rostered shooter never spawns a
-    // phantom substitute row with a fresh 35 average (F-51).
-    const seenNames = new Map<string, string>();
-    for (const [wn, entry] of teamEntries) {
-      if (wn > maxWeek) continue;
-      for (const s of entry.shooters) seenNames.set(normalizeShooterName(s.name), s.name);
-    }
-
-    const rosterShooters: ScorecardShooter[] = (firestoreTeam.shooters ?? []).map((rs) => {
-      seenNames.delete(normalizeShooterName(rs.name));
-      return {
-        name: rs.name,
-        rookie: rs.rookie ?? false,
-        isDummy: isDummyName(rs.name),
-        startingAvg: rs.startingAvg ?? 35,
-        scores: new Array<number | null>(WEEK_COUNT).fill(null),
-        weeksShot: null,
-        finalAvg: 0,
-      };
-    });
-
-    const subShooters: ScorecardShooter[] = [...seenNames.values()].map((name) => ({
-      name,
-      rookie: false,
-      isDummy: isDummyName(name),
-      startingAvg: 35,
-      scores: new Array<number | null>(WEEK_COUNT).fill(null),
-      weeksShot: null,
-      finalAvg: 0,
-    }));
-
-    const shooters = [...rosterShooters, ...subShooters];
-
-    for (let wn = 1; wn <= maxWeek; wn++) {
-      const entry = teamEntries.get(wn);
-      if (!entry) continue;
-      const wi = wn - 1;
-      for (const entryShooter of entry.shooters) {
-        const entryKey = normalizeShooterName(entryShooter.name);
-        const shooter = shooters.find((s) => normalizeShooterName(s.name) === entryKey);
-        if (shooter) shooter.scores[wi] = entryShooter.total;
-      }
-
-      // Compute dummy score: mean of real shooters' actual scores that night, minus 5.
-      const realScores = shooters
-        .filter((s) => !s.isDummy && s.scores[wi] !== null)
-        .map((s) => s.scores[wi] as number);
-      const dummyScore = computeDummyScore(realScores);
-      if (dummyScore === null) continue; // no real shooters shot this week → nothing to fill
-
-      // Dummy positions pass: a team always fields 5 scoring slots per week.
-      // Create/fill auto-named DUMMY entries until total scored positions reaches 5.
-      const scoredCount = shooters.filter((s) => s.scores[wi] !== null).length;
-      const dummiesNeeded = Math.min(2, Math.max(0, 5 - scoredCount));
-      if (dummiesNeeded > 0) {
-        const prefix = getLastWord(firestoreTeam.name);
-        let dummyNum = 0;
-        let filled = 0;
-        while (filled < dummiesNeeded && dummyNum < 10) {
-          dummyNum++;
-          const dName = `${prefix} DUMMY${dummyNum}`;
-          let dummyShooter = shooters.find((s) => s.name === dName);
-          if (!dummyShooter) {
-            dummyShooter = {
-              name: dName,
-              rookie: false,
-              isDummy: true,
-              startingAvg: 35,
-              scores: new Array<number | null>(WEEK_COUNT).fill(null),
-              weeksShot: null,
-              finalAvg: 0,
-            };
-            shooters.push(dummyShooter);
-          }
-          if (dummyShooter.scores[wi] === null) {
-            dummyShooter.scores[wi] = dummyScore;
-            filled++;
-          }
-        }
-      }
-    }
-
-    return {
-      name: firestoreTeam.name,
-      shooters,
-      totals: {
-        targets: new Array<number | null>(WEEK_COUNT).fill(null),
-        rankPoints: new Array<number | null>(WEEK_COUNT).fill(null),
-        bonusPoints: new Array<number | null>(WEEK_COUNT).fill(null),
-      },
-    };
-  });
-
-  return { season: year, teams };
-}
-
-/**
- * Build one team block for the season-scorecards view. Pure given its inputs
- * (no I/O), so it can be unit-tested without a repository stub.
- */
-function _buildScorecardTeamBlock(args: {
-  teamName: string;
-  teamDoc: Team | undefined;
-  weekResults: WeekResult[];
-  prior1Teams: Team[];
-  prior2Teams: Team[];
-  prior1AvgMap: Map<string, number>;
-  prior2AvgMap: Map<string, number>;
-}): ScorecardTeamBlock {
-  const { teamName, teamDoc, weekResults, prior1Teams, prior2Teams, prior1AvgMap, prior2AvgMap } = args;
-  const WEEK_COUNT = 15;
-
-  interface ShooterState {
-    name: string;
-    rookie: boolean;
-    isDummy: boolean;
-    startingAvg: number | '-';
-    scores: (number | null)[];
-    w0Display?: number;
-  }
-
-  const shooterMap = new Map<string, ShooterState>();
-
-  if (teamDoc?.shooters?.length) {
-    for (const s of teamDoc.shooters) {
-      const key = normalizeShooterName(s.name);
-      const computedAvg = prior1AvgMap.get(key)
-        ?? prior2AvgMap.get(key)
-        ?? computeShooterStartingAvg(s.name, [...prior1Teams, ...prior2Teams]);
-      const computedRookie = isShooterRookie(s.name, prior1Teams, prior2Teams, prior1AvgMap, prior2AvgMap);
-      shooterMap.set(s.name, {
-        name: s.name,
-        rookie: computedRookie,
-        isDummy: isDummyName(s.name),
-        startingAvg: computedAvg,
-        scores: new Array<number | null>(WEEK_COUNT).fill(null),
-      });
-    }
-  }
-
-  const targets: (number | null)[] = new Array(WEEK_COUNT).fill(null);
-  const rankPoints: (number | null)[] = new Array(WEEK_COUNT).fill(null);
-  const bonusPoints: (number | null)[] = new Array(WEEK_COUNT).fill(null);
-
-  for (const wr of weekResults) {
-    const wi = wr.weekNumber - 1;
-    if (wi < 0 || wi >= WEEK_COUNT) continue;
-
-    const teamResult = (wr.teamResults ?? []).find((tr) => tr.teamName === teamName);
-    if (!teamResult) continue;
-
-    targets[wi] = teamResult.targets ?? null;
-    rankPoints[wi] = teamResult.rankPoints ?? null;
-    bonusPoints[wi] = teamResult.bonusPoints ?? null;
-
-    for (const ss of teamResult.shooterScores ?? []) {
-      if (!shooterMap.has(ss.name)) {
-        // Only re-add shooters not on the current roster if they are dummies.
-        // Real shooters removed from the roster must not reappear via published data.
-        if (!isDummyName(ss.name)) continue;
-        shooterMap.set(ss.name, {
-          name: ss.name,
-          rookie: false,
-          isDummy: true,
-          startingAvg: '-',
-          scores: new Array<number | null>(WEEK_COUNT).fill(null),
-        });
-      }
-      shooterMap.get(ss.name)!.scores[wi] = ss.total ?? null;
-    }
-  }
-
-  // Pad to 2 DUMMY placeholder rows per team
-  const existingDummies = [...shooterMap.values()].filter((s) => s.isDummy);
-  if (existingDummies.length < 2) {
-    const prefix = getLastWord(teamName);
-    for (let n = existingDummies.length + 1; n <= 2; n++) {
-      const dName = `${prefix} DUMMY${n}`;
-      if (!shooterMap.has(dName)) {
-        shooterMap.set(dName, {
-          name: dName,
-          rookie: false,
-          isDummy: true,
-          startingAvg: '-',
-          scores: new Array<number | null>(WEEK_COUNT).fill(null),
-        });
-      }
-    }
-  }
-
-  // DUMMY W0 display = mean of real teammates' actual W1 scores
-  const realW1Scores = [...shooterMap.values()]
-    .filter((s) => !s.isDummy && s.scores[0] !== null)
-    .map((s) => s.scores[0] as number);
-  if (realW1Scores.length > 0) {
-    const dummyW0Display = Math.round(mean(realW1Scores) * 10) / 10;
-    for (const s of shooterMap.values()) {
-      if (s.isDummy) s.w0Display = dummyW0Display;
-    }
-  }
-
-  // Compute weeksShot, finalAvg, and final w0Display per shooter
-  const rows: ScorecardRowShooter[] = [...shooterMap.values()].map((s) => {
-    const nonNull = s.scores.filter((v): v is number => v !== null);
-    const weeksShot = nonNull.length > 0 ? nonNull.length : null;
-    const w0Num = s.isDummy
-      ? (nonNull.length > 0 ? (s.w0Display ?? null) : null)
-      : (typeof s.startingAvg === 'number' ? s.startingAvg : null);
-    const finalAvg = w0Num !== null
-      ? Math.round(computeShooterAverage(w0Num, s.scores, WEEK_COUNT - 1) * 10) / 10
-      : nonNull.length > 0
-        ? Math.round(mean(nonNull) * 10) / 10
-        : (s.w0Display ?? s.startingAvg);
-    const w0Display: number | '-' = s.w0Display ?? s.startingAvg;
-    return {
-      name: s.name,
-      rookie: s.rookie,
-      isDummy: s.isDummy,
-      w0Display,
-      scores: s.scores,
-      weeksShot,
-      finalAvg,
-    };
-  });
-
-  const withCaptainFirst = sortShootersWithCaptainFirst(rows, teamDoc?.captain ?? '');
-  withCaptainFirst.sort((a, b) => {
-    if (a.isDummy === b.isDummy) return 0;
-    return a.isDummy ? 1 : -1;
-  });
-
-  return {
-    teamName,
-    shooters: withCaptainFirst,
-    targets,
-    rankPoints,
-    bonusPoints,
-  };
-}
-
-/**
- * Recompute season standings by summing the stored per-week TeamResult values.
- * Used after team deletion — the deleted team is already absent from weekResults.
- */
-function _recomputeStandingsFromWeeks(weekResults: WeekResult[]): SeasonStandings[] {
-  const acc = new Map<string, { teamId: string; teamName: string; rankPoints: number; bonusPoints: number; targets: number }>();
-  for (const wr of weekResults) {
-    for (const tr of wr.teamResults ?? []) {
-      const cur = acc.get(tr.teamId) ?? { teamId: tr.teamId, teamName: tr.teamName, rankPoints: 0, bonusPoints: 0, targets: 0 };
-      acc.set(tr.teamId, {
-        ...cur,
-        rankPoints: cur.rankPoints + (tr.rankPoints ?? 0),
-        bonusPoints: cur.bonusPoints + (tr.bonusPoints ?? 0),
-        targets: cur.targets + (tr.targets ?? 0),
-      });
-    }
-  }
-  const rows = [...acc.values()].sort((a, b) =>
-    compareStandings(
-      { points: a.rankPoints + a.bonusPoints, targets: a.targets },
-      { points: b.rankPoints + b.bonusPoints, targets: b.targets },
-    ),
-  );
-  return rows.map((row, i) => ({
-    rank: i + 1,
-    teamId: row.teamId,
-    teamName: row.teamName,
-    totalRankPoints: row.rankPoints,
-    totalBonusPoints: row.bonusPoints,
-    totalTargets: row.targets,
-  }));
-}
-
-function _computeStandings(
-  computed: SeasonData,
-  throughWeek: number,
-  resolveTeamId: (name: string) => string,
-): SeasonStandings[] {
-  const rows = computed.teams.map((team) => {
-    let totalRankPoints = 0;
-    let totalBonusPoints = 0;
-    let totalTargets = 0;
-
-    for (let wi = 0; wi < throughWeek; wi++) {
-      totalRankPoints += team.totals.rankPoints[wi] ?? 0;
-      totalBonusPoints += team.totals.bonusPoints[wi] ?? 0;
-      totalTargets += team.totals.targets[wi] ?? 0;
-    }
-
-    return {
-      teamId: resolveTeamId(team.name),
-      teamName: team.name,
-      totalRankPoints,
-      totalBonusPoints,
-      totalTargets,
-    };
-  });
-
-  rows.sort((a, b) =>
-    compareStandings(
-      { points: a.totalRankPoints + a.totalBonusPoints, targets: a.totalTargets },
-      { points: b.totalRankPoints + b.totalBonusPoints, targets: b.totalTargets },
-    ),
-  );
-
-  return rows.map((row, i) => ({ rank: i + 1, ...row }));
-}

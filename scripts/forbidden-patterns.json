@@ -3,8 +3,8 @@
   "version": 1,
   "sizeLimits": { "warn": 500, "forbid": 750, "$comment": "Applies to production .ts modules only; *.test.ts / *.spec.ts are exempt (a comprehensive test file is not a god module)." },
   "grandfathered": {
-    "$comment": "Pre-existing violators the hook must not block. Remove entries as the underlying debt is fixed (e.g. score-service.ts split in WS-4).",
-    "file-size": ["src/services/score-service.ts"]
+    "$comment": "Pre-existing violators the hook must not block. Remove entries as the underlying debt is fixed. Empty since the score-service.ts split (spec 003).",
+    "file-size": []
   },
   "rules": [
     {
