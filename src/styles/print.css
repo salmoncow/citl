@@ -1,0 +1,142 @@
+/* ============================================================
+   Print styles
+   ============================================================ */
+
+@media print {
+  .site-nav,
+  .footer,
+  #toast-container,
+  .home-standings-controls,
+  .season-scorecards-controls { display: none; }
+
+  .main { max-width: 100%; padding: 0; }
+  body  { font-size: 11pt; color: #000; background: #fff; }
+
+  .standing-table,
+  .scorecard-tables {
+    font-size: 9pt;
+    page-break-inside: avoid;
+  }
+
+  .standing-table th,
+  .scorecard-tables th {
+    background: #000 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .collapsible ~ .scorecard {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Print isolation — each button prints only its own section */
+  body.print-scoresheets yardage-table              { display: none; }
+  .scoresheet-header                                { display: none; }
+  body.print-yardage .downloads-scoresheet-section  { display: none; }
+
+  /* Yardage print layout */
+  .yardage-controls { display: none; }
+  .yardage-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .yardage-card {
+    width: 100%;
+    max-width: none;
+    box-shadow: none;
+  }
+  .yardage-table th {
+    background: #000 !important;
+    color: #fff !important;
+  }
+
+  .scoresheet-controls { display: none; }
+  .scoresheet-card     { page-break-after: always; box-shadow: none; }
+  .scoresheet-table td,
+  .scoresheet-table td.fill {
+    border: 1px solid #000 !important;
+    padding: 1pt 6pt;
+    height: 11pt;
+    vertical-align: middle;
+  }
+  .scoresheet-table td.fill { min-width: 40pt; }
+  .scoresheet-table td.scoresheet-dummy-note {
+    font-size: 9pt;
+    font-style: italic;
+    height: auto;
+    padding: 5pt 8pt;
+    vertical-align: middle;
+  }
+
+  #sg-cards { display: block; }
+
+  .scoresheet-print-header,
+  .scoresheet-print-footer { display: block; }
+
+  .scoresheet-league-title {
+    font-size: 18pt;
+    font-weight: bold;
+    margin: 0 0 4pt 0;
+    text-align: center;
+  }
+
+  .scoresheet-week-label {
+    font-size: 11pt;
+    margin: 0 0 12pt 0;
+    text-align: center;
+  }
+
+  .scoresheet-print-footer {
+    margin-top: 16pt;
+    font-size: 8pt;
+    color: #555;
+    border-top: 1px solid #ccc;
+    padding-top: 6pt;
+  }
+}
+
+/* ─── Season Calendar ──────────────────────────────────────────────────────── */
+
+/* Layout */
+.season-calendar       { margin-bottom: var(--space-8); }
+.calendar-months       { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 260px));
+                         gap: var(--space-4); justify-content: center; }
+.calendar-month        { background: var(--c-surface);
+                         border: 1px solid var(--c-border); border-radius: var(--radius-md);
+                         padding: var(--space-3); }
+.calendar-month-title  { font-size: var(--text-base); font-weight: 600;
+                         color: var(--c-heading); margin-bottom: var(--space-2); }
+
+/* Grid */
+.calendar-grid         { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.calendar-day-header   { text-align: center; font-size: 0.7rem;
+                         color: var(--c-text-muted); font-weight: 600;
+                         padding-bottom: 2px; }
+
+/* Cells */
+.calendar-cell         { aspect-ratio: 1; display: flex; align-items: center;
+                         justify-content: center; border-radius: var(--radius-sm);
+                         font-size: var(--text-xs); color: var(--c-text); }
+.calendar-cell--empty  { /* invisible placeholder */ }
+.calendar-cell--shoot  { background: var(--c-table-header-bg); /* navy */
+                         color: #fff; font-weight: 600; }
+.calendar-cell--practice { background: var(--c-accent); /* orange */
+                           color: #fff; font-weight: 600; }
+.calendar-cell--holiday    { background: #dc2626; color: #fff; font-weight: 600; }
+.calendar-cell--cancelled  { color: var(--c-text-muted); text-decoration: line-through; }
+.calendar-cell--today  { outline: 2px solid var(--c-accent); outline-offset: -2px; }
+
+/* Dark mode — shoot day needs lighter treatment on dark bg */
+@media (prefers-color-scheme: dark) {
+  .calendar-cell--shoot { background: #1e5f8e; }
+}
+
+/* Legend */
+.calendar-legend       { display: flex; gap: var(--space-4); flex-wrap: wrap;
+                         margin-top: var(--space-4); font-size: var(--text-sm);
+                         color: var(--c-text-muted); align-items: center; }
+.calendar-legend-item  { display: flex; align-items: center; gap: var(--space-1); }
+.calendar-legend-swatch { width: 14px; height: 14px; border-radius: var(--radius-sm); }

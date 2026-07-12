@@ -1,0 +1,149 @@
+/* ============================================================
+   Scoresheet Generator
+   ============================================================ */
+
+.scoresheet-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.scoresheet-heading { margin: 0; font-size: var(--text-xl); }
+
+.scoresheet-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.scoresheet-controls p {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: var(--text-sm);
+}
+
+.scoresheet-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.scoresheet-team-name {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--c-heading);
+}
+
+.scoresheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.scoresheet-table th {
+  background: var(--c-table-header-bg);
+  color: var(--c-text-inverse);
+  text-transform: uppercase;
+  font-size: var(--text-xs, .75rem);
+  letter-spacing: .05em;
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.scoresheet-table td {
+  padding: 2px var(--space-3);
+  border-bottom: 1px solid var(--c-table-border);
+}
+
+.scoresheet-table td.fill {
+  border: 1px solid var(--c-border);
+  min-width: 60px;
+}
+
+.scoresheet-table th:nth-child(2),
+.scoresheet-table td:nth-child(2) {
+  text-align: center;
+}
+
+.scoresheet-table td.scoresheet-dummy-note {
+  font-size: var(--text-sm, .875rem);
+  font-style: italic;
+  color: var(--c-text-muted);
+  line-height: 1.4;
+  vertical-align: middle;
+  padding: var(--space-2) var(--space-3);
+}
+
+.scoresheet-season-label {
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+}
+
+/* Date line below week label */
+.scoresheet-date-label     { font-size: var(--text-sm); color: var(--c-text-muted);
+                             margin: 0; }
+.scoresheet-date-cancelled { color: #dc2626; font-weight: 700; letter-spacing: var(--tracking-wide); }
+
+/* Print-only elements are invisible on screen */
+.scoresheet-print-header,
+.scoresheet-print-footer { display: none; }
+
+#sg-cards { display: none; }
+
+/* ── Yardage Table ─────────────────────────────────────────────────────────── */
+.yardage-section   { margin-bottom: var(--space-8); }
+
+.yardage-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.yardage-heading   { margin: 0; font-size: var(--text-xl); }
+
+.yardage-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  padding: var(--space-6);
+}
+
+.yardage-instructions { margin: 0 0 var(--space-3); }
+
+.yardage-steps {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-6);
+}
+.yardage-steps li { margin-bottom: var(--space-1); }
+
+.yardage-table {
+  width: 100%;
+  max-width: 28rem;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  margin: 0 auto;
+}
+.yardage-table th {
+  background: var(--c-table-header-bg);
+  color: var(--c-text-inverse);
+  text-transform: uppercase;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.75rem;
+  text-align: center;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.yardage-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--c-table-border);
+  text-align: center;
+}
+
+

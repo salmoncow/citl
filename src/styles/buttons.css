@@ -1,0 +1,52 @@
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.btn-primary {
+  background-color: var(--c-btn-primary-bg);
+  color: var(--c-btn-primary-text);
+  border: none;
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  font-weight: 500;
+  transition: opacity var(--t-fast), transform var(--t-fast);
+}
+
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  background-color: var(--c-btn-secondary-bg);
+  color: var(--c-btn-secondary-text);
+  border: none;
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  font-weight: 500;
+  transition: opacity var(--t-fast), transform var(--t-fast);
+}
+
+.btn-secondary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-secondary:active { transform: translateY(0); }
+
+.btn-danger {
+  background-color: var(--c-status-error-bg);
+  color: var(--c-status-error);
+  border: none;
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  font-weight: 500;
+  transition: opacity var(--t-fast), transform var(--t-fast);
+}
+
+.btn-danger:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-danger:active { transform: translateY(0); }
+
