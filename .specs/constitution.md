@@ -1,6 +1,6 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.5.1
+**Version:** 1.6.0
 **Last Updated:** 2026-07-10
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
@@ -130,6 +130,13 @@ src/repositories/  Data access — Firestore reads/writes only
 src/types/         TypeScript interfaces and types — no runtime code
 src/views/         Page-level render functions (transitional — migrate to components)
 ```
+
+**Component contract**: every Web Component under `src/components/` follows the contract in
+[src/components/README.md](../src/components/README.md) — shared services via the
+`app-services` composition root (never a private `ScoreService`/factory), static-only
+innerHTML, teardown in `disconnectedCallback`, skeleton→data→error states, re-entrancy
+guards. Item 1 is hook-enforced (`no-private-service-in-component` in
+`scripts/forbidden-patterns.json`).
 
 
 ### II.5 CITL-Specific Data Architecture
@@ -538,3 +545,4 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.4.0 (2026-04-12): Migrated foundational guidance to global Claude Code skills; removed `.prompts/core/` and `.prompts/platforms/` references; retained `.prompts/meta/` for project-specific strategic frameworks; updated §V.1 workflow and §VII references
 - 1.5.0 (2026-05-03): Adopted Firebase Blaze plan and multi-user RBAC (002-multi-user-rbac); Cloud Functions role-writer + auth trigger; App Check enforcement; Security marked Complete (see ADR-009)
 - 1.5.1 (2026-07-10): Truth-reconciliation pass (WS-1) — updated §II.1 to live-production state (AWS decommissioned, site live at citl.club); corrected inventory counts; removed the retired static-JSON data-layer narrative (ADR-010 supersedes ADR-003); refreshed §III.1 testing state and §III.4 bundle figure; single-sourced Firebase quota figures to §VI.1
+- 1.6.0 (2026-07-11): Component contract adopted as a standard (spec 003-service-decomposition) — §II.4 points to src/components/README.md; composition root (`src/services/app-services.ts`) is the sole production construction site for ScoreService; new hook rule `no-private-service-in-component`

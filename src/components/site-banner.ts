@@ -6,12 +6,9 @@
  * Message is always rendered via textContent to prevent XSS.
  */
 
-import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
+import { getServices } from '@/services/app-services';
 
-const factory = createRepositoryFactory({ db });
-const scoreService = new ScoreService(factory.getScoreRepository());
+const { scoreService } = getServices();
 
 class SiteBanner extends HTMLElement {
   connectedCallback(): void {

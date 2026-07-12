@@ -6,15 +6,12 @@
  * No shadow DOM; uses global CSS classes.
  */
 
-import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
+import { getServices } from '@/services/app-services';
 import { escapeHtml } from '@/modules/ui';
 import { renderMarkdown } from '@/utils/markdown';
 import type { Announcement } from '@/types/announcement';
 
-const factory = createRepositoryFactory({ db });
-const scoreService = new ScoreService(factory.getScoreRepository());
+const { scoreService } = getServices();
 
 class HomeAnnouncements extends HTMLElement {
   connectedCallback(): void {

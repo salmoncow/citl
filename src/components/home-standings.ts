@@ -5,17 +5,14 @@
  * No shadow DOM; uses global CSS classes.
  */
 
-import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import { ScoreService } from '@/services/score-service';
+import { getServices } from '@/services/app-services';
 import { compareStandings } from '@/services/scoring-engine';
 import { escapeHtml } from '@/modules/ui';
 import type { Team, WeekResult } from '@/types/score';
 import type { Season } from '@/types/season';
 import type { Accolade } from '@/types/shooter';
 
-const factory = createRepositoryFactory({ db });
-const scoreService = new ScoreService(factory.getScoreRepository());
+const { scoreService } = getServices();
 
 class HomeStandings extends HTMLElement {
   private _seasons: Season[] = [];
