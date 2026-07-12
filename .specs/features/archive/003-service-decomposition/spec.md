@@ -2,9 +2,9 @@
 
 **Feature ID**: 003-service-decomposition
 **Created**: 2026-07-11
-**Status**: Approved (maintainer, 2026-07-11) — implementation in progress
-**Source**: Promotion of backlog items [WS4-01 + WS4-02](../../reviews/2026-07-deep-review/backlog.md)
-(recommended promotion #1); findings [F-01 (P1) and F-21 (P2)](../../reviews/2026-07-deep-review/report.md).
+**Status**: Shipped (PR [#214](https://github.com/salmoncow/citl/pull/214) / PR [#215](https://github.com/salmoncow/citl/pull/215), merged 2026-07-12)
+**Source**: Promotion of backlog items [WS4-01 + WS4-02](../../../reviews/2026-07-deep-review/backlog.md)
+(recommended promotion #1); findings [F-01 (P1) and F-21 (P2)](../../../reviews/2026-07-deep-review/report.md).
 Absorbs the WS3-01 derivation-unification follow-up note (deferred — see Design Decision 4).
 
 ---
@@ -24,7 +24,7 @@ and one cache, and writes the component contract down so the pattern cannot sile
 
 **Part B — score-service three-way split (WS4-02 / F-21).** `src/services/score-service.ts`
 is 1,093 lines — the only entry in the `grandfathered.file-size` list in
-[`scripts/forbidden-patterns.json`](../../../scripts/forbidden-patterns.json) — because the
+[`scripts/forbidden-patterns.json`](../../../../scripts/forbidden-patterns.json) — because the
 class hoards ~325 lines of module-level pure functions and 18 copy-pasted year guards. This
 part moves the pure scorecard builders and standings functions into their own modules, dedups
 the validation guards, collapses `main.ts`'s six clone `_showX` handlers into a route table,
@@ -170,7 +170,7 @@ module-level construction.
 **Decision**: write the contract as `src/components/README.md`, add a single pointer line in
 constitution §II.4, bump the constitution to 1.6.0. Rejected alternative: a full constitution
 §III amendment — per
-[spec-authoring-guidelines](../../../.prompts/meta/spec-authoring-guidelines.md), detailed
+[spec-authoring-guidelines](../../../../.prompts/meta/spec-authoring-guidelines.md), detailed
 rules next to the code they govern, referenced (not restated) from the canon; the constitution
 stays the index, and agents editing components see the README in-tree.
 
