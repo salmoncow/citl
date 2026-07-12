@@ -21,7 +21,6 @@ export const adminDb = () => getFirestore();
 
 const PROJECT = process.env['GCLOUD_PROJECT'] ?? 'citl-fn-test';
 const FIRESTORE_HOST = process.env['FIRESTORE_EMULATOR_HOST'] ?? '127.0.0.1:8080';
-const AUTH_HOST = process.env['FIREBASE_AUTH_EMULATOR_HOST'] ?? '127.0.0.1:9099';
 
 export async function clearFirestore(): Promise<void> {
   const url = `http://${FIRESTORE_HOST}/emulator/v1/projects/${PROJECT}/databases/(default)/documents`;

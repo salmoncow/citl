@@ -1,0 +1,140 @@
+/* ============================================================
+   Form inputs & controls
+   ============================================================ */
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--c-bg);
+  background-image: var(--c-select-arrow);
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  background-size: 10px auto;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-2) calc(var(--space-3) + 22px) var(--space-2) var(--space-3);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  min-width: 120px;
+}
+
+select:hover { border-color: var(--c-text-muted); }
+
+select:focus {
+  outline: none;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(255, 128, 0, 0.15);
+}
+
+/* ── Announcements (homepage) ─────────────────────────────────────── */
+.ann-section { margin-bottom: var(--space-4); }
+.ann-section__heading { font-size: var(--text-lg); font-weight: 700; color: var(--c-heading); margin: 0 0 var(--space-3); }
+.ann-card-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.ann-card { background: var(--c-bg); border: 1px solid var(--c-table-border); border-radius: var(--radius-md); padding: var(--space-4); }
+.ann-card__header { margin-bottom: var(--space-3); }
+.ann-card__title { font-size: var(--text-base); font-weight: 600; color: var(--c-heading); margin: 0 0 4px; }
+.ann-card__meta { display: flex; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-xs); color: var(--c-text-muted); }
+.ann-card__edited { font-style: italic; }
+.ann-card__body { font-size: var(--text-sm); color: var(--c-text); line-height: 1.6; }
+.ann-card__body p { margin: 0 0 0.5rem; }
+.ann-card__body p:last-child { margin-bottom: 0; }
+.ann-card__body ul, .ann-card__body ol { padding-left: 1.5rem; margin: 0.25rem 0 0.5rem; }
+.ann-card__body strong { font-weight: 600; }
+.ann-card__body a { color: var(--c-accent); }
+.ann-card__body code { font-size: 0.9em; background: var(--c-table-border); padding: 0.1em 0.3em; border-radius: 3px; }
+
+/* ── Accolades ───────────────────────────────────────────────────────────── */
+.accolades-section {
+  margin-bottom: var(--space-4);
+}
+
+.accolades-section__heading {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--c-heading);
+  margin: 0 0 var(--space-3);
+}
+
+.accolades-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.accolades-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.accolades-badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.accolades-badge--50 {
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+}
+
+.accolades-badge--25 {
+  background: var(--c-table-header-bg);
+  color: var(--c-text-inverse);
+}
+
+.accolades-item__name {
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.accolades-item__team {
+  color: var(--c-text-muted);
+}
+
+.hs-subtitle {
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+/* Controls containers — label + select row */
+.home-standings-controls,
+.season-scorecards-controls,
+.admin-form-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+}
+
+.home-standings-controls label,
+.season-scorecards-controls label,
+.admin-form-row label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--c-text-muted);
+}
+
+/* Hide number input spinners */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] { -moz-appearance: textfield; }
+

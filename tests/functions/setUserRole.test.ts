@@ -41,9 +41,13 @@ beforeEach(async () => {
 });
 
 function call(args: { actorUid: string | null; actorRole?: string; data: unknown }) {
+  // Hand-built partial CallableRequest/DecodedIdToken shims; the real types
+  // carry a dozen required fields irrelevant to these tests.
   const auth = args.actorUid
-    ? { uid: args.actorUid, token: { role: args.actorRole, sub: args.actorUid, aud: 'citl-fn-test' } as any }
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { uid: args.actorUid, token: { role: args.actorRole, sub: args.actorUid, aud: 'citl-fn-test' } as any }
     : undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return wrapped({ data: args.data, auth } as any);
 }
 

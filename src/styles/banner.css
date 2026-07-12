@@ -1,0 +1,39 @@
+/* ============================================================
+   Site Banner
+   ============================================================ */
+
+site-banner {
+  display: block;
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 8;
+}
+
+site-banner[hidden] {
+  display: none !important;
+}
+
+.site-banner__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  background: var(--c-status-warning-bg);
+  border-left: 4px solid var(--c-accent);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.site-banner__icon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--c-accent);
+}
+
+.site-banner__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-status-warning);
+  line-height: 1.5;
+}
+

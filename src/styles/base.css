@@ -1,0 +1,55 @@
+/* ============================================================
+   Base reset & global
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  margin: 0;
+  background-color: var(--c-bg);
+  color: var(--c-text);
+  font-size: var(--text-base);
+  line-height: var(--leading);
+  letter-spacing: var(--tracking);
+}
+
+h1 {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  color: var(--c-heading);
+  margin-bottom: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+h2 {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--c-heading);
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-4);
+}
+
+h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--c-heading);
+  margin-top: var(--space-6);
+}
+
+h5 { margin-top: 0; }
+
+a {
+  color: var(--c-link);
+  transition: color var(--t-fast);
+}
+a:hover { color: var(--c-link-hover); }
+
+.custom-length {
+  width: 50%;
+  margin-left: 0;
+}
+

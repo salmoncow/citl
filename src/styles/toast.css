@@ -1,0 +1,176 @@
+/* ============================================================
+   Toast system
+   Toasts stack from the bottom-right, slide in from below,
+   and fade back down on dismiss.
+   ============================================================ */
+
+#toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  z-index: 200;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  pointer-events: auto;
+  max-width: 420px;
+  width: max-content;
+  border-left: 3px solid;
+  animation: toast-in 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.toast__msg { flex: 1; }
+
+.toast__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  color: inherit;
+  opacity: 0.55;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: opacity var(--t-fast);
+}
+.toast__close:hover { opacity: 1; }
+
+.toast--success {
+  background: var(--c-status-success-bg);
+  color: var(--c-status-success);
+  border-color: var(--c-status-success);
+}
+
+.toast--error {
+  background: var(--c-status-error-bg);
+  color: var(--c-status-error);
+  border-color: var(--c-status-error);
+}
+
+.toast--info {
+  background: var(--c-status-info-bg);
+  color: var(--c-status-info);
+  border-color: var(--c-status-info);
+}
+
+.toast--warning {
+  background: var(--c-status-warning-bg);
+  color: var(--c-status-warning);
+  border-color: var(--c-status-warning);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(32px) translateX(12px); }
+  to   { opacity: 1; transform: translateY(0)    translateX(0); }
+}
+
+.toast--out {
+  animation: toast-out 250ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0)    translateX(0); }
+  to   { opacity: 0; transform: translateY(20px) translateX(8px); }
+}
+
+/* ── Confirmation dialog ─────────────────────────────────────────────────── */
+.confirm-dialog {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  background: var(--c-surface);
+  color: var(--c-text);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.confirm-dialog__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  color: var(--c-status-error);
+}
+
+.confirm-dialog__warning {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--c-text-muted);
+}
+
+.confirm-dialog__instruction {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.confirm-dialog__input {
+  width: 100%;
+  margin-bottom: 1.25rem;
+  box-sizing: border-box;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* ── Roster editor modal ───────────────────────────────────────────────── */
+.roster-dialog {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  background: var(--c-bg);
+  color: var(--c-text);
+}
+
+.roster-dialog::backdrop {
+  background: rgba(0,0,0,0.55);
+}
+
+.roster-dialog__header {
+  margin-bottom: var(--space-4);
+}
+
+.roster-dialog__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-heading);
+  margin: 0;
+}
+
+.roster-dialog__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-4);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Danger variant for the icon button in team list */
+.admin-icon-btn--danger {
+  color: var(--c-status-error);
+}
+.admin-icon-btn--danger:hover:not(:disabled) {
+  background: var(--c-status-error-bg);
+}
+
