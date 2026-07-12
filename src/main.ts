@@ -9,7 +9,23 @@
  * roleChangedAt snapshot listener — see modules/auth.ts).
  */
 
-import './styles/main.css';
+// Stylesheet sections, split along main.css's former banner sections (F-22).
+// Import order IS cascade order — it must reproduce the original file's
+// top-to-bottom sequence exactly; Vite concatenates these into one CSS asset.
+import './styles/tokens.css';
+import './styles/base.css';
+import './styles/nav.css';
+import './styles/banner.css';
+import './styles/layout.css';
+import './styles/tables.css';
+import './styles/buttons.css';
+import './styles/admin.css';
+import './styles/about.css';
+import './styles/toast.css';
+import './styles/forms.css';
+import './styles/admin-tables.css';
+import './styles/scoresheet.css';
+import './styles/print.css';
 import './components/home-standings';
 import './components/home-announcements';
 import './components/site-banner';

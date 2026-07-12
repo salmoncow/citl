@@ -1,0 +1,220 @@
+/* ============================================================
+   CITL — Design System (Minimal Pro)
+   Two-layer token architecture: primitives → semantic tokens
+   ============================================================ */
+
+:root {
+  /* --- Primitive palette --- */
+  --color-orange: #FF8000;
+  --color-navy:   #0B3C5D;
+  --color-black:  #111111;
+  --color-white:  #ffffff;
+
+  /* --- Semantic: LIGHT MODE (default) --- */
+
+  /* Backgrounds */
+  --c-bg:      #fafafa;
+  --c-surface: #f2f2f2;
+  --c-border:  #e4e4e4;
+
+  /* Text */
+  --c-text:         #1a1a1a;
+  --c-text-muted:   #6b6b6b;
+  --c-text-inverse: #ffffff;
+
+  /* Headings & Accent */
+  --c-heading: #1a1a1a;
+  --c-accent:  #FF8000;
+
+  /* Nav (transparent) */
+  --c-nav-bg:         transparent;
+  --c-nav-border:     #e4e4e4;
+  --c-nav-link:       #6b6b6b;
+  --c-nav-link-hover: #1a1a1a;
+  --c-nav-active:     #FF8000;
+
+  /* Tables */
+  --c-table-header-bg: #0B3C5D;
+  --c-table-header-sc: #0B3C5D;
+  --c-table-row-alt:   #f2f2f2;
+  --c-table-hover:     #e8e8e8;
+  --c-table-border:    #e4e4e4;
+
+  /* Collapsible / Accordion */
+  --c-collapsible-text:        #1a1a1a;
+  --c-collapsible-hover-bg:    #f2f2f2;
+  --c-collapsible-active-text: #FF8000;
+
+  /* Links */
+  --c-link:       #0B3C5D;
+  --c-link-hover: #FF8000;
+
+  /* Buttons */
+  --c-btn-primary-bg:     #1a1a1a;
+  --c-btn-primary-text:   #ffffff;
+  --c-btn-secondary-bg:   #e4e4e4;
+  --c-btn-secondary-text: #1a1a1a;
+
+  /* Status */
+  --c-status-success:    #166534;
+  --c-status-success-bg: #dcfce7;
+  --c-status-error:      #991b1b;
+  --c-status-error-bg:   #fee2e2;
+  --c-status-warning:    #92400e;
+  --c-status-warning-bg: #fef3c7;
+  --c-status-info:       #1e40af;
+  --c-status-info-bg:    #dbeafe;
+
+  /* Warning table */
+  --c-warning-bg:     #fef3c7;
+  --c-warning-border: #fcd34d;
+
+  /* Footer */
+  --c-footer-border: #e4e4e4;
+  --c-footer-text:   #6b6b6b;
+
+  /* Select arrow */
+  --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%236b6b6b' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+
+  /* --- Layout --- */
+  --max-width:  900px;
+  --nav-height: 56px;
+
+  /* --- Typography --- */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --text-xs:   0.8125rem;
+  --text-sm:   0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg:   1.25rem;
+  --text-xl:   1.5rem;
+  --text-2xl:  clamp(1.75rem, 3vw, 2.25rem);
+  --leading:      1.7;
+  --tracking:     0;
+  --tracking-wide: 0.05em;
+
+  /* --- Spacing --- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* --- Borders & Radius --- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* --- Transitions --- */
+  --t-fast: 150ms ease;
+  --t-base: 250ms ease;
+  --t-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- Shadows --- */
+  --shadow-dropdown: 0 8px 16px rgba(0,0,0,0.12);
+}
+
+/* Dark tokens shared by media query and explicit override */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-color-scheme="light"]) {
+    --c-bg:      #111111;
+    --c-surface: #1c1c1c;
+    --c-border:  #2a2a2a;
+
+    --c-text:         #f0f0f0;
+    --c-text-muted:   #9a9a9a;
+    --c-text-inverse: #ffffff;
+
+    --c-heading: #f0f0f0;
+
+    --c-nav-border:     #2a2a2a;
+    --c-nav-link:       #9a9a9a;
+    --c-nav-link-hover: #f0f0f0;
+
+    --c-table-row-alt: #1c1c1c;
+    --c-table-hover:   #242424;
+    --c-table-border:  #2a2a2a;
+
+    --c-collapsible-text:     #f0f0f0;
+    --c-collapsible-hover-bg: #1c1c1c;
+
+    --c-btn-primary-bg:     #f0f0f0;
+    --c-btn-primary-text:   #111111;
+    --c-btn-secondary-bg:   #2a2a2a;
+    --c-btn-secondary-text: #f0f0f0;
+
+    --c-link:       #9a9a9a;
+    --c-link-hover: #FF8000;
+
+    --c-status-success:    #86efac;
+    --c-status-success-bg: #052e16;
+    --c-status-error:      #fca5a5;
+    --c-status-error-bg:   #450a0a;
+    --c-status-warning:    #fbbf24;
+    --c-status-warning-bg: #2d1b00;
+    --c-status-info:       #93c5fd;
+    --c-status-info-bg:    #0f1f4a;
+
+    --c-footer-border: #2a2a2a;
+    --c-footer-text:   #9a9a9a;
+
+    --c-warning-bg:     #2a2800;
+    --c-warning-border: #6b6800;
+
+    --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%239a9a9a' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+  }
+}
+
+/* Explicit dark override — used by theme toggle JS */
+:root[data-color-scheme="dark"] {
+  --c-bg:      #111111;
+  --c-surface: #1c1c1c;
+  --c-border:  #2a2a2a;
+
+  --c-text:         #f0f0f0;
+  --c-text-muted:   #9a9a9a;
+  --c-text-inverse: #ffffff;
+
+  --c-heading: #f0f0f0;
+
+  --c-nav-border:     #2a2a2a;
+  --c-nav-link:       #9a9a9a;
+  --c-nav-link-hover: #f0f0f0;
+
+  --c-table-row-alt: #1c1c1c;
+  --c-table-hover:   #242424;
+  --c-table-border:  #2a2a2a;
+
+  --c-collapsible-text:     #f0f0f0;
+  --c-collapsible-hover-bg: #1c1c1c;
+
+  --c-btn-primary-bg:     #f0f0f0;
+  --c-btn-primary-text:   #111111;
+  --c-btn-secondary-bg:   #2a2a2a;
+  --c-btn-secondary-text: #f0f0f0;
+
+  --c-link:       #9a9a9a;
+  --c-link-hover: #FF8000;
+
+  --c-status-success:    #86efac;
+  --c-status-success-bg: #052e16;
+  --c-status-error:      #fca5a5;
+  --c-status-error-bg:   #450a0a;
+  --c-status-warning:    #fbbf24;
+  --c-status-warning-bg: #2d1b00;
+  --c-status-info:       #93c5fd;
+  --c-status-info-bg:    #0f1f4a;
+
+  --c-footer-border: #2a2a2a;
+  --c-footer-text:   #9a9a9a;
+
+  --c-warning-bg:     #2a2800;
+  --c-warning-border: #6b6800;
+
+  --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%239a9a9a' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+}
+

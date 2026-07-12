@@ -30,7 +30,6 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-ch
 import { useEmulator } from '@/firebase-config';
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   interface Window {
     FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean;
   }
@@ -48,7 +47,6 @@ export function initAppCheck(): void {
 
   const siteKey = import.meta.env['VITE_RECAPTCHA_ENTERPRISE_SITE_KEY'];
   if (!siteKey) {
-    // eslint-disable-next-line no-console
     console.warn(
       '[appcheck] VITE_RECAPTCHA_ENTERPRISE_SITE_KEY not set; App Check init skipped. ' +
         'setUserRole and other enforced callables will reject this client.',
@@ -66,7 +64,6 @@ export function initAppCheck(): void {
   const debugToken = import.meta.env['VITE_APP_CHECK_DEBUG_TOKEN'];
   if (debugToken) {
     window.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
-    // eslint-disable-next-line no-console
     console.warn(
       '[appcheck] DEBUG TOKEN MODE — reCAPTCHA bypassed. ' +
         'Production builds must NEVER set VITE_APP_CHECK_DEBUG_TOKEN.',
