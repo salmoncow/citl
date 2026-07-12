@@ -12,9 +12,9 @@ import { buildPriorAvgMap, computeSeasonTotals, computeShooterStartingAvg, isSho
 import { buildSeasonData, buildScorecardTeamBlock } from '@/services/scorecard-builder';
 import { computeStandings, recomputeStandingsFromWeeks } from '@/services/standings';
 import type { ScoreRepository } from '@/repositories/score-repository';
-import type { Season, SeasonStandings } from '@/types/season';
+import type { Season } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
-import type { SeasonData, ScorecardShooter, ScorecardRowShooter, ScorecardTeamBlock, ScorecardViewData } from '@/types/scorecard';
+import type { ScorecardViewData } from '@/types/scorecard';
 import type { Announcement } from '@/types/announcement';
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
