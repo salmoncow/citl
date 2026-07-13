@@ -10,7 +10,7 @@
  */
 
 import type { ScorecardShooter, SeasonData } from '@/types/scorecard';
-import type { ComputedAwards } from '@/types/season';
+import type { AwardShooterInput, SeasonAwards, SeasonStandings } from '@/types/season';
 import type { Team, TeamResult, WeekResult } from '@/types/score';
 import type { Accolade } from '@/types/shooter';
 
@@ -395,10 +395,6 @@ export function computeSeasonTotals(seasonData: SeasonData): SeasonData {
 // ---------------------------------------------------------------------------
 
 /**
- * Compute the Most Improved percentage score.
- * Formula: 100 × (finalAvg − startingAvg) / (50 − startingAvg)
- */
-/**
  * Compute the starting average for a shooter entering a new season.
  * If found in any prior-year team with a non-null finalAvg, returns that value.
  * Otherwise returns 35 (new-shooter default).
@@ -461,52 +457,68 @@ export function isShooterRookie(
   return !shotInYear(prior1YearTeams, prior1AvgMap) && !shotInYear(prior2YearTeams, prior2AvgMap);
 }
 
+/**
+ * Compute the Most Improved percentage score.
+ * Formula: 100 × (finalAvg − startingAvg) / (50 − startingAvg)
+ * A shooter starting at (or above) the 50 cap has no possible improvement, so
+ * the score is 0 — this also shields historical imports from a zero or
+ * sign-flipped denominator (spec 004 DD-4).
+ */
 export function computeMostImprovedScore(startingAvg: number, finalAvg: number): number {
+  if (startingAvg >= 50) return 0;
   return (100 * (finalAvg - startingAvg)) / (50 - startingAvg);
 }
 
 /**
- * Compute season awards from final shooter averages.
- * Excludes dummy shooters. Requires weeksShot >= 6.
+ * Compute season awards from per-shooter season lines plus final standings.
+ * Shooter awards (Highest Average, Rookie of the Year, Most Improved) follow
+ * the business rules in .specs/features/scoring-engine.md §"Season Awards":
+ * dummies excluded, weeksShot >= 6, finalAvg at full precision. Team
+ * placements derive from the rank-1/rank-2 standings rows
+ * (points = totalRankPoints + totalBonusPoints) and are filled in every
+ * branch; each field is null when its source row/shooter does not exist.
  */
-export function computeSeasonAwards(seasonData: SeasonData): ComputedAwards {
+export function computeSeasonAwards(
+  shooters: AwardShooterInput[],
+  finalStandings: SeasonStandings[],
+): SeasonAwards {
   const WEEK_COUNT = 15;
   const MIN_WEEKS = 6;
 
+  const first = finalStandings.find((row) => row.rank === 1) ?? null;
+  const second = finalStandings.find((row) => row.rank === 2) ?? null;
+  const placements = {
+    firstPlaceTeam: first ? first.teamName : null,
+    firstPlacePoints: first ? first.totalRankPoints + first.totalBonusPoints : null,
+    secondPlaceTeam: second ? second.teamName : null,
+    secondPlacePoints: second ? second.totalRankPoints + second.totalBonusPoints : null,
+  };
+
   const eligible: {
     name: string;
-    teamName: string;
     finalAvg: number;
     startingAvg: number;
     rookie: boolean;
-    weeksShot: number;
   }[] = [];
 
-  for (const team of seasonData.teams) {
-    for (const shooter of team.shooters) {
-      if (shooter.isDummy) continue;
+  for (const shooter of shooters) {
+    if (shooter.isDummy) continue;
 
-      const weeksShot = shooter.scores.filter((s) => s !== null).length;
-      if (weeksShot < MIN_WEEKS) continue;
+    const weeksShot = shooter.scores.filter((s) => s !== null).length;
+    if (weeksShot < MIN_WEEKS) continue;
 
-      const finalAvg = computeShooterAverage(shooter.startingAvg, shooter.scores, WEEK_COUNT - 1);
-      eligible.push({
-        name: shooter.name,
-        teamName: team.name,
-        finalAvg,
-        startingAvg: shooter.startingAvg,
-        rookie: shooter.rookie,
-        weeksShot,
-      });
-    }
+    const finalAvg = computeShooterAverage(shooter.startingAvg, shooter.scores, WEEK_COUNT - 1);
+    eligible.push({
+      name: shooter.name,
+      finalAvg,
+      startingAvg: shooter.startingAvg,
+      rookie: shooter.rookie,
+    });
   }
 
   if (eligible.length === 0) {
     return {
-      firstPlaceTeam: null,
-      firstPlacePoints: null,
-      secondPlaceTeam: null,
-      secondPlacePoints: null,
+      ...placements,
       highestAvgShooter: null,
       highestAvg: null,
       rookieOfYear: null,
@@ -532,10 +544,7 @@ export function computeSeasonAwards(seasonData: SeasonData): ComputedAwards {
   const improvementPct = `${improvementScore.toFixed(2)}%`;
 
   return {
-    firstPlaceTeam: null,
-    firstPlacePoints: null,
-    secondPlaceTeam: null,
-    secondPlacePoints: null,
+    ...placements,
     highestAvgShooter: topShooter.name,
     highestAvg: topShooter.finalAvg,
     rookieOfYear: topRookie ? topRookie.name : null,
