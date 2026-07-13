@@ -279,7 +279,7 @@ Split the 2,182-line `src/styles/main.css` along its existing ~25 banner section
 
 ## WS-5 — Opportunistic sweep (one cleanup session; P3 items plus the P2 decision item WS5-02)
 
-### WS5-01 · P3 · S · Delete dead exports (F-50)
+### WS5-01 · P3 · S · Delete dead exports (F-50) — **DONE ([PR #222](https://github.com/salmoncow/citl/pull/222), 2026-07-13)**
 Remove `lookupYardage` from src/utils/yardage.ts (+ its test cases; the app renders YARDAGE_TABLE directly — keep the table), `StandingRow` (src/types/score.ts:33), `TeamTopShooter` (src/types/season.ts:48). If yardage automation is ever planned instead, make lookupYardage boundary-based (min thresholds only) — but default is delete.
 
 **Acceptance**: typecheck + tests pass; grep for the three names returns nothing outside git history.
@@ -298,35 +298,38 @@ award data exists or can be computed).
 **Sweep scope note**: the WS-5 session must NOT delete or modify `computeSeasonAwards`,
 `computeMostImprovedScore`, or their tests — they are feature-004 inputs.
 `validateFirebaseConfig` (unrelated dead config guard bundled in the same finding) remains in
-sweep scope: wire it at startup or delete it.
+sweep scope: wire it at startup or delete it. **Sweep remainder DONE
+([PR #222](https://github.com/salmoncow/citl/pull/222), 2026-07-13): wired at startup —
+`validateFirebaseConfig()` runs before `initializeApp`, so a build missing `VITE_FIREBASE_*`
+vars now fails loudly on load.**
 
 **Acceptance** (moved to feature 004): season-end awards computed with real placements and no
 NaN edge; awards visible in the UI for the selected year, including historical seasons.
 
-### WS5-03 · P3 · S · Dead-link sweep (F-58, remainder after WS-1)
+### WS5-03 · P3 · S · Dead-link sweep (F-58, remainder after WS-1) — **DONE ([PR #222](https://github.com/salmoncow/citl/pull/222), 2026-07-13)**
 Fix the constitution's repo-root-relative links to true relative paths (`../.prompts/meta/…`, `./technical/…`); in `.specs/features/002-multi-user-rbac/`: copy the still-relevant content of the machine-local "Plan of record" (/Users/ted/.claude/plans/i-recently-implemented-…mochi.md — unrecoverable on other machines; salvage from this machine if it still exists, else note it lost) into a plan.md beside the spec and delete the external link; adopt the rule ".specs/ files never link paths outside the repo"; convert tasks.md's `file.ts:22`-style markdown link targets to plain-text code spans. Then run a link check over all .md files.
 
 **Acceptance**: a relative-link checker over the repo's markdown reports zero dead links (excluding archived files if any).
 
-### WS5-04 · P3 · S · CSP trims and hash guard (F-56, F-46)
+### WS5-04 · P3 · S · CSP trims and hash guard (F-56, F-46) — **DONE ([PR #222](https://github.com/salmoncow/citl/pull/222), 2026-07-13)**
 - Remove the dead `https://cdnjs.cloudflare.com` allowances from style-src and font-src in firebase.json:88 (Font Awesome removed per ADR-008; zero cdnjs references remain in src/); verify no stylesheet/font 404s on a preview channel.
 - Add a ~5-line predeploy/CI script that extracts the single inline script from src/index.html, computes its base64 sha256, and diffs against the pin in firebase.json's script-src — fail loudly on mismatch; add a comment above the inline script in index.html naming the coupling.
 
 **Acceptance**: CSP contains no cdnjs; whitespace-editing the theme snippet without updating firebase.json fails the new check before deploy.
 
-### WS5-05 · P3 · S · Dev-environment functions fixes (F-49, F-54)
+### WS5-05 · P3 · S · Dev-environment functions fixes (F-49, F-54) — **DONE ([PR #222](https://github.com/salmoncow/citl/pull/222), 2026-07-13)**
 - package.json: prefix the dev/dev:seeded/emulators scripts (or add a predev script) with `npm --prefix functions ci --silent && npm --prefix functions run build` so a fresh checkout gets working onUserCreate/setUserRole in the emulator; add one line to CONTRIBUTING.md's fresh-checkout section.
 - functions/package.json: delete or repoint the `test`/`test:watch` scripts (they find zero tests; real tests are repo-root tests/functions/ under the emulator wrapper) — e.g. `"test": "npm run test:functions --prefix .."` with a comment.
 
 **Acceptance**: on a fresh clone (or after `rm -rf functions/lib functions/node_modules`), `npm run dev:seeded` yields a working emulator where signing in seeds users/{uid}; `npm test` inside functions/ either runs the real suite or clearly redirects.
 
-### WS5-06 · P3 · S · Type-home and comment hygiene (F-44, F-45)
+### WS5-06 · P3 · S · Type-home and comment hygiene (F-44, F-45) — **DONE ([PR #222](https://github.com/salmoncow/citl/pull/222), 2026-07-13)**
 - Move Result/success/failure from src/repositories/score-repository.ts:38-49 to `src/types/result.ts`; update importers (score-repository, modules/auth.ts:34, any others); either convert user-repository.ts to the Result contract or add a header comment declaring its throwing convention intentional and why.
 - src/services/admin-user-service.ts:8-9: either make the pagination cursor opaque (expose lastCreatedAt and re-query with startAfter, removing DocumentSnapshot from ListUsersPage and from admin-users-panel.ts:21/:42) or correct the header comment to say the cursor is a pass-through Firestore snapshot.
 
 **Acceptance**: modules/ no longer imports types from a concrete repository; no file header makes a boundary claim its own exports violate.
 
-### WS5-07 · P3 · S · Rules narrowing + revocation-window documentation (F-53, F-52)
+### WS5-07 · P3 · S · Rules narrowing + revocation-window documentation (F-53, F-52) — **DONE ([PR #222](https://github.com/salmoncow/citl/pull/222), 2026-07-13)** *(F-53 half found already shipped with #205: `config/banner`-scoped match + both deny tests)*
 - firestore.rules: narrow `match /config/{doc}` public read to `match /config/banner`; default-deny other config docs; add one rules test that config/other is unreadable anonymously.
 - Document the ≤1h hostile-client revocation window (custom-claims token lifetime; setUserRole does not call revokeRefreshTokens) in .specs/features/002-multi-user-rbac/spec.md §VI; soften src/modules/auth.ts:134-141's comment from "immediately" to "immediately, for cooperative clients (hostile clients retain the claim until token expiry, ≤1h)".
 

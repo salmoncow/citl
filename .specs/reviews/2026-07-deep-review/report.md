@@ -11,7 +11,7 @@
 
 The findings below are a **frozen snapshot as of 2026-07-09**; they are not edited as work lands. This section is the running ledger of what has since been remediated. When a finding is fixed, its write-up in §2 stays as-is for the audit trail — check here for current status.
 
-**All 13 P1 findings are resolved and deployed** (as of 2026-07-11). **WS-4 is complete** (as of 2026-07-12). Ledger by PR:
+**All 13 P1 findings are resolved and deployed** (as of 2026-07-11). **WS-4 is complete** (as of 2026-07-12). **WS-5 is complete** (as of 2026-07-13). Ledger by PR:
 
 | PR | Workstream | Findings closed |
 |----|-----------|-----------------|
@@ -33,8 +33,9 @@ The findings below are a **frozen snapshot as of 2026-07-09**; they are not edit
 | [#214](https://github.com/salmoncow/citl/pull/214) | WS-4 composition root (WS4-01, spec 003 PR-1) | F-01 |
 | [#215](https://github.com/salmoncow/citl/pull/215) | WS-4 score-service split (WS4-02, spec 003 PR-2) | F-21 *(file accepted at 749 lines — see backlog FU-02 for the optional API-splitting follow-up)* |
 | [#220](https://github.com/salmoncow/citl/pull/220) | Feature 004 season awards (WS5-02 — maintainer decided **finish**, not delete) | F-26 *(finished: placements computed from final standings, shape reconciled to the flat prod `SeasonAwards`, `startingAvg ≥ 50` NaN edge guarded, admin Season End preview→finalize flow computing from published week docs, historical awards displayed per selected season on Home; backfill closed — prod 2019–2025 already populated, verified 2026-07-12. `validateFirebaseConfig` remains in WS-5 sweep scope)* |
+| [#222](https://github.com/salmoncow/citl/pull/222) | WS-5 opportunistic sweep | F-44, F-45, F-46, F-49, F-50, F-52, F-54, F-56, F-58, and the `validateFirebaseConfig` remainder of F-26 (wired at startup). *F-53's config-rules narrowing was found already closed by #205.* |
 
-**Still open** (tracked in [backlog.md](backlog.md)): the WS-5 P3 sweep (F-44–F-46, F-49, F-50, F-52, F-54, F-56, F-58, plus the F-15 archive-lifecycle remainder and the `validateFirebaseConfig` half of F-26's finding text) and the two post-WS-4 follow-ups appended to the backlog 2026-07-12 (FU-01 standings-derivation unification per spec 003 DD-4; FU-02 optional score-service API split per spec 003 Open Question 1). F-63's meta-consolidation landed in #201; anything not listed above is open.
+**Still open** (tracked in [backlog.md](backlog.md)): the F-15 archive-lifecycle remainder (`scoring-engine.md` still sits unarchived under `.specs/features/`) and the two post-WS-4 follow-ups appended to the backlog 2026-07-12 (FU-01 standings-derivation unification per spec 003 DD-4; FU-02 optional score-service API split per spec 003 Open Question 1). F-63's meta-consolidation landed in #201; anything not listed above is open.
 
 ---
 
