@@ -1,7 +1,7 @@
 # Tasks: 005-standings-unification
 
 **Spec**: [spec.md](./spec.md)
-**Status**: Draft — do not implement until the spec's Open Questions are answered
+**Status**: Approved — Open Questions resolved 2026-07-13 (all recommended defaults, incl. the task 3.5 confirm dialog)
 **PR**: single PR per DD-7 — `feat(standings): unify standings derivations; publish rewrites week docs`
 (branch `feat/standings-unification`)
 

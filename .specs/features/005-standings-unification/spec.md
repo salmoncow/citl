@@ -2,7 +2,7 @@
 
 **Feature ID**: 005-standings-unification
 **Created**: 2026-07-13
-**Status**: Draft — awaiting maintainer answers to the Open Questions below
+**Status**: Approved — Open Questions resolved 2026-07-13 (see below); implementing
 **Source**: Backlog item [FU-01](../../reviews/2026-07-deep-review/backlog.md) (promotion of the
 spec 003 [DD-4](../archive/003-service-decomposition/spec.md) deferral); original incident
 context [F-05](../../reviews/2026-07-deep-review/report.md).
@@ -414,6 +414,13 @@ See [tasks.md](./tasks.md) — 6 groups, 21 tasks, each with concrete acceptance
 - [ ] `wc -l src/services/score-service.ts` ≤ 749; hook + `/check` clean.
 
 ## Open Questions for the Maintainer
+
+> **Resolved 2026-07-13 (maintainer)**: all five questions answered with the recommended
+> defaults — (1) sum-of-stored-week-docs canonical + ledger pipeline confirmed; (2) ≤16
+> writes/publish accepted; (3) two-part data-surgery rule adopted **including** the optional
+> admin-UI confirmation when deleting a team with published results (task 3.5 is in scope);
+> (4) draft-sync semantics accepted; (5) current-season healing on first publish accepted,
+> with the pre-deploy prod-snapshot diff report. Original questions retained below for context.
 
 1. **Canonical derivation & pipeline (DD-1/DD-3)**: confirm sum-of-stored-week-docs as
    canonical, with publish = full re-derivation of all published weeks from entries
