@@ -141,7 +141,7 @@ Document ID: string year (e.g. `"2025"`).
 | `status` | `'active' \| 'complete'` | |
 | `currentWeek` | `number` | 1–15; reflects last published week |
 | `standings` | `SeasonStandings[]` | Denormalized array — see note below |
-| `awards` | `SeasonAwards \| null` | End-of-season awards; null mid-season |
+| `awards` | `SeasonAwards \| null` | End-of-season awards, flat ten-field shape (`src/types/season.ts`); null/absent mid-season. Written by the admin Season End finalize flow (spec 004); verified against prod 2026-07-12 — all seven historical seasons (2019–2025) populated |
 | `weekDateOverrides` | `Partial<Record<string, string \| null>>` | Optional; overrides computed shoot dates per week number |
 
 **Denormalized standings:** The `standings` array is written on every publish so the
@@ -150,7 +150,7 @@ is an intentional O(1) read trade-off; keep it in sync on every publish.
 
 **Access:** Read — public. Write — admin only.
 
-**TypeScript interfaces:** `Season`, `SeasonAwards`, `SeasonStandings`, `ComputedAwards` — `src/types/season.ts`
+**TypeScript interfaces:** `Season`, `SeasonAwards`, `SeasonStandings`, `AwardShooterInput` — `src/types/season.ts`
 
 ---
 
@@ -332,6 +332,6 @@ this section — the two must always match.
 |-----------|------|
 | `Shooter`, `Accolade` | `src/types/shooter.ts` |
 | `Team`, `TeamTotals`, `ShooterScore`, `TeamResult`, `WeekResult`, `SeasonEntry`, `StandingRow` | `src/types/score.ts` |
-| `Season`, `SeasonAwards`, `SeasonStandings`, `ComputedAwards` | `src/types/season.ts` |
+| `Season`, `SeasonAwards`, `SeasonStandings`, `AwardShooterInput` | `src/types/season.ts` |
 | `ScorecardShooter` (display layer only) | `src/types/scorecard.ts` |
 | `Announcement` | `src/types/announcement.ts` |

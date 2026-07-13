@@ -2,7 +2,7 @@
 
 **Feature**: 004-season-awards
 **Spec**: [spec.md](./spec.md)
-**Status**: Approved (Tyler, 2026-07-12) — in implementation
+**Status**: Implemented — PR #220
 
 Each numbered group is one prospective commit; commit only when every box is checked and the
 group's validation gate passes. AC refs map to spec.md §"Acceptance Criteria"; DD refs to
