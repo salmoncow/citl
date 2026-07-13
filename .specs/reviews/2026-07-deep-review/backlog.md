@@ -284,7 +284,7 @@ Remove `lookupYardage` from src/utils/yardage.ts (+ its test cases; the app rend
 
 **Acceptance**: typecheck + tests pass; grep for the three names returns nothing outside git history.
 
-### WS5-02 · P2 · M · Season-awards pipeline (F-26) — **DONE ([PR #220](https://github.com/salmoncow/citl/pull/220), 2026-07-12) via [`features/004-season-awards/`](../../features/004-season-awards/spec.md)**
+### WS5-02 · P2 · M · Season-awards pipeline (F-26) — **DONE ([PR #220](https://github.com/salmoncow/citl/pull/220), 2026-07-12) via [`features/archive/004-season-awards/`](../../features/archive/004-season-awards/spec.md)**
 **Decision: FINISH, as its own feature spec — NOT in the WS-5 sweep.** The pipeline went
 unnoticed because no season end has occurred since the migration; the current season ends soon
 and trophies must be calculated. Feature requirements (for `@speckit` →

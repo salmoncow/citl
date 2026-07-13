@@ -2,7 +2,7 @@
 
 **Feature ID**: 004-season-awards
 **Created**: 2026-07-12
-**Status**: Implemented — PR #220
+**Status**: Shipped (PR [#220](https://github.com/salmoncow/citl/pull/220), merged 2026-07-13)
 **Source**: Maintainer decision (Tyler, 2026-07-12) recorded in
 [backlog WS5-02](../../reviews/2026-07-deep-review/backlog.md) — promotion of finding
 [F-26 (P2)](../../reviews/2026-07-deep-review/report.md) to a full feature.

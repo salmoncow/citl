@@ -2,7 +2,7 @@
 
 **Feature**: 004-season-awards
 **Spec**: [spec.md](./spec.md)
-**Status**: Implemented — PR #220
+**Status**: Shipped (PR [#220](https://github.com/salmoncow/citl/pull/220), merged 2026-07-13)
 
 Each numbered group is one prospective commit; commit only when every box is checked and the
 group's validation gate passes. AC refs map to spec.md §"Acceptance Criteria"; DD refs to
