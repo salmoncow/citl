@@ -15,7 +15,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SeasonAwardsService } from './season-awards-service';
 import { ScoreService } from './score-service';
-import { success, failure } from '@/repositories/score-repository';
+import { success, failure } from '@/types/result';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Team, WeekResult } from '@/types/score';
 import type { Season, SeasonStandings } from '@/types/season';

@@ -30,22 +30,7 @@ import type { Team, WeekResult, SeasonEntry } from '@/types/score';
 import type { Accolade } from '@/types/shooter';
 import type { Season, SeasonStandings } from '@/types/season';
 import type { Announcement } from '@/types/announcement';
-
-// ---------------------------------------------------------------------------
-// Result type + helpers
-// ---------------------------------------------------------------------------
-
-export type Result<T> =
-  | { success: true; data: T }
-  | { success: false; error: string; code: string };
-
-export function success<T>(data: T): Result<T> {
-  return { success: true, data };
-}
-
-export function failure(error: string, code = 'UNKNOWN_ERROR'): Result<never> {
-  return { success: false, error, code };
-}
+import { type Result, success, failure } from '@/types/result';
 
 // ---------------------------------------------------------------------------
 // Boundary validation (deep-review F-09)

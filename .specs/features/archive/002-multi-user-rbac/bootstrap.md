@@ -181,8 +181,8 @@ IAM permissions**, not to the in-app user.
 
 ## Related
 
-- [scripts/set-role.js](../../../scripts/set-role.js) — the script itself
-- [functions/src/setUserRole.ts](../../../functions/src/setUserRole.ts)
+- [scripts/set-role.js](../../../../scripts/set-role.js) — the script itself
+- [functions/src/setUserRole.ts](../../../../functions/src/setUserRole.ts)
   — the in-app callable (mirrors this script's safety logic)
 - [.specs/features/002-multi-user-rbac/spec.md](./spec.md) — feature
   spec

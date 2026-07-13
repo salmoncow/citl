@@ -4,6 +4,14 @@ import path from 'node:path';
 const repoRoot = path.resolve(__dirname, '..', '..');
 
 export default defineConfig({
+  resolve: {
+    // Mirror the root vitest.config.ts '@' alias: repository-cascades
+    // imports src/ modules whose value imports (e.g. @/types/result)
+    // must resolve at runtime, not just in the type checker.
+    alias: {
+      '@': path.resolve(repoRoot, 'src'),
+    },
+  },
   test: {
     environment: 'node',
     include: ['tests/rules/**/*.test.ts'],

@@ -7,7 +7,10 @@
   <meta name="keywords" content="illinois trap, illinois shotgun, central illinois, trap shooting, central illinois trap, shotgun sport, clay pigeon shooting, clay pigeon, trap league, central illinois trap league, citl">
   <title>Central Illinois Trap League</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <!-- Prevent flash of wrong theme by applying stored preference before first paint -->
+  <!-- Prevent flash of wrong theme by applying stored preference before first paint.
+       COUPLED to firebase.json: the CSP script-src pins this script's sha256 hash.
+       Any edit here (even whitespace) must update that pin — scripts/check-csp-hash.js
+       enforces the match at build/deploy time. -->
   <script>
     (function () {
       var s = localStorage.getItem('color-scheme');

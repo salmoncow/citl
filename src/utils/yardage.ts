@@ -23,11 +23,3 @@ export const YARDAGE_TABLE: readonly YardageRow[] = [
   { min: 211.50, max: 215.49, yards: 26 },
   { min: 215.50, max: 250.00, yards: 27 },
 ];
-
-/**
- * Returns the starting yardage for a given 5-shooter average total,
- * or undefined if the score is outside all defined ranges.
- */
-export function lookupYardage(score: number): number | undefined {
-  return YARDAGE_TABLE.find(r => score >= r.min && score <= r.max)?.yards;
-}

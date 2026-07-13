@@ -37,7 +37,7 @@ acceptance criteria in [spec.md](./spec.md) §"Acceptance Criteria".
 - [ ] **1.2 (S)** Add `.secrets/` to `.gitignore`.
 - [ ] **1.3 (S)** Create `firestore.indexes.json` with `{"indexes":[],"fieldOverrides":[]}`.
 - [ ] **1.4 (M)** Create `functions/` package: `package.json` (firebase-functions ^5, firebase-admin ^13, zod ^3, vitest ^4, typescript ^5), `tsconfig.json`, `src/index.ts` (empty exports).
-- [ ] **1.5 (M)** Extend [firebase.json](../../../firebase.json) with `functions` block (source: `functions`, runtime: `nodejs20`) and `emulators` block (`auth:9099`, `firestore:8080`, `functions:5001`, `ui:4000`).
+- [ ] **1.5 (M)** Extend `firebase.json` with `functions` block (source: `functions`, runtime: `nodejs20`) and `emulators` block (`auth:9099`, `firestore:8080`, `functions:5001`, `ui:4000`).
 - [ ] **1.6 (S)** Verify `.firebaserc` project alias `citl-baed2`.
 - [ ] **1.7 (S)** `firebase emulators:start --only auth,firestore,functions` boots clean. *(Validation gate)*
 
@@ -51,7 +51,7 @@ acceptance criteria in [spec.md](./spec.md) §"Acceptance Criteria".
 
 - [ ] **2.1 (S)** Add dev deps at repo root: `@firebase/rules-unit-testing`.
 - [ ] **2.2 (S)** Add scripts: `test:rules`, `test:functions`, `emulators`.
-- [ ] **2.3 (M)** Rewrite [firestore.rules](../../../firestore.rules) per [spec.md](./spec.md) §"Architecture Approach" + plan-of-record §"Firestore rules — full migration":
+- [ ] **2.3 (M)** Rewrite `firestore.rules` per [spec.md](./spec.md) §"Architecture Approach" + plan-of-record §"Firestore rules — full migration":
   - Helpers: `isSignedIn`, `roleOf`, `isOwner`, `isAdmin`, `isOwnerOrAdmin`, `isSelf`.
   - `users/{uid}`: read self+owner+admin; create self without role; update self preserving role; no delete.
   - `audit/{id}`: owner read; no client write.
@@ -90,13 +90,13 @@ acceptance criteria in [spec.md](./spec.md) §"Acceptance Criteria".
 **Commit**: `feat(rbac): replace grant-admin with multi-role set-role CLI + runbook`
 **AC**: AC-10, AC-14, AC-18
 
-- [ ] **4.1 (L)** Replace [scripts/grant-admin.js](../../../scripts/grant-admin.js) with `scripts/set-role.js`:
+- [ ] **4.1 (L)** Replace `scripts/grant-admin.js` with `scripts/set-role.js`:
   - Subcommands: `set <email> <role>`, `list`, `revoke <email>` (alias for `set <email> user`).
   - Reuses gcloud ADC pattern (no SA key).
   - Atomic: claim + mirror + audit (actorUid: `'cli'`) in one logical operation; last-owner guard.
   - `DRY_RUN=1` mode prints diff without writing.
   - Validation: rejects unknown roles, missing args, unknown email.
-- [ ] **4.2 (S)** Update [package.json](../../../package.json): rename `grant-admin` script entry to `set-role`. Keep `grant-admin` as a deprecated alias (`node scripts/set-role.js set "$1" admin`) for one release with a console.warn deprecation notice.
+- [ ] **4.2 (S)** Update `package.json`: rename `grant-admin` script entry to `set-role`. Keep `grant-admin` as a deprecated alias (`node scripts/set-role.js set "$1" admin`) for one release with a console.warn deprecation notice.
 - [ ] **4.3 (M)** Write [bootstrap.md](./bootstrap.md) — runbook covering: prerequisite (`gcloud auth application-default login`); first owner promotion; ongoing list/promote/demote; emulator dry runs; what to do if the only owner is locked out.
 - [ ] **4.4 (S)** `git status` shows no `.secrets/` or key files leaked. *(Validation gate)*
 
@@ -111,9 +111,9 @@ acceptance criteria in [spec.md](./spec.md) §"Acceptance Criteria".
 - [ ] **5.1 (M)** `src/infrastructure/functions.ts` — lazy `getFunctions` + `httpsCallable` helper, emulator-aware via `import.meta.env.VITE_USE_EMULATOR`.
 - [ ] **5.2 (M)** `src/infrastructure/appcheck.ts` — `initializeAppCheck` with reCAPTCHA Enterprise site key from `import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`; debug token path for `import.meta.env.DEV`.
 - [ ] **5.3 (L)** `src/repositories/user-repository.ts` — `findById(uid): Promise<UserDoc | null>`, `listPaginated({ pageSize: 20, cursor }): Promise<{ users: UserDoc[]; nextCursor: DocumentSnapshot | null }>`, `observeSelf(uid, cb): Unsubscribe` (snapshot listener for `roleChangedAt`). Never writes the `role` field. Type `UserDoc` lives in `src/types/user.ts` (also new).
-- [ ] **5.4 (M)** Extend [src/repositories/repository-factory.ts:22](../../../src/repositories/repository-factory.ts:22) — add `getUserRepository()` next to `getScoreRepository()` with the same caching pattern.
+- [ ] **5.4 (M)** Extend `src/repositories/repository-factory.ts:22` — add `getUserRepository()` next to `getScoreRepository()` with the same caching pattern.
 - [ ] **5.5 (M)** `src/modules/role.ts` — exports `Role` type, `getRole(force?: boolean): Promise<Role | null>`, `onRoleChange(cb): Unsubscribe`. Reads `getIdTokenResult().claims.role`; `force=true` triggers `getIdToken(true)`.
-- [ ] **5.6 (S)** Modify [src/firebase-config.ts](../../../src/firebase-config.ts) — initialize App Check after `initializeApp` when not in test env.
+- [ ] **5.6 (S)** Modify `src/firebase-config.ts` — initialize App Check after `initializeApp` when not in test env.
 - [ ] **5.7 (S)** `.env.example` — document `VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`, `VITE_USE_EMULATOR`.
 - [ ] **5.8 (S)** Manual smoke: sign in via emulator → verify `users/{uid}` doc appears, `role.ts` reports `'user'`. *(Validation gate)*
 
@@ -125,17 +125,17 @@ acceptance criteria in [spec.md](./spec.md) §"Acceptance Criteria".
 **Commit**: `feat(rbac): role-aware auth module, /admin route guard, role-driven nav`
 **AC**: AC-2, AC-9
 
-- [ ] **6.1 (M)** Modify [src/modules/auth.ts:45–49](../../../src/modules/auth.ts:45):
+- [ ] **6.1 (M)** Modify `src/modules/auth.ts:45–49`:
   - Replace `isAdmin()` with `getRole(): Promise<Role | null>`.
   - Add `refreshTokenAndRole(): Promise<Role | null>` (calls `getIdToken(true)` then re-reads).
   - Add `onRoleChange(cb)` — opens an `onSnapshot` on `users/{currentUid}` watching `roleChangedAt`; clean up on sign-out and via the returned unsubscribe.
-- [ ] **6.2 (M)** Modify [src/main.ts:55–62](../../../src/main.ts:55) `_setupRoutes`:
+- [ ] **6.2 (M)** Modify `src/main.ts:55–62` `_setupRoutes`:
   - Extend the existing `onBeforeNavigate` handler — if `path === '/admin'` and current role is not `owner`/`admin`, return `false` (router redirects to `/`). Maintain existing cleanup behavior for `/admin → other`.
-- [ ] **6.3 (M)** Modify [src/main.ts:117–146](../../../src/main.ts:117) `_initAdminAuth`:
+- [ ] **6.3 (M)** Modify `src/main.ts:117–146` `_initAdminAuth`:
   - Replace `await this._auth!.isAdmin()` with `await this._auth!.getRole()`.
   - Toggle `#admin-panel-container` for `role === 'owner' || role === 'admin'`.
   - Toggle `#admin-unauthorized` for `signed in && role === 'user'`.
-- [ ] **6.4 (M)** Modify [src/modules/navigation.ts:81–83](../../../src/modules/navigation.ts:81) `updateAuthState`:
+- [ ] **6.4 (M)** Modify `src/modules/navigation.ts:81–83` `updateAuthState`:
   - Take `role` instead of relying on a no-op.
   - Subscribe to `onRoleChange` so nav admin link toggles live.
 - [ ] **6.5 (S)** Manual smoke: deep-link `/#/admin` as `user` redirects to `/`; as admin/owner renders panel. *(Validation gate)*
@@ -153,7 +153,7 @@ the day-to-day path.
 
 - [ ] **7.1 (M)** New `src/views/admin-users-tab.ts` — pure HTML factory: table with displayName / email / role / lastSignInAt / createdAt; "Load more" button for cursor pagination; loading/empty/error states matching existing `<admin-panel>` patterns. The `role` column renders a `<select>` dropdown ONLY when the current user's role === `'owner'`; otherwise plain text.
 - [ ] **7.2 (M)** New `src/services/admin-user-service.ts` — `listUsers({ pageSize: 20, cursor })` calls `userRepository.listPaginated`; strips to the limited field set. `setUserRole({ targetUid, role })` calls the `setUserRole` callable via the infrastructure helper from Group 5.4. Returns a typed `Result<{ fromRole, toRole }>` so the UI can branch on success vs. each error code.
-- [ ] **7.3 (M)** Modify [src/components/admin-panel.ts:73–80](../../../src/components/admin-panel.ts:73) — add a "Users" tab button alongside Team Management / Score Entry / Announcements. Render `admin-users-tab.ts` content inside; wire change events on the dropdown to `admin-user-service.setUserRole`.
+- [ ] **7.3 (M)** Modify `src/components/admin-panel.ts:73–80` — add a "Users" tab button alongside Team Management / Score Entry / Announcements. Render `admin-users-tab.ts` content inside; wire change events on the dropdown to `admin-user-service.setUserRole`.
 - [ ] **7.4 (M)** Confirmation flow + toast feedback: dropdown change opens a confirm dialog ("Change Alice's role from admin to user?"). On confirm, invoke the callable and show a toast for success or failure. Map callable error codes to user-facing messages: `permission-denied` → "Only the owner can change roles." (shouldn't happen since the dropdown only renders for owner — defense in depth); `failed-precondition` → "Cannot demote the last owner. Promote another user to owner first."; `resource-exhausted` → "Rate limit reached. Please wait before changing more roles."; `invalid-argument` → generic "Invalid role." (also shouldn't happen via the dropdown).
 - [ ] **7.5 (S)** On successful role change, refresh the local row so the new role + new `lastSignInAt` reflect immediately (re-query that single user, or optimistically update).
 - [ ] **7.6 (S)** Emulator smoke: as owner, change another user's role via dropdown → verify auth claim, mirror, audit entry; as admin, dropdown is absent and devtools call to `setUserRole` is rejected. *(Validation gate)*
@@ -168,7 +168,7 @@ the day-to-day path.
 **No commit** — fixes fold into prior groups via `git commit --fixup`.
 **AC**: AC-1 through AC-9, AC-15
 
-Per [plan §Group 8](../../../../.claude/plans/i-recently-implemented-multi-user-partitioned-mochi.md). Run every numbered step; record any surprises in this file or in a fixup commit message.
+Per plan-of-record §Group 8 — a machine-local plan file that was never committed and is lost (see the header note in [spec.md](./spec.md)). Run every numbered step; record any surprises in this file or in a fixup commit message.
 
 ---
 
@@ -178,13 +178,13 @@ Per [plan §Group 8](../../../../.claude/plans/i-recently-implemented-multi-user
 **Commit**: `docs(rbac): advance Security to Phase 2, correct plan tier to Blaze`
 **AC**: AC-19
 
-- [ ] **9.1 (S)** [.specs/constitution.md:76](../../constitution.md:76) Cost row → `Blaze pay-as-you-go (within Spark-equivalent budget)`.
-- [ ] **9.2 (S)** [.specs/constitution.md:71](../../constitution.md:71) Security row → `Phase 2: App Check + custom-claim RBAC (owner/admin/user); Cloud Functions sole role writer`.
-- [ ] **9.3 (S)** [.specs/constitution.md:413](../../constitution.md:413) Cloud Functions row → `Blaze; pay-per-invocation; rate-limited internally`.
+- [ ] **9.1 (S)** `.specs/constitution.md:76` Cost row → `Blaze pay-as-you-go (within Spark-equivalent budget)`.
+- [ ] **9.2 (S)** `.specs/constitution.md:71` Security row → `Phase 2: App Check + custom-claim RBAC (owner/admin/user); Cloud Functions sole role writer`.
+- [ ] **9.3 (S)** `.specs/constitution.md:413` Cloud Functions row → `Blaze; pay-per-invocation; rate-limited internally`.
 - [ ] **9.4 (S)** Update §VI.1 hard constraints — keep cost discipline language; remove "Spark-only" / "no Cloud Functions" language.
 - [ ] **9.5 (S)** Bump constitution version 1.4.0 → 1.5.0; "Last Updated" → 2026-05-03.
-- [ ] **9.6 (S)** Update [.claude/agents/speckit.md:78](../../../.claude/agents/speckit.md:78) — remove `Firebase Spark plan only — no Cloud Functions, no paid features` line; replace with `Cloud Functions allowed (Blaze); audit cost in §VI.1 before adding new functions`.
-- [ ] **9.7 (M)** Append to [.prompts/meta/architectural-decision-log.md](../../../.prompts/meta/architectural-decision-log.md): 2026-05-03 entry "Adopt Blaze + RBAC, enter Security Phase 2" with triggers met / decision / consequences.
+- [ ] **9.6 (S)** Update `.claude/agents/speckit.md:78` — remove `Firebase Spark plan only — no Cloud Functions, no paid features` line; replace with `Cloud Functions allowed (Blaze); audit cost in §VI.1 before adding new functions`.
+- [ ] **9.7 (M)** Append to `.prompts/meta/architectural-decision-log.md`: 2026-05-03 entry "Adopt Blaze + RBAC, enter Security Phase 2" with triggers met / decision / consequences.
 - [ ] **9.8 (S)** `git diff .specs/ .prompts/ .claude/` reviewed for accidental edits. *(Validation gate)*
 
 ---

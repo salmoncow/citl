@@ -17,7 +17,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ScoreService } from './score-service';
 import { buildPriorAvgMap, computeShooterAverage } from './scoring-engine';
-import { success, failure } from '@/repositories/score-repository';
+import { success, failure } from '@/types/result';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
 import type { Shooter } from '@/types/shooter';

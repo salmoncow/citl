@@ -859,7 +859,7 @@ Intent and content quality are genuinely good; the framework fails at its joints
 | 24 | ADR-009 "admin-panel.ts… 1781 lines; follow-up tracked" | decision-log.md:540-542 | STALE | admin-panel.ts = 232 lines; admin-tabs/ refactor complete |
 | 25 | "The site is live at https://citl.club… migration complete" | CLAUDE.md:14 | VERIFIED (best available) | Consistent with git history + prod App Check/key-restriction work; no offline counter-evidence |
 | 26 | "npm run deploy # build + firebase deploy --only hosting" | CLAUDE.md:47 | CONTRADICTED | package.json:18 deploys hosting,firestore:rules,firestore:indexes,functions (since 5ab19ba 2026-05-03) |
-| 27 | "See [AGENTS.md](AGENTS.md)" | README.md:25 | CONTRADICTED | AGENTS.md renamed to CLAUDE.md 4c3c70a 2026-04-05; link dead ~3 months |
+| 27 | "See `[AGENTS.md](AGENTS.md)`" | README.md:25 | CONTRADICTED | AGENTS.md renamed to CLAUDE.md 4c3c70a 2026-04-05; link dead ~3 months |
 | 28 | "@speckit… creates a spec in .specs/features/<name>.md" | WORKFLOW-GUIDE.md:31,44 | STALE | Convention is hybrid: flat scoring-engine.md AND directory 002-multi-user-rbac/{spec,tasks,bootstrap}.md |
 | 29 | "Audit all 12 constitutional checks" | WORKFLOW-GUIDE.md:54 | VERIFIED | reviewer.md check table has 12 rows |
 | 30 | CONTRIBUTING dev/seed commands, test accounts, idempotent seeding | CONTRIBUTING.md:11-58 | VERIFIED | Matches package.json:12-33 scripts exactly; seed script exists with emulator-host guard |

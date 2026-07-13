@@ -28,7 +28,7 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 - Measure before evolving — use decision triggers from `architectural-evolution-strategy.md`
 - Avoid premature optimization and over-engineering
 
-**Reference**: [.prompts/meta/architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md)
+**Reference**: [.prompts/meta/architectural-evolution-strategy.md](../.prompts/meta/architectural-evolution-strategy.md)
 
 ### I.2 Platform Simplification
 
@@ -54,7 +54,7 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
   - TypeScript + Web Components → Lit (95% AI-assisted migration)
   - Lit → React (80% AI-assisted migration)
 
-**Reference**: [.prompts/meta/architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md) §II.1
+**Reference**: [.prompts/meta/architectural-evolution-strategy.md](../.prompts/meta/architectural-evolution-strategy.md) §II.1
 
 ---
 
@@ -101,7 +101,7 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 - **CI/CD**: Active — GitHub Actions gates production deploys on CI (see §II.1).
 - **Cost optimization**: Alert at 70% of any Firebase free tier limit
 
-**Reference**: [.prompts/meta/architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md)
+**Reference**: [.prompts/meta/architectural-evolution-strategy.md](../.prompts/meta/architectural-evolution-strategy.md)
 
 ### II.3 Modularity Requirements
 
@@ -153,7 +153,7 @@ seasons/{year}/teams/{teamId}              → Team roster + totals arrays
 seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapshot + accolades
 ```
 
-See [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md) for the full schema reference.
+See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for the full schema reference.
 
 ---
 
@@ -470,19 +470,19 @@ project-critical ones are `firebase-deploy-runbook` (first-deploy + preview-chan
 ### VII.2 Strategic Frameworks
 
 **Meta Guidance** (`.prompts/meta/`):
-- [architectural-decision-log.md](.prompts/meta/architectural-decision-log.md) — Historical decisions (ADRs) and current-state addenda
-- [architectural-evolution-strategy.md](.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers, decision framework
-- [spec-authoring-guidelines.md](.prompts/meta/spec-authoring-guidelines.md) — How to write specs and agent files: reference the source of truth, never restate rules
+- [architectural-decision-log.md](../.prompts/meta/architectural-decision-log.md) — Historical decisions (ADRs) and current-state addenda
+- [architectural-evolution-strategy.md](../.prompts/meta/architectural-evolution-strategy.md) — Evolution triggers, decision framework
+- [spec-authoring-guidelines.md](../.prompts/meta/spec-authoring-guidelines.md) — How to write specs and agent files: reference the source of truth, never restate rules
 
 The guidance-gap procedure lives in §V.2 above (formerly a separate `prompt-gap-protocol.md`).
 Prompt-library maintenance is covered by the review checklist in §VIII.1.
 
 ### VII.3 Technical Specifications
 
-- [.specs/technical/build-system.md](.specs/technical/build-system.md) — Vite 8 configuration
-- [.specs/technical/cicd-pipeline.md](.specs/technical/cicd-pipeline.md) — GitHub Actions
-- [.specs/technical/firebase-deployment.md](.specs/technical/firebase-deployment.md) — Firebase Hosting deployment
-- [.specs/technical/firestore-schema.md](.specs/technical/firestore-schema.md) — Firestore collection/document reference
+- [.specs/technical/build-system.md](./technical/build-system.md) — Vite 8 configuration
+- [.specs/technical/cicd-pipeline.md](./technical/cicd-pipeline.md) — GitHub Actions
+- [.specs/technical/firebase-deployment.md](./technical/firebase-deployment.md) — Firebase Hosting deployment
+- [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) — Firestore collection/document reference
 
 ### VII.4 Agents & Skills
 

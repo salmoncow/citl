@@ -14,7 +14,7 @@
  * repositories and never import app-services.
  */
 
-import { failure, success, type Result } from '@/repositories/score-repository';
+import { failure, success, type Result } from '@/types/result';
 import { computeSeasonAwards } from '@/services/scoring-engine';
 import { toAwardShooterInputs } from '@/services/scorecard-builder';
 import type { ScoreRepository } from '@/repositories/score-repository';

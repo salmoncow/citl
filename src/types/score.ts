@@ -27,22 +27,6 @@ export interface Team {
 }
 
 /**
- * A team's standing at the end of a specific week.
- * Derived/computed — not stored directly in Firestore.
- */
-export interface StandingRow {
-  standing: number;
-  teamId: string;
-  teamName: string;
-  captain: string;
-  weekTargets: number;
-  totalTargets: number;
-  rankPoints: number;
-  bonusPoints: number;
-  totalPoints: number;
-}
-
-/**
  * A single shooter's score for one week, embedded in a TeamResult.
  */
 export interface ShooterScore {

@@ -65,6 +65,14 @@ See [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml).
 Key settings are documented in [`tsconfig.json`](../../tsconfig.json).
 ```
 
+Two hard rules (adopted 2026-07, deep-review F-58):
+
+- **Never link paths outside the repo.** A machine-local path (`/Users/...`,
+  `~/.claude/...`) is unresolvable on every other checkout; if the content matters,
+  copy it into the repo and link that.
+- **No `file.ts:22`-style link targets.** Line-suffixed targets don't resolve as
+  files; write the location as a plain code span (`` `src/foo.ts:22` ``) instead.
+
 For config files where the *decisions* need explanation, describe the key settings in
 prose and link to the file:
 
