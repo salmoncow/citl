@@ -7,6 +7,7 @@
 
 import { getServices } from '@/services/app-services';
 import { compareStandings } from '@/services/scoring-engine';
+import { computeStandingsFromWeeks } from '@/services/standings';
 import { escapeHtml } from '@/modules/ui';
 import type { Team, WeekResult } from '@/types/score';
 import type { Season, SeasonAwards } from '@/types/season';
@@ -173,29 +174,24 @@ class HomeStandings extends HTMLElement {
         return;
       }
 
-      const cumulative: Record<string, { rankPoints: number; bonusPoints: number; targets: number }> = {};
-      for (const wr of this._allWeekResults) {
-        if (wr.weekNumber > weekNum) continue;
-        for (const tr of wr.teamResults ?? []) {
-          if (!cumulative[tr.teamId]) {
-            cumulative[tr.teamId] = { rankPoints: 0, bonusPoints: 0, targets: 0 };
-          }
-          cumulative[tr.teamId]!.rankPoints += tr.rankPoints ?? 0;
-          cumulative[tr.teamId]!.bonusPoints += tr.bonusPoints ?? 0;
-          cumulative[tr.teamId]!.targets += tr.targets ?? 0;
-        }
-      }
+      // Season-to-date totals come from the SAME canonical derivation that
+      // produces season.standings (spec 005 DD-5) — the same function over
+      // the same stored docs, so the two views can never disagree. Per-week
+      // columns come straight off the week-N doc rows.
+      const cumulative = new Map(
+        computeStandingsFromWeeks(this._allWeekResults, weekNum).map((r) => [r.teamId, r]),
+      );
 
       rows = (weekResult.teamResults ?? []).map((tr) => {
-        const cum = cumulative[tr.teamId] ?? { rankPoints: 0, bonusPoints: 0, targets: 0 };
+        const cum = cumulative.get(tr.teamId);
         return {
           teamName: tr.teamName,
           captain: teamCaptainMap[tr.teamId] ?? '—',
           targets: tr.targets,
-          totalTargets: cum.targets,
+          totalTargets: cum?.totalTargets ?? 0,
           rankPoints: tr.rankPoints,
           bonusPoints: tr.bonusPoints,
-          total: cum.rankPoints + cum.bonusPoints,
+          total: cum ? cum.totalRankPoints + cum.totalBonusPoints : 0,
           place: 0,
         };
       });
