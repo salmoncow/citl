@@ -284,10 +284,24 @@ Remove `lookupYardage` from src/utils/yardage.ts (+ its test cases; the app rend
 
 **Acceptance**: typecheck + tests pass; grep for the three names returns nothing outside git history.
 
-### WS5-02 · P2 · M · Decide the season-awards pipeline: finish or delete (F-26) — **requires maintainer decision**
-`src/services/scoring-engine.ts` computeSeasonAwards (:421-487) + computeMostImprovedScore (:413-415) and `src/firebase-config.ts` validateFirebaseConfig (:35) are dead in the app. Ask Tyler: is a season-awards feature planned? If yes → finish (compute team placements from standings instead of hardcoded nulls, emit the Firestore SeasonAwards shape per types/season.ts, guard the startingAvg=50 divide-by-zero) as its own feature spec. If no → delete all three plus their tests, leaving a TODO in scoring-engine.md.
+### WS5-02 · P2 · M · Season-awards pipeline (F-26) — **DECIDED: finish (Tyler, 2026-07-12)**
+**Decision: FINISH, as its own feature spec — NOT in the WS-5 sweep.** The pipeline went
+unnoticed because no season end has occurred since the migration; the current season ends soon
+and trophies must be calculated. Feature requirements (for `@speckit` →
+`.specs/features/004-season-awards/`): compute team placements from final standings (replacing
+the hardcoded nulls at scoring-engine.ts computeSeasonAwards), emit the Firestore
+`SeasonAwards` shape per types/season.ts, guard the startingAvg=50 divide-by-zero in
+computeMostImprovedScore, and **display awards for the selected season — including previous
+years** (selecting a historical year shows that year's awards, subject to what historical
+award data exists or can be computed).
 
-**Acceptance**: either a working, wired awards path with placements and no NaN edge, or zero dead awards/validateFirebaseConfig code remaining.
+**Sweep scope note**: the WS-5 session must NOT delete or modify `computeSeasonAwards`,
+`computeMostImprovedScore`, or their tests — they are feature-004 inputs.
+`validateFirebaseConfig` (unrelated dead config guard bundled in the same finding) remains in
+sweep scope: wire it at startup or delete it.
+
+**Acceptance** (moved to feature 004): season-end awards computed with real placements and no
+NaN edge; awards visible in the UI for the selected year, including historical seasons.
 
 ### WS5-03 · P3 · S · Dead-link sweep (F-58, remainder after WS-1)
 Fix the constitution's repo-root-relative links to true relative paths (`../.prompts/meta/…`, `./technical/…`); in `.specs/features/002-multi-user-rbac/`: copy the still-relevant content of the machine-local "Plan of record" (/Users/ted/.claude/plans/i-recently-implemented-…mochi.md — unrecoverable on other machines; salvage from this machine if it still exists, else note it lost) into a plan.md beside the spec and delete the external link; adopt the rule ".specs/ files never link paths outside the repo"; convert tasks.md's `file.ts:22`-style markdown link targets to plain-text code spans. Then run a link check over all .md files.
