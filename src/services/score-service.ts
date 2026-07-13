@@ -10,7 +10,7 @@
 import { success, failure, type Result } from '@/types/result';
 import { buildPriorAvgMap, computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, isDummyName, normalizeShooterName } from '@/services/scoring-engine';
 import { buildSeasonData, buildScorecardTeamBlock } from '@/services/scorecard-builder';
-import { buildWeekResults, computeStandingsFromWeeks } from '@/services/standings';
+import { buildWeekResults, computeStandingsFromWeeks, planPublishRewrite } from '@/services/standings';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season } from '@/types/season';
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
@@ -223,37 +223,38 @@ export class ScoreService {
 
     const computed = computeSeasonTotals(buildSeasonData(year, teams, entries, maxWeek));
 
-    // Rewrite set (spec 005 DD-2): the week being published plus every
-    // already-published week <= maxWeek, all regenerated from the one engine
-    // pass so stored week docs can never lag the ledger (the F-05 residual —
-    // republishing an earlier week used to leave later weeks' bonusPoints
-    // stale). Never-published weeks stay unpublished. Read stored weeks fresh
-    // from the repository (not the cache) so the rewrite set and preserved
-    // publishedAt timestamps reflect stored truth.
+    // Rewrite plan (spec 005 DD-2, amended 2026-07-13): rebuild the published
+    // week plus every stored week the ledger covers, all from the one engine
+    // pass so stored docs can never lag the ledger (the F-05 residual).
+    // Stored weeks with no entries are pre-ledger imports the ledger cannot
+    // reproduce — preserved verbatim. Read stored weeks fresh (not the cache).
     const storedWeeksResult = await this.repository.getAllWeekResults(year);
     if (!storedWeeksResult.success) return storedWeeksResult;
-    const publishedAtByWeek = new Map(
-      storedWeeksResult.data.map((w) => [w.weekNumber, w.publishedAt]),
-    );
-    const now = new Date().toISOString();
-    const weekNumbers = [
-      ...new Set([weekNumber, ...publishedAtByWeek.keys()].filter((w) => w <= maxWeek)),
-    ].sort((a, b) => a - b);
+    const plan = planPublishRewrite({
+      publishWeekNumber: weekNumber,
+      maxWeek,
+      storedWeeks: storedWeeksResult.data,
+      entries,
+    });
 
+    const now = new Date().toISOString();
     const weekResults = buildWeekResults({
       computed,
       entries,
       resolveTeamId,
-      weekNumbers,
+      weekNumbers: plan.weekNumbers,
       // Rewrites keep their first-publication timestamp; the published week
       // gets a fresh one (DD-3).
-      getPublishedAt: (w) => (w === weekNumber ? now : publishedAtByWeek.get(w) ?? now),
+      getPublishedAt: (w) => (w === weekNumber ? now : plan.publishedAtByWeek.get(w) ?? now),
     });
 
-    // The aggregate is derived from the exact docs in the same write batch,
-    // so season.standings === computeStandingsFromWeeks(stored week docs)
-    // holds by construction (spec 005 DD-1).
-    const standings = computeStandingsFromWeeks(weekResults, maxWeek);
+    // The aggregate is derived from the post-write stored state (this batch's
+    // docs + preserved pre-ledger docs), so season.standings ===
+    // computeStandingsFromWeeks(stored week docs) by construction (DD-1).
+    const standings = computeStandingsFromWeeks(
+      [...weekResults, ...plan.preservedWeeks],
+      maxWeek,
+    );
 
     const publishResult = await this.repository.publishWeek(year, weekResults, {
       currentWeek: maxWeek,
@@ -262,7 +263,7 @@ export class ScoreService {
     });
 
     if (publishResult.success) {
-      for (const w of weekNumbers) this.cache.delete(`week:${year}:${w}`);
+      for (const w of plan.weekNumbers) this.cache.delete(`week:${year}:${w}`);
       this.cache.delete(`weeks:${year}`);
       this.cache.delete(`latest:${year}`);
       this.cache.delete(`season:${year}`);

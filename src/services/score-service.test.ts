@@ -1439,6 +1439,34 @@ describe('publishWeek — spec 005: season.standings ≡ Σ written week docs (A
     expect(standings).toEqual(computeStandingsFromWeeks(wrs!, 4));
   });
 
+  it('preserves stored weeks the ledger cannot reproduce and still sums them into standings (DD-2 amendment 2026-07-13)', async () => {
+    // Migrated-season shape: weeks 1–2 exist as week docs with real data but
+    // NO entries; the ledger only covers the draft week 3. Rewriting 1–2 from
+    // entries would wipe them to no-show zeros — they must be preserved
+    // verbatim and their totals still counted.
+    const importedRow = { teamId: 'team-a', teamName: 'Team A', targets: 210, rankPoints: 30, bonusPoints: 5, shooterScores: [] };
+    const storedWeeks = [makeStoredWeek(1, [importedRow]), makeStoredWeek(2, [importedRow])];
+
+    let wrs: WeekResult[] | undefined;
+    let standings: SeasonStandings[] | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [wk(3)],
+      teams: [makeTeamFromEntry(wk(3))],
+      season: { currentWeek: 2 } as unknown as Season,
+      storedWeeks,
+      onPublish: (w, su) => { wrs = w; standings = (su as { standings: SeasonStandings[] }).standings; },
+    }));
+
+    const result = await svc.publishWeek(2026, 3);
+    expect(result.success).toBe(true);
+    // Only week 3 is written — the imports are not touched.
+    expect(wrs!.map((w) => w.weekNumber)).toEqual([3]);
+    // AC-1 over the post-write stored state: preserved imports + written doc.
+    expect(standings).toEqual(computeStandingsFromWeeks([...storedWeeks, ...wrs!], 3));
+    // The imported totals are summed: 210+210 imported + 200 from week 3.
+    expect(standings!.find((r) => r.teamId === 'team-a')!.totalTargets).toBe(620);
+  });
+
   it('writes the whole rewrite set and the season update through a single repository call (atomic batch)', async () => {
     let publishCalls = 0;
     const svc = new ScoreService(makePublishRepo({

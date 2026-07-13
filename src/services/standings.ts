@@ -68,6 +68,49 @@ export function computeStandingsFromWeeks(
   }));
 }
 
+export interface PublishRewritePlan {
+  /** Weeks to rebuild from the ledger: the published week ∪ stored weeks with entries. */
+  weekNumbers: number[];
+  /** First-publication timestamp of each stored doc, for preservation (DD-3). */
+  publishedAtByWeek: Map<number, string>;
+  /**
+   * Stored docs the ledger cannot reproduce (no entries — pre-ledger imports,
+   * e.g. migrated seasons): preserved verbatim, summed into standings.
+   */
+  preservedWeeks: WeekResult[];
+}
+
+/**
+ * Decide which stored week docs a publish rewrites (spec 005 DD-2, amended
+ * 2026-07-13): the published week plus every stored week <= maxWeek that the
+ * entries ledger covers. A stored week with no entries CANNOT be regenerated
+ * — rewriting it would wipe it to no-show zeros — so it is preserved instead.
+ * Never-published weeks stay unpublished (gaps stay gaps).
+ */
+export function planPublishRewrite(opts: {
+  publishWeekNumber: number;
+  maxWeek: number;
+  storedWeeks: WeekResult[];
+  entries: SeasonEntry[];
+}): PublishRewritePlan {
+  const { publishWeekNumber, maxWeek, storedWeeks, entries } = opts;
+  const publishedAtByWeek = new Map(storedWeeks.map((w) => [w.weekNumber, w.publishedAt]));
+  const enteredWeeks = new Set(entries.map((e) => e.weekNumber));
+  const weekNumbers = [
+    ...new Set(
+      [publishWeekNumber, ...publishedAtByWeek.keys()].filter(
+        (w) => w <= maxWeek && (w === publishWeekNumber || enteredWeeks.has(w)),
+      ),
+    ),
+  ].sort((a, b) => a - b);
+  const rewritten = new Set(weekNumbers);
+  return {
+    weekNumbers,
+    publishedAtByWeek,
+    preservedWeeks: storedWeeks.filter((w) => !rewritten.has(w.weekNumber)),
+  };
+}
+
 export interface BuildWeekResultsInput {
   /** Engine pass output: computeSeasonTotals(buildSeasonData(...)). */
   computed: SeasonData;

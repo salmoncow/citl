@@ -204,6 +204,17 @@ gaps. The rewrite set is determined by reading the season's existing week docs (
 `repository.getAllWeekResults`, bypassing the service cache), which also supplies each
 rewritten week's original `publishedAt` for preservation (DD-3).
 
+> **Amendment (2026-07-13, during implementation)**: the rewrite set additionally requires
+> **ledger coverage** — a stored week doc with **no entries** is a *pre-ledger import* (the
+> migrated 2019–2025 seasons are week docs only, and the emulator seed reproduces that
+> shape) that the ledger cannot regenerate; rewriting it would wipe it to no-show zeros.
+> Such weeks are **preserved verbatim** and summed into `season.standings` alongside the
+> rewritten docs, keeping AC-1 as "standings ≡ canonical function over the post-write
+> stored state". Implemented as the pure `planPublishRewrite` in `standings.ts`
+> (rewrite set = `{k} ∪ {stored weeks ≤ maxWeek with ≥1 entry}`; `preservedWeeks` = the
+> rest); pinned by unit tests at both the planner and pipeline levels. The published week
+> *k* itself keeps today's semantics (always rebuilt wholly from its entries).
+
 **Write volume (real numbers, vs. §VI.1)**. A week doc is **one document per week**
 (`teamResults` is an array inside it), so team count does not multiply writes:
 

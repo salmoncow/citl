@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildWeekResults, computeStandingsFromWeeks } from './standings';
+import { buildWeekResults, computeStandingsFromWeeks, planPublishRewrite } from './standings';
 import { buildSeasonData } from './scorecard-builder';
 import { computeSeasonTotals } from './scoring-engine';
 import type { SeasonData } from '@/types/scorecard';
@@ -160,6 +160,52 @@ describe('computeStandingsFromWeeks', () => {
     );
     const rows = computeStandingsFromWeeks(docs);
     expect(rows.filter((r) => r.teamId === 'hawks')).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// planPublishRewrite — rewrite-set semantics (DD-2, amended 2026-07-13)
+// ---------------------------------------------------------------------------
+
+describe('planPublishRewrite', () => {
+  const stored = (n: number): WeekResult => ({
+    weekNumber: n,
+    publishedAt: `stored-${n}`,
+    teamResults: [],
+  });
+  const entryFor = (n: number): SeasonEntry => makeEntry(n, 'hawks', 'Hawks', 40);
+
+  it('rewrites the published week plus stored weeks the ledger covers', () => {
+    const plan = planPublishRewrite({
+      publishWeekNumber: 2,
+      maxWeek: 3,
+      storedWeeks: [stored(1), stored(3)],
+      entries: [entryFor(1), entryFor(2), entryFor(3)],
+    });
+    expect(plan.weekNumbers).toEqual([1, 2, 3]);
+    expect(plan.preservedWeeks).toEqual([]);
+    expect(plan.publishedAtByWeek.get(3)).toBe('stored-3');
+  });
+
+  it('preserves stored weeks with no entries (pre-ledger imports) instead of rewriting them', () => {
+    const plan = planPublishRewrite({
+      publishWeekNumber: 6,
+      maxWeek: 6,
+      storedWeeks: [stored(1), stored(2), stored(5)],
+      entries: [entryFor(6)],
+    });
+    expect(plan.weekNumbers).toEqual([6]);
+    expect(plan.preservedWeeks.map((w) => w.weekNumber)).toEqual([1, 2, 5]);
+  });
+
+  it('never-published entered weeks stay gaps; the published week is always included', () => {
+    const plan = planPublishRewrite({
+      publishWeekNumber: 4,
+      maxWeek: 4,
+      storedWeeks: [stored(1)],
+      entries: [entryFor(1), entryFor(3), entryFor(4)], // week 3: entered, never published
+    });
+    expect(plan.weekNumbers).toEqual([1, 4]);
   });
 });
 
