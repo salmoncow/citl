@@ -300,9 +300,20 @@ export class TeamManagementTab implements AdminTab {
   }
 
   private async _confirmDeleteTeam(year: number, teamId: string, teamName: string): Promise<void> {
+    // Spec 005 DD-4: deletion exists to fix data-entry mistakes, not to
+    // retire a real team. Published rank points survive the delete itself,
+    // but the next publish re-derives history without the team — say so when
+    // it applies. (Cached read; a failure just falls back to the short text.)
+    const weeksResult = await this._scoreService.getAllWeekResults(year);
+    const hasPublishedResults =
+      weeksResult.success &&
+      weeksResult.data.some((w) => (w.teamResults ?? []).some((tr) => tr.teamId === teamId));
+    const publishedNote = hasPublishedResults
+      ? ' This team has published weekly results: they are kept for now, but the next publish will recompute season history as if the team never participated.'
+      : '';
     const confirmed = await showConfirmDialog({
       title: 'Delete Team',
-      warning: `This will permanently remove "${teamName}" and all its score entries from the ${year} season. This cannot be undone.`,
+      warning: `This will permanently remove "${teamName}" and all its score entries from the ${year} season.${publishedNote} This cannot be undone.`,
       nameToType: teamName,
       deleteLabel: 'Delete Team',
     });

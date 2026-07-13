@@ -1,6 +1,6 @@
 # Firestore Schema Reference
 
-Last updated: 2026-07-10
+Last updated: 2026-07-13
 
 ---
 
@@ -145,8 +145,11 @@ Document ID: string year (e.g. `"2025"`).
 | `weekDateOverrides` | `Partial<Record<string, string \| null>>` | Optional; overrides computed shoot dates per week number |
 
 **Denormalized standings:** The `standings` array is written on every publish so the
-home page can read a single document instead of aggregating across all week docs. This
-is an intentional O(1) read trade-off; keep it in sync on every publish.
+home page can read a single document instead of aggregating across all week docs. It is
+*defined* as `computeStandingsFromWeeks(published week docs)` (spec 005): publish rewrites
+every ledger-covered week doc from one engine pass **together with** this array in a single
+batch, and team deletion re-derives it from the patched docs with the same function — so
+the stored aggregate can never disagree with the stored week docs.
 
 **Access:** Read — public. Write — admin only.
 
@@ -199,7 +202,7 @@ Document ID: string week number (e.g. `"1"`, `"15"`).
 | Field | Type | Notes |
 |-------|------|-------|
 | `weekNumber` | `number` | 1–15 |
-| `publishedAt` | `string` | ISO 8601 timestamp |
+| `publishedAt` | `string` | ISO 8601 timestamp of **first publication** — preserved when a later publish rewrites the doc (spec 005 DD-3) |
 | `teamResults` | `TeamResult[]` | See sub-type below |
 | `accolades` | `Accolade[]` | Optional; omitted if none |
 
@@ -284,9 +287,13 @@ constructing the 15 possible IDs (`1_{teamId}` through `15_{teamId}`).
 
 ### Denormalized standings
 
-`seasons/{year}.standings` is rewritten on every publish. Home page reads a single
-document to render the full standings table. Any operation that changes the scoring
-outcome (publish, delete team, manual override) must also update this array.
+`seasons/{year}.standings` is rewritten on every publish **together with all
+ledger-covered published week docs, from one engine pass, in one atomic batch**
+(spec 005): the array equals `computeStandingsFromWeeks(stored week docs)` by
+construction. Published week docs with no corresponding `entries` (pre-ledger imports —
+the migrated 2019–2025 seasons) are never rewritten; they are preserved verbatim and
+summed. Any operation that changes the scoring outcome (publish, delete team) derives
+this array from the stored week docs via the same single function.
 
 ### Cascading operations
 

@@ -8,12 +8,12 @@
  */
 
 import { success, failure, type Result } from '@/types/result';
-import { buildPriorAvgMap, computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, isDummyName, normalizeShooterName, computeAccolades } from '@/services/scoring-engine';
+import { buildPriorAvgMap, computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, isDummyName, normalizeShooterName } from '@/services/scoring-engine';
 import { buildSeasonData, buildScorecardTeamBlock } from '@/services/scorecard-builder';
-import { computeStandings, recomputeStandingsFromWeeks } from '@/services/standings';
+import { buildWeekResults, computeStandingsFromWeeks, planPublishRewrite } from '@/services/standings';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Season } from '@/types/season';
-import type { Team, WeekResult, SeasonEntry, ShooterScore } from '@/types/score';
+import type { Team, WeekResult, SeasonEntry } from '@/types/score';
 import type { ScorecardViewData } from '@/types/scorecard';
 import type { Announcement } from '@/types/announcement';
 
@@ -221,52 +221,51 @@ export class ScoreService {
     const teamIdByName = new Map(teams.map((t) => [t.name, t.id]));
     const resolveTeamId = (name: string): string => teamIdByName.get(name) ?? _slugify(name);
 
-    const seasonData = buildSeasonData(year, teams, entries, maxWeek);
+    const computed = computeSeasonTotals(buildSeasonData(year, teams, entries, maxWeek));
 
-    const computed = computeSeasonTotals(seasonData);
-
-    const wi = weekNumber - 1;
-    const teamResults = computed.teams.map((team) => {
-      const teamEntry = entries.find(
-        (e) => e.weekNumber === weekNumber && e.teamName === team.name,
-      );
-      // DNS shooters and auto-created dummy positions were given computed dummy scores in
-      // buildSeasonData. Include all of them in shooterScores (score1/score2 null = computed).
-      // Compare normalized so a case/whitespace variant in the saved entry
-      // doesn't duplicate the roster shooter here (F-51).
-      const entryShooterNames = new Set(
-        teamEntry?.shooters.map((s) => normalizeShooterName(s.name)) ?? [],
-      );
-      const extraScores: ShooterScore[] = team.shooters
-        .filter((s) => !entryShooterNames.has(normalizeShooterName(s.name)) && s.scores[wi] !== null)
-        .map((s) => ({ name: s.name, score1: null, score2: null, total: s.scores[wi] as number }));
-      return {
-        teamId: resolveTeamId(team.name),
-        teamName: team.name,
-        targets: team.totals.targets[wi] ?? 0,
-        rankPoints: team.totals.rankPoints[wi] ?? 0,
-        bonusPoints: team.totals.bonusPoints[wi] ?? 0,
-        shooterScores: [...(teamEntry?.shooters ?? []), ...extraScores],
-      };
+    // Rewrite plan (spec 005 DD-2, amended 2026-07-13): rebuild the published
+    // week plus every stored week the ledger covers, all from the one engine
+    // pass so stored docs can never lag the ledger (the F-05 residual).
+    // Stored weeks with no entries are pre-ledger imports the ledger cannot
+    // reproduce — preserved verbatim. Read stored weeks fresh (not the cache).
+    const storedWeeksResult = await this.repository.getAllWeekResults(year);
+    if (!storedWeeksResult.success) return storedWeeksResult;
+    const plan = planPublishRewrite({
+      publishWeekNumber: weekNumber,
+      maxWeek,
+      storedWeeks: storedWeeksResult.data,
+      entries,
     });
 
-    const weekResult: WeekResult = {
-      weekNumber,
-      publishedAt: new Date().toISOString(),
-      teamResults,
-      accolades: computeAccolades(teamResults),
-    };
+    const now = new Date().toISOString();
+    const weekResults = buildWeekResults({
+      computed,
+      entries,
+      resolveTeamId,
+      weekNumbers: plan.weekNumbers,
+      // Rewrites keep their first-publication timestamp; the published week
+      // gets a fresh one (DD-3).
+      getPublishedAt: (w) => (w === weekNumber ? now : plan.publishedAtByWeek.get(w) ?? now),
+    });
 
-    const standings = computeStandings(computed, maxWeek, resolveTeamId);
+    // The aggregate is derived from the post-write stored state (this batch's
+    // docs + preserved pre-ledger docs), so season.standings ===
+    // computeStandingsFromWeeks(stored week docs) by construction (DD-1).
+    const standings = computeStandingsFromWeeks(
+      [...weekResults, ...plan.preservedWeeks],
+      maxWeek,
+    );
 
-    const publishResult = await this.repository.publishWeek(year, weekResult, {
+    const publishResult = await this.repository.publishWeek(year, weekResults, {
       currentWeek: maxWeek,
       standings,
       status: 'active',
     });
 
     if (publishResult.success) {
-      this.invalidateWeek(year, weekNumber);
+      for (const w of plan.weekNumbers) this.cache.delete(`week:${year}:${w}`);
+      this.cache.delete(`weeks:${year}`);
+      this.cache.delete(`latest:${year}`);
       this.cache.delete(`season:${year}`);
     }
 
@@ -514,7 +513,7 @@ export class ScoreService {
       );
     }
     if (weeksResult.data.length > 0) {
-      const newStandings = recomputeStandingsFromWeeks(weeksResult.data);
+      const newStandings = computeStandingsFromWeeks(weeksResult.data);
       const update = await this.repository.updateSeason(year, { standings: newStandings } as Partial<Season>);
       this.cache.delete(`season:${year}`);
       if (!update.success) {
@@ -704,12 +703,6 @@ export class ScoreService {
   // -------------------------------------------------------------------------
   // Cache control
   // -------------------------------------------------------------------------
-
-  invalidateWeek(year: number, weekNumber: number): void {
-    this.cache.delete(`week:${year}:${weekNumber}`);
-    this.cache.delete(`weeks:${year}`);
-    this.cache.delete(`latest:${year}`);
-  }
 
   clearCache(): void {
     this.cache.clear();
