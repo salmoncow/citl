@@ -3,7 +3,7 @@
 **Purpose**: Rules for writing specs, prompts, **and agent files** that stay accurate and
 maintainable over time. The same rule applies to `.claude/agents/*` and `.claude/skills/*`:
 agents reference the source of truth, they never restate rules — a restated rule drifts from
-the spec it copied (e.g. the `@scoring` agent must point at `scoring-engine.md`, not summarize it).
+the spec it copied (e.g. the `@scoring` agent must point at `.specs/domain/scoring-rules.md`, not summarize it).
 
 ---
 

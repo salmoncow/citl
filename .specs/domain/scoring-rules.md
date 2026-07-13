@@ -1,6 +1,9 @@
-# Feature: Scoring Engine
+# CITL Scoring Rules
 
-**Status:** Implemented (`src/services/scoring-engine.ts`)
+**Kind:** Living domain reference (not a feature spec — never archived)
+**Implemented by:** `src/services/scoring-engine.ts`
+**Maintenance:** update this document whenever a feature changes the scoring rules; the
+`@scoring` agent treats it as the single authoritative source.
 
 ## Overview
 
