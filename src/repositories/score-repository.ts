@@ -292,31 +292,42 @@ export class ScoreRepository {
     }
   }
 
+  /**
+   * Atomically write a set of week docs plus the season doc (spec 005 DD-2:
+   * publish rewrites every already-published week from one engine pass, so
+   * the caller passes the full rewrite set). At most 15 weeks + 1 season doc
+   * = 16 ops — far under Firestore's 500-op batch limit.
+   */
   async publishWeek(
     year: number,
-    weekResult: WeekResult,
+    weekResults: WeekResult[],
     seasonUpdates: { currentWeek: number; standings: SeasonStandings[]; status: string },
-  ): Promise<Result<{ weekResult: WeekResult; seasonUpdates: typeof seasonUpdates }>> {
+  ): Promise<Result<{ weekResults: WeekResult[]; seasonUpdates: typeof seasonUpdates }>> {
     try {
-      if (!weekResult || !weekResult.weekNumber) {
-        return failure('weekResult.weekNumber is required', 'VALIDATION_ERROR');
+      if (!Array.isArray(weekResults) || weekResults.length === 0) {
+        return failure('weekResults must be a non-empty array', 'VALIDATION_ERROR');
+      }
+      if (weekResults.some((wr) => !wr || !wr.weekNumber)) {
+        return failure('every weekResult requires a weekNumber', 'VALIDATION_ERROR');
       }
       const batch = writeBatch(this.db);
 
-      const weekRef = doc(
-        this.db,
-        'seasons',
-        String(year),
-        'weeks',
-        String(weekResult.weekNumber),
-      );
-      batch.set(weekRef, weekResult);
+      for (const wr of weekResults) {
+        const weekRef = doc(
+          this.db,
+          'seasons',
+          String(year),
+          'weeks',
+          String(wr.weekNumber),
+        );
+        batch.set(weekRef, wr);
+      }
 
       const seasonRef = doc(this.db, 'seasons', String(year));
       batch.set(seasonRef, { year, ...seasonUpdates }, { merge: true });
 
       await batch.commit();
-      return success({ weekResult, seasonUpdates });
+      return success({ weekResults, seasonUpdates });
     } catch (err) {
       return failure(`Failed to publish week: ${(err as Error).message}`, 'FIRESTORE_WRITE_ERROR');
     }
