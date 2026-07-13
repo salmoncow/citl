@@ -12,8 +12,7 @@
  * holds by construction, not by policing. `deleteTeam` patches week docs and
  * re-derives with the same function; `home-standings.ts` imports it for the
  * historical-week view. There is deliberately no second derivation anywhere
- * in src/ — see .specs/features/005-standings-unification/ (DD-1–DD-6; moves
- * to features/archive/ at close-out).
+ * in src/ — see .specs/features/archive/005-standings-unification/ (DD-1–DD-6).
  *
  * Import rule: only @/types/* and @/services/scoring-engine.
  */
