@@ -5,8 +5,11 @@
  *   - UserRepository.listPaginated for the user table
  *   - setUserRole callable for owner-driven role changes
  *
- * The service strips Firestore-specific types from its return shape
- * so the component layer doesn't need to import from firebase/firestore.
+ * Note: the pagination cursor is a pass-through Firestore
+ * DocumentSnapshot (ListUsersPage.nextCursor), so the component layer
+ * does import that one Firestore type. Kept as a snapshot cursor on
+ * purpose — a value-based cursor (startAfter on createdAt) could skip
+ * or duplicate rows on createdAt ties.
  */
 
 import type { DocumentSnapshot } from 'firebase/firestore';

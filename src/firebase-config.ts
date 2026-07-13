@@ -41,6 +41,8 @@ export function validateFirebaseConfig(): boolean {
   return true;
 }
 
+validateFirebaseConfig();
+
 const app = initializeApp(firebaseConfig);
 
 export const db: Firestore = getFirestore(app);

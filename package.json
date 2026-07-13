@@ -9,6 +9,8 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
+    "ensure:functions": "[ -d functions/node_modules ] || npm --prefix functions ci --silent; npm --prefix functions run build",
+    "predev": "npm run ensure:functions",
     "dev": "firebase emulators:exec --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data 'VITE_USE_EMULATOR=true vite'",
     "dev:prod": "vite",
     "build": "vite build",
@@ -22,7 +24,9 @@
     "deploy:functions": "firebase deploy --only functions",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
     "deploy:rules:dryrun": "firebase deploy --only firestore:rules --dry-run",
+    "preemulators": "npm run ensure:functions",
     "emulators": "firebase emulators:start --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data",
+    "predev:seeded": "npm run ensure:functions",
     "dev:seeded": "firebase emulators:exec --only auth,firestore,functions --import=.emulator-data --export-on-exit=.emulator-data 'npm run seed:emulator && VITE_USE_EMULATOR=true vite'",
     "seed:emulator": "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=citl-baed2 node scripts/seed-emulator.js",
     "set-role": "node scripts/set-role.js",

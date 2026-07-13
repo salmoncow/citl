@@ -13,6 +13,13 @@
  *
  * Never writes identity or role fields. Firestore rules restrict client
  * self-update to lastSignInAt/updatedAt (the touchLastSignIn path).
+ *
+ * Error convention: unlike ScoreRepository's Result contract, methods here
+ * deliberately throw (or reject) on Firestore errors. Callers are the
+ * admin-only Users tab and the auth module, which already wrap calls in
+ * try/catch and surface failures directly; the exceptions are
+ * touchLastSignIn (best-effort, swallows + warns internally) and
+ * observeSelf (errors delivered via the snapshot listener).
  */
 
 import {

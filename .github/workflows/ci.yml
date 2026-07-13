@@ -81,3 +81,6 @@ jobs:
       # secrets needed — the build succeeds with the env vars undefined.
       - run: npm run build
       - run: npm --prefix functions run build
+      # Fails if the inline theme snippet in index.html drifts from the
+      # sha256 pin in firebase.json's CSP script-src.
+      - run: node scripts/check-csp-hash.js

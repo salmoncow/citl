@@ -4,9 +4,9 @@
 **Created**: 2026-07-12
 **Status**: Shipped (PR [#220](https://github.com/salmoncow/citl/pull/220), merged 2026-07-13)
 **Source**: Maintainer decision (Tyler, 2026-07-12) recorded in
-[backlog WS5-02](../../reviews/2026-07-deep-review/backlog.md) — promotion of finding
-[F-26 (P2)](../../reviews/2026-07-deep-review/report.md) to a full feature.
-**Authoritative business rules**: [scoring-engine.md §"Season Awards"](../scoring-engine.md)
+[backlog WS5-02](../../../reviews/2026-07-deep-review/backlog.md) — promotion of finding
+[F-26 (P2)](../../../reviews/2026-07-deep-review/report.md) to a full feature.
+**Authoritative business rules**: [scoring-engine.md §"Season Awards"](../../scoring-engine.md)
 — Highest Average, Rookie of the Year, Most Improved; min 6 weeks shot; dummies excluded.
 **Those rules are NOT restated here** — the engine already implements them correctly per its
 tests; this spec finishes the placements, the shape, the guard, the trigger, and the display.
@@ -122,7 +122,7 @@ Read-only firebase-admin inspection of prod `citl-baed2` (gcloud ADC), 2026-07-1
   the composition root `getServices()` (constitution §II.4 → `src/components/README.md`
   contract, hook rule `no-private-service-in-component`).
 - **§III.2 Security**: the finalize write is enforced by the existing
-  `seasons/{year}` admin-only rule in [`firestore.rules`](../../../firestore.rules) — not by
+  `seasons/{year}` admin-only rule in [`firestore.rules`](../../../../firestore.rules) — not by
   client-side checks; existing rules tests (`tests/rules/`) already pin this authz. The
   awards computation itself depends only on **publicly readable** collections (seasons,
   teams, weeks) — no admin-only `entries` reads.
@@ -135,7 +135,7 @@ Read-only firebase-admin inspection of prod `citl-baed2` (gcloud ADC), 2026-07-1
   post-deploy steps are **N/A**.
 - **§III.5 / §IV.2 Code Quality & Forbidden Patterns**: strict TS, `@/` imports,
   `escapeHtml()` for all Firestore-sourced strings, no God modules; the machine ruleset in
-  [`scripts/forbidden-patterns.json`](../../../scripts/forbidden-patterns.json) is unchanged
+  [`scripts/forbidden-patterns.json`](../../../../scripts/forbidden-patterns.json) is unchanged
   and must pass on every edit.
 
 ## Design Decisions
@@ -283,7 +283,7 @@ numeric derived W0), and the engine would exclude them via `isDummy` anyway; `is
 still passed through so the engine remains the exclusion authority for numeric-W0 dummies.
 Unit-tested directly.
 
-The [scoring-engine.md](../scoring-engine.md) §"Outputs — computeSeasonAwards" paragraph
+The [scoring-engine.md](../../scoring-engine.md) §"Outputs — computeSeasonAwards" paragraph
 (which currently documents the null placements) is updated to the new flat-input signature;
 the §"Season Awards" rules section is untouched.
 

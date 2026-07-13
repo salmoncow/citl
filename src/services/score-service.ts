@@ -7,7 +7,7 @@
  *   - Result pattern (never throws across module boundaries)
  */
 
-import { success, failure, type Result } from '@/repositories/score-repository';
+import { success, failure, type Result } from '@/types/result';
 import { buildPriorAvgMap, computeSeasonTotals, computeShooterStartingAvg, isShooterRookie, isDummyName, normalizeShooterName, computeAccolades } from '@/services/scoring-engine';
 import { buildSeasonData, buildScorecardTeamBlock } from '@/services/scorecard-builder';
 import { computeStandings, recomputeStandingsFromWeeks } from '@/services/standings';

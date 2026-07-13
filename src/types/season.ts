@@ -59,15 +59,6 @@ export interface SeasonStandings {
 }
 
 /**
- * Top shooter average by team (for the "Highest Average by Team" table).
- */
-export interface TeamTopShooter {
-  teamName: string;
-  shooterName: string;
-  average: number;
-}
-
-/**
  * A full season's metadata and summary.
  * Firestore path: seasons/{year}
  */

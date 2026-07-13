@@ -31,7 +31,7 @@ import {
   type UserCredential,
 } from 'firebase/auth';
 import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
-import { type Result, success, failure } from '@/repositories/score-repository';
+import { type Result, success, failure } from '@/types/result';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import type { UserRepository } from '@/repositories/user-repository';
 import { getRole, refreshRole } from '@/modules/role';
@@ -133,9 +133,13 @@ export class AuthModule {
 
       if (tsMs !== null && tsMs !== this._lastRoleChangedAtMs) {
         // Server bumped the role mid-session. Force token refresh so
-        // the rules engine sees the new claim immediately and
-        // onIdTokenChanged subscribers (modules/role.ts) propagate
-        // the change to UI consumers.
+        // the rules engine sees the new claim immediately — for
+        // cooperative clients running this code. A hostile client can
+        // skip this refresh and retain the old claim until its ID token
+        // expires (≤1h; setUserRole does not revoke refresh tokens —
+        // see 002-multi-user-rbac spec §VI.1). onIdTokenChanged
+        // subscribers (modules/role.ts) propagate the change to UI
+        // consumers.
         await refreshRole();
         this._lastRoleChangedAtMs = tsMs;
       }

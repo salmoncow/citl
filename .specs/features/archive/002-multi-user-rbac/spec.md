@@ -200,13 +200,13 @@ sequencing" for the full file-by-file breakdown.
 
 | Layer | Files |
 |-------|-------|
-| Components | [src/components/admin-panel.ts](../../../src/components/admin-panel.ts) (modify) — add Users tab |
-| Modules | [src/modules/auth.ts](../../../src/modules/auth.ts) (modify), `src/modules/role.ts` (new), [src/modules/navigation.ts](../../../src/modules/navigation.ts) (modify), [src/main.ts](../../../src/main.ts) (modify) |
+| Components | `src/components/admin-panel.ts` (modify) — add Users tab |
+| Modules | `src/modules/auth.ts` (modify), `src/modules/role.ts` (new), `src/modules/navigation.ts` (modify), `src/main.ts` (modify) |
 | Services | `src/services/admin-user-service.ts` (new) |
-| Repositories | `src/repositories/user-repository.ts` (new), [src/repositories/repository-factory.ts](../../../src/repositories/repository-factory.ts) (extend) |
+| Repositories | `src/repositories/user-repository.ts` (new), `src/repositories/repository-factory.ts` (extend) |
 | Infrastructure | `src/infrastructure/functions.ts` (new), `src/infrastructure/appcheck.ts` (new) |
 | Server | `functions/src/{setUserRole,onUserCreate,index}.ts`, `functions/src/lib/{validate,rateLimit,lastOwnerGuard}.ts` |
-| Config | [firestore.rules](../../../firestore.rules) (rewrite), `firestore.indexes.json` (new), [firebase.json](../../../firebase.json) (add functions+emulators), `.gitignore` (add `.secrets/`) |
+| Config | `firestore.rules` (rewrite), `firestore.indexes.json` (new), `firebase.json` (add functions+emulators), `.gitignore` (add `.secrets/`) |
 | Scripts | `scripts/set-role.js` (replaces `grant-admin.js`) |
 | Tests | `tests/rules/*`, `tests/functions/*` |
 
@@ -262,6 +262,18 @@ the mirror. Therefore:
    is fail-closed for the security-critical path (an admin or owner
    losing access is a higher-stakes event than a new admin being
    granted access).
+
+   > **Residual revocation window (noted 2026-07, deep-review F-52).**
+   > "Immediately" means the claim change is committed to Firebase Auth
+   > immediately — it reaches a client only on its next ID-token
+   > refresh. Cooperative clients refresh within seconds (the
+   > `roleChangedAt` snapshot listener in `src/modules/auth.ts` forces
+   > it). A hostile client that suppresses the refresh retains the old
+   > claim until its current ID token expires: **up to 1 hour**, because
+   > `setUserRole` does not call `revokeRefreshTokens()` (and Firestore
+   > rules do not check revocation time). Accepted for this league's
+   > threat model; calling `revokeRefreshTokens(targetUid)` on demotion
+   > is the future-hardening option if that window ever matters.
 2. **Mirror + audit drift is recoverable.** The actor's identity and
    timestamp are still captured by Cloud Audit Logs. The next
    `setUserRole` call for the same target reads the now-stale mirror,
@@ -333,9 +345,10 @@ prerequisite.
 The full sequenced plan is in [tasks.md](./tasks.md). Operational
 runbook for the very first owner promotion is in [bootstrap.md](./bootstrap.md).
 
-The technical plan, decision rationale, and verification protocol are
-in the approved plan-of-record (link at top of this file). This spec
-captures the contract; the plan-of-record captures how to execute it.
+The technical plan, decision rationale, and verification protocol were
+in the approved plan-of-record — a machine-local file that was never
+committed and is no longer recoverable (see the header note). This spec
+plus [tasks.md](./tasks.md) and ADR-009 are the surviving record.
 
 ---
 

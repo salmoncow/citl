@@ -22,6 +22,10 @@ A fresh checkout has no `.emulator-data/` (it's git-ignored), so `npm run dev` w
 start an empty Firestore — every view that reads scorecards, standings, or
 announcements will render blank.
 
+`npm run dev`, `dev:seeded`, and `emulators` install and build `functions/`
+automatically (via `ensure:functions`) so the emulated `onUserCreate`/`setUserRole`
+functions work on a fresh checkout — no manual `npm --prefix functions` step needed.
+
 To get a realistic dataset (2024 season in progress + 2025 season complete, four
 teams, three test accounts) running on the local emulator:
 
