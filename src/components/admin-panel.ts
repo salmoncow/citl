@@ -9,6 +9,7 @@
  *   - Team Management — team list with inline editing + roster modal
  *   - Score Entry     — weekly entry form, date override, publish
  *   - Announcements   — site banner + per-year announcements
+ *   - Season End      — preview + finalize season awards (spec 004)
  *   - Users           — hosts <admin-users-panel> (owner-only dropdown)
  *
  * No shadow DOM. All user values rendered via textContent (never innerHTML),
@@ -24,13 +25,14 @@ import { buildOptions } from './admin-tabs/admin-shared';
 import { TeamManagementTab } from './admin-tabs/team-management-tab';
 import { ScoreEntryTab } from './admin-tabs/score-entry-tab';
 import { AnnouncementsTab } from './admin-tabs/announcements-tab';
+import { SeasonEndTab } from './admin-tabs/season-end-tab';
 import type { AdminTab, AdminTabContext } from './admin-tabs/types';
 
-const { scoreService } = getServices();
+const { scoreService, seasonAwardsService } = getServices();
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-type TabName = 'team-mgmt' | 'score-entry' | 'announcements' | 'users';
+type TabName = 'team-mgmt' | 'score-entry' | 'announcements' | 'season-end' | 'users';
 
 class AdminPanel extends HTMLElement {
   private _teamsData: Team[] | null = null;
@@ -41,10 +43,11 @@ class AdminPanel extends HTMLElement {
   private readonly _teamMgmtTab = new TeamManagementTab(scoreService);
   private readonly _scoreEntryTab = new ScoreEntryTab(scoreService);
   private readonly _announcementsTab = new AnnouncementsTab(scoreService);
+  private readonly _seasonEndTab = new SeasonEndTab(seasonAwardsService);
 
   /** All tabs that implement the AdminTab lifecycle (excludes self-managed Users tab). */
   private get _lifecycleTabs(): AdminTab[] {
-    return [this._teamMgmtTab, this._scoreEntryTab, this._announcementsTab];
+    return [this._teamMgmtTab, this._scoreEntryTab, this._announcementsTab, this._seasonEndTab];
   }
 
   connectedCallback(): void {
@@ -54,6 +57,7 @@ class AdminPanel extends HTMLElement {
           <button class="admin-tab-btn is-active" data-tab="team-mgmt">Team Management</button>
           <button class="admin-tab-btn" data-tab="score-entry">Score Entry</button>
           <button class="admin-tab-btn" data-tab="announcements">Announcements</button>
+          <button class="admin-tab-btn" data-tab="season-end">Season End</button>
           <button class="admin-tab-btn" data-tab="users">Users</button>
         </div>
 
@@ -65,6 +69,7 @@ class AdminPanel extends HTMLElement {
         <div id="ap-panel-team-mgmt" class="admin-tab-content"></div>
         <div id="ap-panel-score-entry" class="admin-tab-content admin-tab-panel--hidden"></div>
         <div id="ap-panel-announcements" class="admin-tab-content admin-tab-panel--hidden"></div>
+        <div id="ap-panel-season-end" class="admin-tab-content admin-tab-panel--hidden"></div>
         <div id="ap-panel-users" class="admin-tab-content admin-tab-panel--hidden">
           <admin-users-panel></admin-users-panel>
         </div>
@@ -74,6 +79,7 @@ class AdminPanel extends HTMLElement {
     this._teamMgmtTab.mount(this.querySelector<HTMLElement>('#ap-panel-team-mgmt')!, ctx);
     this._scoreEntryTab.mount(this.querySelector<HTMLElement>('#ap-panel-score-entry')!, ctx);
     this._announcementsTab.mount(this.querySelector<HTMLElement>('#ap-panel-announcements')!, ctx);
+    this._seasonEndTab.mount(this.querySelector<HTMLElement>('#ap-panel-season-end')!, ctx);
 
     for (const btn of this.querySelectorAll<HTMLButtonElement>('.admin-tab-btn')) {
       btn.addEventListener('click', () => this._switchTab((btn.dataset['tab'] ?? '') as TabName));
@@ -103,6 +109,7 @@ class AdminPanel extends HTMLElement {
       { id: 'ap-panel-team-mgmt', name: 'team-mgmt' },
       { id: 'ap-panel-score-entry', name: 'score-entry' },
       { id: 'ap-panel-announcements', name: 'announcements' },
+      { id: 'ap-panel-season-end', name: 'season-end' },
       { id: 'ap-panel-users', name: 'users' },
     ]) {
       const el = this.querySelector(`#${id}`);
@@ -114,6 +121,7 @@ class AdminPanel extends HTMLElement {
 
     if (tab === 'score-entry') this._scoreEntryTab.onActivate?.();
     else if (tab === 'announcements') this._announcementsTab.onActivate?.();
+    else if (tab === 'season-end') this._seasonEndTab.onActivate?.();
   }
 
   // ── Shared data refresh ──────────────────────────────────────────────────

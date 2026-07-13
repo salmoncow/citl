@@ -9,7 +9,7 @@ import { getServices } from '@/services/app-services';
 import { compareStandings } from '@/services/scoring-engine';
 import { escapeHtml } from '@/modules/ui';
 import type { Team, WeekResult } from '@/types/score';
-import type { Season } from '@/types/season';
+import type { Season, SeasonAwards } from '@/types/season';
 import type { Accolade } from '@/types/shooter';
 
 const { scoreService } = getServices();
@@ -211,9 +211,96 @@ class HomeStandings extends HTMLElement {
       accolades = weekResult.accolades ?? [];
     }
 
+    // Season awards ride the already-loaded season doc — zero extra reads
+    // (spec 004 AC-6). Rendered only in the Season view and only when the
+    // finalize flow (or the legacy migration) has written awards.
+    const awardsHtml =
+      weekKey === 'season' && this._season?.awards
+        ? this._renderAwards(this._season.awards)
+        : '';
+
     this.querySelector('#hs-table')!.innerHTML =
+      awardsHtml +
       this._renderAccolades(accolades) +
       this._buildTable(rows, subtitle);
+  }
+
+  /**
+   * Season Awards table (spec 004 DD-2, table refinement 2026-07-12). Each
+   * field is null-guarded independently (repository reads are unvalidated
+   * casts); rows with a missing winner are omitted, and the whole section is
+   * omitted when no row renders. Icons are plain emoji — no icon font or
+   * custom assets (ADR-008).
+   */
+  private _renderAwards(awards: SeasonAwards): string {
+    const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+    const rows: { icon: string; award: string; winner: string; result: string }[] = [];
+    if (typeof awards.firstPlaceTeam === 'string') {
+      rows.push({
+        icon: '\u{1F3C6}', // 🏆
+        award: 'First Place',
+        winner: awards.firstPlaceTeam,
+        result: num(awards.firstPlacePoints) ? `${awards.firstPlacePoints} pts` : '—',
+      });
+    }
+    if (typeof awards.secondPlaceTeam === 'string') {
+      rows.push({
+        icon: '\u{1F948}', // 🥈
+        award: 'Second Place',
+        winner: awards.secondPlaceTeam,
+        result: num(awards.secondPlacePoints) ? `${awards.secondPlacePoints} pts` : '—',
+      });
+    }
+    if (typeof awards.highestAvgShooter === 'string') {
+      rows.push({
+        icon: '\u{1F3AF}', // 🎯
+        award: 'Highest Average',
+        winner: awards.highestAvgShooter,
+        result: num(awards.highestAvg) ? `${awards.highestAvg.toFixed(2)} avg` : '—',
+      });
+    }
+    if (typeof awards.rookieOfYear === 'string') {
+      rows.push({
+        icon: '\u{2B50}', // ⭐
+        award: 'Rookie of the Year',
+        winner: awards.rookieOfYear,
+        result: num(awards.rookieAvg) ? `${awards.rookieAvg.toFixed(2)} avg` : '—',
+      });
+    }
+    if (typeof awards.mostImproved === 'string') {
+      rows.push({
+        icon: '\u{1F4C8}', // 📈
+        award: 'Most Improved',
+        winner: awards.mostImproved,
+        result: typeof awards.improvement === 'string' ? awards.improvement : '—',
+      });
+    }
+    if (rows.length === 0) return '';
+
+    const trs = rows.map((row) => `
+        <tr>
+          <td class="awards-table__award">
+            <span class="awards-table__icon" aria-hidden="true">${row.icon}</span>${escapeHtml(row.award)}
+          </td>
+          <td class="awards-table__winner">${escapeHtml(row.winner)}</td>
+          <td class="awards-table__result">${escapeHtml(row.result)}</td>
+        </tr>`).join('');
+
+    return `
+    <div class="awards-section">
+      <h3 class="awards-section__heading">Season Awards</h3>
+      <table class="awards-table">
+        <thead>
+          <tr>
+            <th>Award</th>
+            <th>Winner</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>`;
   }
 
   private _renderAccolades(accolades: Accolade[]): string {

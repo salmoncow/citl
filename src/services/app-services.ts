@@ -18,10 +18,12 @@
 import { db } from '@/firebase-config';
 import { createRepositoryFactory, type RepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
+import { SeasonAwardsService } from '@/services/season-awards-service';
 
 export interface AppServices {
   repositoryFactory: RepositoryFactory;
   scoreService: ScoreService;
+  seasonAwardsService: SeasonAwardsService;
 }
 
 let instance: AppServices | null = null;
@@ -29,8 +31,10 @@ let instance: AppServices | null = null;
 export function getServices(): AppServices {
   if (!instance) {
     const repositoryFactory = createRepositoryFactory({ db });
-    const scoreService = new ScoreService(repositoryFactory.getScoreRepository());
-    instance = Object.freeze({ repositoryFactory, scoreService });
+    const repository = repositoryFactory.getScoreRepository();
+    const scoreService = new ScoreService(repository);
+    const seasonAwardsService = new SeasonAwardsService(repository, scoreService);
+    instance = Object.freeze({ repositoryFactory, scoreService, seasonAwardsService });
   }
   return instance;
 }

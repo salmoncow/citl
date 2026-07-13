@@ -12,6 +12,7 @@
 import { computeDummyScore, computeShooterAverage, computeShooterStartingAvg, getLastWord, isDummyName, isShooterRookie, mean, normalizeShooterName, sortShootersWithCaptainFirst } from '@/services/scoring-engine';
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
 import type { SeasonData, ScorecardShooter, ScorecardRowShooter, ScorecardTeamBlock } from '@/types/scorecard';
+import type { AwardShooterInput } from '@/types/season';
 
 export function buildSeasonData(
   year: number,
@@ -269,4 +270,32 @@ export function buildScorecardTeamBlock(args: {
     rankPoints,
     bonusPoints,
   };
+}
+
+/**
+ * Adapt rendered scorecard blocks into the flat per-shooter inputs
+ * computeSeasonAwards consumes (spec 004 DD-3), so trophies are always
+ * computed from the same published-data derivation the scorecards page
+ * displays. Rows without a numeric w0Display are skipped — only dummy/padding
+ * rows can lack a numeric W0 (rostered shooters always get a derived going-in
+ * average), and the engine excludes numeric-W0 dummies via isDummy. The row's
+ * display-rounded finalAvg/weeksShot are ignored; the engine recomputes at
+ * full precision. Pure — no I/O.
+ */
+export function toAwardShooterInputs(blocks: ScorecardTeamBlock[]): AwardShooterInput[] {
+  const inputs: AwardShooterInput[] = [];
+  for (const block of blocks) {
+    for (const row of block.shooters) {
+      if (typeof row.w0Display !== 'number') continue;
+      inputs.push({
+        name: row.name,
+        teamName: block.teamName,
+        isDummy: row.isDummy,
+        rookie: row.rookie,
+        startingAvg: row.w0Display,
+        scores: row.scores,
+      });
+    }
+  }
+  return inputs;
 }

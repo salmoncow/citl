@@ -104,6 +104,70 @@ select:focus {
   color: var(--c-text-muted);
 }
 
+/* ── Season Awards (spec 004) — design-system table, mirrors .standing-table ─ */
+.awards-section {
+  margin-bottom: var(--space-6);
+}
+
+.awards-section__heading {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--c-heading);
+  margin: 0 0 var(--space-3);
+}
+
+.awards-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-table-border);
+}
+
+.awards-table th {
+  background: var(--c-table-header-bg);
+  color: var(--c-text-inverse);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+}
+
+.awards-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--c-table-border);
+  color: var(--c-text);
+}
+
+.awards-table tr:hover td { background: var(--c-table-hover); }
+.awards-table tr:last-child td { border-bottom: none; }
+
+/* Award column hugs its content; Winner takes the remaining width. */
+.awards-table th:first-child,
+.awards-table td:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.awards-table__icon {
+  font-size: var(--text-base);
+  margin-right: var(--space-2);
+}
+
+.awards-table__winner {
+  font-weight: 600;
+}
+
+.awards-table__result {
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
 .hs-subtitle {
   font-size: var(--text-sm);
   color: var(--c-text-muted);

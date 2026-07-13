@@ -155,9 +155,15 @@ Returns a new `SeasonData` with `totals` populated.
 
 ### Outputs — computeSeasonAwards
 
-Returns a partial `SeasonAwards` with shooter-based awards only.
-Team standings awards (`firstPlaceTeam`, etc.) are computed separately
-from cumulative rank+bonus totals and are returned as `null`.
+`computeSeasonAwards(shooters: AwardShooterInput[], finalStandings: SeasonStandings[])`
+returns the complete flat `SeasonAwards` (spec 004). Team placements derive from the
+rank-1/rank-2 rows of the caller-supplied final standings
+(points = `totalRankPoints + totalBonusPoints`) and are present in every branch; each
+field is null when its source row/shooter does not exist. Shooter inputs are adapted
+from the published scorecard derivation via `toAwardShooterInputs`
+(`scorecard-builder.ts`), so awards always agree with the public scorecards page.
+`computeMostImprovedScore` returns `0` when `startingAvg >= 50` (no possible
+improvement; guards the divide-by-zero).
 
 ### Season Standings Order (cumulative)
 

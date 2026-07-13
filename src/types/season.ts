@@ -3,20 +3,19 @@
  */
 
 /**
- * Season-level trophy / award winners.
- * Populated at season end; embedded in the seasons/{year} document.
+ * Season-level trophy / award winners, embedded in the seasons/{year} document.
+ * Written at season end by the admin finalize flow; also the engine's return
+ * shape (computeSeasonAwards) — one type end to end.
+ *
+ * FLAT shape by prod precedent: all seven historical seasons (2019–2025) store
+ * exactly these ten fields, verified against prod 2026-07-12
+ * (.specs/features/004-season-awards/spec.md §"Verified Production Evidence").
+ * `improvement` is a pre-formatted percent string (e.g. "55.24%") by the same
+ * precedent — changing it to a number would require migrating seven prod docs.
+ * All fields nullable: placements are null when standings lack a rank-1/rank-2
+ * row; shooter awards are null when no shooter meets eligibility.
  */
 export interface SeasonAwards {
-  highestAvg: { shooterName: string; teamName: string; avg: number };
-  rookieOfYear: { shooterName: string; teamName: string; avg: number } | null;
-  mostImproved: { shooterName: string; teamName: string; improvement: string } | null;
-}
-
-/**
- * Computed season awards returned by computeSeasonAwards().
- * Not the same shape as SeasonAwards (Firestore-stored).
- */
-export interface ComputedAwards {
   firstPlaceTeam: string | null;
   firstPlacePoints: number | null;
   secondPlaceTeam: string | null;
@@ -27,6 +26,23 @@ export interface ComputedAwards {
   rookieAvg: number | null;
   mostImproved: string | null;
   improvement: string | null;
+}
+
+/**
+ * Minimal per-shooter facts computeSeasonAwards consumes. Adapted from the
+ * published scorecard derivation by toAwardShooterInputs (scorecard-builder)
+ * so trophies always agree with the public scorecards page.
+ */
+export interface AwardShooterInput {
+  name: string;
+  /** Not consumed by the engine today; retained for future per-award team attribution. */
+  teamName: string;
+  isDummy: boolean;
+  rookie: boolean;
+  /** Going-in (W0) average — numeric only; display-only '-' rows are excluded upstream. */
+  startingAvg: number;
+  /** 15 weekly scores (W1–W15); null = did not shoot. */
+  scores: (number | null)[];
 }
 
 /**

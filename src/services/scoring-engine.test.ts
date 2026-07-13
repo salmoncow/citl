@@ -5,7 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { ScorecardShooter, SeasonData, Team as ScTeam, TeamTotals } from '@/types/scorecard';
+import type { ScorecardShooter, SeasonData, TeamTotals } from '@/types/scorecard';
+import type { AwardShooterInput, SeasonStandings } from '@/types/season';
 import type { Team as PriorTeam, TeamResult } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
 import {
@@ -616,6 +617,15 @@ describe('computeMostImprovedScore', () => {
     // 100 * (45-30) / (50-30) = 100 * 15/20 = 75
     expect(computeMostImprovedScore(30, 45)).toBe(75);
   });
+
+  it('guards the divide-by-zero: startingAvg=50 → 0, never Infinity/NaN (DD-4)', () => {
+    expect(computeMostImprovedScore(50, 45)).toBe(0);
+    expect(computeMostImprovedScore(50, 50)).toBe(0);
+  });
+
+  it('guards impossible startingAvg>50 (bad import) → 0, not a sign-flipped score', () => {
+    expect(computeMostImprovedScore(55, 40)).toBe(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -623,51 +633,97 @@ describe('computeMostImprovedScore', () => {
 // ---------------------------------------------------------------------------
 
 describe('computeSeasonAwards', () => {
-  const makeTeam = (name: string, shooters: ScorecardShooter[]): ScTeam => ({
+  const makeAwardShooter = (
+    name: string,
+    startingAvg: number,
+    scores: (number | null)[],
+    opts: { rookie?: boolean; isDummy?: boolean; teamName?: string } = {},
+  ): AwardShooterInput => ({
     name,
-    shooters,
-    totals: makeEmptyTotals(),
+    teamName: opts.teamName ?? 'Team A',
+    isDummy: opts.isDummy ?? false,
+    rookie: opts.rookie ?? false,
+    startingAvg,
+    scores,
   });
 
-  const makeSeasonData = (teams: ScTeam[]): SeasonData => ({ season: 2024, teams });
+  const makeStandingsRow = (
+    rank: number,
+    teamName: string,
+    totalRankPoints: number,
+    totalBonusPoints: number,
+  ): SeasonStandings => ({
+    rank,
+    teamId: teamName.toLowerCase().replace(/\s+/g, '-'),
+    teamName,
+    totalRankPoints,
+    totalBonusPoints,
+    totalTargets: 5000,
+  });
 
-  it('returns all null when no shooters have >= 6 weeks shot', () => {
-    const scores = nScores(5, 40); // 5 < 6 weeks
-    const data = makeSeasonData([
-      makeTeam('Team A', [makeScorecardShooter('Alice', 35, scores)]),
-    ]);
-    const awards = computeSeasonAwards(data);
+  const twoTeamStandings = [
+    makeStandingsRow(1, 'Sights Impaired', 400, 33), // 433 pts
+    makeStandingsRow(2, 'Full Choke Artists', 390, 25), // 415 pts
+  ];
+
+  it('derives placements from the rank-1/rank-2 standings rows (points = rank + bonus)', () => {
+    const awards = computeSeasonAwards([makeAwardShooter('Bob', 35, nScores(6, 40))], twoTeamStandings);
+    expect(awards.firstPlaceTeam).toBe('Sights Impaired');
+    expect(awards.firstPlacePoints).toBe(433);
+    expect(awards.secondPlaceTeam).toBe('Full Choke Artists');
+    expect(awards.secondPlacePoints).toBe(415);
+  });
+
+  it('one-team standings → second-place fields null', () => {
+    const awards = computeSeasonAwards([], [makeStandingsRow(1, 'Solo', 100, 5)]);
+    expect(awards.firstPlaceTeam).toBe('Solo');
+    expect(awards.firstPlacePoints).toBe(105);
+    expect(awards.secondPlaceTeam).toBeNull();
+    expect(awards.secondPlacePoints).toBeNull();
+  });
+
+  it('empty standings → all four placement fields null', () => {
+    const awards = computeSeasonAwards([makeAwardShooter('Bob', 35, nScores(6, 40))], []);
+    expect(awards.firstPlaceTeam).toBeNull();
+    expect(awards.firstPlacePoints).toBeNull();
+    expect(awards.secondPlaceTeam).toBeNull();
+    expect(awards.secondPlacePoints).toBeNull();
+  });
+
+  it('empty-eligible branch still carries placements (no shooter with >= 6 weeks)', () => {
+    const awards = computeSeasonAwards([makeAwardShooter('Alice', 35, nScores(5, 40))], twoTeamStandings);
+    expect(awards.firstPlaceTeam).toBe('Sights Impaired');
+    expect(awards.secondPlacePoints).toBe(415);
+    expect(awards.highestAvgShooter).toBeNull();
+  });
+
+  it('shooter awards all null when no shooters have >= 6 weeks shot', () => {
+    const awards = computeSeasonAwards([makeAwardShooter('Alice', 35, nScores(5, 40))], []);
     expect(awards.highestAvgShooter).toBeNull();
     expect(awards.rookieOfYear).toBeNull();
     expect(awards.mostImproved).toBeNull();
   });
 
-  it('returns all null when all eligible shooters are dummies', () => {
-    const data = makeSeasonData([
-      makeTeam('Team A', [
-        makeScorecardShooter('DUMMY 1', 35, nScores(6, 40), { isDummy: true }),
-      ]),
-    ]);
-    expect(computeSeasonAwards(data).highestAvgShooter).toBeNull();
+  it('shooter awards all null when all eligible shooters are dummies', () => {
+    const awards = computeSeasonAwards(
+      [makeAwardShooter('DUMMY 1', 35, nScores(6, 40), { isDummy: true })],
+      [],
+    );
+    expect(awards.highestAvgShooter).toBeNull();
   });
 
   it('identifies single eligible non-rookie as highestAvgShooter; rookieOfYear is null', () => {
-    const data = makeSeasonData([
-      makeTeam('Team A', [makeScorecardShooter('Bob', 35, nScores(6, 40))]),
-    ]);
-    const awards = computeSeasonAwards(data);
+    const awards = computeSeasonAwards([makeAwardShooter('Bob', 35, nScores(6, 40))], []);
     expect(awards.highestAvgShooter).toBe('Bob');
     expect(awards.highestAvg).toBe(40);
     expect(awards.rookieOfYear).toBeNull();
   });
 
   it('single eligible rookie wins both highestAvg and rookieOfYear', () => {
-    const data = makeSeasonData([
-      makeTeam('Team A', [
-        makeScorecardShooter('Rex', 35, nScores(6, 40), { rookie: true }),
-      ]),
-    ]);
-    const awards = computeSeasonAwards(data);
+    const awards = computeSeasonAwards(
+      [makeAwardShooter('Rex', 35, nScores(6, 40), { rookie: true })],
+      [],
+    );
     expect(awards.highestAvgShooter).toBe('Rex');
     expect(awards.rookieOfYear).toBe('Rex');
   });
@@ -675,15 +731,33 @@ describe('computeSeasonAwards', () => {
   it('identifies most improved shooter with formatted percentage', () => {
     // X: startingAvg=35 → finalAvg=40  → 100*5/15  ≈ 33.33%
     // Y: startingAvg=20 → finalAvg=40  → 100*20/30 ≈ 66.67% (wins)
-    const data = makeSeasonData([
-      makeTeam('Team A', [
-        makeScorecardShooter('X', 35, nScores(6, 40)),
-        makeScorecardShooter('Y', 20, nScores(6, 40)),
-      ]),
-    ]);
-    const awards = computeSeasonAwards(data);
+    const awards = computeSeasonAwards(
+      [makeAwardShooter('X', 35, nScores(6, 40)), makeAwardShooter('Y', 20, nScores(6, 40))],
+      [],
+    );
     expect(awards.mostImproved).toBe('Y');
     expect(awards.improvement).toBe('66.67%');
+  });
+
+  it('a startingAvg=50 shooter scores 0 improvement and loses to any genuine improver', () => {
+    // Cap: 50 → 45 would divide by zero unguarded; scores 0 (DD-4).
+    // Imp: 35 → 40 → 33.33% (wins).
+    const awards = computeSeasonAwards(
+      [makeAwardShooter('Cap', 50, nScores(6, 45)), makeAwardShooter('Imp', 35, nScores(6, 40))],
+      [],
+    );
+    expect(awards.mostImproved).toBe('Imp');
+    expect(awards.improvement).toBe('33.33%');
+    expect(Number.isFinite(awards.highestAvg as number)).toBe(true);
+  });
+
+  it('award finalAvg is full-precision, not display-rounded', () => {
+    // 7 weeks: 45,44,46,45,44,46,44 → 314/7 = 44.857142857…
+    const scores = nullScores15();
+    [45, 44, 46, 45, 44, 46, 44].forEach((v, i) => { scores[i] = v; });
+    const awards = computeSeasonAwards([makeAwardShooter('Precise', 35, scores)], []);
+    expect(awards.highestAvg).toBeCloseTo(44.857142857142854, 12);
+    expect(awards.highestAvg).not.toBe(44.9);
   });
 });
 
