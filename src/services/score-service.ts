@@ -704,12 +704,6 @@ export class ScoreService {
   // Cache control
   // -------------------------------------------------------------------------
 
-  invalidateWeek(year: number, weekNumber: number): void {
-    this.cache.delete(`week:${year}:${weekNumber}`);
-    this.cache.delete(`weeks:${year}`);
-    this.cache.delete(`latest:${year}`);
-  }
-
   clearCache(): void {
     this.cache.clear();
   }

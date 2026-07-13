@@ -175,9 +175,27 @@ descending. A points tie is broken by **total targets broken**, descending — t
 broke more targets ranks higher. Teams equal on both points and targets keep their existing
 order (stable sort).
 
-This is implemented by the shared pure comparator `compareStandings` (`scoring-engine.ts`),
-used at all three standings call sites (`_recomputeStandingsFromWeeks`, `_computeStandings`,
-and the live weekly view in `home-standings.ts`) so every path orders standings identically.
+This is implemented by the shared pure comparator `compareStandings` (`scoring-engine.ts`)
+inside the **single** standings derivation `computeStandingsFromWeeks` (`standings.ts`,
+spec 005): `season.standings` is *defined* as
+`computeStandingsFromWeeks(published week docs)` — publish, team deletion, and the home
+page's historical-week view all call the same function over the same stored docs, so no
+two surfaces can disagree.
+
+### Team Deletion & Published History (spec 005 DD-4, maintainer-confirmed 2026-07-13)
+
+Team deletion exists to fix data-entry mistakes, not to retire a real team (a team that
+folds simply stops appearing in future entries; forfeit/no-show rules apply). Two-part rule:
+
+1. **The delete itself preserves history**: the team's rows are removed from published week
+   docs *without re-ranking* — remaining teams keep the rank points they earned against the
+   deleted team — and `season.standings` becomes the sum of the patched docs.
+2. **Publishes re-derive from the ledger**: deletion also removes the team's entries, so
+   the *next* publish recomputes every ledger-covered published week as if the team never
+   participated (re-ranking those weeks among the remaining teams). The admin delete dialog
+   warns about this when the team has published results. Published weeks whose entries
+   predate the ledger (migrated seasons) are never rewritten — they are preserved verbatim
+   (spec 005 DD-2 amendment).
 
 ---
 
