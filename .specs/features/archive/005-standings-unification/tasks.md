@@ -1,7 +1,7 @@
 # Tasks: 005-standings-unification
 
 **Spec**: [spec.md](./spec.md)
-**Status**: Implemented — [PR #224](https://github.com/salmoncow/citl/pull/224) (2026-07-13)
+**Status**: Shipped ([PR #224](https://github.com/salmoncow/citl/pull/224), merged 2026-07-13)
 **PR**: single PR per DD-7 — `feat(standings): unify standings derivations; publish rewrites week docs`
 (branch `claude/compassionate-turing-5432ec`)
 
@@ -177,12 +177,14 @@ deleted. **AC**: AC-2 (module half), AC-5 (new-file budget).
 - [x] **6.5 (S)** Set spec.md + this file's Status to "Implemented — PR #NNN"; after
       merge, move `005-standings-unification/` to `.specs/features/archive/` per the
       `.specs/README.md` lifecycle. Link-check all edited docs' relative links.
+      *(Archived post-merge in the follow-up docs PR.)*
 
 ---
 
 ## Post-merge / post-deploy
 
-- [ ] Deploy via the normal pipeline (no new Cloud Function → `firebase-deploy-runbook`
-      IAM steps N/A, spec §Constitutional Constraints).
+- [x] Deploy via the normal pipeline (no new Cloud Function → `firebase-deploy-runbook`
+      IAM steps N/A, spec §Constitutional Constraints). *(Merged to main 2026-07-13;
+      deploy-production ran on the merge commit.)*
 - [ ] Prod spot-check after the next real publish: home Week-N views vs Season view agree
       for the current season; archived seasons byte-identical (spot-check one).

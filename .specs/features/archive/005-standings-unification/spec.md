@@ -2,10 +2,10 @@
 
 **Feature ID**: 005-standings-unification
 **Created**: 2026-07-13
-**Status**: Implemented — [PR #224](https://github.com/salmoncow/citl/pull/224) (2026-07-13); archive after merge
-**Source**: Backlog item [FU-01](../../reviews/2026-07-deep-review/backlog.md) (promotion of the
-spec 003 [DD-4](../archive/003-service-decomposition/spec.md) deferral); original incident
-context [F-05](../../reviews/2026-07-deep-review/report.md).
+**Status**: Shipped ([PR #224](https://github.com/salmoncow/citl/pull/224), merged 2026-07-13)
+**Source**: Backlog item [FU-01](../../../reviews/2026-07-deep-review/backlog.md) (promotion of the
+spec 003 [DD-4](../003-service-decomposition/spec.md) deferral); original incident
+context [F-05](../../../reviews/2026-07-deep-review/report.md).
 
 ---
 
@@ -33,7 +33,7 @@ the current season wherever its stored docs already agree).
 ### The live divergence path (verified 2026-07-13 — this is not theoretical)
 
 Bonus points depend on going-in averages, which depend on **all earlier weeks' scores**
-(see [.specs/domain/scoring-rules.md](../../domain/scoring-rules.md)). When an admin edits
+(see [.specs/domain/scoring-rules.md](../../../domain/scoring-rules.md)). When an admin edits
 week 2's entries and republishes week 2 while the season stands at week 5:
 
 - `_publishWeekInner` (post-F-05 fix) correctly recomputes `season.standings` from entries
@@ -123,13 +123,13 @@ Two further divergence paths exist today and are closed by the same design:
   publish against daily ceilings of 20,000 writes / 50,000 reads. No new Cloud Functions →
   the `firebase-deploy-runbook` post-deploy steps are **N/A**.
 - **§IV.2 (forbidden patterns)**: the ruleset in
-  [`scripts/forbidden-patterns.json`](../../../scripts/forbidden-patterns.json) is active
+  [`scripts/forbidden-patterns.json`](../../../../scripts/forbidden-patterns.json) is active
   via the PostToolUse hook and CI lint gate — notably the 750-line cap (AC-5) and the
   bounded-`getDocs` rule (the publish path's new week-doc read reuses the existing bounded
   `getAllWeekResults`; no new query shapes).
 - **§VIII.1 (version bumps)**: no constitution change is needed — no new standard is
   introduced. The deleteTeam business rule lands in
-  [.specs/domain/scoring-rules.md](../../domain/scoring-rules.md) (living domain reference,
+  [.specs/domain/scoring-rules.md](../../../domain/scoring-rules.md) (living domain reference,
   its designated home).
 
 ## Architecture Approach
@@ -345,7 +345,7 @@ AC-2's "one derivation" criterion as FU-01 explicitly allows.
 
 **Decision**: the stored shapes of `seasons/{year}`, `seasons/{year}/weeks/{n}`, and
 `season.standings` are **unchanged** (see
-[firestore-schema.md](../../technical/firestore-schema.md)); only prose in that doc
+[firestore-schema.md](../../../technical/firestore-schema.md)); only prose in that doc
 changes (the "Denormalized standings" pattern description and a `publishedAt`
 preserved-on-rewrite note). No backfill script:
 
