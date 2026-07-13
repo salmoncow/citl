@@ -2,7 +2,7 @@
 
 **Feature ID**: 005-standings-unification
 **Created**: 2026-07-13
-**Status**: Approved — Open Questions resolved 2026-07-13 (see below); implementing
+**Status**: Implemented — [PR #224](https://github.com/salmoncow/citl/pull/224) (2026-07-13); archive after merge
 **Source**: Backlog item [FU-01](../../reviews/2026-07-deep-review/backlog.md) (promotion of the
 spec 003 [DD-4](../archive/003-service-decomposition/spec.md) deferral); original incident
 context [F-05](../../reviews/2026-07-deep-review/report.md).
@@ -88,26 +88,26 @@ Two further divergence paths exist today and are closed by the same design:
 
 ## Acceptance Criteria (non-negotiable, from FU-01)
 
-- [ ] **AC-1 (invariant)**: identical season states can never yield disagreeing
+- [x] **AC-1 (invariant)**: identical season states can never yield disagreeing
       `season.standings` vs. week-doc standings rows. Unit tests assert, after each of
       **publish**, **republish-earlier-week**, **deleteTeam**, and
       **removeShooterFromRoster**: `season.standings` (as written) deep-equals
       `computeStandingsFromWeeks(<week docs as stored after the operation>)`.
-- [ ] **AC-2 (one derivation)**: the number of standings derivations in `src/` drops from
+- [x] **AC-2 (one derivation)**: the number of standings derivations in `src/` drops from
       three to one. `computeStandings` is deleted; `home-standings.ts` contains no local
       cumulative-summing loop — it imports the one canonical function (importing the single
       canonical function at a second call site still counts as one derivation).
-- [ ] **AC-3 (F-05 residual closed)**: emulator flow — publish weeks 1–5, edit week 2's
+- [x] **AC-3 (F-05 residual closed)**: emulator flow — publish weeks 1–5, edit week 2's
       entries, republish week 2 → week docs 2–5 **and** `season.standings` update
       consistently; the home page's Week 3/4/5 views and Season view agree.
-- [ ] **AC-4 (behavior-change honesty)**: this spec's Behavior Changes table (DD-3/DD-6) is
+- [x] **AC-4 (behavior-change honesty)**: this spec's Behavior Changes table (DD-3/DD-6) is
       accurate to what ships; read surfaces on already-consistent seasons are verified
       equivalent by dual preview-channel SHA-256 DOM-hash comparison (the PR #203/#204 /
       spec 003 AC-2 technique).
-- [ ] **AC-5 (size discipline)**: `wc -l src/services/score-service.ts` ≤ 749 (no net
+- [x] **AC-5 (size discipline)**: `wc -l src/services/score-service.ts` ≤ 749 (no net
       growth; expected to shrink); no file touched by this feature exceeds 750 lines and no
       **new** file exceeds 500.
-- [ ] **AC-6 (no new surface)**: no new Cloud Functions, no Firestore schema shape change,
+- [x] **AC-6 (no new surface)**: no new Cloud Functions, no Firestore schema shape change,
       no rules change, no new indexes.
 
 ## Constitutional Constraints
@@ -404,25 +404,25 @@ See [tasks.md](./tasks.md) — 6 groups, 21 tasks, each with concrete acceptance
 
 ## Testing Checklist
 
-- [ ] `npm run typecheck`, `npm test`, `npm run lint` clean. Existing publish-path tests
+- [x] `npm run typecheck`, `npm test`, `npm run lint` clean. Existing publish-path tests
       updated deliberately (this is a behavior change — the spec 003 "tests unmodified"
       rule does not apply; every modified assertion must trace to a DD).
-- [ ] `npm run test:rules` + `npm run test:functions` pass (regression tripwire; neither
+- [x] `npm run test:rules` + `npm run test:functions` pass (regression tripwire; neither
       is touched). **Note**: `test:rules` conflicts with a running dev emulator on port
       8080 — stop `npm run dev` first.
-- [ ] AC-1 invariant unit tests: after publish / republish-earlier-week / deleteTeam /
+- [x] AC-1 invariant unit tests: after publish / republish-earlier-week / deleteTeam /
       removeShooterFromRoster, written `season.standings` ≡
       `computeStandingsFromWeeks(written week docs)` (stub repository captures writes).
-- [ ] Emulator demos (backup `.emulator-data` first, restore after): AC-3 republish flow;
+- [x] Emulator demos (backup `.emulator-data` first, restore after): AC-3 republish flow;
       publish-after-deleteTeam (DD-4 semantics observed and screenshotted for the PR);
       gap-week scenario (unpublished week stays unpublished, standings exclude it).
-- [ ] `publishedAt` preserved on rewritten weeks; fresh on the published week.
-- [ ] Accolades on rewritten weeks with unchanged entries are identical pre/post
+- [x] `publishedAt` preserved on rewritten weeks; fresh on the published week.
+- [x] Accolades on rewritten weeks with unchanged entries are identical pre/post
       (deterministic recompute proof).
-- [ ] Dual preview-channel SHA-256 DOM-hash equivalence (AC-4) across all archived seasons
+- [x] Dual preview-channel SHA-256 DOM-hash equivalence (AC-4) across all archived seasons
       + consistent current-season views: home (Season + each week), scorecards, scoresheet
       generator.
-- [ ] `wc -l src/services/score-service.ts` ≤ 749; hook + `/check` clean.
+- [x] `wc -l src/services/score-service.ts` ≤ 749; hook + `/check` clean.
 
 ## Open Questions for the Maintainer
 
