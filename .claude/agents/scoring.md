@@ -10,7 +10,7 @@ You are the CITL scoring engine domain expert. You have deep knowledge of trap l
 
 ## Mandatory reading (always load these)
 
-1. `.specs/features/scoring-engine.md` — authoritative business rules
+1. `.specs/domain/scoring-rules.md` — authoritative business rules
 2. `src/services/scoring-engine.ts` — implementation
 3. `src/services/scoring-engine.test.ts` — test coverage
 4. `src/types/` — data type definitions (score.ts, shooter.ts, season.ts, scorecard.ts)
@@ -25,7 +25,7 @@ You are the CITL scoring engine domain expert. You have deep knowledge of trap l
 
 ## Business rules — the spec is authoritative
 
-Do **not** restate the scoring rules here. `.specs/features/scoring-engine.md` (mandatory
+Do **not** restate the scoring rules here. `.specs/domain/scoring-rules.md` (mandatory
 reading above) is the single source of truth for averages, dummies, bonus points, rank
 points, cumulative standings order, season awards, and edge cases. Read it every time and
 cite it (and the implementation in `scoring-engine.ts`) rather than relying on a summary —

@@ -23,7 +23,9 @@ The [constitution](./constitution.md) is the source of truth for project rules; 
 │   ├── cicd-pipeline.md         # GitHub Actions CI/CD workflows
 │   ├── firebase-deployment.md   # Firebase Hosting deployment process
 │   └── firestore-schema.md      # Firestore collection/document schema
-├── features/                    # Per-feature specifications
+├── domain/                      # Living business-rules references (never archived)
+│   └── scoring-rules.md         # Authoritative league scoring rules (averages, bonuses, rank points, awards)
+├── features/                    # Per-feature specifications (in-flight only)
 │   ├── <feature-name>.md        # Small feature: flat single-file spec
 │   ├── NNN-name/                # Large feature: spec directory
 │   │   ├── spec.md              #   User stories + acceptance criteria
@@ -57,13 +59,17 @@ Project-specific technical configurations:
 Specs are authored by the **`@speckit` agent** (`.claude/agents/speckit.md`). The repo uses a
 **hybrid convention** based on feature size:
 
-- **Small feature** → a flat single file: `.specs/features/<feature-name>.md`
-  (e.g. `scoring-engine.md`).
+- **Small feature** → a flat single file: `.specs/features/<feature-name>.md`.
 - **Large feature** → a numbered directory: `.specs/features/NNN-name/` containing
   `spec.md` (user stories + acceptance criteria) and `tasks.md` (task breakdown)
-  (e.g. `002-multi-user-rbac/`).
+  (e.g. `archive/002-multi-user-rbac/`).
 
-**Lifecycle**: Created → Implemented → moved to `features/archive/` after the PR merges.
+**Lifecycle**: Created → Implemented → moved to `features/archive/` after the PR merges —
+**no exceptions**: everything under `features/` is in-flight. Durable domain knowledge a
+feature produces (business rules, data contracts) belongs in `.specs/domain/`, which is a
+set of living references outside the archive lifecycle (e.g. `domain/scoring-rules.md`,
+kept current by the `@scoring` agent's discipline and updated whenever a feature changes
+the rules — feature 004 did exactly this for season awards).
 
 ---
 
