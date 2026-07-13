@@ -9,7 +9,7 @@ import { getServices } from '@/services/app-services';
 import { compareStandings } from '@/services/scoring-engine';
 import { escapeHtml } from '@/modules/ui';
 import type { Team, WeekResult } from '@/types/score';
-import type { Season } from '@/types/season';
+import type { Season, SeasonAwards } from '@/types/season';
 import type { Accolade } from '@/types/shooter';
 
 const { scoreService } = getServices();
@@ -211,9 +211,79 @@ class HomeStandings extends HTMLElement {
       accolades = weekResult.accolades ?? [];
     }
 
+    // Season awards ride the already-loaded season doc — zero extra reads
+    // (spec 004 AC-6). Rendered only in the Season view and only when the
+    // finalize flow (or the legacy migration) has written awards.
+    const awardsHtml =
+      weekKey === 'season' && this._season?.awards
+        ? this._renderAwards(this._season.awards)
+        : '';
+
     this.querySelector('#hs-table')!.innerHTML =
+      awardsHtml +
       this._renderAccolades(accolades) +
       this._buildTable(rows, subtitle);
+  }
+
+  /**
+   * Season Awards section (spec 004 DD-2). Each field is null-guarded
+   * independently (repository reads are unvalidated casts); rows with a
+   * missing winner are omitted, and the whole section is omitted when no
+   * row renders.
+   */
+  private _renderAwards(awards: SeasonAwards): string {
+    const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+    const items: { badge: string; name: string; detail: string }[] = [];
+    if (typeof awards.firstPlaceTeam === 'string') {
+      items.push({
+        badge: 'First Place',
+        name: awards.firstPlaceTeam,
+        detail: num(awards.firstPlacePoints) ? `${awards.firstPlacePoints} pts` : '',
+      });
+    }
+    if (typeof awards.secondPlaceTeam === 'string') {
+      items.push({
+        badge: 'Second Place',
+        name: awards.secondPlaceTeam,
+        detail: num(awards.secondPlacePoints) ? `${awards.secondPlacePoints} pts` : '',
+      });
+    }
+    if (typeof awards.highestAvgShooter === 'string') {
+      items.push({
+        badge: 'Highest Average',
+        name: awards.highestAvgShooter,
+        detail: num(awards.highestAvg) ? `${awards.highestAvg.toFixed(2)} avg` : '',
+      });
+    }
+    if (typeof awards.rookieOfYear === 'string') {
+      items.push({
+        badge: 'Rookie of the Year',
+        name: awards.rookieOfYear,
+        detail: num(awards.rookieAvg) ? `${awards.rookieAvg.toFixed(2)} avg` : '',
+      });
+    }
+    if (typeof awards.mostImproved === 'string') {
+      items.push({
+        badge: 'Most Improved',
+        name: awards.mostImproved,
+        detail: typeof awards.improvement === 'string' ? awards.improvement : '',
+      });
+    }
+    if (items.length === 0) return '';
+
+    const lis = items.map((item) => `
+      <li class="awards-item">
+        <span class="awards-badge">${escapeHtml(item.badge)}</span>
+        <span class="awards-item__name">${escapeHtml(item.name)}</span>
+        <span class="awards-item__detail">${escapeHtml(item.detail)}</span>
+      </li>`).join('');
+
+    return `
+    <div class="awards-section">
+      <h3 class="awards-section__heading">Season Awards</h3>
+      <ul class="awards-list">${lis}</ul>
+    </div>`;
   }
 
   private _renderAccolades(accolades: Accolade[]): string {
