@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { ScorecardShooter, SeasonData, Team as ScTeam, TeamTotals } from '@/types/scorecard';
+import type { ScorecardShooter, SeasonData, TeamTotals } from '@/types/scorecard';
 import type { AwardShooterInput, SeasonStandings } from '@/types/season';
 import type { Team as PriorTeam, TeamResult } from '@/types/score';
 import type { Shooter } from '@/types/shooter';
