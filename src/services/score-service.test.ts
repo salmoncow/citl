@@ -17,6 +17,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ScoreService } from './score-service';
 import { buildPriorAvgMap, computeShooterAverage } from './scoring-engine';
+import { computeStandingsFromWeeks } from './standings';
 import { success, failure } from '@/types/result';
 import type { ScoreRepository } from '@/repositories/score-repository';
 import type { Team, WeekResult, SeasonEntry } from '@/types/score';
@@ -1050,18 +1051,29 @@ function makePublishRepo(opts: {
   entries?: SeasonEntry[];
   teams?: Team[];
   season?: Season | null;
-  onPublish?: (wr: WeekResult, su: object) => void;
+  /** Pre-existing stored week docs — the rewrite-set source (spec 005 DD-2). */
+  storedWeeks?: WeekResult[];
+  onPublish?: (wrs: WeekResult[], su: object) => void;
 }): ScoreRepository {
   const stub: Partial<ScoreRepository> = {
     getEntries: async () => success(opts.entries ?? []),
     getTeams: async () => success(opts.teams ?? []),
     getSeason: async () => success(opts.season ?? null),
-    publishWeek: async (_y, wr, su) => {
-      opts.onPublish?.(wr, su as object);
-      return success({ weekResult: wr, seasonUpdates: su });
+    getAllWeekResults: async () => success(opts.storedWeeks ?? []),
+    publishWeek: async (_y, wrs, su) => {
+      opts.onPublish?.(wrs, su as object);
+      return success({ weekResults: wrs, seasonUpdates: su });
     },
   };
   return stub as unknown as ScoreRepository;
+}
+
+/** A minimal stored week doc — only weekNumber/publishedAt/teamResults matter here. */
+function makeStoredWeek(
+  weekNumber: number,
+  teamResults: WeekResult['teamResults'] = [],
+): WeekResult {
+  return { weekNumber, publishedAt: `stored-${weekNumber}`, teamResults };
 }
 
 describe('publishWeek — input validation', () => {
@@ -1121,17 +1133,20 @@ describe('publishWeek — happy path: WeekResult structure', () => {
     const entryB = makeEntry({ weekNumber: 1, teamId: 'team-b', teamName: 'Team B',
       shooters: [{ name: 'V' }, { name: 'W' }, { name: 'X' }, { name: 'Y' }, { name: 'Z' }] });
 
-    let captured: WeekResult | undefined;
+    // publishWeek now writes the full rewrite set (spec 005 DD-2); with no
+    // stored weeks, a first publish writes exactly one doc.
+    let captured: WeekResult[] | undefined;
     const svc = new ScoreService(makePublishRepo({
       entries: [entryA, entryB],
       teams: [makeTeamFromEntry(entryA), makeTeamFromEntry(entryB)],
-      onPublish: (wr) => { captured = wr; },
+      onPublish: (wrs) => { captured = wrs; },
     }));
 
     const result = await svc.publishWeek(2026, 1);
     expect(result.success).toBe(true);
-    expect(captured?.weekNumber).toBe(1);
-    expect(captured?.teamResults).toHaveLength(2);
+    expect(captured).toHaveLength(1);
+    expect(captured?.[0]?.weekNumber).toBe(1);
+    expect(captured?.[0]?.teamResults).toHaveLength(2);
   });
 });
 
@@ -1231,20 +1246,20 @@ describe('publishWeek — standings computation', () => {
       shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] });
     const team: Team = { ...makeTeamFromEntry(entry), id: 'original-team-id' };
 
-    let capturedWr: WeekResult | undefined;
+    let capturedWrs: WeekResult[] | undefined;
     let capturedStandings: SeasonStandings[] | undefined;
     const svc = new ScoreService(makePublishRepo({
       entries: [entry],
       teams: [team],
-      onPublish: (wr, su) => {
-        capturedWr = wr;
+      onPublish: (wrs, su) => {
+        capturedWrs = wrs;
         capturedStandings = (su as { standings: SeasonStandings[] }).standings;
       },
     }));
 
     await svc.publishWeek(2026, 1);
     // Not _slugify('Renamed Team') === 'renamed-team'.
-    expect(capturedWr?.teamResults[0]?.teamId).toBe('original-team-id');
+    expect(capturedWrs?.[0]?.teamResults[0]?.teamId).toBe('original-team-id');
     expect(capturedStandings?.[0]?.teamId).toBe('original-team-id');
   });
 });
@@ -1264,16 +1279,16 @@ describe('publishWeek — dummy auto-injection via _buildSeasonData', () => {
     // Roster has 5 shooters; entry only covers 3 → 2 dummies auto-injected
     const team = makeTeamFromEntry(entry, ['D', 'E']);
 
-    let capturedWr: WeekResult | undefined;
+    let capturedWrs: WeekResult[] | undefined;
     const svc = new ScoreService(makePublishRepo({
       entries: [entry],
       teams: [team],
-      onPublish: (wr) => { capturedWr = wr; },
+      onPublish: (wrs) => { capturedWrs = wrs; },
     }));
 
     await svc.publishWeek(2026, 1);
 
-    const teamResult = capturedWr?.teamResults[0];
+    const teamResult = capturedWrs?.[0]?.teamResults[0];
     expect(teamResult?.targets).toBe(200); // 40+42+44+37+37
   });
 
@@ -1290,19 +1305,19 @@ describe('publishWeek — dummy auto-injection via _buildSeasonData', () => {
     });
     const team = makeTeamFromEntry(entry);
 
-    let capturedWr: WeekResult | undefined;
+    let capturedWrs: WeekResult[] | undefined;
     const svc = new ScoreService(makePublishRepo({
       entries: [entry],
       teams: [team],
-      onPublish: (wr) => { capturedWr = wr; },
+      onPublish: (wrs) => { capturedWrs = wrs; },
     }));
 
     await svc.publishWeek(2026, 1);
 
-    const shooterScores = capturedWr?.teamResults[0]?.shooterScores ?? [];
+    const shooterScores = capturedWrs?.[0]?.teamResults[0]?.shooterScores ?? [];
     const dummies = shooterScores.filter((s) => s.name.toUpperCase().includes('DUMMY'));
     expect(dummies).toHaveLength(0);
-    expect(capturedWr?.teamResults[0]?.targets).toBe(200); // 5 × 40
+    expect(capturedWrs?.[0]?.teamResults[0]?.targets).toBe(200); // 5 × 40
   });
 });
 
@@ -1328,16 +1343,16 @@ describe('publishWeek — shooter-name normalization (F-51)', () => {
       shooters: ['John Smith', 'Bob', 'Cal', 'Dan', 'Ed'].map((n) => makeShooter(n, 45)),
       totals: { targets: [], rankPoints: [], bonusPoints: [] },
     };
-    let captured: WeekResult | undefined;
+    let captured: WeekResult[] | undefined;
     const svc = new ScoreService(makePublishRepo({
       entries: [entry],
       teams: [team],
-      onPublish: (wr) => { captured = wr; },
+      onPublish: (wrs) => { captured = wrs; },
     }));
     const result = await svc.publishWeek(2026, 1);
     expect(result.success).toBe(true);
 
-    const tr = captured!.teamResults.find((t) => t.teamName === 'Alphas')!;
+    const tr = captured![0]!.teamResults.find((t) => t.teamName === 'Alphas')!;
     const johns = tr.shooterScores.filter(
       (s) => s.name.toLowerCase().trim() === 'john smith',
     );
@@ -1345,6 +1360,161 @@ describe('publishWeek — shooter-name normalization (F-51)', () => {
     expect(tr.shooterScores).toHaveLength(5); // exactly the 5 entry shooters
     expect(tr.targets).toBe(220);
     expect(tr.bonusPoints).toBe(0); // phantom 35-avg shooter would have made this 5
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Spec 005 — the AC-1 invariant and the rewrite-set pipeline (DD-1/DD-2/DD-3)
+// ---------------------------------------------------------------------------
+
+describe('publishWeek — spec 005: season.standings ≡ Σ written week docs (AC-1)', () => {
+  const wk = (n: number, total = 40) => makeEntry({
+    weekNumber: n, teamId: 'team-a', teamName: 'Team A',
+    shooters: [{ name: 'A', score1: Math.floor(total / 2), score2: Math.ceil(total / 2) },
+      { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }],
+  });
+
+  it('first publish: written standings deep-equal the canonical function over the written docs', async () => {
+    let wrs: WeekResult[] | undefined;
+    let standings: SeasonStandings[] | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [wk(1)],
+      teams: [makeTeamFromEntry(wk(1))],
+      onPublish: (w, su) => { wrs = w; standings = (su as { standings: SeasonStandings[] }).standings; },
+    }));
+    const result = await svc.publishWeek(2026, 1);
+    expect(result.success).toBe(true);
+    expect(standings).toEqual(computeStandingsFromWeeks(wrs!, 1));
+  });
+
+  it('republish week 2 at season week 5: all published docs are rewritten from the ledger and the invariant holds (AC-3 unit half)', async () => {
+    // Stored docs 1–5 carry stale values a pre-005 out-of-order republish
+    // could have left behind (bonusPoints 99 can never come from the engine).
+    const staleRow = { teamId: 'team-a', teamName: 'Team A', targets: 1, rankPoints: 1, bonusPoints: 99, shooterScores: [] };
+    const storedWeeks = [1, 2, 3, 4, 5].map((n) => makeStoredWeek(n, [staleRow]));
+
+    let wrs: WeekResult[] | undefined;
+    let su: { currentWeek?: number; standings?: SeasonStandings[] } | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [wk(1), wk(2, 44), wk(3), wk(4), wk(5)],
+      teams: [makeTeamFromEntry(wk(1))],
+      season: { currentWeek: 5 } as unknown as Season,
+      storedWeeks,
+      onPublish: (w, s) => { wrs = w; su = s as typeof su; },
+    }));
+
+    const result = await svc.publishWeek(2026, 2);
+    expect(result.success).toBe(true);
+
+    // DD-2: the rewrite set is every stored week ≤ maxWeek plus the published week.
+    expect(wrs!.map((w) => w.weekNumber)).toEqual([1, 2, 3, 4, 5]);
+    // DD-3: every rewritten doc is engine-derived — the stale 99s are healed.
+    for (const w of wrs!) {
+      for (const tr of w.teamResults) expect(tr.bonusPoints).not.toBe(99);
+    }
+    // DD-3: publishedAt preserved for rewrites, fresh for the published week.
+    expect(wrs!.find((w) => w.weekNumber === 1)!.publishedAt).toBe('stored-1');
+    expect(wrs!.find((w) => w.weekNumber === 5)!.publishedAt).toBe('stored-5');
+    expect(wrs!.find((w) => w.weekNumber === 2)!.publishedAt).not.toBe('stored-2');
+    // F-05: no rewind.
+    expect(su?.currentWeek).toBe(5);
+    // AC-1: the aggregate is the canonical function over the docs written.
+    expect(su?.standings).toEqual(computeStandingsFromWeeks(wrs!, 5));
+  });
+
+  it('gap weeks stay unpublished: entries for weeks 1,2,4 with only 1,2 stored → publishing 4 writes 1,2,4 and never 3 (DD-2)', async () => {
+    const staleRow = { teamId: 'team-a', teamName: 'Team A', targets: 1, rankPoints: 1, bonusPoints: 0, shooterScores: [] };
+    let wrs: WeekResult[] | undefined;
+    let standings: SeasonStandings[] | undefined;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [wk(1), wk(2), wk(4)],
+      teams: [makeTeamFromEntry(wk(1))],
+      season: { currentWeek: 2 } as unknown as Season,
+      storedWeeks: [makeStoredWeek(1, [staleRow]), makeStoredWeek(2, [staleRow])],
+      onPublish: (w, su) => { wrs = w; standings = (su as { standings: SeasonStandings[] }).standings; },
+    }));
+    const result = await svc.publishWeek(2026, 4);
+    expect(result.success).toBe(true);
+    expect(wrs!.map((w) => w.weekNumber)).toEqual([1, 2, 4]);
+    expect(standings).toEqual(computeStandingsFromWeeks(wrs!, 4));
+  });
+
+  it('writes the whole rewrite set and the season update through a single repository call (atomic batch)', async () => {
+    let publishCalls = 0;
+    const svc = new ScoreService(makePublishRepo({
+      entries: [wk(1), wk(2)],
+      teams: [makeTeamFromEntry(wk(1))],
+      season: { currentWeek: 2 } as unknown as Season,
+      storedWeeks: [makeStoredWeek(1), makeStoredWeek(2)],
+      onPublish: () => { publishCalls++; },
+    }));
+    const result = await svc.publishWeek(2026, 1);
+    expect(result.success).toBe(true);
+    expect(publishCalls).toBe(1);
+  });
+
+  it('deleteTeam: recomputed standings deep-equal the canonical function over the patched docs', async () => {
+    const patchedWeeks = [
+      makeStoredWeek(1, [{ teamId: 'team-b', teamName: 'Team B', targets: 200, rankPoints: 30, bonusPoints: 5, shooterScores: [] }]),
+      makeStoredWeek(2, [{ teamId: 'team-b', teamName: 'Team B', targets: 190, rankPoints: 28, bonusPoints: 0, shooterScores: [] }]),
+    ];
+    let written: SeasonStandings[] | undefined;
+    const repo: Partial<ScoreRepository> = {
+      deleteTeam: async () => success(undefined),
+      getAllWeekResults: async () => success(patchedWeeks),
+      updateSeason: async (_y, updates) => {
+        written = (updates as { standings: SeasonStandings[] }).standings;
+        return success(updates);
+      },
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.deleteTeam(2026, 'team-a');
+    expect(result.success).toBe(true);
+    expect(written).toEqual(computeStandingsFromWeeks(patchedWeeks));
+  });
+
+  it('removeShooterFromRoster: no standings write occurs — sums are untouched, so the invariant holds without action', async () => {
+    const team = makeTeam('Team', [makeRosterShooter('Alice')]);
+    let updateSeasonCalled = false;
+    const repo: Partial<ScoreRepository> = {
+      getTeam: async () => success(team),
+      getEntry: async () => success(null),
+      getAllWeekResults: async () => success([makeStoredWeek(1)]),
+      removeShooterFromRosterAndEntries: async () => success(undefined),
+      updateSeason: async () => { updateSeasonCalled = true; return success({}); },
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+    const result = await svc.removeShooterFromRoster(2026, 'team-1', 'Alice');
+    expect(result.success).toBe(true);
+    expect(updateSeasonCalled).toBe(false);
+  });
+});
+
+describe('publishWeek — spec 005: widened cache invalidation (task 3.2)', () => {
+  it('publishing week 2 also invalidates cached week docs it rewrote (week 1)', async () => {
+    const entries = [1, 2].map((n) => makeEntry({
+      weekNumber: n, teamId: 'team-a', teamName: 'Team A',
+      shooters: [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }],
+    }));
+    let getWeekCalls = 0;
+    const repo: Partial<ScoreRepository> = {
+      getEntries: async () => success(entries),
+      getTeams: async () => success([makeTeamFromEntry(entries[0]!)]),
+      getSeason: async () => success({ currentWeek: 2 } as unknown as Season),
+      getAllWeekResults: async () => success([makeStoredWeek(1), makeStoredWeek(2)]),
+      getWeekResult: async () => { getWeekCalls++; return success(makeStoredWeek(1)); },
+      publishWeek: async (_y, wrs, su) => success({ weekResults: wrs, seasonUpdates: su }),
+    };
+    const svc = new ScoreService(repo as unknown as ScoreRepository);
+
+    await svc.getWeekResult(2026, 1); // populate week:2026:1
+    await svc.getWeekResult(2026, 1); // cache hit
+    expect(getWeekCalls).toBe(1);
+
+    await svc.publishWeek(2026, 2);   // rewrites week 1 too → must invalidate it
+
+    await svc.getWeekResult(2026, 1); // must re-fetch
+    expect(getWeekCalls).toBe(2);
   });
 });
 
@@ -1361,7 +1531,8 @@ describe('publishWeek — cache invalidation', () => {
       getEntries: async () => success([entry]),
       getTeams: async () => success([makeTeamFromEntry(entry)]),
       getSeason: async () => { getSeasonCallCount++; return success(season); },
-      publishWeek: async (_y, wr, su) => success({ weekResult: wr, seasonUpdates: su }),
+      getAllWeekResults: async () => success([]),
+      publishWeek: async (_y, wrs, su) => success({ weekResults: wrs, seasonUpdates: su }),
     };
     const svc = new ScoreService(repo as unknown as ScoreRepository);
 
