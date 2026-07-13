@@ -164,6 +164,12 @@ functional gain. Documented here so nobody "fixes" it casually.
 
 ### DD-2: Display surface = `home-standings`, "Season" view; no-data = render nothing
 
+> **Refinement (Tyler, 2026-07-12, pre-merge)**: the awards render as a design-system
+> table (`.awards-table`, mirroring `.standing-table`: Award | Winner | Result) with
+> plain-emoji trophy icons (🏆 🥈 🎯 ⭐ 📈 — no custom assets, consistent with ADR-008),
+> replacing the initially shipped badge list. Row-omission and null-guard semantics
+> below are unchanged.
+
 **Decision**: Render the awards inside `src/components/home-standings.ts`, in `_renderTable`,
 **only when the week selector is `"Season"`** and `this._season.awards != null` — a
 "Season Awards" section above the standings table, structurally parallel to the existing

@@ -226,63 +226,80 @@ class HomeStandings extends HTMLElement {
   }
 
   /**
-   * Season Awards section (spec 004 DD-2). Each field is null-guarded
-   * independently (repository reads are unvalidated casts); rows with a
-   * missing winner are omitted, and the whole section is omitted when no
-   * row renders.
+   * Season Awards table (spec 004 DD-2, table refinement 2026-07-12). Each
+   * field is null-guarded independently (repository reads are unvalidated
+   * casts); rows with a missing winner are omitted, and the whole section is
+   * omitted when no row renders. Icons are plain emoji — no icon font or
+   * custom assets (ADR-008).
    */
   private _renderAwards(awards: SeasonAwards): string {
     const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
-    const items: { badge: string; name: string; detail: string }[] = [];
+    const rows: { icon: string; award: string; winner: string; result: string }[] = [];
     if (typeof awards.firstPlaceTeam === 'string') {
-      items.push({
-        badge: 'First Place',
-        name: awards.firstPlaceTeam,
-        detail: num(awards.firstPlacePoints) ? `${awards.firstPlacePoints} pts` : '',
+      rows.push({
+        icon: '\u{1F3C6}', // 🏆
+        award: 'First Place',
+        winner: awards.firstPlaceTeam,
+        result: num(awards.firstPlacePoints) ? `${awards.firstPlacePoints} pts` : '—',
       });
     }
     if (typeof awards.secondPlaceTeam === 'string') {
-      items.push({
-        badge: 'Second Place',
-        name: awards.secondPlaceTeam,
-        detail: num(awards.secondPlacePoints) ? `${awards.secondPlacePoints} pts` : '',
+      rows.push({
+        icon: '\u{1F948}', // 🥈
+        award: 'Second Place',
+        winner: awards.secondPlaceTeam,
+        result: num(awards.secondPlacePoints) ? `${awards.secondPlacePoints} pts` : '—',
       });
     }
     if (typeof awards.highestAvgShooter === 'string') {
-      items.push({
-        badge: 'Highest Average',
-        name: awards.highestAvgShooter,
-        detail: num(awards.highestAvg) ? `${awards.highestAvg.toFixed(2)} avg` : '',
+      rows.push({
+        icon: '\u{1F3AF}', // 🎯
+        award: 'Highest Average',
+        winner: awards.highestAvgShooter,
+        result: num(awards.highestAvg) ? `${awards.highestAvg.toFixed(2)} avg` : '—',
       });
     }
     if (typeof awards.rookieOfYear === 'string') {
-      items.push({
-        badge: 'Rookie of the Year',
-        name: awards.rookieOfYear,
-        detail: num(awards.rookieAvg) ? `${awards.rookieAvg.toFixed(2)} avg` : '',
+      rows.push({
+        icon: '\u{2B50}', // ⭐
+        award: 'Rookie of the Year',
+        winner: awards.rookieOfYear,
+        result: num(awards.rookieAvg) ? `${awards.rookieAvg.toFixed(2)} avg` : '—',
       });
     }
     if (typeof awards.mostImproved === 'string') {
-      items.push({
-        badge: 'Most Improved',
-        name: awards.mostImproved,
-        detail: typeof awards.improvement === 'string' ? awards.improvement : '',
+      rows.push({
+        icon: '\u{1F4C8}', // 📈
+        award: 'Most Improved',
+        winner: awards.mostImproved,
+        result: typeof awards.improvement === 'string' ? awards.improvement : '—',
       });
     }
-    if (items.length === 0) return '';
+    if (rows.length === 0) return '';
 
-    const lis = items.map((item) => `
-      <li class="awards-item">
-        <span class="awards-badge">${escapeHtml(item.badge)}</span>
-        <span class="awards-item__name">${escapeHtml(item.name)}</span>
-        <span class="awards-item__detail">${escapeHtml(item.detail)}</span>
-      </li>`).join('');
+    const trs = rows.map((row) => `
+        <tr>
+          <td class="awards-table__award">
+            <span class="awards-table__icon" aria-hidden="true">${row.icon}</span>${escapeHtml(row.award)}
+          </td>
+          <td class="awards-table__winner">${escapeHtml(row.winner)}</td>
+          <td class="awards-table__result">${escapeHtml(row.result)}</td>
+        </tr>`).join('');
 
     return `
     <div class="awards-section">
       <h3 class="awards-section__heading">Season Awards</h3>
-      <ul class="awards-list">${lis}</ul>
+      <table class="awards-table">
+        <thead>
+          <tr>
+            <th>Award</th>
+            <th>Winner</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>${trs}</tbody>
+      </table>
     </div>`;
   }
 
