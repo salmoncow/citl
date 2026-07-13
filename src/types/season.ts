@@ -35,6 +35,7 @@ export interface SeasonAwards {
  */
 export interface AwardShooterInput {
   name: string;
+  /** Not consumed by the engine today; retained for future per-award team attribution. */
   teamName: string;
   isDummy: boolean;
   rookie: boolean;

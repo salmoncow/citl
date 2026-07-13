@@ -11,7 +11,7 @@
  * textContent (component contract, src/components/README.md).
  */
 
-import { SeasonAwardsService } from '@/services/season-awards-service';
+import type { SeasonAwardsService } from '@/services/season-awards-service';
 import { showToast } from '@/modules/ui';
 import type { SeasonAwards } from '@/types/season';
 import { setStatus } from './admin-shared';
