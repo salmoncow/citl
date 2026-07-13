@@ -201,23 +201,42 @@ function buildStandings(teams, throughWeekIdx) {
   return rows;
 }
 
+/**
+ * Flat SeasonAwards shape (src/types/season.ts) — the shape all seven prod
+ * seasons store. Plain-JS mirror of the engine's rules; must not import the
+ * TS engine. Complete seasons only: placements come from the full-season
+ * standings (rank 1/2, points = rank + bonus totals).
+ */
 export function buildAwards(teams) {
-  let top = { shooterName: '', teamName: '', avg: -1 };
-  let rookie = { shooterName: '', teamName: '', avg: -1 };
+  const standings = buildStandings(teams, WEEKS_PER_SEASON - 1);
+  const first = standings.find((r) => r.rank === 1) ?? null;
+  const second = standings.find((r) => r.rank === 2) ?? null;
+
+  let top = null; //     { name, avg }
+  let rookie = null; //  { name, avg }
+  let improved = null; // { name, score }
   for (const team of teams) {
     for (const s of team.shooters) {
-      if (s.finalAvg !== null && s.finalAvg > top.avg) {
-        top = { shooterName: s.name, teamName: team.name, avg: s.finalAvg };
-      }
-      if (s.rookie && s.finalAvg !== null && s.finalAvg > rookie.avg) {
-        rookie = { shooterName: s.name, teamName: team.name, avg: s.finalAvg };
-      }
+      if (s.finalAvg === null) continue;
+      if (!top || s.finalAvg > top.avg) top = { name: s.name, avg: s.finalAvg };
+      if (s.rookie && (!rookie || s.finalAvg > rookie.avg)) rookie = { name: s.name, avg: s.finalAvg };
+      // Most Improved formula with the startingAvg >= 50 guard (engine DD-4).
+      const score = s.startingAvg >= 50 ? 0 : (100 * (s.finalAvg - s.startingAvg)) / (50 - s.startingAvg);
+      if (!improved || score > improved.score) improved = { name: s.name, score };
     }
   }
+
   return {
-    highestAvg: top,
-    rookieOfYear: rookie.avg >= 0 ? rookie : null,
-    mostImproved: null,
+    firstPlaceTeam: first ? first.teamName : null,
+    firstPlacePoints: first ? first.totalRankPoints + first.totalBonusPoints : null,
+    secondPlaceTeam: second ? second.teamName : null,
+    secondPlacePoints: second ? second.totalRankPoints + second.totalBonusPoints : null,
+    highestAvgShooter: top ? top.name : null,
+    highestAvg: top ? top.avg : null,
+    rookieOfYear: rookie ? rookie.name : null,
+    rookieAvg: rookie ? rookie.avg : null,
+    mostImproved: improved ? improved.name : null,
+    improvement: improved ? `${improved.score.toFixed(2)}%` : null,
   };
 }
 
@@ -241,7 +260,9 @@ export function buildSeason(year, status, currentWeek, teams, awards) {
     status,
     currentWeek,
     standings,
-    awards,
+    // Active seasons carry NO awards field, matching prod (2026 has the
+    // field absent until the Season End finalize flow writes it).
+    ...(awards ? { awards } : {}),
   };
 }
 
