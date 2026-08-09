@@ -56,7 +56,7 @@
     "vitest": "^4.1.0"
   },
   "dependencies": {
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.13",
     "firebase": "^12.12.1",
     "marked": "^17.0.4"
   },
