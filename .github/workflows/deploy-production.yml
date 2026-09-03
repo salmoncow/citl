@@ -27,10 +27,10 @@ jobs:
     steps:
       # Deploy the exact commit that passed CI. On manual dispatch this
       # is empty and checkout falls back to the default branch HEAD.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
