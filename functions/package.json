@@ -24,7 +24,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.1",
     "firebase-functions-test": "^3.4.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
