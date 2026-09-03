@@ -166,6 +166,43 @@ Also enable:
 
 ---
 
+## Dependency Automation
+
+Two independent Dependabot mechanisms run against this repo. The distinction matters, because
+relying on the first alone is what let the GitHub Actions Node 20 pins drift into a hard deadline
+(see the `action-hosting-deploy` / `setup-java` bump).
+
+| Mechanism | Enabled by | Fires when |
+|-----------|-----------|------------|
+| **Security updates** | Repo Security Alerts page (no config file) | A security advisory is published against a dependency |
+| **Version updates** | [`.github/dependabot.yml`](../../.github/dependabot.yml) | On the configured weekly schedule, regardless of advisories |
+
+Security updates are advisory-driven only. A GitHub Actions **runner-runtime deprecation is never
+published as an advisory**, so no amount of security scanning surfaces one — version updates are
+the only mechanism that catches it. Before `dependabot.yml` existed, the `github-actions` ecosystem
+was not watched at all.
+
+Configured version-update targets:
+
+| Ecosystem | Directory | Commit prefix |
+|-----------|-----------|---------------|
+| `github-actions` | `/` (all workflows) | `ci` |
+| `npm` | `/` | `chore` |
+| `npm` | `/functions` | `chore` |
+
+**Grouping policy**: dev-dependency *minor and patch* bumps collapse into one PR per manifest to
+keep weekly volume manageable. Production dependencies and **all majors stay as individual PRs**.
+That is deliberate — `deploy-production.yml` is CI-gated specifically so a dependabot major that
+breaks the build cannot ship, and batching majors into a grouped PR would undercut that gate.
+
+Dependabot PRs get CI but no preview channel: `deploy-preview.yml` skips them via
+`if: github.actor != 'dependabot[bot]'`.
+
+To verify the config is live: **Insights → Dependency graph → Dependabot** lists each configured
+ecosystem with its last-checked time, and surfaces schema errors there.
+
+---
+
 ## Performance Targets
 
 | Metric | Target |
@@ -210,6 +247,7 @@ Firebase console → Hosting → Release history → select previous release →
 - [x] `.github/workflows/deploy-production.yml` created
 - [x] `.github/workflows/deploy-preview.yml` created
 - [x] Branch protection rules enabled on `main` (all five CI jobs required as of 2026-07-10)
+- [x] `.github/dependabot.yml` created (version updates for `github-actions` + both npm manifests)
 - [x] Test: merge to `main` → CI passes → `workflow_run` triggers production deploy
 - [x] Test: open PR → verify preview channel URL posts as PR comment
 - [x] Test: typecheck failure on a branch blocks merge
@@ -220,5 +258,6 @@ Firebase console → Hosting → Release history → select previous release →
 
 - [FirebaseExtended/action-hosting-deploy](https://github.com/FirebaseExtended/action-hosting-deploy)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Dependabot version update options](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference)
 - [.specs/technical/firebase-deployment.md](./firebase-deployment.md) — Hosting config
 - [.specs/constitution.md](../constitution.md) — §II.1 Current Architectural State
