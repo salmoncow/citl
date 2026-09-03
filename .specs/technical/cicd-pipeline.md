@@ -196,7 +196,25 @@ That is deliberate — `deploy-production.yml` is CI-gated specifically so a dep
 breaks the build cannot ship, and batching majors into a grouped PR would undercut that gate.
 
 Dependabot PRs get CI but no preview channel: `deploy-preview.yml` skips them via
-`if: github.actor != 'dependabot[bot]'`.
+`if: github.actor != 'dependabot[bot]'`. For a **production** dependency that only manifests in a
+browser (the `firebase` client SDK, for instance) that means no in-browser check before it
+reaches production — verify against the live site after the deploy, or open a throwaway
+non-dependabot PR to get a preview channel.
+
+**Ignored majors**: three packages have major-version bumps suppressed in `dependabot.yml`, each
+for a specific reason rather than as general noise reduction. Minor and patch bumps still flow.
+
+| Package | Manifest | Why | Tracking |
+|---------|----------|-----|----------|
+| `typescript` | root | `typescript-eslint` caps its `typescript` peer at `<6.1.0` in every published release | #262 |
+| `firebase-admin` | both | `firebase-functions-test` caps its `firebase-admin` peer at `^13` | #261 |
+| `@types/node` | `/functions` | must track the deployed `nodejs22` runtime, not the newest release | — |
+
+The `@types/node` case is the one worth internalising: bumping type definitions past the runtime
+is invisible to CI. Types only widen what the compiler accepts and are never executed, so Node
+23+ APIs would typecheck, build, pass every job, and then throw in production. Bump it only
+alongside a deliberate change to `firebase.json`'s `runtime` and `functions/package.json`'s
+`engines.node`.
 
 To verify the config is live: **Insights → Dependency graph → Dependabot** lists each configured
 ecosystem with its last-checked time, and surfaces schema errors there.
