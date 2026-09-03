@@ -32,6 +32,19 @@ updates:
       dev-dependencies:
         dependency-type: development
         update-types: [minor, patch]
+    ignore:
+      # Hard-blocked upstream; each has a tracking issue that says to
+      # remove the entry when the block clears. Majors only — minor and
+      # patch bumps still flow.
+      #
+      # typescript-eslint caps its typescript peer at <6.1.0 in every
+      # published release, so root TS 7 cannot resolve. See #262.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      # firebase-functions-test caps its firebase-admin peer at ^13.
+      # See #261.
+      - dependency-name: firebase-admin
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /functions
@@ -44,3 +57,16 @@ updates:
       dev-dependencies:
         dependency-type: development
         update-types: [minor, patch]
+    ignore:
+      # @types/node must track the DEPLOYED runtime major, which is
+      # nodejs22 (firebase.json runtime + functions engines.node), not
+      # the newest release and not .nvmrc's 24. Bumping the types alone
+      # would let Node 23+ APIs typecheck and build, then throw in
+      # production — no CI job can catch that, since types are never
+      # executed. Bump this only alongside a deliberate runtime change.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+      # firebase-functions-test caps its firebase-admin peer at ^13.
+      # See #261.
+      - dependency-name: firebase-admin
+        update-types: [version-update:semver-major]
