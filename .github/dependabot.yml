@@ -1,0 +1,46 @@
+# Dependabot version updates.
+#
+# Security updates (advisory-driven) are enabled separately via the
+# repo's Security Alerts page and need no config here. This file adds
+# *version* updates, which security scanning does not cover — notably
+# the github-actions ecosystem, where a runner-runtime deprecation is
+# never published as an advisory and so drifted unnoticed until it hit
+# a hard deadline. See #179 / #248.
+version: 2
+updates:
+  # The ecosystem that addresses the #179 failure mode.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+    groups:
+      # Keep the weekly noise to one PR for low-risk dev bumps.
+      # Production deps and majors stay individual so they get review.
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /functions
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
