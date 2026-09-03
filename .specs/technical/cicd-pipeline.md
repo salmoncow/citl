@@ -1,6 +1,6 @@
 # CI/CD Pipeline — citl.club
 
-**Last Updated**: 2026-07-10
+**Last Updated**: 2026-09-03
 
 ---
 
@@ -72,7 +72,7 @@ Deploy steps, in order:
 2. Deploy `firestore:rules`, `firestore:indexes`, and `functions` via the Firebase CLI
    (`npx firebase deploy --only firestore:rules,firestore:indexes,functions`), authenticated with
    `GOOGLE_APPLICATION_CREDENTIALS` pointing at the service-account JSON written to a temp file.
-3. Deploy Firebase Hosting to the `live` channel via `FirebaseExtended/action-hosting-deploy@v0`.
+3. Deploy Firebase Hosting to the `live` channel via `FirebaseExtended/action-hosting-deploy@v0.11.0`.
 
 `firebase-tools` is in `devDependencies` so `npx firebase` resolves from the local install after
 `npm ci` — no download on every run.
