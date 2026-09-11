@@ -27,6 +27,15 @@ updates:
       prefix: chore
       prefix-development: chore
     groups:
+      # @vitest/coverage-v8 pins an EXACT peer on vitest (peer
+      # vitest@"5.0.0", not a range), so the two can only ever move
+      # together. Split across two PRs — which is what the majors-are-
+      # individual rule below does — each PR fails `npm ci` with
+      # ERESOLVE before a single check runs. See #275 / #278. This
+      # group is listed first so it wins the match, and it carries no
+      # update-types filter so it covers majors too.
+      vitest:
+        patterns: ['vitest', '@vitest/*']
       # Keep the weekly noise to one PR for low-risk dev bumps.
       # Production deps and majors stay individual so they get review.
       dev-dependencies:
