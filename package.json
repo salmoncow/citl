@@ -57,7 +57,7 @@
   },
   "dependencies": {
     "dompurify": "^3.4.15",
-    "firebase": "^12.18.0",
+    "firebase": "^12.19.0",
     "marked": "^18.0.13"
   },
   "overrides": {
