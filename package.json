@@ -58,7 +58,7 @@
   "dependencies": {
     "dompurify": "^3.4.15",
     "firebase": "^12.18.0",
-    "marked": "^18.0.12"
+    "marked": "^18.0.13"
   },
   "overrides": {
     "google-gax": {
