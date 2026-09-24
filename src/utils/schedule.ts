@@ -98,6 +98,16 @@ export function currentShootWeek(year: number, today: Date = new Date()): number
 }
 
 /**
+ * Parse a stored `YYYY-MM-DD` (optionally followed by a time) as a LOCAL
+ * calendar date. `new Date('2026-06-09')` would be UTC midnight — the evening
+ * before in Central time — so overrides must never go through it.
+ */
+export function parseLocalDate(iso: string): Date {
+  const [y, m, d] = iso.substring(0, 10).split('-').map(Number);
+  return new Date(y!, (m ?? 1) - 1, d ?? 1);
+}
+
+/**
  * Apply admin week-date overrides (season.weekDateOverrides) to a schedule.
  * - string override: replace the shoot event's date; keep type 'shoot'
  * - null override:   change the shoot event's type to 'cancelled'
@@ -113,7 +123,7 @@ export function applyWeekDateOverrides(
     const override = overrides[key];
     if (override === undefined) return event;
     if (override === null) return { ...event, type: 'cancelled' as const };
-    return { ...event, date: new Date(override) };
+    return { ...event, date: parseLocalDate(override) };
   });
 }
 

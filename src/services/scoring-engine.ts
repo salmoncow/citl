@@ -248,8 +248,13 @@ export function computeTargetBonus(teamTargets: number, goingInSum: number): 5 |
  * maximum 2 points. Not awarded for weekIndex >= 10 (W11–W15).
  * Dummies excluded.
  */
+/** Rule 5.6a: a rookie qualifies with a going-in average below this. */
+export const ROOKIE_QUALIFYING_AVG = 35;
+/** Rule 5.6b: no rookie points from this week index on (index 10 = Week 11). */
+export const ROOKIE_BONUS_END_WEEK_INDEX = 10;
+
 export function computeRookieBonus(shooters: ScorecardShooter[], weekIndex: number): number {
-  if (weekIndex >= 10) return 0;
+  if (weekIndex >= ROOKIE_BONUS_END_WEEK_INDEX) return 0;
 
   let bonus = 0;
   for (const shooter of shooters) {
@@ -257,7 +262,7 @@ export function computeRookieBonus(shooters: ScorecardShooter[], weekIndex: numb
     if (shooter.scores[weekIndex] == null) continue;
 
     const goingInAvg = computeGoingInAverage(shooter.startingAvg, shooter.scores, weekIndex);
-    if (goingInAvg < 35) {
+    if (goingInAvg < ROOKIE_QUALIFYING_AVG) {
       bonus += 1;
       if (bonus >= 2) break;
     }

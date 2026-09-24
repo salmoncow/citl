@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.6.0
-**Last Updated:** 2026-07-10
+**Version:** 1.7.0
+**Last Updated:** 2026-09-24
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
 
@@ -62,24 +62,25 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-07-10
-**Last Architecture Review**: 2026-07-10
+**Last Updated**: 2026-09-24
+**Last Architecture Review**: 2026-09-24
 
 | Domain | Current State | Status |
 |--------|---------------|--------|
-| **UI Components** | Web Components under `src/components/` (10 components + 6 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
+| **UI Components** | Web Components under `src/components/` (13 custom elements + 2 render-helper modules + 9 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
 | **Security** | Firebase Auth (Google) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim + mirror | Complete |
 | **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, and audit log | Live |
-| **Testing** | Vitest unit tests (scoring engine, score service, schedule/yardage/markdown utils); rules-unit-testing matrix (47 cases); function unit tests (15 cases). See §III.1. | Active |
+| **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (47 cases); function unit tests (15 cases). See §III.1. | Active |
 | **Deployment** | GitHub Actions CI/CD: PR/push runs typecheck + build + three test suites; production deploy is gated on CI success (`workflow_run`) → Firebase Hosting + Firestore rules/indexes + Functions | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
 | **Cost** | Firebase Blaze (pay-as-you-go); usage discipline targets Spark-equivalent quotas | Near 0% usage |
 | **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
 
-**Key Metrics** (as of 2026-07-10):
+**Key Metrics** (as of 2026-09-24):
 - **Status**: Live in production at https://citl.club (Firebase Hosting); AWS/CloudFront decommissioned
 - **SPA Views**: 6 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`)
-- **Components**: 10 under `src/components/` + 6 `admin-tabs/` modules
+- **Components**: 13 custom elements + 2 render helpers (`home-standings-parts`, `scorecard-render`) under `src/components/`; 9 `admin-tabs/` modules
+- **Services**: 9 (`admin-user-service`, `app-services`, `score-entry-preview`, `score-service`, `scorecard-builder`, `scoring-engine`, `season-awards-service`, `season-highlights`, `standings`)
 - **Modules**: 5 (`auth`, `navigation`, `role`, `router`, `ui`)
 - **Repositories**: 3 (`score-repository`, `user-repository`, `repository-factory`)
 - **Types**: 6 (`announcement`, `score`, `scorecard`, `season`, `shooter`, `user`)
@@ -201,11 +202,11 @@ not a hard gate.
 
 **How to implement**:
 
-1. At the top of any async load method (before the first `await`), set `this.innerHTML` to skeleton HTML built from the utility classes in `src/styles/main.css`.
+1. At the top of any async load method (before the first `await`), set `this.innerHTML` to skeleton HTML built from the utility classes in `src/styles/admin-tables.css`.
 2. Write the skeleton as a `private static` method on the component class so it can be called in both `connectedCallback` (initial render) and any year/week-change handler.
 3. Shape the skeleton to match the real content — use the same number of rows, columns, and approximate widths. Exact pixel perfection is not required; structural resemblance is.
 
-**Available CSS utilities** (`src/styles/main.css`):
+**Available CSS utilities** (`src/styles/admin-tables.css`, imported globally):
 
 | Class | Purpose |
 |-------|---------|
@@ -243,7 +244,8 @@ private static _skeleton(): string {
 - Page Load Time: <3 seconds (p95)
 - Time to Interactive (TTI): <5 seconds (p95)
 - First Contentful Paint (FCP): <1.5 seconds (p95)
-- JS bundle: <250 kB gzipped (currently ~167 kB gzipped ✅)
+- JS bundle: <250 kB gzipped (currently ~242 kB gzipped, measured 2026-09-24 ✅ — little headroom left)
+- CSS: <20 kB gzipped (currently ~16 kB); fonts: self-hosted latin woff2 only, 9 files / ~187 kB if every weight loads, cached `immutable`. Figures and method: [build-system.md](technical/build-system.md#bundle-size-targets)
 
 **Firebase Quota Constraints**: the daily target ceilings and 70% alert thresholds are
 defined once in [§VI.1](#vi1-firebase-blaze-plan-with-spark-equivalent-discipline) — see that
@@ -286,6 +288,25 @@ table (do not duplicate the figures here).
 - All changes to `main` via Pull Request — no direct commits
 - No force pushes to `main`
 
+### III.6 Accessibility & Responsive Standards
+
+Target **WCAG 2.x AA**. Every page, in light and dark mode:
+
+- **Contrast**: text ≥ 4.5:1 (≥ 3:1 for large text) — SC 1.4.3; control boundaries, focus
+  indicators, and other meaningful non-text UI ≥ 3:1 — SC 1.4.11. Set colors through tokens
+  so both schemes are checked once (`tokens.css`).
+- **Focus**: every interactive element shows a visible `:focus-visible` ring (`--c-focus`);
+  keyboard operable with no traps (SC 2.1.1, 2.1.2, 2.4.7). Composite widgets (tabs, chip
+  groups) follow the ARIA APG patterns.
+- **Targets**: interactive controls ≥ 44px tall (`--control-height`).
+- **Reflow**: no horizontal page scroll at any width ≥ 360px. Wide data scrolls inside a
+  `.table-scroll` region that is labelled (`role="region"` + `aria-label`) and tabbable
+  (`tabindex="0"`).
+- **Motion**: honour `prefers-reduced-motion` — no shimmer, smooth scroll, or transitions.
+- **Colour** is never the only signal (SC 1.4.1): pair it with text, a glyph, or an
+  accessible name.
+
+Reference implementation and rationale: spec 006 (DD-3, DD-13).
 
 ---
 
@@ -297,7 +318,7 @@ table (do not duplicate the figures here).
 - **Build Tool**: Vite 8.x (see `.specs/technical/build-system.md`)
 - **Language**: TypeScript (strict mode, `allowJs: false`; Vite strips types via esbuild — no tsc emit)
 - **UI Pattern**: SPA with hash-based router; views migrating to Web Components
-- **Styling**: CSS design system — two-layer custom properties (primitive palette `--color-*` + semantic tokens `--c-*`); system-aware dark/light mode via `@media (prefers-color-scheme: dark)`; no framework
+- **Styling**: CSS design system ("Range Day", ADR-011) — two-layer custom properties (primitive palette `--color-*` + semantic tokens `--c-*`: grounds, text, brand/accent, focus, an always-dark `--c-shell-*` group, and a 5-step score heat ramp `--c-heat-{1..5}`); system-aware dark/light mode via `@media (prefers-color-scheme: dark)` plus the `data-color-scheme` toggle; colours belong in `tokens.css`; fonts self-hosted from `@fontsource` (Barlow, Barlow Condensed, IBM Plex Mono; latin subsets) under CSP `font-src 'self'` — no font CDN; no framework
 - **Type checking**: `tsconfig.json` with `strict: true`, `allowJs: false`, `noUncheckedIndexedAccess: true` — full strict type checking; `src/vite-env.d.ts` types `ImportMetaEnv` for all VITE_* vars
 
 **Backend / Platform**:
@@ -527,6 +548,7 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - ✅ No secrets in code (`.env` only)
 - ✅ Conventional commit format
 - ✅ Any new async Web Component loading state uses `.skeleton` classes — no `<p>Loading…</p>` (§III.3)
+- ✅ UI changes meet §III.6 (AA contrast, visible focus, 44px targets, no page overflow ≥360px, reduced motion)
 
 **Mandatory before every PR**:
 - ✅ PR description includes Summary, Changes, Testing, Constitutional Compliance
@@ -546,3 +568,4 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.5.0 (2026-05-03): Adopted Firebase Blaze plan and multi-user RBAC (002-multi-user-rbac); Cloud Functions role-writer + auth trigger; App Check enforcement; Security marked Complete (see ADR-009)
 - 1.5.1 (2026-07-10): Truth-reconciliation pass (WS-1) — updated §II.1 to live-production state (AWS decommissioned, site live at citl.club); corrected inventory counts; removed the retired static-JSON data-layer narrative (ADR-010 supersedes ADR-003); refreshed §III.1 testing state and §III.4 bundle figure; single-sourced Firebase quota figures to §VI.1
 - 1.6.0 (2026-07-11): Component contract adopted as a standard (spec 003-service-decomposition) — §II.4 points to src/components/README.md; composition root (`src/services/app-services.ts`) is the sole production construction site for ScoreService; new hook rule `no-private-service-in-component`
+- 1.7.0 (2026-09-24): "Range Day" site redesign (spec 006, ADR-011) — added §III.6 Accessibility & Responsive Standards; §IV.1 styling line covers self-hosted `@fontsource` fonts and the new token groups/heat ramp; §III.3 skeleton path corrected to `admin-tables.css`; §III.4 JS figure re-measured (~242 kB) with CSS and font budgets; §II.1 inventory recounted

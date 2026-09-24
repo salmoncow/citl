@@ -229,10 +229,10 @@ export class ScoreService {
     });
 
     if (publishResult.success) {
-      for (const w of plan.weekNumbers) this.cache.delete(`week:${year}:${w}`);
-      this.cache.delete(`weeks:${year}`);
-      this.cache.delete(`latest:${year}`);
-      this.cache.delete(`season:${year}`);
+      for (const w of plan.weekNumbers) this._invalidate(`week:${year}:${w}`);
+      this._invalidate(`weeks:${year}`);
+      this._invalidate(`latest:${year}`);
+      this._invalidate(`season:${year}`);
     }
 
     return publishResult;
@@ -256,7 +256,7 @@ export class ScoreService {
       captain: trimmedCaptain,
     });
     if (!result.success) return result;
-    this.cache.delete(`teams:${year}`);
+    this._invalidate(`teams:${year}`);
 
     if (trimmedName !== oldName) {
       const cascade = await this.repository.cascadeTeamRename(
@@ -299,11 +299,11 @@ export class ScoreService {
 
     const result = await this.repository.createTeam(year, teamId, newTeam);
     if (result.success) {
-      this.cache.delete(`teams:${year}`);
+      this._invalidate(`teams:${year}`);
       // createTeam also seeds the season doc; drop any cached null/stale
       // season so the new year appears without waiting out the TTL (F-48).
-      this.cache.delete(`season:${year}`);
-      this.cache.delete('seasons:all');
+      this._invalidate(`season:${year}`);
+      this._invalidate('seasons:all');
     }
     return result;
   }
@@ -460,11 +460,11 @@ export class ScoreService {
     const result = await this.repository.deleteTeam(year, teamId);
     if (!result.success) return result;
 
-    this.cache.delete(`teams:${year}`);
-    this.cache.delete(`weeks:${year}`);
-    this.cache.delete(`latest:${year}`);
-    this.cache.delete(`season:${year}`);
-    for (let w = 1; w <= 15; w++) this.cache.delete(`week:${year}:${w}`);
+    this._invalidate(`teams:${year}`);
+    this._invalidate(`weeks:${year}`);
+    this._invalidate(`latest:${year}`);
+    this._invalidate(`season:${year}`);
+    for (let w = 1; w <= 15; w++) this._invalidate(`week:${year}:${w}`);
 
     // Recompute standings from the updated week docs (deleted team already
     // removed by repo). The team IS deleted at this point, so a follow-up
@@ -481,7 +481,7 @@ export class ScoreService {
     if (weeksResult.data.length > 0) {
       const newStandings = computeStandingsFromWeeks(weeksResult.data);
       const update = await this.repository.updateSeason(year, { standings: newStandings } as Partial<Season>);
-      this.cache.delete(`season:${year}`);
+      this._invalidate(`season:${year}`);
       if (!update.success) {
         return failure(
           `Team deleted, but standings recompute failed: ${update.error}`,
@@ -569,7 +569,7 @@ export class ScoreService {
       entryUpdates,
       weekAccoladePatches,
     );
-    if (writeResult.success) this.cache.delete(`teams:${year}`);
+    if (writeResult.success) this._invalidate(`teams:${year}`);
     return writeResult;
   }
 
@@ -598,7 +598,7 @@ export class ScoreService {
       captain: trimmedCaptain,
       shooters,
     });
-    if (result.success) this.cache.delete(`teams:${year}`);
+    if (result.success) this._invalidate(`teams:${year}`);
     return result;
   }
 
@@ -616,8 +616,8 @@ export class ScoreService {
     const updated = { ...existing, [String(weekNumber)]: date };
     const result = await this.repository.updateSeason(year, { weekDateOverrides: updated } as Partial<Season>);
     if (result.success) {
-      this.cache.delete(`season:${year}`);
-      this.cache.delete('seasons:all');
+      this._invalidate(`season:${year}`);
+      this._invalidate('seasons:all');
     }
     return result.success ? { success: true, data: undefined } : result;
   }
@@ -632,19 +632,19 @@ export class ScoreService {
 
   async createAnnouncement(year: number, title: string, body: string): Promise<Result<Announcement>> {
     const result = await this.repository.createAnnouncement(year, title, body);
-    if (result.success) this.cache.delete(`announcements:${year}`);
+    if (result.success) this._invalidate(`announcements:${year}`);
     return result;
   }
 
   async updateAnnouncement(id: string, year: number, title: string, body: string): Promise<Result<Announcement>> {
     const result = await this.repository.updateAnnouncement(id, title, body);
-    if (result.success) this.cache.delete(`announcements:${year}`);
+    if (result.success) this._invalidate(`announcements:${year}`);
     return result;
   }
 
   async deleteAnnouncement(id: string, year: number): Promise<Result<void>> {
     const result = await this.repository.deleteAnnouncement(id);
-    if (result.success) this.cache.delete(`announcements:${year}`);
+    if (result.success) this._invalidate(`announcements:${year}`);
     return result;
   }
 
@@ -667,6 +667,17 @@ export class ScoreService {
   clearCache(): void {
     this.cache.clear();
     this.inflight.clear();
+    this.cacheGen += 1;
+  }
+
+  /**
+   * Drop cached keys after a write. Also forgets any in-flight read for them
+   * and bumps the generation, so a read that started before the write can
+   * neither be joined by later callers nor cache its (pre-write) result.
+   */
+  private _invalidate(key: string): void {
+    this.cache.delete(key);
+    this.inflight.delete(key);
     this.cacheGen += 1;
   }
 

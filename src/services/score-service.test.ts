@@ -1607,6 +1607,25 @@ describe('ScoreService in-flight read coalescing (spec 006)', () => {
     expect(calls).toBe(2);
   });
 
+  it('a write invalidation detaches in-flight reads, so later reads refetch', async () => {
+    let calls = 0;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => { release = r; });
+    const repo = {
+      getAnnouncements: async () => { calls++; if (calls === 1) await gate; return success([]); },
+      deleteAnnouncement: async () => success(undefined),
+    } as unknown as ScoreRepository;
+    const svc = new ScoreService(repo);
+    const stale = svc.getAnnouncements(2026);           // starts before the write
+    await svc.deleteAnnouncement('a1', 2026);           // invalidates announcements:2026
+    const fresh = svc.getAnnouncements(2026);           // must not join the stale request
+    release();
+    await Promise.all([stale, fresh]);
+    expect(calls).toBe(2);
+    await svc.getAnnouncements(2026);                   // fresh result was cached
+    expect(calls).toBe(2);
+  });
+
   it('discards a result that lands after clearCache()', async () => {
     let calls = 0;
     let release: () => void = () => {};

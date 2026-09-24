@@ -145,7 +145,13 @@ export class NavigationModule {
     if (!link) return;
     const href = link.getAttribute('href') ?? '';
     if (href === '#' || href.startsWith('#/')) return;
-    const target = document.getElementById(decodeURIComponent(href.slice(1)));
+    let id: string;
+    try {
+      id = decodeURIComponent(href.slice(1));
+    } catch {
+      return; // malformed fragment (e.g. from announcement markdown) — let the browser handle it
+    }
+    const target = document.getElementById(id);
     if (!target) return;
     event.preventDefault();
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

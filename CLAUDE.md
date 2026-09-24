@@ -58,15 +58,22 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 |------|---------|
 | `src/main.ts` | App entry point, route definitions |
 | `src/modules/router.ts` | Hash-based SPA router |
-| `src/modules/navigation.ts` | Responsive nav, burger menu |
+| `src/modules/navigation.ts` | Responsive nav, burger menu, in-page `#id` link scroll/focus |
 | `src/firebase-config.ts` | Firebase SDK init, exports `db` and `auth` |
 | `src/services/score-service.ts` | Firestore reads + 1-hr cache |
 | `src/modules/auth.ts` | AuthModule: Google sign-in/out, isAdmin claim check |
 | `src/services/scoring-engine.ts` | Pure scoring calculations (ADR-006) |
+| `src/services/season-highlights.ts` | Pure Home stats: award races, league average, top averages, straights |
+| `src/services/score-entry-preview.ts` | `previewTeamNight()` — admin live preview (read-only engine composition) |
 | `src/repositories/score-repository.ts` | Raw Firestore operations |
 | `src/repositories/repository-factory.ts` | Factory: Firestore backend only |
-| `src/utils/yardage.ts` | Yardage lookup table + `lookupYardage()` |
-| `src/utils/schedule.ts` | Schedule utilities: `nthTuesdayOfMonth`, `computeSchedule` |
+| `src/utils/yardage.ts` | `YARDAGE_TABLE` + `lookupYardage(total)` (rule 5.7; rounds to 2 dp, clamps >250) |
+| `src/utils/schedule.ts` | Schedule utilities: `nthTuesdayOfMonth`, `computeSchedule`, `applyWeekDateOverrides`, `seasonTimeline` |
+| `src/utils/heat.ts`, `src/utils/sparkline.ts` | Scorecard heat bins; sparkline SVG geometry |
+| `src/components/home-{hero,stats,award-races}.ts` | Home dashboard: next shoot, KPI tiles, lazy award races |
+| `src/components/rules-toc.ts`, `scorecard-render.ts` | Rules TOC/accordion; scorecard heat-grid render helpers |
+| `src/styles/tokens.css` | "Range Day" design tokens, light/dark (ADR-011) |
+| `src/styles/{components,home,scorecards,rules,admin-shell}.css` | Shared components; per-page styles; admin app shell |
 | `firebase.json` | Hosting config: SPA rewrite, CSP, cache headers |
 | `.env.example` | Template for required `VITE_FIREBASE_*` env vars |
 

@@ -114,7 +114,7 @@ class HomeHero extends HTMLElement {
   /**
    * Rule 4.2: a missed week must be made up by the close (Friday midnight) of
    * the second week after it. When week N is next, week N−2's window closes
-   * the Friday after week N. Weeks 1–2 have nothing closing, and the final
+   * the Friday of week N's shoot. Weeks 1–2 have nothing closing, and the final
    * week uses the shorter end-of-season grace, so those get the general note.
    */
   private static _makeupNote(next: TimelineEntry): string {
@@ -122,8 +122,10 @@ class HomeHero extends HTMLElement {
     if (week === undefined || week < 3 || week >= WEEKS_PER_SEASON) {
       return 'We shoot in wind and rain — never lightning. Missed a week? <a href="#/rules">Makeup rules</a>';
     }
+    // "Close of a week is Friday at midnight" — the Friday of the shoot's week,
+    // so a postponed (non-Tuesday) shoot still gets the right deadline.
     const friday = new Date(next.date);
-    friday.setDate(friday.getDate() + 3);
+    friday.setDate(friday.getDate() + ((5 - friday.getDay() + 7) % 7));
     const date = friday.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     return `<strong>Makeup deadline:</strong> Week ${week - 2} rounds must be shot by ${date} at midnight. <a href="#/rules">Rules</a>`;
   }

@@ -16,11 +16,11 @@ import {
   computeSeasonTotals,
   computeTargetBonus,
   normalizeShooterName,
+  ROOKIE_BONUS_END_WEEK_INDEX,
+  ROOKIE_QUALIFYING_AVG,
 } from '@/services/scoring-engine';
 import { lookupYardage, type YardageRow } from '@/utils/yardage';
 import type { SeasonEntry, Team } from '@/types/score';
-
-const ROOKIE_BONUS_LAST_WEEK = 10;
 
 export interface RookieNote {
   name: string;
@@ -54,7 +54,7 @@ export function previewTeamNight(opts: {
   const { year, weekNumber, teams, entries, draft } = opts;
   const wi = weekNumber - 1;
   const merged = [
-    ...entries.filter((e) => !(e.teamName === draft.teamName && e.weekNumber === weekNumber)),
+    ...entries.filter((e) => !(e.teamId === draft.teamId && e.weekNumber === weekNumber)),
     draft,
   ];
   const season = computeSeasonTotals(buildSeasonData(year, teams, merged, weekNumber));
@@ -63,13 +63,13 @@ export function previewTeamNight(opts: {
 
   const goingInSum = computeGoingInAverageSum(team.shooters, wi);
   const teamTotal = team.totals.targets[wi] ?? 0;
-  const rookieWindowClosed = wi >= ROOKIE_BONUS_LAST_WEEK;
+  const rookieWindowClosed = wi >= ROOKIE_BONUS_END_WEEK_INDEX;
 
   const rookieNotes = team.shooters
     .filter((s) => s.rookie && !s.isDummy && s.scores[wi] != null)
     .map((s) => {
       const goingIn = computeGoingInAverage(s.startingAvg, s.scores, wi);
-      return { name: s.name, goingIn, qualifies: goingIn < 35 && !rookieWindowClosed };
+      return { name: s.name, goingIn, qualifies: goingIn < ROOKIE_QUALIFYING_AVG && !rookieWindowClosed };
     });
 
   const goingInByName = new Map(

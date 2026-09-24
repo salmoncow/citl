@@ -24,6 +24,7 @@ import {
   computeSchedule,
   currentShootWeek,
   nthTuesdayOfMonth,
+  parseLocalDate,
   seasonTimeline,
 } from './schedule';
 
@@ -255,11 +256,13 @@ describe('currentShootWeek — defaults the Score Entry week dropdown', () => {
 describe('applyWeekDateOverrides', () => {
   it('moves a postponed week and marks a cancelled one', () => {
     const events = computeSchedule(2026);
-    const out = applyWeekDateOverrides(events, { '2': '2026-04-30T00:00:00', '3': null });
+    // Stored format is the plain <input type="date"> value
+    const out = applyWeekDateOverrides(events, { '2': '2026-04-30', '3': null });
     const wk2 = out.find((e) => e.week === 2)!;
     const wk3 = out.find((e) => e.week === 3)!;
     expect(wk2.type).toBe('shoot');
     expect(wk2.date.getDate()).toBe(30);
+    expect(wk2.date.getHours()).toBe(0); // local midnight, not UTC
     expect(wk3.type).toBe('cancelled');
     expect(out.find((e) => e.week === 4)!.type).toBe('shoot');
   });
@@ -293,5 +296,16 @@ describe('seasonTimeline', () => {
   it('has no next entry once the season is over', () => {
     const tl = seasonTimeline(computeSchedule(2026), new Date(2026, 8, 24));
     expect(tl.every((e) => e.status === 'done')).toBe(true);
+  });
+});
+
+describe('parseLocalDate', () => {
+  it('reads a stored date as a local calendar day, whatever the time zone', () => {
+    const d = parseLocalDate('2026-06-09');
+    expect([d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()]).toEqual([2026, 5, 9, 0]);
+  });
+
+  it('ignores a trailing time component', () => {
+    expect(parseLocalDate('2026-06-09T23:00:00Z').getDate()).toBe(9);
   });
 });

@@ -17,7 +17,7 @@ export function aboutView(): string {
       <section class="card about-card">
         <h2>Trap Shooting</h2>
         <p>
-          <a href="https://en.wikipedia.org/wiki/Trap_shooting" target="_blank">Trap Shooting</a>
+          <a href="https://en.wikipedia.org/wiki/Trap_shooting" target="_blank" rel="noopener noreferrer">Trap Shooting</a>
           is a competitive clay pigeon shooting sport where individuals participate in shooting clay
           targets launched from a stationary bunker. Teams consist of many shooters, but only five
           shooters from a team will participate during any one event.
@@ -31,7 +31,7 @@ export function aboutView(): string {
 
         <p>
           For more information and how-to videos, visit the
-          <a href="https://shootata.com/GeneralInformation/TrapshootingOverview.aspx" target="_blank">
+          <a href="https://shootata.com/GeneralInformation/TrapshootingOverview.aspx" target="_blank" rel="noopener noreferrer">
             Amateur Trapshooting Association (ATA) website.
           </a>
         </p>

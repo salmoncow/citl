@@ -28,11 +28,8 @@ export function buildOptions(min: number, max: number, label: string, selected: 
 
 // ── Date utilities (shared by score-entry date override) ────────────────────
 
-/** Parse a YYYY-MM-DD string as a local date (avoids UTC midnight offset). */
-export function parseLocalDate(iso: string): Date {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y!, (m ?? 1) - 1, d ?? 1);
-}
+// Moved to utils/schedule (spec 006 review): re-exported for existing callers.
+export { parseLocalDate } from '@/utils/schedule';
 
 /** Format a Date as YYYY-MM-DD for use as an <input type="date"> value. */
 export function toInputDate(date: Date): string {

@@ -712,7 +712,93 @@ screenshots for AC-G1/G2/G5. The ordered tasks, with file assignments, are in
 
 ---
 
+## Implementation Notes (as built)
+
+Deviations from the design above, recorded at close-out (2026-09-24).
+
+- **DD-5 read de-dup**: in-flight coalescing is a private `_cachedRead()` inside
+  `ScoreService`, not an extracted `ttl-cache.ts`. `clearCache()` bumps a generation counter
+  so late results from a cleared generation are discarded. `score-service.ts` went from 742
+  to 729 lines. Tests are in `score-service.test.ts`.
+- **DD-5 League average**: the mean of non-dummy per-shooter `total` values from the week
+  docs (`computeLeagueAverageByWeek`), not targets ÷ 5. **Straight 25s** counts every
+  perfect bunker through `computeAccolades` over the week docs (`countStraights`; a straight
+  50 counts as two). The sub-line gives the straight-50 count.
+- **DD-5/DD-6 Top Gun tile** is **"Top average"**: `computeCurrentAverages` over published
+  week docs, for shooters with ≥ 2 nights only. The starting average has phased out by then
+  (rule 5.1), so the plain mean is exact. 0 extra reads; shown in every season state.
+- **DD-6 award races**: a new pure `src/services/season-highlights.ts` (`computeAwardRaces`,
+  `AWARD_MIN_NIGHTS`, `MIN_RACE_NIGHTS`). `computeSeasonAwards` is untouched (no
+  `rankAwardCandidates`, no `previewAwardRaces`). Races rank shooters with ≥ 2 nights and
+  flag per row whether they meet the 6-night eligibility ("N of 6 nights"). The component is
+  `<home-award-races>` (`src/components/home-award-races.ts`), lazy-loaded with an
+  `IntersectionObserver`; it calls `buildScorecardData` directly and is hidden for completed
+  seasons.
+- **DD-7**: a current-year complete season shows a "Season complete" card naming the
+  champion; otherwise the off-season card points to next year's practice day. The
+  makeup-deadline line follows the DD-5 table (weeks 3–14).
+- **DD-8**: `applyWeekDateOverrides` and `seasonTimeline` in `src/utils/schedule.ts`
+  (instead of `nextShootEvent`). The season strip shows done / next / upcoming / cancelled;
+  there is no separate "moved" badge.
+- **DD-4**: implemented once, globally, in `NavigationModule._handleInPageLink`. Any
+  `a[href^="#"]` that is not `#/…` and whose target id exists is scrolled to and focused, so
+  fragment hrefs are safe site-wide (skip link, hero CTA, Rules TOC). `data-scroll-target`
+  is not used.
+- **DD-10**: season chips are a `role="group"` of `aria-pressed` buttons (a select below
+  640px); team tabs follow the APG tabs pattern. Padding dummy rows that never shot are
+  hidden. Summary numbers come from `summarizeScorecardTeams` in `scorecard-builder.ts`
+  (no `scorecard-summary.ts`); heat bins from `src/utils/heat.ts`. S-6 (chart/highlights)
+  was not built.
+- **DD-11**: `<rules-toc>` (`src/components/rules-toc.ts`). The glance tile "35 starting
+  average (rule 5.1)" replaces "50 targets". The verbatim-text regression test is
+  `src/views/rules.test.ts` (38 rule sentences).
+- **DD-12**: below 960px the sidebar becomes a sticky horizontal nav bar (no slide-in
+  drawer). Team status chips complement the `#ap-team` select, which is kept. The Publish
+  button stays in its section. New files: `src/services/score-entry-preview.ts`
+  (`previewTeamNight`), `src/components/admin-tabs/score-entry-ui.ts`, and
+  `src/components/admin-tabs/score-entry-date-card.ts` (verbatim extraction; no
+  `score-entry-calc.ts`). `score-entry-tab.ts` went from 593 to 514 lines (the >500 advisory
+  remains). `lookupYardage` was added to `src/utils/yardage.ts` with tests. S-2/S-3/S-4 were
+  not built.
+- **DD-9 / task 1.4**: the skeleton utilities were not moved to `skeleton.css`; they remain
+  in `src/styles/admin-tables.css` (474 lines).
+- **DD-2**: Barlow Condensed 600 is still imported, so 9 latin woff2 files ship, not 8.
+- **Tokens (DV-1/DV-2)**: `--c-focus` is navy in light mode and clay in dark mode; dark shell
+  regions use `--c-focus-on-dark` (clay). `--c-input-border` is `#7A848D` light /
+  `#5F7A8E` dark. The unused `--c-nav-*`/`--c-collapsible-*` aliases were removed;
+  `--c-table-*` stay as live semantic tokens. No `tokens.test.ts` dark-parity test was added.
+- **Review fixes (post-@reviewer)**: override dates parse as local calendar days
+  (`parseLocalDate` moved to `utils/schedule.ts`; `new Date('YYYY-MM-DD')` was UTC and showed
+  postponed weeks a day early); write paths invalidate via `_invalidate()`, which also drops
+  in-flight reads; malformed `#%…` fragments are ignored by the in-page link handler; the
+  preview replaces the saved entry by `teamId`; rookie constants are exported from
+  `scoring-engine.ts` (`ROOKIE_QUALIFYING_AVG`, `ROOKIE_BONUS_END_WEEK_INDEX`); the makeup
+  deadline uses the Friday of the shoot's own week.
+- **AC-G5 hex check not met**: component CSS still has hex literals outside `tokens.css`/
+  `print.css` (mostly `#ffffff` on dark regions; also `#dc2626` in `admin.css` and a few
+  shell navy values in `admin-shell.css`, `home.css`, `buttons.css`).
+- **Stretch S-8**: the static venue card was built (the map stays on About).
+- **Measured build (gzip)**: JS 229.3 KB before → 241.6 KB after (budget 250); CSS 7.6 →
+  15.6 KB; fonts: 9 latin woff2 files, 187 KB total if every weight loads.
+
+**Open Questions — resolved (2026-09-24)**:
+
+| OQ | Decision |
+|---|---|
+| OQ-1 | Approved, as lazy-loaded reads (`<home-award-races>` loads on scroll into view). |
+| OQ-2 | Moot — no engine refactor; races are computed in `season-highlights.ts`. |
+| OQ-3 | `#/about`. |
+| OQ-4 | Accepted and implemented (DV-1 to DV-3). |
+| OQ-5 | Accepted and implemented (`:has()` chrome hiding in `admin-shell.css`). |
+| OQ-6 | Accepted — constitution §III.6 added (1.7.0). |
+| OQ-7 | Accepted — 9 latin woff2 files, 187 KB total if every weight loads. |
+| OQ-8 | Implemented as in-service coalescing (`_cachedRead()`), not an extraction. |
+
+---
+
 ## Open Questions / Constitutional Amendments
+
+*Resolved — see the table above. Kept as authored for the record.*
 
 Each item has a **default**. `/implement` proceeds on the default unless the maintainer
 overrides it. Items marked **gate** block only their own tasks.
