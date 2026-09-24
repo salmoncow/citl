@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CITL Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Barlow:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Barlow',system-ui,sans-serif;background:#F3F1EC;color:#0E1B26}
+a{color:#0B3C5D}a:hover{color:#A84300}
+</style>
+</helmet>
+<div style="width: 1440px; height: 3300px; box-sizing: border-box; display: flex; flex-direction: column; background: #F3F1EC; font-family: 'Barlow', system-ui, sans-serif; color: #0E1B26;">
+
+  <!-- Ticker -->
+  <div style="height: 36px; background: #04121C; color: #C9D6E0; display: flex; align-items: center; gap: 28px; padding: 0 120px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden;">
+    <span style="color: {{accent}}; font-weight: 600;">● 2026 · WEEK 6 FINAL</span>
+    <sc-for list="{{ticker}}" as="t" hint-placeholder-count="8">
+      <span><span style="color: #7F93A3;">{{t.pos}}</span> {{t.name}} <span style="color: #FFFFFF; font-weight: 600;">{{t.total}}</span></span>
+    </sc-for>
+    <span style="color: #7F93A3;">NEXT · TUE JUN 2</span>
+  </div>
+
+  <!-- Nav -->
+  <header style="height: 76px; background: #071C2B; display: flex; align-items: center; gap: 40px; padding: 0 120px; border-bottom: 1px solid #12344C;">
+    <a href="#" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #FFFFFF;">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="{{accent}}" stroke-width="3"></circle><circle cx="17" cy="17" r="8" fill="{{accent}}"></circle></svg>
+      <span style="display: flex; flex-direction: column; line-height: 1;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.04em;">CITL</span>
+        <span style="font-size: 11px; letter-spacing: 0.14em; color: #9FB2C1; text-transform: uppercase;">Central Illinois Trap League</span>
+      </span>
+    </a>
+    <nav aria-label="Primary" style="display: flex; gap: 4px; flex-grow: 1;">
+      <a href="#" aria-current="page" style="padding: 10px 14px; border-radius: 8px; background: #12344C; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 15px;">Home</a>
+      <a href="Scorecards.dc.html" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">Scorecards</a>
+      <a href="Rules.dc.html" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">Rules</a>
+      <a href="#" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">About</a>
+      <a href="#" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">Downloads</a>
+      <button type="button" aria-haspopup="true" style="padding: 10px 14px; border: 0; border-radius: 8px; background: transparent; color: #C9D6E0; font: 500 15px 'Barlow', sans-serif; display: flex; align-items: center; gap: 6px;">Resources <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+    </nav>
+    <button type="button" aria-label="Switch to dark mode" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #23465F; background: transparent; color: #C9D6E0; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
+    <a href="#" style="height: 44px; padding: 0 20px; border-radius: 10px; background: {{accent}}; color: #0E1B26; text-decoration: none; font-weight: 700; font-size: 15px; display: flex; align-items: center;">Join the league</a>
+  </header>
+
+  <!-- Hero -->
+  <section style="position: relative; height: 560px; background: #071C2B; color: #FFFFFF; padding: 72px 120px 0; box-sizing: border-box; display: flex; gap: 64px; overflow: hidden;">
+    <svg width="760" height="760" viewBox="0 0 760 760" aria-hidden="true" style="position: absolute; right: -180px; top: -140px;"><circle cx="380" cy="380" r="370" fill="none" stroke="#0E2B40" stroke-width="2"></circle><circle cx="380" cy="380" r="290" fill="none" stroke="#0E2B40" stroke-width="2"></circle><circle cx="380" cy="380" r="210" fill="none" stroke="#0E2B40" stroke-width="2"></circle><circle cx="380" cy="380" r="130" fill="none" stroke="#10324A" stroke-width="2"></circle></svg>
+    <div style="position: relative; flex-grow: 1; display: flex; flex-direction: column; gap: 24px; max-width: 640px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.12em; color: {{accent}}; text-transform: uppercase;">Tuesday nights · Darnall's Gun Works · Bloomington, IL</div>
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 96px; line-height: 0.92; letter-spacing: -0.01em; text-transform: uppercase;">Fifty targets.<br>Fifteen weeks.<br><span style="color: {{accent}};">One table.</span></h1>
+      <p style="margin: 0; font-size: 20px; line-height: 1.5; color: #C9D6E0; max-width: 520px;">A free, family-friendly trap league for Central Illinois. Five shooters a squad, two bunkers a night, standings updated every week.</p>
+      <div style="display: flex; gap: 12px; margin-top: 8px;">
+        <a href="#" style="height: 52px; padding: 0 26px; border-radius: 12px; background: {{accent}}; color: #0E1B26; text-decoration: none; font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 10px;">Join the league <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+        <a href="#standings" style="height: 52px; padding: 0 26px; border-radius: 12px; border: 1px solid #3B5F78; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 17px; display: flex; align-items: center;">Week 6 results</a>
+      </div>
+    </div>
+    <div style="position: relative; width: 420px; flex-shrink: 0; align-self: flex-start; background: #0C2638; border: 1px solid #1C4260; border-radius: 20px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #9FB2C1;">NEXT SHOOT</span>
+        <span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #173B55; color: #D8E4EC;">Week 7 of 15</span>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 84px; padding: 10px 0; border-radius: 14px; background: #FFFFFF; color: #0E1B26;">
+          <span style="font-size: 13px; font-weight: 700; color: #A84300; letter-spacing: 0.1em;">JUN</span>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 48px; line-height: 1;">2</span>
+          <span style="font-size: 13px; color: #56616C;">Tuesday</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.05;">Darnall's Gun Works &amp; Ranges</span>
+          <span style="font-size: 15px; color: #9FB2C1;">Squads by signup order · $12 range fee</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #9FB2C1;"><span>Season progress</span><span style="font-family: 'IBM Plex Mono', monospace; color: #FFFFFF;">6 / 15</span></div>
+        <div style="display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 3px;">
+          <sc-for list="{{weeks}}" as="w" hint-placeholder-count="15"><div style="height: 8px; border-radius: 2px; background: {{w.bar}};"></div></sc-for>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px; background: #1B2F3D; border: 1px solid #3A4E5C;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        <span style="font-size: 14px; line-height: 1.45; color: #D8E4EC;"><strong style="color: #FFFFFF;">Makeup deadline:</strong> Week 5 rounds must be shot by Fri, Jun 5 at midnight.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI tiles -->
+  <section aria-label="Season at a glance" style="padding: 0 120px; margin-top: -64px; position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+    <div style="background: #FFFFFF; border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 0 #E2DED5, 0 12px 32px rgba(7, 28, 43, 0.08);">
+      <span style="font-size: 13px; font-weight: 600; color: #56616C; text-transform: uppercase; letter-spacing: 0.08em;">Season leader</span>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 800; line-height: 1;">Eagles</span>
+      <span style="font-size: 15px; color: #56616C;"><span style="font-family: 'IBM Plex Mono', monospace; color: #0E1B26; font-weight: 600;">190 pts</span> · +4 over Hawks</span>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 0 #E2DED5, 0 12px 32px rgba(7, 28, 43, 0.08);">
+      <span style="font-size: 13px; font-weight: 600; color: #56616C; text-transform: uppercase; letter-spacing: 0.08em;">Top Gun race</span>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 800; line-height: 1;">Aaron Klein</span>
+      <span style="font-size: 15px; color: #56616C;"><span style="font-family: 'IBM Plex Mono', monospace; color: #0E1B26; font-weight: 600;">47.8 avg</span> · Eagles · 6 nights</span>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 0 #E2DED5, 0 12px 32px rgba(7, 28, 43, 0.08);">
+      <span style="font-size: 13px; font-weight: 600; color: #56616C; text-transform: uppercase; letter-spacing: 0.08em;">League average</span>
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 800; line-height: 1;">43.8<span style="font-size: 20px; color: #56616C;"> / 50</span></span>
+        <svg width="120" height="44" viewBox="0 0 200 44" aria-label="League average by week, 42.6 in week 1 to 43.8 in week 6" role="img"><polyline points="4,29 40,24 80,36 120,19 160,11 196,13" fill="none" stroke="#0B3C5D" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="196" cy="13" r="5" fill="{{accent}}" stroke="#FFFFFF" stroke-width="2"></circle></svg>
+      </div>
+      <span style="font-size: 15px; color: #56616C;">per shooter · <span style="color: #0B3C5D; font-weight: 600;">▲ 1.2 since Wk 1</span></span>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 0 #E2DED5, 0 12px 32px rgba(7, 28, 43, 0.08);">
+      <span style="font-size: 13px; font-weight: 600; color: #56616C; text-transform: uppercase; letter-spacing: 0.08em;">Straight 25s</span>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 800; line-height: 1;">9</span>
+      <span style="font-size: 15px; color: #56616C;">this season · 1 straight 50 (Klein, Wk 6)</span>
+    </div>
+  </section>
+
+  <!-- Standings -->
+  <section id="standings" style="padding: 72px 120px 0; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #A84300;">STANDINGS</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 48px; line-height: 1; text-transform: uppercase;">After Week 6</h2>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div role="group" aria-label="Standings view" style="display: flex; padding: 4px; border-radius: 12px; background: #E7E3DA;">
+          <button type="button" aria-pressed="true" style="height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: #FFFFFF; font: 600 14px 'Barlow', sans-serif; color: #0E1B26; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">Season</button>
+          <button type="button" aria-pressed="false" style="height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; font: 500 14px 'Barlow', sans-serif; color: #56616C;">This week</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #56616C;">Week
+          <select style="height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #D5D0C5; background: #FFFFFF; font: 600 14px 'Barlow', sans-serif; color: #0E1B26;"><option>Week 6</option></select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #56616C;">Season
+          <select style="height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #D5D0C5; background: #FFFFFF; font: 600 14px 'Barlow', sans-serif; color: #0E1B26;"><option>2026</option></select>
+        </label>
+      </div>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 18px; border: 1px solid #E2DED5; overflow: hidden;">
+      <div style="display: grid; grid-template-columns: 64px 56px minmax(0, 1.6fr) minmax(0, 1.3fr) 110px 120px 100px 90px 110px 80px 140px; align-items: center; height: 48px; padding: 0 20px; background: #F7F5F0; border-bottom: 1px solid #E2DED5; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #56616C; text-transform: uppercase;">
+        <span>Pos</span><span>±</span><span>Team</span><span>Captain</span><span style="text-align: right;">Wk 6 tgts</span><span style="text-align: right;">Total tgts</span><span style="text-align: right;">Rank pts</span><span style="text-align: right;">Bonus</span><span style="text-align: right; color: #0E1B26;">Points</span><span style="text-align: right;">Gap</span><span style="text-align: right;">Rank pts by week</span>
+      </div>
+      <sc-for list="{{standings}}" as="s" hint-placeholder-count="8">
+        <div style="display: grid; grid-template-columns: 64px 56px minmax(0, 1.6fr) minmax(0, 1.3fr) 110px 120px 100px 90px 110px 80px 140px; align-items: center; height: 64px; padding: 0 20px; border-bottom: 1px solid #EEEBE4; font-size: 16px; background: {{s.rowBg}};">
+          <span style="display: flex; width: 34px; height: 34px; border-radius: 10px; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 20px; background: {{s.posBg}}; color: {{s.posFg}};">{{s.pos}}</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: {{s.moveColor}};">{{s.move}}</span>
+          <span style="display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 17px;"><span style="width: 32px; height: 32px; border-radius: 50%; background: #E9EEF2; color: #0B3C5D; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700;">{{s.mono}}</span>{{s.team}}</span>
+          <span style="color: #56616C;">{{s.captain}}</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 15px;">{{s.wk}}</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 15px;">{{s.tt}}</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 15px;">{{s.rp}}</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 15px;">{{s.bp}}</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600;">{{s.total}}</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #56616C;">{{s.gap}}</span>
+          <span style="display: flex; justify-content: flex-end; align-items: flex-end; gap: 4px; height: 32px;"><sc-for list="{{s.form}}" as="f" hint-placeholder-count="6"><span title="{{f.label}}" style="width: 10px; border-radius: 3px 3px 0 0; height: {{f.h}}px; background: {{f.c}};"></span></sc-for></span>
+        </div>
+      </sc-for>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; font-size: 14px; color: #56616C;">
+        <span>Ties on points are broken by total targets. Weekly bars: tallest = 30 rank points; orange = that week's winner.</span>
+        <a href="Scorecards.dc.html" style="font-weight: 700; text-decoration: none;">Full scorecards →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Announcements + First night -->
+  <section style="padding: 72px 120px 0; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 36px; text-transform: uppercase;">League news</h2>
+        <a href="#" style="font-weight: 600; font-size: 15px; text-decoration: none;">All announcements</a>
+      </div>
+      <sc-for list="{{news}}" as="n" hint-placeholder-count="3">
+        <article style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 22px 24px; display: flex; gap: 20px;">
+          <div style="width: 64px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding-top: 2px;">
+            <span style="font-size: 12px; font-weight: 700; color: #A84300; letter-spacing: 0.1em;">{{n.mon}}</span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 34px; font-weight: 800; line-height: 1;">{{n.day}}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: {{n.tagBg}}; color: {{n.tagFg}};">{{n.tag}}</span>
+            <h3 style="margin: 0; font-size: 19px; font-weight: 700;">{{n.title}}</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #56616C;">{{n.body}}</p>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+    <aside style="background: #0B3C5D; color: #FFFFFF; border-radius: 20px; padding: 32px; display: flex; flex-direction: column; gap: 22px; align-self: start;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #FFB066;">NEW TO TRAP?</span>
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; text-transform: uppercase;">Your first Tuesday</h2>
+      <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 18px;">
+        <li style="display: flex; gap: 16px;"><span style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: {{accent}}; color: #0E1B26; display: flex; align-items: center; justify-content: center; font-weight: 800;">1</span><span style="font-size: 16px; line-height: 1.45; color: #D8E4EC;"><strong style="color: #FFFFFF;">Email the coordinator</strong> as an individual or a pre-formed team. Enrollment is free.</span></li>
+        <li style="display: flex; gap: 16px;"><span style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: {{accent}}; color: #0E1B26; display: flex; align-items: center; justify-content: center; font-weight: 800;">2</span><span style="font-size: 16px; line-height: 1.45; color: #D8E4EC;"><strong style="color: #FFFFFF;">Bring your gear:</strong> 12-gauge (or smaller), shells, eye and ear protection.</span></li>
+        <li style="display: flex; gap: 16px;"><span style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: {{accent}}; color: #0E1B26; display: flex; align-items: center; justify-content: center; font-weight: 800;">3</span><span style="font-size: 16px; line-height: 1.45; color: #D8E4EC;"><strong style="color: #FFFFFF;">Pay the $12 range fee</strong> at Darnall's and shoot two bunkers — 50 targets.</span></li>
+      </ol>
+      <a href="#" style="height: 52px; border-radius: 12px; background: #FFFFFF; color: #0B3C5D; text-decoration: none; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center;">Contact the League Coordinator</a>
+      <span style="font-size: 13px; color: #9FB2C1; line-height: 1.5;">Under 16? Shoot with a parent or guardian. Adults need a valid FOID card.</span>
+    </aside>
+  </section>
+
+  <!-- Season timeline -->
+  <section style="padding: 72px 120px 0; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 36px; text-transform: uppercase;">2026 Season calendar</h2>
+      <span style="font-size: 15px; color: #56616C;">Practice Apr 14 · Kickoff Apr 21 · Finale Jul 28</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 6px;">
+      <sc-for list="{{calendar}}" as="c" hint-placeholder-count="16">
+        <div style="height: 104px; border-radius: 12px; padding: 12px 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: {{c.bg}}; color: {{c.fg}}; border: 1px solid {{c.border}};">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.85;">{{c.label}}</span>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; line-height: 1;">{{c.date}}</span>
+          <span style="font-size: 11px; font-weight: 600;">{{c.status}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Awards race -->
+  <section style="padding: 72px 120px 0; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 36px; text-transform: uppercase;">Award races</h2>
+      <span style="font-size: 15px; color: #56616C;">Eligibility: 6 nights shot. Provisional until season end.</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+      <sc-for list="{{awards}}" as="a" hint-placeholder-count="3">
+        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 800; text-transform: uppercase;">{{a.title}}</span>
+            <span style="font-size: 14px; color: #56616C;">{{a.sub}}</span>
+          </div>
+          <sc-for list="{{a.rows}}" as="r" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #EEEBE4;">
+              <span style="width: 24px; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 20px; color: #56616C;">{{r.n}}</span>
+              <span style="flex-grow: 1; display: flex; flex-direction: column;"><span style="font-weight: 700; font-size: 16px;">{{r.name}}</span><span style="font-size: 13px; color: #56616C;">{{r.team}}</span></span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px;">{{r.val}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Venue -->
+  <section style="padding: 72px 120px 0;">
+    <div style="display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; overflow: hidden;">
+      <div style="padding: 40px; display: flex; flex-direction: column; gap: 16px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #A84300;">WHERE WE SHOOT</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; text-transform: uppercase;">Darnall's Gun Works &amp; Ranges</h2>
+        <p style="margin: 0; font-size: 16px; line-height: 1.55; color: #56616C;">Just west of Bloomington, IL. Tuesday evenings, rain or wind — never lightning. Teams may arrange another night with the coordinator before the season begins.</p>
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+          <a href="#" style="height: 48px; padding: 0 20px; border-radius: 12px; background: #0B3C5D; color: #FFFFFF; text-decoration: none; font-weight: 700; display: flex; align-items: center;">Get directions</a>
+          <a href="#" style="height: 48px; padding: 0 20px; border-radius: 12px; border: 1px solid #D5D0C5; color: #0E1B26; text-decoration: none; font-weight: 600; display: flex; align-items: center;">About the league</a>
+        </div>
+      </div>
+      <div style="min-height: 320px; background: #E9EEF2; display: flex; align-items: center; justify-content: center; color: #56616C; font-size: 15px; font-family: 'IBM Plex Mono', monospace;">[ Map embed — Darnall's Gun Works ]</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="margin-top: auto; background: #04121C; color: #9FB2C1; padding: 48px 120px; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 48px;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; color: #FFFFFF; letter-spacing: 0.04em;">CITL</span>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; max-width: 520px;">An independently organized, non-discriminating shooting sport. Families and friends welcome. Keep it legal: shoot with an adult if under age, or carry a valid FOID card.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px;">
+      <span style="color: #FFFFFF; font-weight: 700;">League</span>
+      <a href="Scorecards.dc.html" style="color: #C9D6E0; text-decoration: none;">Scorecards</a>
+      <a href="Rules.dc.html" style="color: #C9D6E0; text-decoration: none;">Rules</a>
+      <a href="#" style="color: #C9D6E0; text-decoration: none;">Downloads</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px;">
+      <span style="color: #FFFFFF; font-weight: 700;">Resources</span>
+      <a href="#" style="color: #C9D6E0; text-decoration: none;">Darnall's Gun Works</a>
+      <a href="#" style="color: #C9D6E0; text-decoration: none;">Amateur Trapshooting Association</a>
+      <a href="Admin.dc.html" style="color: #7F93A3; text-decoration: none;">Admin sign-in</a>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF8000","options":["#FF8000","#F2A900","#E4572E"]},"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent ?? '#FF8000';
+    var rows = [
+      ['Eagles','EA','Greg Litchfield',223,1325,170,20,190,'▲ 1',[30,26,30,26,30,28]],
+      ['Hawks','HA','Dave Brennan',224,1318,164,22,186,'▼ 1',[28,30,26,28,22,30]],
+      ['Falcons','FA','Mike Hardy',219,1321,162,20,182,'—',[26,28,28,30,24,26]],
+      ['Kestrels','KE','Tom Schroeder',216,1296,146,20,166,'▲ 2',[24,22,24,24,28,24]],
+      ['Ospreys','OS','J. Keller',212,1290,142,21,163,'—',[28,24,22,22,26,20]],
+      ['Harriers','HR','R. Dunn',215,1284,142,12,154,'▼ 2',[22,24,20,26,28,22]],
+      ['Merlins','ME','S. Pruitt',204,1262,132,11,143,'—',[24,22,22,18,28,18]],
+      ['Condors','CO','K. Moss',198,1240,122,9,131,'—',[18,20,24,22,22,16]]
+    ];
+    var standings = rows.map(function (r, i) {
+      var move = r[8];
+      return {
+        pos: i + 1, team: r[0], mono: r[1], captain: r[2], wk: r[3], tt: r[4].toLocaleString('en-US'), rp: r[5], bp: r[6], total: r[7],
+        gap: i === 0 ? '—' : '−' + (190 - r[7]), move: move,
+        moveColor: move.indexOf('▲') === 0 ? '#0B3C5D' : (move.indexOf('▼') === 0 ? '#A84300' : '#9AA3AB'),
+        rowBg: i === 0 ? '#FFF8F0' : '#FFFFFF',
+        posBg: i === 0 ? accent : (i < 3 ? '#0B3C5D' : '#EEEBE4'),
+        posFg: i === 0 ? '#0E1B26' : (i < 3 ? '#FFFFFF' : '#0E1B26'),
+        form: r[9].map(function (v, w) { return { h: Math.round((v - 14) / 16 * 26 + 6), c: v === 30 ? accent : '#0B3C5D', label: 'Week ' + (w + 1) + ': ' + v + ' pts' }; })
+      };
+    });
+    var ticker = standings.map(function (s) { return { pos: s.pos, name: s.team.toUpperCase(), total: s.total }; });
+    var weeks = [];
+    for (var w = 1; w <= 15; w++) weeks.push({ bar: w <= 6 ? accent : (w === 7 ? '#5E7E96' : '#1C4260') });
+    var dates = ['Apr 14','Apr 21','Apr 28','May 5','May 12','May 19','May 26','Jun 2','Jun 9','Jun 16','Jun 23','Jun 30','Jul 7','Jul 14','Jul 21','Jul 28'];
+    var calendar = dates.map(function (d, i) {
+      var done = i <= 6, next = i === 7;
+      return {
+        label: i === 0 ? 'PRACTICE' : 'WK ' + i, date: d,
+        status: next ? 'Next up' : (done ? 'Final' : (i === 15 ? 'Finale' : '')),
+        bg: next ? accent : (done ? '#0B3C5D' : '#FFFFFF'),
+        fg: next ? '#0E1B26' : (done ? '#FFFFFF' : '#0E1B26'),
+        border: next ? accent : (done ? '#0B3C5D' : '#E2DED5')
+      };
+    });
+    var news = [
+      { mon: 'MAY', day: '27', tag: 'Results', tagBg: '#E9EEF2', tagFg: '#0B3C5D', title: 'Week 6 scores are posted', body: 'Hawks take the night with 224. Aaron Klein shoots the season’s first straight 50. Eagles hold the lead by four.' },
+      { mon: 'MAY', day: '22', tag: 'Deadline', tagBg: '#FDEBD9', tagFg: '#8A3700', title: 'Week 5 makeups close Friday, June 5', body: 'Missed rounds are made up in order. After the two-week window the score stays at zero.' },
+      { mon: 'APR', day: '08', tag: 'League', tagBg: '#EEEBE4', tagFg: '#3D4650', title: '2026 rules agreed by captains', body: 'No changes to scoring. Rookie bonus points end after Week 10.' }
+    ];
+    var awards = [
+      { title: 'Top Gun', sub: 'Highest average', rows: [{ n: 1, name: 'Aaron Klein', team: 'Eagles', val: '47.8' }, { n: 2, name: 'Carl Webb', team: 'Falcons', val: '47.1' }, { n: 3, name: 'Greg Litchfield', team: 'Eagles', val: '46.4' }] },
+      { title: 'Rookie of the Year', sub: 'Highest rookie average', rows: [{ n: 1, name: 'Luis Ortega', team: 'Eagles', val: '40.3' }, { n: 2, name: 'Dana Pierce', team: 'Eagles', val: '40.0' }, { n: 3, name: 'Joe Vance', team: 'Hawks', val: '39.8' }] },
+      { title: 'Most Improved', sub: 'Current avg vs. going-in avg', rows: [{ n: 1, name: 'Luis Ortega', team: 'Eagles', val: '+5.3' }, { n: 2, name: 'Hank Olson', team: 'Kestrels', val: '+3.9' }, { n: 3, name: 'Frank Holt', team: 'Hawks', val: '+2.6' }] }
+    ];
+    return { accent: accent, standings: standings, ticker: ticker, weeks: weeks, calendar: calendar, news: news, awards: awards };
+  }
+}
+</script>
+</body>
+</html>
