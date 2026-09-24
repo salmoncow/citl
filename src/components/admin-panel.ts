@@ -1,7 +1,8 @@
 /**
  * <admin-panel> — Custom Element
  *
- * Thin shell that owns the year selector, the tab strip, and shared
+ * Thin app shell (spec 006 DD-12): sidebar navigation, a top bar with the
+ * page title and year selector, and shared
  * data caches (teams, season, name suggestions). Delegates each tab's
  * rendering and behavior to a tab module under `./admin-tabs/`.
  *
@@ -51,27 +52,48 @@ class AdminPanel extends HTMLElement {
   }
 
   connectedCallback(): void {
+    const navItem = (tab: TabName, label: string, icon: string, active = false): string => `
+      <button type="button" class="admin-tab-btn${active ? ' is-active' : ''}" data-tab="${tab}"${active ? ' aria-current="page"' : ''}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${icon}"/></svg>
+        <span>${label}</span>
+      </button>`;
+
     this.innerHTML = `
-      <div class="admin-panel">
-        <div class="admin-tabs">
-          <button class="admin-tab-btn is-active" data-tab="team-mgmt">Team Management</button>
-          <button class="admin-tab-btn" data-tab="score-entry">Score Entry</button>
-          <button class="admin-tab-btn" data-tab="announcements">Announcements</button>
-          <button class="admin-tab-btn" data-tab="season-end">Season End</button>
-          <button class="admin-tab-btn" data-tab="users">Users</button>
+      <aside class="admin-sidebar on-dark">
+        <a href="#/" class="admin-brand" aria-label="CITL — back to the public site">
+          <svg width="28" height="28" viewBox="0 0 34 34" aria-hidden="true" focusable="false"><circle cx="17" cy="17" r="15" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="17" cy="17" r="8" fill="currentColor"/></svg>
+          <span class="admin-brand__word">CITL</span>
+          <span class="admin-brand__tag">Admin</span>
+        </a>
+        <nav class="admin-nav admin-tabs" aria-label="Admin">
+          ${navItem('team-mgmt', 'Team Management', 'M16 21v-2a4 4 0 0 0-8 0v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', true)}
+          ${navItem('score-entry', 'Score Entry', 'M4 4h16v16H4zM4 10h16M10 4v16')}
+          ${navItem('announcements', 'Announcements', 'M3 11l15-6v14L3 13zM7 12v6')}
+          ${navItem('season-end', 'Season End', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z')}
+          ${navItem('users', 'Users', 'M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z')}
+        </nav>
+      </aside>
+
+      <div class="admin-main">
+        <div class="admin-topbar">
+          <div class="admin-topbar__title">
+            <span class="eyebrow">Admin</span>
+            <h1 id="ap-title">Team Management</h1>
+          </div>
+          <div id="ap-year-row" class="admin-form-row">
+            <label for="ap-year">Season</label>
+            <select id="ap-year">${buildOptions(2019, 2030, '', CURRENT_YEAR)}</select>
+          </div>
         </div>
 
-        <div id="ap-year-row" class="admin-form-row">
-          <label for="ap-year">Year</label>
-          <select id="ap-year">${buildOptions(2019, 2030, '', CURRENT_YEAR)}</select>
-        </div>
-
-        <div id="ap-panel-team-mgmt" class="admin-tab-content"></div>
-        <div id="ap-panel-score-entry" class="admin-tab-content admin-tab-panel--hidden"></div>
-        <div id="ap-panel-announcements" class="admin-tab-content admin-tab-panel--hidden"></div>
-        <div id="ap-panel-season-end" class="admin-tab-content admin-tab-panel--hidden"></div>
-        <div id="ap-panel-users" class="admin-tab-content admin-tab-panel--hidden">
-          <admin-users-panel></admin-users-panel>
+        <div class="admin-content">
+          <div id="ap-panel-team-mgmt" class="admin-tab-content"></div>
+          <div id="ap-panel-score-entry" class="admin-tab-content admin-tab-panel--hidden"></div>
+          <div id="ap-panel-announcements" class="admin-tab-content admin-tab-panel--hidden"></div>
+          <div id="ap-panel-season-end" class="admin-tab-content admin-tab-panel--hidden"></div>
+          <div id="ap-panel-users" class="admin-tab-content admin-tab-panel--hidden">
+            <admin-users-panel></admin-users-panel>
+          </div>
         </div>
       </div>`;
 
@@ -103,7 +125,14 @@ class AdminPanel extends HTMLElement {
 
   private _switchTab(tab: TabName): void {
     for (const btn of this.querySelectorAll<HTMLButtonElement>('.admin-tab-btn')) {
-      btn.classList.toggle('is-active', btn.dataset['tab'] === tab);
+      const on = btn.dataset['tab'] === tab;
+      btn.classList.toggle('is-active', on);
+      if (on) {
+        btn.setAttribute('aria-current', 'page');
+        this.querySelector('#ap-title')!.textContent = btn.textContent?.trim() ?? '';
+      } else {
+        btn.removeAttribute('aria-current');
+      }
     }
     for (const { id, name } of [
       { id: 'ap-panel-team-mgmt', name: 'team-mgmt' },

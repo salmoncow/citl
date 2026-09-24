@@ -23,3 +23,17 @@ export const YARDAGE_TABLE: readonly YardageRow[] = [
   { min: 211.50, max: 215.49, yards: 26 },
   { min: 215.50, max: 250.00, yards: 27 },
 ];
+
+/**
+ * Starting yardage for a squad (rule 5.7): the row whose range contains the
+ * total of the five shooters' going-in averages. The total is rounded to 2
+ * decimals first, which closes the .49/.50 gaps between rows. Negative or
+ * non-finite totals are invalid (null); totals above 250 clamp to the last row.
+ */
+export function lookupYardage(total: number): YardageRow | null {
+  if (!Number.isFinite(total) || total < 0) return null;
+  const t = Math.round(total * 100) / 100;
+  const last = YARDAGE_TABLE[YARDAGE_TABLE.length - 1] ?? null;
+  if (last && t > last.max) return last;
+  return YARDAGE_TABLE.find((r) => t >= r.min && t <= r.max) ?? null;
+}

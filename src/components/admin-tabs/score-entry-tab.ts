@@ -1,26 +1,22 @@
 /**
  * Score Entry tab — week/team picker, date override, shooter rows,
- * save/publish flow.
+ * live calculation preview, save/publish flow.
  *
- * Owns the date override card (`#ap-date-section`) too: locking and
- * cancellation are interleaved with score-entry state (presence of
- * saved entries, past-date detection), so the two pieces stay together.
+ * The date override card (`#ap-date-section`) lives in
+ * score-entry-date-card.ts; this tab drives it because its locking depends
+ * on score-entry state (presence of saved entries for the week).
  */
 
 import { ScoreService } from '@/services/score-service';
+import { previewTeamNight } from '@/services/score-entry-preview';
+import { normalizeShooterName } from '@/services/scoring-engine';
+import type { SeasonEntry } from '@/types/score';
 import { showToast } from '@/modules/ui';
-import { computeSchedule, currentShootWeek } from '@/utils/schedule';
-import {
-  LOCK_SVG,
-  PENCIL_SVG,
-  WARN_SVG,
-  attachAutocomplete,
-  buildOptions,
-  parseLocalDate,
-  setStatus,
-  toInputDate,
-} from './admin-shared';
+import { currentShootWeek } from '@/utils/schedule';
+import { attachAutocomplete, buildOptions, setStatus } from './admin-shared';
 import type { AdminTab, AdminTabContext } from './types';
+import { renderPreviewPanel, renderTeamStatus, wrapWithStepper } from './score-entry-ui';
+import { DateOverrideCard } from './score-entry-date-card';
 
 const MAX_WEEKS = 15;
 const MAX_SCORE = 25;
@@ -30,15 +26,24 @@ export class ScoreEntryTab implements AdminTab {
   private _ctx: AdminTabContext | null = null;
   private readonly _scoreService: ScoreService;
 
-  /** Whether the date override card is in edit mode. */
-  private _dateEditMode = false;
   /** Whether any entries have been saved for the currently selected week. */
   private _weekHasScores = false;
   /** Re-entrancy guard: only the latest _populateShooterRows call may render (F-23). */
   private _loadGen = 0;
+  /** Saved entries for weeks ≤ the selected week (feeds the live preview, 0 extra reads). */
+  private _entries: SeasonEntry[] = [];
+  private _previewTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private readonly _dateCard: DateOverrideCard;
 
   constructor(scoreService: ScoreService) {
     this._scoreService = scoreService;
+    this._dateCard = new DateOverrideCard({
+      scoreService,
+      getHost: () => this._host,
+      getCtx: () => this._ctx,
+      hasScores: () => this._weekHasScores,
+    });
   }
 
   mount(host: HTMLElement, ctx: AdminTabContext): void {
@@ -57,17 +62,20 @@ export class ScoreEntryTab implements AdminTab {
         </select>
       </div>
 
+      <div id="ap-team-status" class="ap-team-status" role="group" aria-label="Team entry status"></div>
+
       <div id="ap-date-section"></div>
 
       <h3>Shooters</h3>
       <div class="admin-table-wrapper">
         <table class="admin-shooters-table">
           <thead>
-            <tr><th>Name</th><th>Score 1 (0–25)</th><th>Score 2 (0–25)</th><th>Total</th><th></th></tr>
+            <tr><th>Name</th><th class="ap-goingin-head">Going-in</th><th>Bunker 1 (0–25)</th><th>Bunker 2 (0–25)</th><th>Total</th><th></th></tr>
           </thead>
           <tbody id="ap-shooters-body"></tbody>
         </table>
       </div>
+      <div id="ap-preview" aria-live="polite"></div>
       <div class="admin-actions">
         <button id="ap-save" class="btn-primary">Save Entry</button>
         <span class="tooltip-icon" tabindex="0" role="img" aria-label="Save Entry help"
@@ -93,23 +101,33 @@ export class ScoreEntryTab implements AdminTab {
       </div>`;
 
     host.querySelector('#ap-week')!.addEventListener('change', () => {
-      this._dateEditMode = false;
+      this._dateCard.resetEdit();
       this._weekHasScores = false;
-      this._updateDateSection();
+      this._dateCard.render();
       void this._populateShooterRows();
       void this._loadSavedEntries();
     });
-    host.querySelector('#ap-team')!.addEventListener('change', () => void this._populateShooterRows());
+    host.querySelector('#ap-team')!.addEventListener('change', () => {
+      void this._populateShooterRows();
+      this._renderTeamStatus();
+    });
+    host.querySelector('#ap-team-status')!.addEventListener('click', (e) => {
+      const chip = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-team-id]');
+      const select = host.querySelector<HTMLSelectElement>('#ap-team');
+      if (!chip || !select) return;
+      select.value = chip.dataset['teamId'] ?? '';
+      select.dispatchEvent(new Event('change'));
+    });
     host.querySelector('#ap-save')!.addEventListener('click', () => void this._saveEntry());
     host.querySelector('#ap-publish')!.addEventListener('click', () => void this._publishWeek());
 
     this._populateTeamSelect();
-    this._updateDateSection();
+    this._dateCard.render();
     void this._loadSavedEntries();
   }
 
   onYearChange(): void {
-    this._dateEditMode = false;
+    this._dateCard.resetEdit();
     this._weekHasScores = false;
     const weekSelect = this._host?.querySelector<HTMLSelectElement>('#ap-week');
     if (weekSelect && this._ctx) {
@@ -124,7 +142,7 @@ export class ScoreEntryTab implements AdminTab {
   }
 
   onSeasonChanged(): void {
-    this._updateDateSection();
+    this._dateCard.render();
   }
 
   onActivate(): void {
@@ -187,6 +205,7 @@ export class ScoreEntryTab implements AdminTab {
             if (!entryNames.has(shooter.name)) this._addShooterRow(shooter.name);
           }
         }
+        this._refreshPreview();
         return;
       }
     }
@@ -197,6 +216,7 @@ export class ScoreEntryTab implements AdminTab {
       for (const shooter of team.shooters) this._addShooterRow(shooter.name);
     }
     // no-team-selected branch: leave tbody empty (user must select a team)
+    this._refreshPreview();
   }
 
   private _addShooterRow(prefilledName = '', score1?: number, score2?: number): void {
@@ -222,6 +242,7 @@ export class ScoreEntryTab implements AdminTab {
 
     const s1 = this._scoreInput();
     const s2 = this._scoreInput();
+    const who = prefilledName || 'new shooter';
 
     if (score1 !== undefined) s1.value = String(score1);
     if (score2 !== undefined) s2.value = String(score2);
@@ -236,7 +257,13 @@ export class ScoreEntryTab implements AdminTab {
     };
     s1.addEventListener('input', updateTotal);
     s2.addEventListener('input', updateTotal);
+    s1.addEventListener('input', () => this._schedulePreview());
+    s2.addEventListener('input', () => this._schedulePreview());
     updateTotal();
+
+    const goingInCell = document.createElement('td');
+    goingInCell.className = 'ap-goingin num';
+    goingInCell.textContent = '—';
 
     const td = (child: HTMLElement) => {
       const c = document.createElement('td');
@@ -244,15 +271,20 @@ export class ScoreEntryTab implements AdminTab {
       return c;
     };
     row.appendChild(nameCell);
-    row.appendChild(td(s1));
-    row.appendChild(td(s2));
+    row.appendChild(goingInCell);
+    row.appendChild(td(wrapWithStepper(s1, `bunker 1 for ${who}`)));
+    row.appendChild(td(wrapWithStepper(s2, `bunker 2 for ${who}`)));
     row.appendChild(totalCell);
     if (!prefilledName) {
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.textContent = '✕';
       removeBtn.className = 'ap-remove-shooter';
-      removeBtn.addEventListener('click', () => tbody.removeChild(row));
+      removeBtn.setAttribute('aria-label', 'Remove shooter row');
+      removeBtn.addEventListener('click', () => {
+        tbody.removeChild(row);
+        this._schedulePreview();
+      });
       row.appendChild(td(removeBtn));
     } else {
       row.appendChild(document.createElement('td')); // keep column alignment
@@ -350,11 +382,14 @@ export class ScoreEntryTab implements AdminTab {
       return;
     }
 
+    this._entries = result.data.filter((e) => e.weekNumber <= weekNumber);
     const entries = result.data.filter((e) => e.weekNumber === weekNumber);
+    this._renderTeamStatus();
+    this._refreshPreview();
 
     // Update score-presence flag and re-render the date card (locking state may have changed)
     this._weekHasScores = entries.length > 0;
-    this._updateDateSection();
+    this._dateCard.render();
 
     if (entries.length === 0) {
       const li = document.createElement('li');
@@ -380,6 +415,71 @@ export class ScoreEntryTab implements AdminTab {
     }
   }
 
+  // ── Live preview (spec 006 DD-12) ───────────────────────────────────────
+
+  private _selectedWeek(): number {
+    return parseInt(this._host?.querySelector<HTMLSelectElement>('#ap-week')?.value ?? '0', 10);
+  }
+
+  private _renderTeamStatus(): void {
+    const box = this._host?.querySelector('#ap-team-status');
+    if (!box) return;
+    const week = this._selectedWeek();
+    const entered = new Set(this._entries.filter((e) => e.weekNumber === week).map((e) => e.teamId));
+    const selected = this._host?.querySelector<HTMLSelectElement>('#ap-team')?.value ?? '';
+    box.innerHTML = renderTeamStatus(this._ctx?.getTeamsData() ?? [], entered, selected);
+  }
+
+  private _schedulePreview(): void {
+    if (this._previewTimer) clearTimeout(this._previewTimer);
+    this._previewTimer = setTimeout(() => this._refreshPreview(), 150);
+  }
+
+  /**
+   * Rebuild the calculation panel from the on-screen rows. Lenient: rows
+   * with no or out-of-range scores are left out — validation stays in
+   * _saveEntry, which this never touches.
+   */
+  private _refreshPreview(): void {
+    const host = this._host;
+    const panel = host?.querySelector('#ap-preview');
+    if (!host || !panel) return;
+    const teamSelect = host.querySelector<HTMLSelectElement>('#ap-team')!;
+    const teamId = teamSelect.value;
+    const teams = this._ctx?.getTeamsData() ?? [];
+    const team = teams.find((t) => t.id === teamId);
+    if (!team) {
+      panel.innerHTML = '';
+      return;
+    }
+
+    const shooters: SeasonEntry['shooters'] = [];
+    for (const row of host.querySelectorAll<HTMLElement>('.ap-shooter-row')) {
+      const name = (row.dataset['name'] ?? row.querySelector<HTMLInputElement>('.ap-shooter-name')?.value ?? '').trim();
+      const [a, b] = [...row.querySelectorAll<HTMLInputElement>('.ap-score-input')].map((i) => parseInt(i.value, 10));
+      if (!name || a === undefined || b === undefined || Number.isNaN(a) || Number.isNaN(b)) continue;
+      if (a < 0 || a > MAX_SCORE || b < 0 || b > MAX_SCORE) continue;
+      shooters.push({ name, score1: a, score2: b, total: a + b });
+    }
+
+    const week = this._selectedWeek();
+    const preview = previewTeamNight({
+      year: this._ctx?.getYear() ?? 0,
+      weekNumber: week,
+      teams,
+      entries: this._entries,
+      draft: { year: this._ctx?.getYear() ?? 0, weekNumber: week, teamId, teamName: team.name, savedAt: '', shooters },
+    });
+    panel.innerHTML = renderPreviewPanel(preview);
+
+    for (const row of host.querySelectorAll<HTMLElement>('.ap-shooter-row')) {
+      const cell = row.querySelector('.ap-goingin');
+      const name = row.dataset['name'] ?? row.querySelector<HTMLInputElement>('.ap-shooter-name')?.value ?? '';
+      const avg = preview?.goingInByName.get(normalizeShooterName(name));
+      if (cell) cell.textContent = avg === undefined ? '—' : avg.toFixed(1);
+    }
+  }
+
   private async _publishWeek(): Promise<void> {
     const host = this._host;
     if (!host) return;
@@ -399,185 +499,6 @@ export class ScoreEntryTab implements AdminTab {
       showToast('success', `Week ${weekNumber} published — standings updated.`);
     } else {
       showToast('error', `Publish failed: ${result.error}`);
-    }
-  }
-
-  // ── Date override ────────────────────────────────────────────────────────
-
-  /**
-   * Rebuild the date override card. Called whenever week, year, season data,
-   * or entry presence changes. Manages all of: view mode, edit mode, locked state.
-   */
-  private _updateDateSection(): void {
-    const host = this._host;
-    if (!host) return;
-    const container = host.querySelector<HTMLElement>('#ap-date-section');
-    if (!container) return;
-
-    const year = this._ctx?.getYear() ?? 0;
-    const weekNumber = parseInt(host.querySelector<HTMLSelectElement>('#ap-week')?.value ?? '1', 10);
-
-    const overrides = this._ctx?.getSeasonData()?.weekDateOverrides ?? {};
-    const key = String(weekNumber);
-    const hasOverride = key in overrides;
-    const overrideValue = overrides[key]; // string | null | undefined
-
-    const shootEvents = computeSchedule(year).filter((e) => e.type === 'shoot');
-    const scheduledEvent = shootEvents.find((e) => e.week === weekNumber);
-    const scheduledDate = scheduledEvent?.date ?? null;
-
-    let effectiveDate: Date | null;
-    let displayState: 'normal' | 'overridden' | 'cancelled';
-
-    if (hasOverride && overrideValue === null) {
-      displayState = 'cancelled';
-      effectiveDate = scheduledDate;
-    } else if (hasOverride && typeof overrideValue === 'string') {
-      displayState = 'overridden';
-      effectiveDate = parseLocalDate(overrideValue);
-    } else {
-      displayState = 'normal';
-      effectiveDate = scheduledDate;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isInPast = effectiveDate !== null && effectiveDate < today;
-    const isLocked = isInPast || this._weekHasScores;
-    const lockReason = isInPast
-      ? 'This date is in the past'
-      : this._weekHasScores
-        ? 'Scores have been entered for this week'
-        : '';
-
-    if (isLocked && this._dateEditMode) this._dateEditMode = false;
-
-    const formattedDate = effectiveDate !== null
-      ? effectiveDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-      : '';
-
-    const badgeHtml = displayState === 'overridden'
-      ? `<span class="ap-date-badge">overridden</span>`
-      : displayState === 'cancelled'
-        ? `<span class="ap-date-badge ap-date-badge--cancelled">cancelled</span>`
-        : '';
-
-    const dateDisplayHtml = displayState === 'cancelled'
-      ? `<span class="ap-date-display ap-date-display--cancelled">CANCELLED</span>`
-      : `<span class="ap-date-display">${formattedDate || '—'}</span>`;
-
-    const todayStr = toInputDate(today);
-
-    if (!this._dateEditMode) {
-      const actionHtml = isLocked
-        ? `<span class="ap-date-lock" data-tooltip="${lockReason}">${LOCK_SVG} Locked</span>`
-        : `<button class="ap-date-edit-btn btn-secondary" id="ap-date-edit-btn">${PENCIL_SVG} Edit date</button>`;
-
-      container.innerHTML = `
-        <div class="ap-date-card">
-          <div class="ap-date-card__header">
-            <span class="ap-date-card__label">Shoot Date</span>
-            ${badgeHtml}
-          </div>
-          <div class="ap-date-card__body">
-            ${dateDisplayHtml}
-            ${actionHtml}
-          </div>
-        </div>`;
-
-      host.querySelector('#ap-date-edit-btn')
-        ?.addEventListener('click', () => {
-          this._dateEditMode = true;
-          this._updateDateSection();
-        });
-      return;
-    }
-
-    // Edit mode: pre-fill input with override or computed date
-    const inputValue = displayState === 'overridden' && typeof overrideValue === 'string'
-      ? overrideValue.substring(0, 10)
-      : scheduledDate !== null ? toInputDate(scheduledDate) : '';
-
-    const cancelledChecked = displayState === 'cancelled' ? ' checked' : '';
-
-    container.innerHTML = `
-      <div class="ap-date-card ap-date-card--editing">
-        <div class="ap-date-card__header">
-          <span class="ap-date-card__label">Shoot Date</span>
-          ${badgeHtml}
-        </div>
-        <div class="ap-date-warning">
-          ${WARN_SVG}
-          <span>This overrides the scheduled shoot date on the season calendar and printed scoresheets.</span>
-        </div>
-        <div class="ap-date-edit-row">
-          <input type="date" id="ap-shoot-date" class="ap-date-input" value="${inputValue}" min="${todayStr}" />
-          <label class="ap-cancelled-label">
-            <input type="checkbox" id="ap-cancelled"${cancelledChecked} /> Cancelled
-          </label>
-        </div>
-        <div class="ap-date-edit-actions">
-          <button id="ap-cancel-date-edit" class="btn-secondary">Cancel</button>
-          <button id="ap-save-date" class="btn-primary">Save Date</button>
-        </div>
-      </div>`;
-
-    const cancelledCb = host.querySelector<HTMLInputElement>('#ap-cancelled')!;
-    const dateInput = host.querySelector<HTMLInputElement>('#ap-shoot-date')!;
-    if (cancelledCb.checked) dateInput.disabled = true;
-
-    cancelledCb.addEventListener('change', () => {
-      dateInput.disabled = cancelledCb.checked;
-      if (cancelledCb.checked) dateInput.value = '';
-    });
-
-    host.querySelector('#ap-cancel-date-edit')?.addEventListener('click', () => {
-      this._dateEditMode = false;
-      this._updateDateSection();
-    });
-
-    host.querySelector('#ap-save-date')?.addEventListener('click', () => {
-      void this._saveDateOverride();
-    });
-  }
-
-  private async _saveDateOverride(): Promise<void> {
-    const host = this._host;
-    if (!host) return;
-    const year = this._ctx?.getYear() ?? 0;
-    const weekNumber = parseInt(host.querySelector<HTMLSelectElement>('#ap-week')!.value, 10);
-    const cancelledCb = host.querySelector<HTMLInputElement>('#ap-cancelled');
-    const dateInput = host.querySelector<HTMLInputElement>('#ap-shoot-date');
-    const saveBtn = host.querySelector<HTMLButtonElement>('#ap-save-date');
-    const cancelBtn = host.querySelector<HTMLButtonElement>('#ap-cancel-date-edit');
-
-    const isCancelled = cancelledCb?.checked ?? false;
-    const dateValue = dateInput?.value ?? '';
-
-    if (!isCancelled && !dateValue) {
-      showToast('error', 'Enter a date or check Cancelled.');
-      return;
-    }
-
-    if (saveBtn) saveBtn.disabled = true;
-    if (cancelBtn) cancelBtn.disabled = true;
-
-    const result = await this._scoreService.saveWeekDateOverride(
-      year,
-      weekNumber,
-      isCancelled ? null : dateValue,
-    );
-
-    if (result.success) {
-      this._dateEditMode = false;
-      showToast('success', isCancelled
-        ? `Week ${weekNumber} marked as cancelled.`
-        : `Shoot date for Week ${weekNumber} updated.`);
-      await this._ctx?.refreshSeason(); // triggers onSeasonChanged → re-render
-    } else {
-      if (saveBtn) saveBtn.disabled = false;
-      if (cancelBtn) cancelBtn.disabled = false;
-      showToast('error', `Failed to save date: ${result.error}`);
     }
   }
 

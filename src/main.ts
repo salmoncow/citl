@@ -35,6 +35,7 @@ import './styles/about.css';
 import './styles/toast.css';
 import './styles/forms.css';
 import './styles/admin-tables.css';
+import './styles/admin-shell.css';
 import './styles/scoresheet.css';
 import './styles/home.css';
 import './styles/scorecards.css';
