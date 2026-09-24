@@ -37,6 +37,7 @@ import './styles/forms.css';
 import './styles/admin-tables.css';
 import './styles/scoresheet.css';
 import './styles/home.css';
+import './styles/scorecards.css';
 import './styles/print.css';
 import './components/home-hero';
 import './components/home-stats';

@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { ScorecardRowShooter, ScorecardTeamBlock } from '@/types/scorecard';
-import { toAwardShooterInputs } from './scorecard-builder';
+import { summarizeScorecardTeams, toAwardShooterInputs } from './scorecard-builder';
 
 const makeRow = (overrides: Partial<ScorecardRowShooter> = {}): ScorecardRowShooter => ({
   name: 'Alice',
@@ -79,5 +79,31 @@ describe('toAwardShooterInputs', () => {
   it('returns [] for empty blocks', () => {
     expect(toAwardShooterInputs([])).toEqual([]);
     expect(toAwardShooterInputs([makeBlock('Empty', [])])).toEqual([]);
+  });
+});
+
+describe('summarizeScorecardTeams (spec 006)', () => {
+  const N = null;
+  const pad = <T,>(xs: T[]): (T | null)[] => [...xs, ...Array.from({ length: 15 - xs.length }, () => null)];
+  const block = (teamName: string, targets: number[], rank: number[], bonus: number[]): ScorecardTeamBlock => ({
+    teamName, shooters: [], targets: pad(targets), rankPoints: pad(rank), bonusPoints: pad(bonus),
+  });
+
+  it('totals the season and counts weekly wins and target-bonus weeks', () => {
+    const [a, b] = summarizeScorecardTeams([
+      block('A', [220, 210, 230], [30, 28, 29], [5, 1, 7]),
+      block('B', [210, 215, 230], [28, 30, 29], [0, 5, 0]),
+    ]);
+    expect(a).toEqual({
+      teamName: 'A', nightsShot: 3, totalTargets: 660, rankPoints: 87, bonusPoints: 13,
+      weeklyWins: 2, beatAverageWeeks: 2,
+    });
+    expect(b!.weeklyWins).toBe(2); // week 2 outright, week 3 tied
+    expect(b!.beatAverageWeeks).toBe(1);
+  });
+
+  it('ignores unplayed weeks', () => {
+    const blocks = [{ ...block('C', [200], [30], [0]), targets: [200, N, ...Array(13).fill(N)] }];
+    expect(summarizeScorecardTeams(blocks)[0]!.nightsShot).toBe(1);
   });
 });
