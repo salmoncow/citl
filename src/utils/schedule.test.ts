@@ -19,7 +19,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { nthTuesdayOfMonth, computeSchedule, currentShootWeek } from './schedule';
+import {
+  applyWeekDateOverrides,
+  computeSchedule,
+  currentShootWeek,
+  nthTuesdayOfMonth,
+  seasonTimeline,
+} from './schedule';
 
 // ─── nthTuesdayOfMonth ──────────────────────────────────────────────────────
 
@@ -243,5 +249,49 @@ describe('currentShootWeek — defaults the Score Entry week dropdown', () => {
 
   it('ignores time of day (late evening on Week 3 still resolves to Week 3)', () => {
     expect(currentShootWeek(2025, new Date(2025, 3, 29, 23, 59))).toBe(3);
+  });
+});
+
+describe('applyWeekDateOverrides', () => {
+  it('moves a postponed week and marks a cancelled one', () => {
+    const events = computeSchedule(2026);
+    const out = applyWeekDateOverrides(events, { '2': '2026-04-30T00:00:00', '3': null });
+    const wk2 = out.find((e) => e.week === 2)!;
+    const wk3 = out.find((e) => e.week === 3)!;
+    expect(wk2.type).toBe('shoot');
+    expect(wk2.date.getDate()).toBe(30);
+    expect(wk3.type).toBe('cancelled');
+    expect(out.find((e) => e.week === 4)!.type).toBe('shoot');
+  });
+});
+
+describe('seasonTimeline', () => {
+  it('lists practice + 15 weeks with done / next / upcoming status', () => {
+    // 2026: practice Apr 14, week 1 Apr 21, week 7 Jun 2
+    const tl = seasonTimeline(computeSchedule(2026), new Date(2026, 4, 27));
+    expect(tl).toHaveLength(16);
+    expect(tl[0]!.type).toBe('practice');
+    expect(tl[0]!.status).toBe('done');
+    expect(tl.find((e) => e.status === 'next')!.week).toBe(7);
+    expect(tl.filter((e) => e.status === 'done')).toHaveLength(7);
+    expect(tl[15]!.status).toBe('upcoming');
+  });
+
+  it('treats a shoot dated today as next', () => {
+    const tl = seasonTimeline(computeSchedule(2026), new Date(2026, 5, 2, 18, 0));
+    expect(tl.find((e) => e.status === 'next')!.week).toBe(7);
+  });
+
+  it('drops the July 4 holiday and keeps cancelled weeks', () => {
+    const events = applyWeekDateOverrides(computeSchedule(2025), { '5': null });
+    const tl = seasonTimeline(events, new Date(2025, 0, 1));
+    expect(tl.some((e) => (e.type as string) === 'holiday')).toBe(false);
+    expect(tl.find((e) => e.week === 5)!.status).toBe('cancelled');
+    expect(tl[0]!.status).toBe('next');
+  });
+
+  it('has no next entry once the season is over', () => {
+    const tl = seasonTimeline(computeSchedule(2026), new Date(2026, 8, 24));
+    expect(tl.every((e) => e.status === 'done')).toBe(true);
   });
 });

@@ -87,12 +87,12 @@ select:focus {
 
 .accolades-badge--50 {
   background: var(--c-accent);
-  color: var(--c-text-inverse);
+  color: var(--c-on-accent);
 }
 
 .accolades-badge--25 {
   background: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
 }
 
 .accolades-item__name {
@@ -129,7 +129,7 @@ select:focus {
 
 .awards-table th {
   background: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--tracking-wide);

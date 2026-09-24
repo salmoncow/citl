@@ -12,11 +12,22 @@
 // Stylesheet sections, split along main.css's former banner sections (F-22).
 // Import order IS cascade order — it must reproduce the original file's
 // top-to-bottom sequence exactly; Vite concatenates these into one CSS asset.
+// Self-hosted fonts (spec 006) — keeps CSP font-src 'self'. Latin subset only.
+import '@fontsource/barlow/latin-400.css';
+import '@fontsource/barlow/latin-500.css';
+import '@fontsource/barlow/latin-600.css';
+import '@fontsource/barlow/latin-700.css';
+import '@fontsource/barlow-condensed/latin-600.css';
+import '@fontsource/barlow-condensed/latin-700.css';
+import '@fontsource/barlow-condensed/latin-800.css';
+import '@fontsource/ibm-plex-mono/latin-500.css';
+import '@fontsource/ibm-plex-mono/latin-600.css';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/nav.css';
 import './styles/banner.css';
 import './styles/layout.css';
+import './styles/components.css';
 import './styles/tables.css';
 import './styles/buttons.css';
 import './styles/admin.css';
@@ -25,8 +36,12 @@ import './styles/toast.css';
 import './styles/forms.css';
 import './styles/admin-tables.css';
 import './styles/scoresheet.css';
+import './styles/home.css';
 import './styles/print.css';
+import './components/home-hero';
+import './components/home-stats';
 import './components/home-standings';
+import './components/home-award-races';
 import './components/home-announcements';
 import './components/site-banner';
 import './components/season-scorecards';
@@ -182,6 +197,8 @@ class App {
   // ─── View renderer ──────────────────────────────────────────────────────────
 
   private _showRoute(route: RouteDef): void {
+    // Exposed for route-scoped layout (e.g. the full-bleed home hero).
+    if (this._mainContent) this._mainContent.dataset['route'] = route.path;
     this._renderView(route.view());
     this._navigation!.setActiveLink(route.path);
     this._navigation!.closeDropdown();

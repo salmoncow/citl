@@ -1,22 +1,38 @@
 /**
  * home-standings — Custom Element
  *
- * Displays a year/week dropdown and standings table driven from Firestore.
- * No shadow DOM; uses global CSS classes.
+ * Season / week standings table driven from Firestore (spec 006 layout):
+ * position badge, movement vs the previous week, gap to the leader and the
+ * last six weeks of rank points as bars. Season awards and weekly accolades
+ * render above the table. No shadow DOM; uses global CSS classes.
  */
 
 import { getServices } from '@/services/app-services';
 import { compareStandings } from '@/services/scoring-engine';
-import { computeStandingsFromWeeks } from '@/services/standings';
+import { computeRankMovement, computeStandingsFromWeeks, rankPointsByWeek } from '@/services/standings';
 import { escapeHtml } from '@/modules/ui';
+import { renderAccolades, renderSeasonAwards } from '@/components/home-standings-parts';
 import type { Team, WeekResult } from '@/types/score';
-import type { Season, SeasonAwards } from '@/types/season';
+import type { Season } from '@/types/season';
 import type { Accolade } from '@/types/shooter';
 
 const { scoreService } = getServices();
 
+const FORM_WEEKS = 6;
+
+interface Row {
+  place: number | null;
+  teamId: string;
+  teamName: string;
+  captain: string;
+  weekTargets: number | null;
+  totalTargets: number | null;
+  rankPoints: number | null;
+  bonusPoints: number | null;
+  total: number | null;
+}
+
 class HomeStandings extends HTMLElement {
-  private _seasons: Season[] = [];
   private _selectedYear: number | null = null;
   private _season: Season | null = null;
   private _allWeekResults: WeekResult[] = [];
@@ -26,15 +42,21 @@ class HomeStandings extends HTMLElement {
 
   connectedCallback(): void {
     this.innerHTML = `
-      <div class="home-standings">
-        <div class="home-standings-controls">
-          <label for="hs-year">Season</label>
-          <select id="hs-year"></select>
-          <label for="hs-week">Week</label>
-          <select id="hs-week"><option value="season">Season</option></select>
+      <section class="section home-standings" id="standings" aria-labelledby="hs-title">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Standings</span>
+            <h2 id="hs-title">Standings</h2>
+          </div>
+          <div class="section-head__controls">
+            <label class="field-inline" for="hs-week">View</label>
+            <select id="hs-week"><option value="season">Season</option></select>
+            <label class="field-inline" for="hs-year">Season</label>
+            <select id="hs-year"></select>
+          </div>
         </div>
         <div id="hs-table">${HomeStandings._standingsSkeleton()}</div>
-      </div>`;
+      </section>`;
 
     this.querySelector<HTMLSelectElement>('#hs-year')!.addEventListener('change', (e) => {
       const year = parseInt((e.target as HTMLSelectElement).value, 10);
@@ -49,36 +71,43 @@ class HomeStandings extends HTMLElement {
     void this._loadSeasons();
   }
 
+  private _setBody(html: string): void {
+    this.querySelector('#hs-table')!.innerHTML = html;
+  }
+
+  private _setTitle(text: string): void {
+    this.querySelector('#hs-title')!.textContent = text;
+  }
+
   private async _loadSeasons(): Promise<void> {
     const result = await scoreService.getAllSeasons();
     if (!result.success) {
-      this.querySelector('#hs-table')!.innerHTML = '<p>Error loading seasons.</p>';
+      this._setBody('<p class="state-msg">Error loading seasons.</p>');
       return;
     }
 
-    this._seasons = result.data ?? [];
+    const seasons = result.data ?? [];
     const yearSelect = this.querySelector<HTMLSelectElement>('#hs-year')!;
-
-    for (const season of this._seasons) {
+    for (const season of seasons) {
       const opt = document.createElement('option');
       opt.value = String(season.year);
       opt.textContent = String(season.year);
       yearSelect.appendChild(opt);
     }
 
-    if (this._seasons.length > 0) {
-      const defaultYear = this._seasons[0]!.year;
-      this._selectedYear = defaultYear;
-      yearSelect.value = String(defaultYear);
-      await this._loadYear(defaultYear);
-    } else {
-      this.querySelector('#hs-table')!.innerHTML = '<p>No seasons available.</p>';
+    const latest = seasons[0];
+    if (!latest) {
+      this._setBody('<p class="state-msg">No seasons available.</p>');
+      return;
     }
+    this._selectedYear = latest.year;
+    yearSelect.value = String(latest.year);
+    await this._loadYear(latest.year);
   }
 
   private async _loadYear(year: number): Promise<void> {
     const gen = ++this._loadGen;
-    this.querySelector('#hs-table')!.innerHTML = HomeStandings._standingsSkeleton();
+    this._setBody(HomeStandings._standingsSkeleton());
 
     const [weeksResult, seasonResult, teamsResult] = await Promise.all([
       scoreService.getAllWeekResults(year),
@@ -88,7 +117,7 @@ class HomeStandings extends HTMLElement {
     if (gen !== this._loadGen) return; // superseded by a newer selection
 
     if (!seasonResult.success || !seasonResult.data) {
-      this.querySelector('#hs-table')!.innerHTML = `<p>Error loading standings for ${year}.</p>`;
+      this._setBody(`<p class="state-msg">Error loading standings for ${year}.</p>`);
       return;
     }
 
@@ -113,64 +142,54 @@ class HomeStandings extends HTMLElement {
     }
 
     const defaultView =
-      this._season!.status === 'complete' || currentWeek === 0
-        ? 'season'
-        : String(currentWeek);
+      this._season.status === 'complete' || currentWeek === 0 ? 'season' : String(currentWeek);
     weekSelect.value = defaultView;
     this._renderTable(defaultView);
   }
 
   private _renderTable(weekKey: string): void {
-    let rows: {
-      place: number | string;
-      teamName: string;
-      captain: string;
-      targets: number | string;
-      totalTargets: number | string;
-      rankPoints: number | string;
-      bonusPoints: number | string;
-      total: number | string;
-    }[];
-    let subtitle: string;
-    let accolades: Accolade[] = [];
+    const season = this._season;
+    if (!season) return;
+    const captainOf = new Map(this._teams.map((t) => [t.id, t.captain]));
+    const year = this._selectedYear ?? season.year;
 
-    const teamCaptainMap: Record<string, string> = Object.fromEntries(
-      this._teams.map((t) => [t.id, t.captain])
-    );
+    let rows: Row[];
+    let throughWeek: number;
+    let accolades: Accolade[] = [];
+    let weekView = false;
 
     if (weekKey === 'season') {
-      const standings = this._season?.standings ?? [];
-
-      if (standings.length > 0) {
-        rows = standings.map((s) => ({
-          place: s.rank,
-          teamName: s.teamName,
-          captain: teamCaptainMap[s.teamId] ?? '—',
-          targets: s.totalTargets,
-          totalTargets: s.totalTargets,
-          rankPoints: s.totalRankPoints,
-          bonusPoints: s.totalBonusPoints,
-          total: s.totalRankPoints + s.totalBonusPoints,
-        }));
-        subtitle = 'Cumulative season totals';
-      } else {
+      throughWeek = season.currentWeek ?? 0;
+      const standings = season.standings ?? [];
+      rows = standings.map((s) => ({
+        place: s.rank,
+        teamId: s.teamId,
+        teamName: s.teamName,
+        captain: captainOf.get(s.teamId) ?? '—',
+        weekTargets: null,
+        totalTargets: s.totalTargets,
+        rankPoints: s.totalRankPoints,
+        bonusPoints: s.totalBonusPoints,
+        total: s.totalRankPoints + s.totalBonusPoints,
+      }));
+      if (rows.length === 0) {
         rows = this._teams.map((t) => ({
-          place: '—',
-          teamName: t.name,
-          captain: t.captain,
-          targets: '—',
-          totalTargets: '—',
-          rankPoints: '—',
-          bonusPoints: '—',
-          total: '—',
+          place: null, teamId: t.id, teamName: t.name, captain: t.captain,
+          weekTargets: null, totalTargets: null, rankPoints: null, bonusPoints: null, total: null,
         }));
-        subtitle = 'Season has not yet begun — teams registered';
+        this._setTitle(`${year} teams`);
+      } else if (season.status === 'complete') {
+        this._setTitle(`${year} final standings`);
+      } else {
+        this._setTitle(throughWeek > 0 ? `After week ${throughWeek}` : `${year} standings`);
       }
     } else {
-      const weekNum = parseInt(weekKey, 10);
-      const weekResult = this._allWeekResults.find((w) => w.weekNumber === weekNum);
+      weekView = true;
+      throughWeek = parseInt(weekKey, 10);
+      const weekResult = this._allWeekResults.find((w) => w.weekNumber === throughWeek);
+      this._setTitle(`Week ${throughWeek} results`);
       if (!weekResult) {
-        this.querySelector('#hs-table')!.innerHTML = `<p>No data for Week ${weekNum}.</p>`;
+        this._setBody(`<p class="state-msg">No data for Week ${throughWeek}.</p>`);
         return;
       }
 
@@ -179,147 +198,130 @@ class HomeStandings extends HTMLElement {
       // the same stored docs, so the two views can never disagree. Per-week
       // columns come straight off the week-N doc rows.
       const cumulative = new Map(
-        computeStandingsFromWeeks(this._allWeekResults, weekNum).map((r) => [r.teamId, r]),
+        computeStandingsFromWeeks(this._allWeekResults, throughWeek).map((r) => [r.teamId, r]),
       );
-
       rows = (weekResult.teamResults ?? []).map((tr) => {
         const cum = cumulative.get(tr.teamId);
         return {
+          place: 0,
+          teamId: tr.teamId,
           teamName: tr.teamName,
-          captain: teamCaptainMap[tr.teamId] ?? '—',
-          targets: tr.targets,
+          captain: captainOf.get(tr.teamId) ?? '—',
+          weekTargets: tr.targets,
           totalTargets: cum?.totalTargets ?? 0,
           rankPoints: tr.rankPoints,
           bonusPoints: tr.bonusPoints,
           total: cum ? cum.totalRankPoints + cum.totalBonusPoints : 0,
-          place: 0,
         };
       });
-
       rows.sort((a, b) =>
         compareStandings(
-          { points: a.total as number, targets: a.totalTargets as number },
-          { points: b.total as number, targets: b.totalTargets as number },
+          { points: a.total ?? 0, targets: a.totalTargets ?? 0 },
+          { points: b.total ?? 0, targets: b.totalTargets ?? 0 },
         ),
       );
       rows = rows.map((r, i) => ({ ...r, place: i + 1 }));
-      subtitle = `Week ${weekNum} results \u00b7 Total reflects season-to-date`;
       accolades = weekResult.accolades ?? [];
     }
 
     // Season awards ride the already-loaded season doc — zero extra reads
-    // (spec 004 AC-6). Rendered only in the Season view and only when the
-    // finalize flow (or the legacy migration) has written awards.
-    const awardsHtml =
-      weekKey === 'season' && this._season?.awards
-        ? this._renderAwards(this._season.awards)
-        : '';
+    // (spec 004 AC-6), and only in the Season view.
+    const awardsHtml = !weekView && season.awards ? renderSeasonAwards(season.awards) : '';
 
-    this.querySelector('#hs-table')!.innerHTML =
+    this._setBody(
       awardsHtml +
-      this._renderAccolades(accolades) +
-      this._buildTable(rows, subtitle);
+      renderAccolades(accolades, throughWeek) +
+      this._buildTable(rows, throughWeek, weekView),
+    );
   }
 
-  /**
-   * Season Awards table (spec 004 DD-2, table refinement 2026-07-12). Each
-   * field is null-guarded independently (repository reads are unvalidated
-   * casts); rows with a missing winner are omitted, and the whole section is
-   * omitted when no row renders. Icons are plain emoji — no icon font or
-   * custom assets (ADR-008).
-   */
-  private _renderAwards(awards: SeasonAwards): string {
-    const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-
-    const rows: { icon: string; award: string; winner: string; result: string }[] = [];
-    if (typeof awards.firstPlaceTeam === 'string') {
-      rows.push({
-        icon: '\u{1F3C6}', // 🏆
-        award: 'First Place',
-        winner: awards.firstPlaceTeam,
-        result: num(awards.firstPlacePoints) ? `${awards.firstPlacePoints} pts` : '—',
-      });
+  private _buildTable(rows: Row[], throughWeek: number, weekView: boolean): string {
+    const movement = computeRankMovement(this._allWeekResults, throughWeek);
+    const form = rankPointsByWeek(this._allWeekResults, throughWeek);
+    const weekMax = new Map<number, number>();
+    for (const wr of this._allWeekResults) {
+      const pts = (wr.teamResults ?? []).map((t) => t.rankPoints ?? 0);
+      if (pts.length) weekMax.set(wr.weekNumber, Math.max(...pts));
     }
-    if (typeof awards.secondPlaceTeam === 'string') {
-      rows.push({
-        icon: '\u{1F948}', // 🥈
-        award: 'Second Place',
-        winner: awards.secondPlaceTeam,
-        result: num(awards.secondPlacePoints) ? `${awards.secondPlacePoints} pts` : '—',
-      });
-    }
-    if (typeof awards.highestAvgShooter === 'string') {
-      rows.push({
-        icon: '\u{1F3AF}', // 🎯
-        award: 'Highest Average',
-        winner: awards.highestAvgShooter,
-        result: num(awards.highestAvg) ? `${awards.highestAvg.toFixed(2)} avg` : '—',
-      });
-    }
-    if (typeof awards.rookieOfYear === 'string') {
-      rows.push({
-        icon: '\u{2B50}', // ⭐
-        award: 'Rookie of the Year',
-        winner: awards.rookieOfYear,
-        result: num(awards.rookieAvg) ? `${awards.rookieAvg.toFixed(2)} avg` : '—',
-      });
-    }
-    if (typeof awards.mostImproved === 'string') {
-      rows.push({
-        icon: '\u{1F4C8}', // 📈
-        award: 'Most Improved',
-        winner: awards.mostImproved,
-        result: typeof awards.improvement === 'string' ? awards.improvement : '—',
-      });
-    }
-    if (rows.length === 0) return '';
+    const leaderTotal = rows[0]?.total ?? null;
+    const fmt = (v: number | null): string => (v === null ? '—' : v.toLocaleString('en-US'));
 
-    const trs = rows.map((row) => `
-        <tr>
-          <td class="awards-table__award">
-            <span class="awards-table__icon" aria-hidden="true">${row.icon}</span>${escapeHtml(row.award)}
-          </td>
-          <td class="awards-table__winner">${escapeHtml(row.winner)}</td>
-          <td class="awards-table__result">${escapeHtml(row.result)}</td>
-        </tr>`).join('');
-
-    return `
-    <div class="awards-section">
-      <h3 class="awards-section__heading">Season Awards</h3>
-      <table class="awards-table">
-        <thead>
-          <tr>
-            <th>Award</th>
-            <th>Winner</th>
-            <th>Result</th>
-          </tr>
-        </thead>
-        <tbody>${trs}</tbody>
-      </table>
-    </div>`;
-  }
-
-  private _renderAccolades(accolades: Accolade[]): string {
-    if (accolades.length === 0) return '';
-
-    const items = accolades.map((a) => {
-      const badgeClass = a.streak === 50
-        ? 'accolades-badge--50'
-        : 'accolades-badge--25';
-      const label = a.streak === 50 ? 'Straight 50' : 'Straight 25';
+    const trs = rows.map((r, i) => {
+      const place = r.place ?? '—';
+      const posCls = r.place !== null && r.place <= 3 ? ` pos--${r.place}` : '';
+      const gap = i === 0 || r.total === null || leaderTotal === null ? '—' : `−${leaderTotal - r.total}`;
+      const leaderCls = r.place === 1 ? ' class="is-leader"' : '';
       return `
-      <li class="accolades-item">
-        <span class="accolades-badge ${badgeClass}">${label}</span>
-        <span class="accolades-item__name">${escapeHtml(a.shooterName)}</span>
-        <span class="accolades-item__team">${escapeHtml(a.teamName)}</span>
-      </li>`;
+        <tr${leaderCls}>
+          <td><span class="pos${posCls}">${place}</span></td>
+          <td class="hs-move">${HomeStandings._movement(movement.get(r.teamId))}</td>
+          <th scope="row" class="hs-team">
+            <span class="hs-team__name">${escapeHtml(r.teamName)}</span>
+            <span class="hs-team__captain">${escapeHtml(r.captain)}</span>
+          </th>
+          <td class="hs-col-captain">${escapeHtml(r.captain)}</td>
+          ${weekView ? `<td class="num hs-col-opt">${fmt(r.weekTargets)}</td>` : ''}
+          <td class="num hs-col-opt">${fmt(r.totalTargets)}</td>
+          <td class="num hs-col-opt">${fmt(r.rankPoints)}</td>
+          <td class="num hs-col-opt">${fmt(r.bonusPoints)}</td>
+          <td class="num hs-points">${fmt(r.total)}</td>
+          <td class="num hs-gap">${gap}</td>
+          <td class="hs-form-cell">${HomeStandings._formBars(form.get(r.teamId) ?? [], throughWeek, weekMax)}</td>
+        </tr>`;
     }).join('');
 
+    const wk = weekView ? `Wk ${throughWeek} ` : '';
     return `
-    <div class="accolades-section">
-      <h3 class="accolades-section__heading">Accolades</h3>
-      <ul class="accolades-list">${items}</ul>
-    </div>`;
+      <div class="card card--flush hs-card">
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Standings table">
+          <table class="standing-table">
+            <thead>
+              <tr>
+                <th scope="col">Pos</th>
+                <th scope="col"><span class="visually-hidden">Movement</span><span aria-hidden="true">±</span></th>
+                <th scope="col">Team</th>
+                <th scope="col" class="hs-col-captain">Captain</th>
+                ${weekView ? `<th scope="col" class="num hs-col-opt">Wk ${throughWeek} tgts</th>` : ''}
+                <th scope="col" class="num hs-col-opt">Total tgts</th>
+                <th scope="col" class="num hs-col-opt">${wk}Rank pts</th>
+                <th scope="col" class="num hs-col-opt">${wk}Bonus</th>
+                <th scope="col" class="num hs-points">Points</th>
+                <th scope="col" class="num hs-gap">Gap</th>
+                <th scope="col" class="hs-form-cell">Last ${FORM_WEEKS} weeks</th>
+              </tr>
+            </thead>
+            <tbody>${trs}</tbody>
+          </table>
+        </div>
+        <div class="hs-foot">
+          <span>Ties on points are broken by total targets. Bars show weekly rank points; orange marks that week's top team.</span>
+          <a href="#/scorecards">Full scorecards →</a>
+        </div>
+      </div>`;
+  }
+
+  private static _movement(delta: number | undefined): string {
+    if (!delta) return '<span class="hs-move--flat" aria-label="No change">—</span>';
+    const up = delta > 0;
+    const n = Math.abs(delta);
+    return `<span class="${up ? 'hs-move--up' : 'hs-move--down'}" aria-label="${up ? 'Up' : 'Down'} ${n}">${up ? '▲' : '▼'} ${n}</span>`;
+  }
+
+  private static _formBars(points: (number | null)[], throughWeek: number, weekMax: Map<number, number>): string {
+    const start = Math.max(1, throughWeek - FORM_WEEKS + 1);
+    const bars: string[] = [];
+    for (let w = start; w <= throughWeek; w++) {
+      const v = points[w - 1] ?? null;
+      if (v === null) {
+        bars.push(`<span class="hs-bar hs-bar--none" title="Week ${w}: no result"></span>`);
+        continue;
+      }
+      const h = Math.max(4, Math.round((v / 30) * 28));
+      const top = weekMax.get(w) === v ? ' hs-bar--top' : '';
+      bars.push(`<span class="hs-bar${top}" style="height:${h}px" title="Week ${w}: ${v} pts"></span>`);
+    }
+    if (bars.length === 0) return '';
+    return `<span class="hs-form" role="img" aria-label="Rank points, weeks ${start}–${throughWeek}: ${points.slice(start - 1, throughWeek).map((v) => v ?? 'none').join(', ')}">${bars.join('')}</span>`;
   }
 
   private static _standingsSkeleton(): string {
@@ -331,62 +333,8 @@ class HomeStandings extends HTMLElement {
         <span class="skeleton skeleton--lg" style="flex:1"></span>
         <span class="skeleton skeleton--lg" style="flex:1"></span>
         <span class="skeleton skeleton--lg" style="flex:1"></span>
-        <span class="skeleton skeleton--lg" style="flex:1"></span>
-        <span class="skeleton skeleton--lg" style="flex:1"></span>
       </div>`;
-    return `
-      <div class="skeleton-group" style="padding-top:var(--space-2)">
-        <span class="skeleton skeleton--sm" style="width:45%"></span>
-        ${dataRow.repeat(7)}
-      </div>`;
-  }
-
-  private _buildTable(
-    rows: {
-      place: number | string;
-      teamName: string;
-      captain: string;
-      targets: number | string;
-      totalTargets: number | string;
-      rankPoints: number | string;
-      bonusPoints: number | string;
-      total: number | string;
-    }[],
-    subtitle: string,
-  ): string {
-    const trs = rows
-      .map(
-        (r) => `
-        <tr>
-          <td>${r.place}</td>
-          <td>${escapeHtml(r.teamName)}</td>
-          <td>${escapeHtml(r.captain)}</td>
-          <td>${r.targets}</td>
-          <td>${r.totalTargets}</td>
-          <td>${r.rankPoints}</td>
-          <td>${r.bonusPoints}</td>
-          <td>${r.total}</td>
-        </tr>`,
-      )
-      .join('');
-
-    return `
-      <p class="hs-subtitle">${subtitle}</p>
-      <table class="standing-table">
-        <thead>
-          <tr>
-            <th>Place</th>
-            <th>Team</th>
-            <th>Captain</th>
-            <th>Targets</th>
-            <th>Total Targets</th>
-            <th>Rank Pts</th>
-            <th>Bonus Pts</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>${trs}</tbody>
-      </table>`;
+    return `<div class="card skeleton-group">${dataRow.repeat(7)}</div>`;
   }
 }
 

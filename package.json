@@ -56,6 +56,9 @@
     "vitest": "^5.0.0"
   },
   "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "dompurify": "^3.4.15",
     "firebase": "^12.19.0",
     "marked": "^18.0.13"

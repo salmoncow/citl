@@ -49,6 +49,8 @@ function setCache<T>(cache: Map<string, CacheEntry<unknown>>, key: string, data:
 export class ScoreService {
   private readonly repository: ScoreRepository;
   private readonly cache = new Map<string, CacheEntry<unknown>>();
+  private readonly inflight = new Map<string, Promise<Result<unknown>>>();
+  private cacheGen = 0;
 
   constructor(repository: ScoreRepository) {
     if (!repository) throw new Error('ScoreService: repository is required');
@@ -62,25 +64,13 @@ export class ScoreService {
   async getSeason(year: number): Promise<Result<Season | null>> {
     { const bad = assertValidYear(year); if (bad) return bad; }
 
-    const cacheKey = `season:${year}`;
-    const cached = getCached<Season | null>(this.cache, cacheKey);
-    if (cached !== undefined) return success(cached);
-
-    const result = await this.repository.getSeason(year);
-    // Cache nulls too — a nonexistent season is as cacheable as a real one,
-    // and skipping it made every repeat lookup a fresh Firestore read (F-48).
-    if (result.success) setCache(this.cache, cacheKey, result.data);
-    return result;
+    // Nulls are cached too — a nonexistent season is as cacheable as a real
+    // one; skipping it made every repeat lookup a fresh Firestore read (F-48).
+    return this._cachedRead<Season | null>(`season:${year}`, () => this.repository.getSeason(year));
   }
 
   async getAllSeasons(): Promise<Result<Season[]>> {
-    const cacheKey = 'seasons:all';
-    const cached = getCached<Season[]>(this.cache, cacheKey);
-    if (cached !== undefined) return success(cached);
-
-    const result = await this.repository.getAllSeasons();
-    if (result.success) setCache(this.cache, cacheKey, result.data);
-    return result;
+    return this._cachedRead<Season[]>('seasons:all', () => this.repository.getAllSeasons());
   }
 
   // -------------------------------------------------------------------------
@@ -90,13 +80,7 @@ export class ScoreService {
   async getTeams(year: number): Promise<Result<Team[]>> {
     { const bad = assertValidYear(year); if (bad) return bad; }
 
-    const cacheKey = `teams:${year}`;
-    const cached = getCached<Team[]>(this.cache, cacheKey);
-    if (cached !== undefined) return success(cached);
-
-    const result = await this.repository.getTeams(year);
-    if (result.success) setCache(this.cache, cacheKey, result.data);
-    return result;
+    return this._cachedRead<Team[]>(`teams:${year}`, () => this.repository.getTeams(year));
   }
 
   // -------------------------------------------------------------------------
@@ -107,37 +91,19 @@ export class ScoreService {
     { const bad = assertValidYear(year); if (bad) return bad; }
     { const bad = assertValidWeek(weekNumber); if (bad) return bad; }
 
-    const cacheKey = `week:${year}:${weekNumber}`;
-    const cached = getCached<WeekResult | null>(this.cache, cacheKey);
-    if (cached !== undefined) return success(cached);
-
-    const result = await this.repository.getWeekResult(year, weekNumber);
-    if (result.success) setCache(this.cache, cacheKey, result.data);
-    return result;
+    return this._cachedRead<WeekResult | null>(`week:${year}:${weekNumber}`, () => this.repository.getWeekResult(year, weekNumber));
   }
 
   async getAllWeekResults(year: number): Promise<Result<WeekResult[]>> {
     { const bad = assertValidYear(year); if (bad) return bad; }
 
-    const cacheKey = `weeks:${year}`;
-    const cached = getCached<WeekResult[]>(this.cache, cacheKey);
-    if (cached !== undefined) return success(cached);
-
-    const result = await this.repository.getAllWeekResults(year);
-    if (result.success) setCache(this.cache, cacheKey, result.data);
-    return result;
+    return this._cachedRead<WeekResult[]>(`weeks:${year}`, () => this.repository.getAllWeekResults(year));
   }
 
   async getLatestWeekResult(year: number): Promise<Result<WeekResult | null>> {
     { const bad = assertValidYear(year); if (bad) return bad; }
 
-    const cacheKey = `latest:${year}`;
-    const cached = getCached<WeekResult | null>(this.cache, cacheKey, 5 * 60 * 1000);
-    if (cached !== undefined) return success(cached);
-
-    const result = await this.repository.getLatestWeekResult(year);
-    if (result.success) setCache(this.cache, cacheKey, result.data);
-    return result;
+    return this._cachedRead<WeekResult | null>(`latest:${year}`, () => this.repository.getLatestWeekResult(year), 5 * 60 * 1000);
   }
 
   // -------------------------------------------------------------------------
@@ -661,13 +627,7 @@ export class ScoreService {
   // -------------------------------------------------------------------------
 
   async getAnnouncements(year: number): Promise<Result<Announcement[]>> {
-    const cacheKey = `announcements:${year}`;
-    const cached = getCached<Announcement[]>(this.cache, cacheKey);
-    if (cached !== undefined) return success(cached);
-
-    const result = await this.repository.getAnnouncements(year);
-    if (result.success) setCache(this.cache, cacheKey, result.data);
-    return result;
+    return this._cachedRead<Announcement[]>(`announcements:${year}`, () => this.repository.getAnnouncements(year));
   }
 
   async createAnnouncement(year: number, title: string, body: string): Promise<Result<Announcement>> {
@@ -706,6 +666,33 @@ export class ScoreService {
 
   clearCache(): void {
     this.cache.clear();
+    this.inflight.clear();
+    this.cacheGen += 1;
+  }
+
+  /**
+   * Cached read with in-flight coalescing: concurrent callers for one key
+   * share a single repository call (the home page mounts several components
+   * that read the same season / week docs at once). Only successes are
+   * cached; a clearCache() during the call discards its result.
+   */
+  private _cachedRead<T>(key: string, fetch: () => Promise<Result<T>>, ttl = CACHE_TTL_MS): Promise<Result<T>> {
+    const cached = getCached<T>(this.cache, key, ttl);
+    if (cached !== undefined) return Promise.resolve(success(cached));
+    const pending = this.inflight.get(key) as Promise<Result<T>> | undefined;
+    if (pending) return pending;
+
+    const gen = this.cacheGen;
+    const request = fetch()
+      .then((result) => {
+        if (result.success && gen === this.cacheGen) setCache(this.cache, key, result.data);
+        return result;
+      })
+      .finally(() => {
+        if (this.inflight.get(key) === request) this.inflight.delete(key);
+      });
+    this.inflight.set(key, request);
+    return request;
   }
 }
 

@@ -8,7 +8,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildWeekResults, computeStandingsFromWeeks, planPublishRewrite } from './standings';
+import {
+  buildWeekResults,
+  computeRankMovement,
+  computeStandingsFromWeeks,
+  planPublishRewrite,
+  rankPointsByWeek,
+} from './standings';
 import { buildSeasonData } from './scorecard-builder';
 import { computeSeasonTotals } from './scoring-engine';
 import type { SeasonData } from '@/types/scorecard';
@@ -263,5 +269,61 @@ describe('buildWeekResults', () => {
     const doves = doc!.teamResults.find((tr) => tr.teamId === 'doves')!;
     expect(doves.targets).toBe(0);
     expect(doves.shooterScores).toHaveLength(0);
+  });
+});
+
+// ── spec 006: home standings movement + per-week rank points ────────────────
+
+function weekDoc(weekNumber: number, rows: [string, number, number, number][]): WeekResult {
+  return {
+    weekNumber,
+    publishedAt: `2026-01-0${weekNumber}`,
+    teamResults: rows.map(([teamId, targets, rankPoints, bonusPoints]) => ({
+      teamId,
+      teamName: teamId.toUpperCase(),
+      targets,
+      rankPoints,
+      bonusPoints,
+      shooterScores: [],
+    })),
+  };
+}
+
+const MOVE_WEEKS: WeekResult[] = [
+  weekDoc(1, [['a', 220, 30, 5], ['b', 210, 28, 0], ['c', 200, 26, 0]]),
+  weekDoc(2, [['a', 200, 26, 0], ['b', 215, 28, 5], ['c', 230, 30, 5]]),
+];
+
+describe('computeRankMovement', () => {
+  it('reports places gained/lost against the previous week', () => {
+    // wk1: a(35) b(28) c(26). wk2 cumulative: a 61, b 61 (tgts 425 < a 420? no: b 425 > a 420), c 61 (430)
+    const move = computeRankMovement(MOVE_WEEKS, 2);
+    const through2 = computeStandingsFromWeeks(MOVE_WEEKS, 2).map((r) => r.teamId);
+    expect(through2).toEqual(['c', 'b', 'a']);
+    expect(move.get('c')).toBe(2);
+    expect(move.get('b')).toBe(0);
+    expect(move.get('a')).toBe(-2);
+  });
+
+  it('returns no movement for week 1', () => {
+    expect(computeRankMovement(MOVE_WEEKS, 1).size).toBe(0);
+  });
+
+  it('treats a team absent from the prior week as unchanged', () => {
+    const weeks = [...MOVE_WEEKS, weekDoc(3, [['d', 250, 30, 5]])];
+    expect(computeRankMovement(weeks, 3).get('d')).toBe(0);
+  });
+});
+
+describe('rankPointsByWeek', () => {
+  it('lays out weekly rank points per team, null for missing weeks', () => {
+    const weeks = [MOVE_WEEKS[0]!, weekDoc(3, [['a', 210, 28, 0]])];
+    const byTeam = rankPointsByWeek(weeks, 3);
+    expect(byTeam.get('a')).toEqual([30, null, 28]);
+    expect(byTeam.get('b')).toEqual([28, null, null]);
+  });
+
+  it('ignores weeks after throughWeek', () => {
+    expect(rankPointsByWeek(MOVE_WEEKS, 1).get('c')).toEqual([26]);
   });
 });

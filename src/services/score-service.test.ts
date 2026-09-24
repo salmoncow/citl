@@ -1576,3 +1576,50 @@ describe('publishWeek — cache invalidation', () => {
     expect(getSeasonCallCount).toBe(afterPublish + 1);
   });
 });
+
+describe('ScoreService in-flight read coalescing (spec 006)', () => {
+  it('concurrent reads of one key share a single repository call', async () => {
+    let calls = 0;
+    const repo = {
+      getAllWeekResults: async () => { calls++; await Promise.resolve(); return success([] as WeekResult[]); },
+    } as unknown as ScoreRepository;
+    const svc = new ScoreService(repo);
+    const [a, b, c] = await Promise.all([
+      svc.getAllWeekResults(2026),
+      svc.getAllWeekResults(2026),
+      svc.getAllWeekResults(2026),
+    ]);
+    expect(calls).toBe(1);
+    expect(a.success && b.success && c.success).toBe(true);
+    await svc.getAllWeekResults(2026); // cached
+    expect(calls).toBe(1);
+  });
+
+  it('does not cache a failed read, so the next call retries', async () => {
+    let calls = 0;
+    const repo = {
+      getAllSeasons: async () => { calls++; return failure('down', 'NETWORK'); },
+    } as unknown as ScoreRepository;
+    const svc = new ScoreService(repo);
+    await Promise.all([svc.getAllSeasons(), svc.getAllSeasons()]);
+    expect(calls).toBe(1);
+    await svc.getAllSeasons();
+    expect(calls).toBe(2);
+  });
+
+  it('discards a result that lands after clearCache()', async () => {
+    let calls = 0;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => { release = r; });
+    const repo = {
+      getTeams: async () => { calls++; await gate; return success([] as Team[]); },
+    } as unknown as ScoreRepository;
+    const svc = new ScoreService(repo);
+    const pending = svc.getTeams(2026);
+    svc.clearCache();
+    release();
+    await pending;
+    await svc.getTeams(2026);
+    expect(calls).toBe(2);
+  });
+});

@@ -51,7 +51,7 @@
 
 .admin-shooters-table th {
   background: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--tracking-wide);

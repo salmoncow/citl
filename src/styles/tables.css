@@ -1,49 +1,4 @@
 /* ============================================================
-   Standings table — horizontal lines only
-   ============================================================ */
-
-.standing-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-sm);
-  display: block;
-  overflow-x: auto;
-  white-space: nowrap;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--c-table-border);
-}
-
-.standing-table th {
-  background: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  padding: var(--space-3) var(--space-4);
-  text-align: left;
-}
-
-.standing-table td {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--c-table-border);
-  color: var(--c-text);
-}
-
-.standing-table tr:hover td { background: var(--c-table-hover); }
-
-.standing-table td:nth-child(n+2):nth-child(-n+16),
-.standing-table th:nth-child(n+2):nth-child(-n+16) { width: 5%; }
-
-.standing-table th:first-child,
-.standing-table td:first-child {
-  width: 1%;
-  white-space: nowrap;
-}
-
-.standing-table tr:last-child td { border-bottom: none; }
-
-/* ============================================================
    Collapsible scorecards — heading-style accordion
    ============================================================ */
 
@@ -108,7 +63,7 @@
   font-size: var(--text-xs);
   font-weight: 600;
   background-color: var(--c-table-header-sc);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
 }
@@ -137,7 +92,7 @@
 .scorecard-tables tr:nth-last-child(-n+3) td {
   text-align: center;
   font-size: var(--text-xs);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   background-color: var(--c-table-header-sc);
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
@@ -176,7 +131,7 @@
 .scoresheets-table th {
   text-align: left;
   background-color: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
@@ -207,7 +162,7 @@
   font-size: var(--text-xs);
   font-weight: 600;
   background-color: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
 }

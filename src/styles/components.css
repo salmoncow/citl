@@ -1,0 +1,207 @@
+/* ============================================================
+   Shared UI primitives (spec 006): eyebrow, section header,
+   card, chips / segmented controls, badges, stat tiles.
+   ============================================================ */
+
+.eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--c-accent-text);
+}
+
+.section { margin-top: var(--space-18); }
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.section-head h2 { margin: var(--space-1) 0 0; font-size: var(--display-md); }
+
+.section-head__meta { margin: 0; font-size: var(--text-sm); color: var(--c-text-muted); }
+
+.section-head__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+/* Card */
+.card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+}
+
+.card--flush { padding: 0; overflow: hidden; }
+
+/* Chips — pill toggles (season picker, team picker). Use aria-pressed / aria-selected. */
+.chip-row {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: var(--space-1);
+}
+
+.chip {
+  flex-shrink: 0;
+  min-height: var(--control-height);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-card);
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+
+.chip:hover { border-color: var(--c-brand-text); }
+
+.chip[aria-pressed="true"],
+.chip[aria-selected="true"] {
+  background: var(--c-brand);
+  border-color: var(--c-brand);
+  color: #ffffff;
+}
+
+.chip--mono { font-family: var(--font-mono); font-weight: 500; }
+
+/* Segmented control */
+.segmented {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--c-surface);
+}
+
+.segmented button {
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--c-text-muted);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--c-card);
+  color: var(--c-text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Labelled select used in section controls */
+.field-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  background: var(--c-brand-tint);
+  color: var(--c-brand-text);
+}
+
+.badge--accent { background: var(--c-accent-tint); color: var(--c-accent-ink); }
+.badge--solid { background: var(--c-brand); color: #ffffff; }
+.badge--neutral { background: var(--c-surface); color: var(--c-text-muted); }
+
+/* Position badge (standings) */
+.pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.pos--1 { background: var(--c-accent); color: var(--c-on-accent); }
+.pos--2,
+.pos--3 { background: var(--c-brand); color: #ffffff; }
+
+/* Stat tiles */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  background: var(--c-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+.stat__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+.stat__value {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.stat__sub { font-size: var(--text-sm); color: var(--c-text-muted); }
+.stat__sub strong { font-family: var(--font-mono); font-weight: 600; color: var(--c-text); }
+
+@media screen and (max-width: 959px) {
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .stat { padding: var(--space-4); border-radius: var(--radius-lg); }
+  .stat__value { font-size: 1.75rem; }
+  .stat__label { font-size: 0.6875rem; }
+}
+
+/* Empty / error states */
+.state-msg {
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--c-text-muted);
+  background: var(--c-card);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--radius-xl);
+}

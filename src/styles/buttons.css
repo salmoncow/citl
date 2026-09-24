@@ -1,52 +1,73 @@
 /* ============================================================
-   Buttons
+   Buttons — 44px touch targets. Base class + modifiers.
    ============================================================ */
+
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-accent,
+.btn-outline-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter var(--t-fast), background var(--t-fast), transform var(--t-fast);
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-danger:active,
+.btn-accent:active,
+.btn-outline-dark:active { transform: translateY(1px); }
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled,
+.btn-accent:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-primary {
   background-color: var(--c-btn-primary-bg);
   color: var(--c-btn-primary-text);
-  border: none;
-  padding: var(--space-2) var(--space-5);
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  font-weight: 500;
-  transition: opacity var(--t-fast), transform var(--t-fast);
 }
-
-.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
-.btn-primary:active { transform: translateY(0); }
+.btn-primary:hover { color: var(--c-btn-primary-text); filter: brightness(1.15); }
 
 .btn-secondary {
   background-color: var(--c-btn-secondary-bg);
   color: var(--c-btn-secondary-text);
-  border: none;
-  padding: var(--space-2) var(--space-5);
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  font-weight: 500;
-  transition: opacity var(--t-fast), transform var(--t-fast);
+  border-color: var(--c-border-strong);
 }
-
-.btn-secondary:hover { opacity: 0.88; transform: translateY(-1px); }
-.btn-secondary:active { transform: translateY(0); }
+.btn-secondary:hover { color: var(--c-btn-secondary-text); background: var(--c-surface); }
 
 .btn-danger {
   background-color: var(--c-status-error-bg);
   color: var(--c-status-error);
-  border: none;
-  padding: var(--space-2) var(--space-5);
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  font-weight: 500;
-  transition: opacity var(--t-fast), transform var(--t-fast);
 }
+.btn-danger:hover { filter: brightness(0.96); }
 
-.btn-danger:hover { opacity: 0.88; transform: translateY(-1px); }
-.btn-danger:active { transform: translateY(0); }
+/* Orange call-to-action (ink text — never white on orange) */
+.btn-accent {
+  background-color: var(--c-accent);
+  color: var(--c-on-accent);
+  font-weight: 700;
+}
+.btn-accent:hover { color: var(--c-on-accent); filter: brightness(1.08); }
 
+/* Outline button for dark shell surfaces */
+.btn-outline-dark {
+  background: transparent;
+  color: #ffffff;
+  border-color: #3B5F78;
+}
+.btn-outline-dark:hover { color: #ffffff; background: rgba(255, 255, 255, 0.06); }
+
+.btn-lg { min-height: 52px; padding: 0 var(--space-6); font-size: var(--text-base); border-radius: var(--radius-lg); }
