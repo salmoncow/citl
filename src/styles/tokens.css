@@ -70,13 +70,6 @@
   --c-shell-muted:  var(--color-fog);
   --c-shell-accent: var(--color-clay-soft);
 
-  /* Legacy aliases kept so older component CSS keeps resolving */
-  --c-nav-bg:         var(--c-shell-bg);
-  --c-nav-border:     var(--c-shell-border);
-  --c-nav-link:       var(--c-shell-text);
-  --c-nav-link-hover: #ffffff;
-  --c-nav-active:     #ffffff;
-
   /* Tables */
   --c-table-header-bg: var(--c-card-alt);
   --c-table-header-text: var(--c-text-muted);
@@ -84,11 +77,6 @@
   --c-table-row-alt:   var(--c-card-alt);
   --c-table-hover:     #F4F1EA;
   --c-table-border:    #EEEBE4;
-
-  /* Collapsible / Accordion */
-  --c-collapsible-text:        var(--c-text);
-  --c-collapsible-hover-bg:    var(--c-surface);
-  --c-collapsible-active-text: var(--c-accent-text);
 
   /* Links */
   --c-link:       var(--color-navy);
