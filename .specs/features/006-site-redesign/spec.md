@@ -2,12 +2,9 @@
 
 **Feature ID**: 006-site-redesign
 **Created**: 2026-09-24
-**Status**: Draft — ready for `/implement` once the Open Questions below are resolved or their
-stated defaults are accepted. **Phase 1 is partially implemented as uncommitted changes in the
-working tree** (branch `claude/wonderful-babbage-qzoupz`: `tokens.css`, `base.css`, `nav.css`,
-`layout.css`, `buttons.css`, new `components.css`, `index.html`, `main.ts`, `navigation.ts`,
-`@fontsource/*` deps). This spec adopts that work's token *names*; task 1.0 reconciles it
-against the acceptance criteria below.
+**Status**: Implemented (2026-09-24, branch `claude/wonderful-babbage-qzoupz`). Where the
+build differs from the design below, [Implementation Notes (as built)](#implementation-notes-as-built)
+is authoritative; the Open Questions are resolved there.
 **Tasks**: [tasks.md](./tasks.md)
 **Design source**: approved mockups in [`mockups/`](./mockups/) (8 artboards; canvas reference
 https://claude.ai/artifact/5jfDgtL7FWX3SDeA6YsVtx). All data in the mockups is sample data.
