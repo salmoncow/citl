@@ -38,6 +38,7 @@ import './styles/admin-tables.css';
 import './styles/scoresheet.css';
 import './styles/home.css';
 import './styles/scorecards.css';
+import './styles/rules.css';
 import './styles/print.css';
 import './components/home-hero';
 import './components/home-stats';
@@ -50,6 +51,7 @@ import './components/admin-panel';
 import './components/scoresheet-generator';
 import './components/yardage-table';
 import './components/season-calendar';
+import './components/rules-toc';
 
 import { NavigationModule } from './modules/navigation';
 import { RouterModule } from './modules/router';

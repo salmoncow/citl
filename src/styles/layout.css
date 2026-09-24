@@ -93,9 +93,10 @@
 .footer__admin-link { color: var(--c-shell-muted); }
 
 .footer__legal {
-  max-width: calc(var(--max-width) + 2 * var(--gutter));
+  width: calc(100% - 2 * var(--gutter));
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: var(--space-5) var(--gutter) var(--space-8);
+  padding: var(--space-5) 0 var(--space-8);
   border-top: 1px solid var(--c-shell-border);
   font-size: var(--text-xs);
 }

@@ -1,6 +1,24 @@
 /* ============================================================
-   Map container (About view)
+   About + Downloads (spec 006 phase 4)
    ============================================================ */
 
-.map-container { text-align: center; }
+.about-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
+.about-card { padding: var(--space-8); }
+.about-card h2 { margin-top: 0; font-size: var(--display-sm); }
+.about-card p { max-width: var(--prose-width); line-height: 1.65; }
+.about-card:last-child { grid-column: 1 / -1; }
 
+.map-container { margin-top: var(--space-5); border-radius: var(--radius-lg); overflow: hidden; }
+.map-container iframe { display: block; width: 100%; }
+
+.downloads-yardage { margin-top: var(--space-6); }
+
+@media screen and (max-width: 959px) {
+  .about-grid { grid-template-columns: minmax(0, 1fr); }
+  .about-card { padding: var(--space-5); }
+}
+
+@media print {
+  .downloads-scoresheet-section.card, .downloads-yardage.card { border: 0; padding: 0; }
+  .page-hero { display: none; }
+}
