@@ -47,7 +47,7 @@ class HomeHero extends HTMLElement {
         <div class="hero__inner">
           <div class="hero__copy">
             <span class="eyebrow eyebrow--on-dark">Tuesday nights · Darnall's Gun Works · Bloomington, IL</span>
-            <h1 id="hero-title" class="hero__title">Fifty targets.<br>Fifteen weeks.<br><span>One table.</span></h1>
+            <h1 id="hero-title" class="hero__title">Central Illinois Trap League</h1>
             <p class="hero__lede">A free, family-friendly trap league for Central Illinois. Five shooters a squad, two bunkers a night, standings updated every week.</p>
             <div class="hero__actions">
               <a class="btn-accent btn-lg" href="#/about">Join the league

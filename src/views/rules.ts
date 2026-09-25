@@ -2,10 +2,9 @@
  * rulesView — League rules (spec 006 DD-11)
  *
  * The rule wording is unchanged (guarded by rules.test.ts); only the markup
- * around it is new: at-a-glance tiles, a section TOC, numbered section cards
- * (collapsible on phones via <rules-toc>), a makeup example strip, the
- * rank-points ladder and the yardage table — both generated from the same
- * code the scoring engine uses, not hard-coded.
+ * around it is new: a section TOC, numbered section cards (collapsible on
+ * phones via <rules-toc>), and the rank-points ladder and yardage table —
+ * both generated from the code the scoring engine uses, not hard-coded.
  */
 
 import { computeRankPoints } from '@/services/scoring-engine';
@@ -18,15 +17,6 @@ const SECTIONS: { id: string; n: number; title: string }[] = [
   { id: 'rule-makeups', n: 4, title: 'Makeup Rounds' },
   { id: 'scoring-and-yardage', n: 5, title: 'Scoring &amp; Yardage' },
   { id: 'rule-trophies', n: 6, title: 'Trophies' },
-];
-
-const GLANCE: { value: string; label: string; rule: string }[] = [
-  { value: '5–15', label: 'shooters per team', rule: '2.1' },
-  { value: '30', label: 'points to the week’s top team, then 28, 26…', rule: '5.3' },
-  { value: '+5', label: 'bonus for beating the team’s going-in average', rule: '5.5' },
-  { value: '2 wks', label: 'to make up a missed week (1 at season end)', rule: '4.2' },
-  { value: '35', label: 'starting average for new shooters', rule: '5.1' },
-  { value: '6', label: 'nights shot to qualify for awards', rule: '6.3' },
 ];
 
 function sectionOpen(id: string): string {
@@ -81,13 +71,6 @@ export function rulesView(): string {
   const toc = SECTIONS.map((s) =>
     `<li><a class="rules-toc__link" href="#${s.id}" data-section="${s.id}"><span class="rules-toc__num">${s.n}</span>${s.title}</a></li>`).join('');
 
-  const glance = GLANCE.map((g) => `
-    <li class="glance">
-      <span class="glance__value">${g.value}</span>
-      <span class="glance__label">${g.label}</span>
-      <span class="glance__rule">Rule ${g.rule}</span>
-    </li>`).join('');
-
   return `
     <section class="page-hero bleed on-dark" aria-labelledby="rules-title">
       <div class="page-hero__inner">
@@ -108,8 +91,6 @@ export function rulesView(): string {
       </nav>
 
       <div class="rules-main">
-        <ul class="glance-grid" aria-label="Rules at a glance">${glance}</ul>
-
         ${sectionOpen('rule-general')}
           <ol>
             <li>Rules will be agreed on at the beginning of each season by the league coordinator
@@ -126,10 +107,10 @@ export function rulesView(): string {
             or guardian present</li>
             <li>A shooter may be added to a team at any time</li>
             <li>Teams may shoot with up to 2 dummies if necessary to field a squad
-              <ol type="a" class="rule-facts">
-                <li><span class="rule-facts__k">Going-in average</span>Dummy's going-in average equals the average of those shooting</li>
-                <li><span class="rule-facts__k">Score</span>Dummy's score is average score of those shooting for that night, minus 5</li>
-                <li><span class="rule-facts__k">Who pays</span>Captain pays for dummies and gets a practice chit in return</li>
+              <ol type="a">
+                <li>Dummy's going-in average equals the average of those shooting</li>
+                <li>Dummy's score is average score of those shooting for that night, minus 5</li>
+                <li>Captain pays for dummies and gets a practice chit in return</li>
               </ol>
             </li>
           </ol>
@@ -173,12 +154,6 @@ export function rulesView(): string {
               <p class="rule-example">For example, if WEEK5 is not made up by the close of WEEK7, the score is forfeit. The
               close of a week is Friday at midnight of a given week. At the end of the season, this two
               week grace period will be reduced to one week</p>
-              <ol class="makeup-strip" aria-label="Example: Week 5 missed">
-                <li><span class="makeup-strip__wk">Week 5</span><span>Round missed</span></li>
-                <li><span class="makeup-strip__wk">Week 6</span><span>Make it up</span></li>
-                <li><span class="makeup-strip__wk">Week 7</span><span>Last chance</span></li>
-                <li class="makeup-strip__end"><span class="makeup-strip__wk">Friday, midnight</span><span>Week 7 closes · forfeit</span></li>
-              </ol>
             </li>
             <li>Missed weeks will be made up in the order they were missed. If two rounds are shot in
             one week or one evening, the team's first round will be recorded as the missing week.</li>

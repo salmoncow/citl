@@ -43,12 +43,11 @@
 .hero__title {
   margin: 0;
   color: #ffffff;
-  font-size: var(--display-xl);
-  line-height: 0.92;
+  font-size: clamp(2.75rem, 6vw, 5rem);
+  line-height: 0.95;
   letter-spacing: -0.01em;
 }
 
-.hero__title span { color: var(--c-accent); }
 
 .hero__lede { margin: 0; max-width: 520px; font-size: var(--text-lg); line-height: 1.5; color: var(--c-shell-text); }
 
@@ -397,6 +396,7 @@ home-announcements:empty { display: none; }
   font-weight: 800;
 }
 .first-night__steps strong { color: #ffffff; }
+.first-night__steps a { color: var(--c-shell-accent); overflow-wrap: anywhere; }
 
 .first-night__cta {
   display: inline-flex;

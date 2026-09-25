@@ -1,3 +1,5 @@
+import { LEAGUE_EMAIL, leagueMailto } from '@/utils/contact';
+
 /**
  * adminView — Admin portal login gate + panel container
  *
@@ -24,7 +26,7 @@ export function adminView(): string {
       <span class="eyebrow">Admin portal</span>
       <h1>No admin access</h1>
       <p>You are signed in but do not have admin access to this portal.</p>
-      <p>Contact the league administrator to request access.</p>
+      <p>Contact the league administrator at <a href="${leagueMailto('CITL admin access')}">${LEAGUE_EMAIL}</a> to request access.</p>
       <button id="admin-sign-out-unauth" class="btn-secondary">Sign out</button>
     </section>
 

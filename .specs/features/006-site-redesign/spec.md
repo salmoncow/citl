@@ -777,6 +777,13 @@ Deviations from the design above, recorded at close-out (2026-09-24).
 - **AC-G5 hex check not met**: component CSS still has hex literals outside `tokens.css`/
   `print.css` (mostly `#ffffff` on dark regions; also `#dc2626` in `admin.css` and a few
   shell navy values in `admin-shell.css`, `home.css`, `buttons.css`).
+- **Owner review (2026-09-25)**: the hero title is "Central Illinois Trap League" (not
+  "Fifty targets. Fifteen weeks. One table."). The Rules at-a-glance tiles, dummy rule-facts
+  cards and makeup timeline strip were removed (AC-4.2 no longer includes them); the section
+  cards, rank-points ladder and yardage table remain. The League Coordinator address
+  `lmckenna.citl@gmail.com` is `LEAGUE_EMAIL` in `src/utils/contact.ts`, linked from Home
+  ("Your first night"), About and the admin unauthorized card. The mockups in `mockups/` are
+  not updated and still show the earlier title and tiles.
 - **Stretch S-8**: the static venue card was built (the map stays on About).
 - **Measured build (gzip)**: JS 229.3 KB before → 241.6 KB after (budget 250); CSS 7.6 →
   15.6 KB; fonts: 9 latin woff2 files, 187 KB total if every weight loads.

@@ -1,3 +1,5 @@
+import { LEAGUE_EMAIL, leagueMailto } from '@/utils/contact';
+
 /**
  * aboutView — About the league (spec 006: page hero + content cards;
  * copy unchanged).
@@ -41,7 +43,7 @@ export function aboutView(): string {
         <h2>Enrollment &amp; Fees</h2>
         <p>
           Look for an announcement on the home page for when enrollments are open. Send an email to
-          the League Coordinator as either an individual, or a pre-formed team. Even when enrollments
+          the League Coordinator (<a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a>) as either an individual, or a pre-formed team. Even when enrollments
           are closed, teams can still add new shooters to their ranks as long as they do not exceed
           the 15 members per team limit.
         </p>
