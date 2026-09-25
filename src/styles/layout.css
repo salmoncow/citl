@@ -73,12 +73,12 @@
   font-size: 1.625rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #ffffff;
+  color: var(--c-text-inverse);
 }
 
 .footer__col { display: flex; flex-direction: column; gap: var(--space-2); }
 
-.footer__col-title { color: #ffffff; font-weight: 700; margin-bottom: var(--space-1); }
+.footer__col-title { color: var(--c-text-inverse); font-weight: 700; margin-bottom: var(--space-1); }
 
 .footer a,
 .footer__admin-link {

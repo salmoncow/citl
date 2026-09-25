@@ -66,13 +66,13 @@
   margin-bottom: var(--space-5);
   border-radius: var(--radius-2xl);
   background: var(--c-shell-bg);
-  color: #ffffff;
+  color: var(--c-text-inverse);
 }
 
 .sc-summary__team { display: flex; align-items: center; gap: var(--space-4); flex: 1 1 280px; min-width: 0; }
 .sc-summary__pos { width: 56px; height: 56px; font-size: 2rem; border-radius: var(--radius-lg); }
-.sc-summary .pos--4 { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
-.sc-summary__name { margin: 0; color: #ffffff; font-size: var(--display-md); line-height: 1; }
+.sc-summary .pos--4 { background: var(--c-shell-fill); color: var(--c-text-inverse); }
+.sc-summary__name { margin: 0; color: var(--c-text-inverse); font-size: var(--display-md); line-height: 1; }
 .sc-summary__meta { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--c-shell-muted); }
 
 .sc-summary__metrics { display: flex; flex-wrap: wrap; gap: var(--space-5); margin: 0; }

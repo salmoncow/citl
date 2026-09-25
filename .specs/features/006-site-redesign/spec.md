@@ -766,7 +766,7 @@ Deviations from the design above, recorded at close-out (2026-09-24).
 - **Tokens (DV-1/DV-2)**: `--c-focus` is navy in light mode and clay in dark mode; dark shell
   regions use `--c-focus-on-dark` (clay). `--c-input-border` is `#7A848D` light /
   `#5F7A8E` dark. The unused `--c-nav-*`/`--c-collapsible-*` aliases were removed;
-  `--c-table-*` stay as live semantic tokens. No `tokens.test.ts` dark-parity test was added.
+  `--c-table-*` stay as live semantic tokens. The dark-parity test (`tokens.test.ts`) was added later by spec 007.
 - **Review fixes (post-@reviewer)**: override dates parse as local calendar days
   (`parseLocalDate` moved to `utils/schedule.ts`; `new Date('YYYY-MM-DD')` was UTC and showed
   postponed weeks a day early); write paths invalidate via `_invalidate()`, which also drops
@@ -774,9 +774,8 @@ Deviations from the design above, recorded at close-out (2026-09-24).
   preview replaces the saved entry by `teamId`; rookie constants are exported from
   `scoring-engine.ts` (`ROOKIE_QUALIFYING_AVG`, `ROOKIE_BONUS_END_WEEK_INDEX`); the makeup
   deadline uses the Friday of the shoot's own week.
-- **AC-G5 hex check not met**: component CSS still has hex literals outside `tokens.css`/
-  `print.css` (mostly `#ffffff` on dark regions; also `#dc2626` in `admin.css` and a few
-  shell navy values in `admin-shell.css`, `home.css`, `buttons.css`).
+- **AC-G5 hex check**: not met at merge; closed by
+  [spec 007](../007-design-token-hygiene/spec.md), which also adds the dark-block parity test.
 - **Owner review (2026-09-25)**: the hero title is "Central Illinois Trap League" (not
   "Fifty targets. Fifteen weeks. One table."). The Rules at-a-glance tiles, dummy rule-facts
   cards and makeup timeline strip were removed (AC-4.2 no longer includes them); the section

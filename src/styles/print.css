@@ -19,6 +19,10 @@
   .sc-panel { page-break-before: always; }
   .sc-panel:first-of-type { page-break-before: auto; }
   .sc-grid-wrap { display: block !important; overflow: visible !important; }
+  /* Rules / About / Downloads hero: print as plain black on white */
+  .page-hero { background: #fff !important; color: #000 !important; }
+  .page-hero h1, .page-hero__lede { color: #000 !important; }
+
   .sc-summary { background: #fff !important; color: #000 !important; border: 1px solid #000; }
   .sc-summary * { color: #000 !important; }
   .heat { background: #fff !important; color: #000 !important; border: 0 !important; }

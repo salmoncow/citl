@@ -29,6 +29,12 @@
   --color-slate:       #56616C;
   --color-mist:        #C9D6E0;
   --color-fog:         #9FB2C1;
+  --color-frost:       #D8E4EC;   /* bright text on navy */
+  --color-navy-chip:   #173B55;
+  --color-navy-edge:   #3B5F78;
+  --color-navy-steel:  #5E7E96;
+  --color-navy-tint:   #E9EEF2;
+  --color-red:         #DC2626;
 
   /* --- Semantic: LIGHT MODE (default) --- */
 
@@ -49,7 +55,7 @@
   /* Brand */
   --c-brand:        var(--color-navy);  /* navy fills, primary buttons */
   --c-brand-text:   var(--color-navy);  /* navy used as text on light */
-  --c-brand-tint:   #E9EEF2;
+  --c-brand-tint:   var(--color-navy-tint);
   --c-accent:       var(--color-clay);  /* orange fills only */
   --c-accent-text:  var(--color-clay-deep);
   --c-accent-tint:  var(--color-clay-tint);
@@ -69,6 +75,23 @@
   --c-shell-text:   var(--color-mist);
   --c-shell-muted:  var(--color-fog);
   --c-shell-accent: var(--color-clay-soft);
+  --c-shell-text-bright: var(--color-frost);
+  --c-shell-chip:     var(--color-navy-chip);   /* pills and tags on the shell */
+  --c-shell-outline:  var(--color-navy-edge);   /* outline buttons on the shell */
+  --c-shell-progress: var(--color-navy-steel);  /* "next" step in progress bars */
+  --c-shell-hover:    rgba(255, 255, 255, 0.06);
+  --c-shell-wash:     rgba(255, 255, 255, 0.04);
+  --c-shell-skeleton: rgba(255, 255, 255, 0.08);
+  --c-shell-fill:     rgba(255, 255, 255, 0.1);
+  --c-shell-rings:    rgba(158, 195, 224, 0.08);
+  --c-shell-panel:    var(--color-navy);        /* navy panel that stays navy in dark mode */
+  /* Light "paper" chips set on the shell (hero date block, first-night CTA) */
+  --c-shell-paper:        var(--color-paper);
+  --c-shell-paper-hover:  var(--color-navy-tint);
+  --c-shell-paper-text:   var(--color-ink);
+  --c-shell-paper-muted:  var(--color-slate);
+  --c-shell-paper-brand:  var(--color-navy);
+  --c-shell-paper-accent: var(--color-clay-deep);
 
   /* Tables */
   --c-table-header-bg: var(--c-card-alt);
@@ -96,7 +119,9 @@
   --c-status-warning:    #8A3700;
   --c-status-warning-bg: #FFF3E6;
   --c-status-info:       #0B3C5D;
-  --c-status-info-bg:    #E9EEF2;
+  --c-status-info-bg:    var(--color-navy-tint);
+  --c-danger:            var(--color-red);   /* fills; pair with --c-text-inverse */
+  --c-danger-text:       var(--color-red);
 
   /* Warning table */
   --c-warning-bg:     #FFF3E6;
@@ -172,9 +197,15 @@
   --t-base: 250ms ease;
   --t-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* --- Shadows --- */
+  /* --- Shadows & overlays --- */
   --shadow-dropdown: 0 12px 32px rgba(7, 28, 43, 0.16);
   --shadow-card:     0 1px 0 var(--c-border), 0 12px 32px rgba(7, 28, 43, 0.08);
+  --shadow-sm:       0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-sheet:    0 1px 4px rgba(0, 0, 0, 0.08);
+  --shadow-tooltip:  0 2px 8px rgba(0, 0, 0, 0.18);
+  --shadow-popover:  0 8px 32px rgba(0, 0, 0, 0.18);
+  --shadow-modal:    0 20px 60px rgba(0, 0, 0, 0.3);
+  --c-scrim:         rgba(0, 0, 0, 0.55);
 }
 
 /* ------------------------------------------------------------
@@ -225,6 +256,7 @@
     --c-status-warning-bg: #2E1E0F;
     --c-status-info:       #9CC3E0;
     --c-status-info-bg:    #16324A;
+    --c-danger-text:       #fca5a5;
 
     --c-warning-bg:     #2E1E0F;
     --c-warning-border: #6B4217;
@@ -284,6 +316,7 @@
   --c-status-warning-bg: #2E1E0F;
   --c-status-info:       #9CC3E0;
   --c-status-info-bg:    #16324A;
+  --c-danger-text:       #fca5a5;
 
   --c-warning-bg:     #2E1E0F;
   --c-warning-border: #6B4217;

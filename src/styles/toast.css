@@ -91,13 +91,13 @@
   padding: 2rem;
   max-width: 440px;
   width: 90%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-modal);
   background: var(--c-surface);
   color: var(--c-text);
 }
 
 .confirm-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--c-scrim);
 }
 
 .confirm-dialog__title {
@@ -137,13 +137,13 @@
   padding: 2rem;
   max-width: 600px;
   width: 90%;
-  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  box-shadow: var(--shadow-popover);
   background: var(--c-bg);
   color: var(--c-text);
 }
 
 .roster-dialog::backdrop {
-  background: rgba(0,0,0,0.55);
+  background: var(--c-scrim);
 }
 
 .roster-dialog__header {

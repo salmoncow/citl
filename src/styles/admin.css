@@ -150,7 +150,7 @@
 .ap-date-card__body        { display: flex; align-items: center; gap: var(--space-3); }
 
 .ap-date-display           { font-size: var(--text-base); color: var(--c-text); flex: 1; }
-.ap-date-display--cancelled{ color: #dc2626; font-weight: 700;
+.ap-date-display--cancelled{ color: var(--c-danger-text); font-weight: 700;
                              letter-spacing: var(--tracking-wide); flex: 1; }
 .ap-date-edit-btn          { display: inline-flex; align-items: center; gap: var(--space-1);
                              font-size: var(--text-sm); white-space: nowrap; }
@@ -180,8 +180,8 @@
 .ap-date-edit-actions      { display: flex; gap: var(--space-2); }
 
 .ap-date-badge             { font-size: var(--text-xs); background: var(--c-accent);
-                             color: #fff; padding: 2px 6px; border-radius: var(--radius-sm); }
-.ap-date-badge--cancelled  { background: #dc2626; }
+                             color: var(--c-on-accent); padding: 2px 6px; border-radius: var(--radius-sm); }
+.ap-date-badge--cancelled  { background: var(--c-danger); color: var(--c-text-inverse); }
 
 .admin-divider { border: none; border-top: 1px solid var(--c-border); margin: var(--space-6) 0; }
 
