@@ -100,7 +100,7 @@ class HomeHero extends HTMLElement {
           ${HomeHero._dateBlock(next.date)}
           <div class="next-card__where">
             <span class="next-card__venue">Darnall's Gun Works &amp; Ranges</span>
-            <span class="next-card__detail">Squads by signup order · $12 range fee</span>
+            <span class="next-card__detail">Squads by signup order · range fee paid at Darnall's</span>
           </div>
         </div>
         ${HomeHero._progress(done)}

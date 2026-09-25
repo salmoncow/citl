@@ -49,8 +49,8 @@ export function aboutView(): string {
         </p>
 
         <p>
-          The cost for enrollment in the league is free. However, Darnall's does require a $12 per
-          day fee for using their facilities. This price includes the cost of maintaining the bunker
+          The cost for enrollment in the league is free. However, Darnall's does require a per-day
+          fee, set each year, for using their facilities. This price includes the cost of maintaining the bunker
           equipment, as well as the cost of clay pigeons. Shotgun ammunition, shotguns, protective
           eyewear and ear plugs are all items supplied by the shooters themselves.
         </p>

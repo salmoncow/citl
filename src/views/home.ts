@@ -12,7 +12,7 @@ const FIRST_TUESDAY = `
     <ol class="first-night__steps">
       <li><span><strong>Email the League Coordinator</strong> at <a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a> as an individual or a pre-formed team. Enrollment is free.</span></li>
       <li><span><strong>Bring your gear:</strong> a 12-gauge (or smaller), shells, eye and ear protection.</span></li>
-      <li><span><strong>Pay the $12 range fee</strong> at Darnall's and shoot two bunkers — 50 targets.</span></li>
+      <li><span><strong>Pay Darnall's range fee</strong> and shoot two bunkers — 50 targets.</span></li>
     </ol>
     <a class="btn-lg first-night__cta" href="${leagueMailto('CITL enrollment')}">Email the League Coordinator</a>
     <p class="first-night__fine">Under 16? Shoot with a parent or guardian. Keep it legal with a valid FOID card.</p>
@@ -31,7 +31,7 @@ const VENUE = `
     </div>
     <dl class="venue__facts">
       <div><dt>Night</dt><dd>Tuesday</dd></div>
-      <div><dt>Range fee</dt><dd>$12</dd></div>
+      <div><dt>Range fee</dt><dd>Set by Darnall's</dd></div>
       <div><dt>Per shooter</dt><dd>50 targets</dd></div>
       <div><dt>Season</dt><dd>15 weeks</dd></div>
     </dl>
