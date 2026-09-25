@@ -1,6 +1,6 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.7.0
+**Version:** 1.7.1
 **Last Updated:** 2026-09-24
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
@@ -318,7 +318,7 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
 - **Build Tool**: Vite 8.x (see `.specs/technical/build-system.md`)
 - **Language**: TypeScript (strict mode, `allowJs: false`; Vite strips types via esbuild — no tsc emit)
 - **UI Pattern**: SPA with hash-based router; views migrating to Web Components
-- **Styling**: CSS design system ("Range Day", ADR-011) — two-layer custom properties (primitive palette `--color-*` + semantic tokens `--c-*`: grounds, text, brand/accent, focus, an always-dark `--c-shell-*` group, and a 5-step score heat ramp `--c-heat-{1..5}`); system-aware dark/light mode via `@media (prefers-color-scheme: dark)` plus the `data-color-scheme` toggle; colours belong in `tokens.css`; fonts self-hosted from `@fontsource` (Barlow, Barlow Condensed, IBM Plex Mono; latin subsets) under CSP `font-src 'self'` — no font CDN; no framework
+- **Styling**: CSS design system ("Range Day", ADR-011) — two-layer custom properties (primitive palette `--color-*` + semantic tokens `--c-*`: grounds, text, brand/accent, focus, an always-dark `--c-shell-*` group, and a 5-step score heat ramp `--c-heat-{1..5}`); system-aware dark/light mode via `@media (prefers-color-scheme: dark)` plus the `data-color-scheme` toggle; colours belong in `tokens.css` — component CSS holds no colour literals and no `--color-*` references (only `print.css` is exempt), enforced with dark-block parity by `src/styles/tokens.test.ts` (spec 007); fonts self-hosted from `@fontsource` (Barlow, Barlow Condensed, IBM Plex Mono; latin subsets) under CSP `font-src 'self'` — no font CDN; no framework
 - **Type checking**: `tsconfig.json` with `strict: true`, `allowJs: false`, `noUncheckedIndexedAccess: true` — full strict type checking; `src/vite-env.d.ts` types `ImportMetaEnv` for all VITE_* vars
 
 **Backend / Platform**:
@@ -569,3 +569,4 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.5.1 (2026-07-10): Truth-reconciliation pass (WS-1) — updated §II.1 to live-production state (AWS decommissioned, site live at citl.club); corrected inventory counts; removed the retired static-JSON data-layer narrative (ADR-010 supersedes ADR-003); refreshed §III.1 testing state and §III.4 bundle figure; single-sourced Firebase quota figures to §VI.1
 - 1.6.0 (2026-07-11): Component contract adopted as a standard (spec 003-service-decomposition) — §II.4 points to src/components/README.md; composition root (`src/services/app-services.ts`) is the sole production construction site for ScoreService; new hook rule `no-private-service-in-component`
 - 1.7.0 (2026-09-24): "Range Day" site redesign (spec 006, ADR-011) — added §III.6 Accessibility & Responsive Standards; §IV.1 styling line covers self-hosted `@fontsource` fonts and the new token groups/heat ramp; §III.3 skeleton path corrected to `admin-tables.css`; §III.4 JS figure re-measured (~242 kB) with CSS and font budgets; §II.1 inventory recounted
+- 1.7.1 (2026-09-25): Design-token hygiene (spec 007) — §IV.1 styling line: the token contract is now enforced by `src/styles/tokens.test.ts` (no colour literals or primitive references in component CSS; identical dark blocks)

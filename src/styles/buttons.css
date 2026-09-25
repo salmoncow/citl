@@ -65,9 +65,9 @@
 /* Outline button for dark shell surfaces */
 .btn-outline-dark {
   background: transparent;
-  color: #ffffff;
-  border-color: #3B5F78;
+  color: var(--c-text-inverse);
+  border-color: var(--c-shell-outline);
 }
-.btn-outline-dark:hover { color: #ffffff; background: rgba(255, 255, 255, 0.06); }
+.btn-outline-dark:hover { color: var(--c-text-inverse); background: var(--c-shell-hover); }
 
 .btn-lg { min-height: 52px; padding: 0 var(--space-6); font-size: var(--text-base); border-radius: var(--radius-lg); }

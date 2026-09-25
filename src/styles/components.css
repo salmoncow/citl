@@ -71,7 +71,7 @@
 .chip[aria-selected="true"] {
   background: var(--c-brand);
   border-color: var(--c-brand);
-  color: #ffffff;
+  color: var(--c-text-inverse);
 }
 
 .chip--mono { font-family: var(--font-mono); font-weight: 500; }
@@ -101,7 +101,7 @@
   background: var(--c-card);
   color: var(--c-text);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Labelled select used in section controls */
@@ -130,7 +130,7 @@
 }
 
 .badge--accent { background: var(--c-accent-tint); color: var(--c-accent-ink); }
-.badge--solid { background: var(--c-brand); color: #ffffff; }
+.badge--solid { background: var(--c-brand); color: var(--c-text-inverse); }
 .badge--neutral { background: var(--c-surface); color: var(--c-text-muted); }
 
 /* Position badge (standings) */
@@ -150,7 +150,7 @@
 
 .pos--1 { background: var(--c-accent); color: var(--c-on-accent); }
 .pos--2,
-.pos--3 { background: var(--c-brand); color: #ffffff; }
+.pos--3 { background: var(--c-brand); color: var(--c-text-inverse); }
 
 /* Stat tiles */
 .stat-grid {
