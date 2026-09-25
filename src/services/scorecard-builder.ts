@@ -299,3 +299,38 @@ export function toAwardShooterInputs(blocks: ScorecardTeamBlock[]): AwardShooter
   }
   return inputs;
 }
+
+export interface ScorecardTeamSummary {
+  teamName: string;
+  nightsShot: number;
+  totalTargets: number;
+  rankPoints: number;
+  bonusPoints: number;
+  /** Weeks where this team took the week's highest rank points (ties count). */
+  weeklyWins: number;
+  /** Weeks with the +5 target bonus (bonus ≥ 5; rookie points alone max out at 2). */
+  beatAverageWeeks: number;
+}
+
+/**
+ * Per-team headline numbers for the scorecards summary strip (spec 006
+ * DD-5), derived from the rendered blocks only — no I/O.
+ */
+export function summarizeScorecardTeams(blocks: ScorecardTeamBlock[]): ScorecardTeamSummary[] {
+  const weekMax: number[] = [];
+  for (const b of blocks) {
+    b.rankPoints.forEach((v, i) => {
+      if (v !== null) weekMax[i] = Math.max(weekMax[i] ?? -Infinity, v);
+    });
+  }
+  const sum = (xs: (number | null)[]): number => xs.reduce<number>((a, v) => a + (v ?? 0), 0);
+  return blocks.map((b) => ({
+    teamName: b.teamName,
+    nightsShot: b.targets.filter((v) => v !== null).length,
+    totalTargets: sum(b.targets),
+    rankPoints: sum(b.rankPoints),
+    bonusPoints: sum(b.bonusPoints),
+    weeklyWins: b.rankPoints.filter((v, i) => v !== null && v === weekMax[i]).length,
+    beatAverageWeeks: b.bonusPoints.filter((v) => v !== null && v >= 5).length,
+  }));
+}

@@ -1,96 +1,147 @@
 /* ============================================================
-   CITL — Design System (Minimal Pro)
-   Two-layer token architecture: primitives → semantic tokens
+   CITL — Design System ("Range Day", spec 006)
+   Two-layer token architecture: primitives → semantic tokens.
+   Components reference semantic --c-* tokens only; dark mode
+   redefines the semantic layer, never the primitives.
    ============================================================ */
 
 :root {
   /* --- Primitive palette --- */
-  --color-orange: #FF8000;
-  --color-navy:   #0B3C5D;
-  --color-black:  #111111;
-  --color-white:  #ffffff;
+  --color-clay:        #FF8000;   /* brand orange — fills, and text on dark only */
+  --color-clay-deep:   #A84300;   /* orange text on light grounds (AA) */
+  --color-clay-ink:    #8A3700;   /* orange text on clay tint */
+  --color-clay-tint:   #FFF3E6;
+  --color-clay-soft:   #FFB066;   /* orange text on navy */
+  --color-navy:        #0B3C5D;
+  --color-navy-mid:    #3B6E95;
+  --color-navy-deep:   #071C2B;
+  --color-navy-night:  #04121C;
+  --color-navy-raised: #0C2638;
+  --color-navy-line:   #1C4260;
+  --color-navy-active: #12344C;
+  --color-ivory:       #F3F1EC;
+  --color-paper:       #FFFFFF;
+  --color-paper-alt:   #F7F5F0;
+  --color-sand:        #EDEAE3;
+  --color-line:        #E2DED5;
+  --color-line-strong: #D5D0C5;
+  --color-ink:         #0E1B26;
+  --color-slate:       #56616C;
+  --color-mist:        #C9D6E0;
+  --color-fog:         #9FB2C1;
 
   /* --- Semantic: LIGHT MODE (default) --- */
 
-  /* Backgrounds */
-  --c-bg:      #fafafa;
-  --c-surface: #f2f2f2;
-  --c-border:  #e4e4e4;
+  /* Grounds */
+  --c-bg:       var(--color-ivory);     /* page ground */
+  --c-card:     var(--color-paper);     /* raised cards, tables */
+  --c-card-alt: var(--color-paper-alt); /* table headers, inset panels */
+  --c-surface:  var(--color-sand);      /* hover, shimmer, subtle fills */
+  --c-border:   var(--color-line);
+  --c-border-strong: var(--color-line-strong);
 
   /* Text */
-  --c-text:         #1a1a1a;
-  --c-text-muted:   #6b6b6b;
+  --c-text:         var(--color-ink);
+  --c-text-muted:   var(--color-slate);
   --c-text-inverse: #ffffff;
+  --c-heading:      var(--color-ink);
 
-  /* Headings & Accent */
-  --c-heading: #1a1a1a;
-  --c-accent:  #FF8000;
+  /* Brand */
+  --c-brand:        var(--color-navy);  /* navy fills, primary buttons */
+  --c-brand-text:   var(--color-navy);  /* navy used as text on light */
+  --c-brand-tint:   #E9EEF2;
+  --c-accent:       var(--color-clay);  /* orange fills only */
+  --c-accent-text:  var(--color-clay-deep);
+  --c-accent-tint:  var(--color-clay-tint);
+  --c-accent-ink:   var(--color-clay-ink);
+  --c-on-accent:    var(--color-ink);   /* text on orange fills */
+  --c-leader-row:   #FFF8F0;
+  --c-focus:        var(--color-navy);  /* clay on ivory is 2.2:1 — fails 1.4.11 (DV-1) */
+  --c-focus-on-dark: var(--color-clay);
+  --c-input-border: #7A848D;            /* ≥3:1 on white, ivory and sand (DV-2) */
 
-  /* Nav (transparent) */
-  --c-nav-bg:         transparent;
-  --c-nav-border:     #e4e4e4;
-  --c-nav-link:       #6b6b6b;
-  --c-nav-link-hover: #1a1a1a;
-  --c-nav-active:     #FF8000;
+  /* Shell (header, hero, footer) — dark in both modes */
+  --c-shell-bg:     var(--color-navy-deep);
+  --c-shell-deep:   var(--color-navy-night);
+  --c-shell-raised: var(--color-navy-raised);
+  --c-shell-border: var(--color-navy-line);
+  --c-shell-active: var(--color-navy-active);
+  --c-shell-text:   var(--color-mist);
+  --c-shell-muted:  var(--color-fog);
+  --c-shell-accent: var(--color-clay-soft);
 
   /* Tables */
-  --c-table-header-bg: #0B3C5D;
-  --c-table-header-sc: #0B3C5D;
-  --c-table-row-alt:   #f2f2f2;
-  --c-table-hover:     #e8e8e8;
-  --c-table-border:    #e4e4e4;
-
-  /* Collapsible / Accordion */
-  --c-collapsible-text:        #1a1a1a;
-  --c-collapsible-hover-bg:    #f2f2f2;
-  --c-collapsible-active-text: #FF8000;
+  --c-table-header-bg: var(--c-card-alt);
+  --c-table-header-text: var(--c-text-muted);
+  --c-table-header-sc: var(--c-card-alt);
+  --c-table-row-alt:   var(--c-card-alt);
+  --c-table-hover:     #F4F1EA;
+  --c-table-border:    #EEEBE4;
 
   /* Links */
-  --c-link:       #0B3C5D;
-  --c-link-hover: #FF8000;
+  --c-link:       var(--color-navy);
+  --c-link-hover: var(--color-clay-deep);
 
   /* Buttons */
-  --c-btn-primary-bg:     #1a1a1a;
+  --c-btn-primary-bg:     var(--color-navy);
   --c-btn-primary-text:   #ffffff;
-  --c-btn-secondary-bg:   #e4e4e4;
-  --c-btn-secondary-text: #1a1a1a;
+  --c-btn-secondary-bg:   var(--c-card);
+  --c-btn-secondary-text: var(--c-text);
 
   /* Status */
   --c-status-success:    #166534;
   --c-status-success-bg: #dcfce7;
   --c-status-error:      #991b1b;
   --c-status-error-bg:   #fee2e2;
-  --c-status-warning:    #92400e;
-  --c-status-warning-bg: #fef3c7;
-  --c-status-info:       #1e40af;
-  --c-status-info-bg:    #dbeafe;
+  --c-status-warning:    #8A3700;
+  --c-status-warning-bg: #FFF3E6;
+  --c-status-info:       #0B3C5D;
+  --c-status-info-bg:    #E9EEF2;
 
   /* Warning table */
-  --c-warning-bg:     #fef3c7;
-  --c-warning-border: #fcd34d;
+  --c-warning-bg:     #FFF3E6;
+  --c-warning-border: #F5C08A;
 
   /* Footer */
-  --c-footer-border: #e4e4e4;
-  --c-footer-text:   #6b6b6b;
+  --c-footer-border: var(--c-shell-border);
+  --c-footer-text:   var(--c-shell-muted);
+
+  /* Heat ramp — shooter score of 50 (scorecards). Low → high. */
+  --c-heat-1: #EEF2F5;  --c-heat-1-text: var(--color-ink);
+  --c-heat-2: #D3E0EA;  --c-heat-2-text: var(--color-ink);
+  --c-heat-3: #A9C3D6;  --c-heat-3-text: var(--color-ink);
+  --c-heat-4: #3B6E95;  --c-heat-4-text: #ffffff;
+  --c-heat-5: #0B3C5D;  --c-heat-5-text: #ffffff;
+  --c-heat-empty: var(--c-card-alt);
 
   /* Select arrow */
-  --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%236b6b6b' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+  --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%2356616C' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
 
   /* --- Layout --- */
-  --max-width:  900px;
-  --nav-height: 56px;
+  --max-width:   1200px;
+  --prose-width: 760px;
+  --gutter:      clamp(16px, 4vw, 32px);
+  --nav-height:  72px;
 
   /* --- Typography --- */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans:    'Barlow', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', ui-sans-serif, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --text-xs:   0.8125rem;
   --text-sm:   0.9375rem;
   --text-base: 1.0625rem;
   --text-lg:   1.25rem;
   --text-xl:   1.5rem;
   --text-2xl:  clamp(1.75rem, 3vw, 2.25rem);
-  --leading:      1.7;
-  --tracking:     0;
-  --tracking-wide: 0.05em;
+  --display-sm: clamp(1.75rem, 2.4vw, 2.25rem);
+  --display-md: clamp(2rem, 3.6vw, 3rem);
+  --display-lg: clamp(2.5rem, 5vw, 4rem);
+  --display-xl: clamp(3.25rem, 7.5vw, 6rem);
+  --leading:       1.6;
+  --leading-tight: 1;
+  --tracking:      0;
+  --tracking-wide: 0.08em;
+  --tracking-eyebrow: 0.12em;
 
   /* --- Spacing --- */
   --space-1:  4px;
@@ -103,11 +154,18 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
+  --space-18: 72px;
 
   /* --- Borders & Radius --- */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 20px;
+  --radius-pill: 999px;
+
+  /* --- Controls --- */
+  --control-height: 44px;
 
   /* --- Transitions --- */
   --t-fast: 150ms ease;
@@ -115,106 +173,128 @@
   --t-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* --- Shadows --- */
-  --shadow-dropdown: 0 8px 16px rgba(0,0,0,0.12);
+  --shadow-dropdown: 0 12px 32px rgba(7, 28, 43, 0.16);
+  --shadow-card:     0 1px 0 var(--c-border), 0 12px 32px rgba(7, 28, 43, 0.08);
 }
 
-/* Dark tokens shared by media query and explicit override */
+/* ------------------------------------------------------------
+   Dark mode. The two blocks below MUST stay identical: the first
+   follows the OS preference, the second is the explicit toggle.
+   ------------------------------------------------------------ */
 @media (prefers-color-scheme: dark) {
   :root:not([data-color-scheme="light"]) {
-    --c-bg:      #111111;
-    --c-surface: #1c1c1c;
-    --c-border:  #2a2a2a;
+    --c-bg:       #08141D;
+    --c-card:     #0F2130;
+    --c-card-alt: #132838;
+    --c-surface:  #1A3144;
+    --c-border:   #22394B;
+    --c-border-strong: #2E4A60;
 
-    --c-text:         #f0f0f0;
-    --c-text-muted:   #9a9a9a;
-    --c-text-inverse: #ffffff;
+    --c-text:         #E8EEF2;
+    --c-text-muted:   #9FB2C1;
+    --c-heading:      #FFFFFF;
 
-    --c-heading: #f0f0f0;
+    --c-brand:        #1D5A85;
+    --c-brand-text:   #9CC3E0;
+    --c-brand-tint:   #16324A;
+    --c-accent-text:  #FFA64D;
+    --c-accent-tint:  #2E1E0F;
+    --c-accent-ink:   #FFC285;
+    --c-leader-row:   #1A2530;
+    --c-focus:        var(--color-clay);
+    --c-input-border: #5F7A8E;
 
-    --c-nav-border:     #2a2a2a;
-    --c-nav-link:       #9a9a9a;
-    --c-nav-link-hover: #f0f0f0;
+    --c-shell-bg:     #050F17;
+    --c-shell-deep:   #030A10;
+    --c-shell-raised: #0C1E2C;
 
-    --c-table-row-alt: #1c1c1c;
-    --c-table-hover:   #242424;
-    --c-table-border:  #2a2a2a;
+    --c-table-hover:  #15293A;
+    --c-table-border: #1C3244;
 
-    --c-collapsible-text:     #f0f0f0;
-    --c-collapsible-hover-bg: #1c1c1c;
+    --c-link:       #9CC3E0;
+    --c-link-hover: #FFA64D;
 
-    --c-btn-primary-bg:     #f0f0f0;
-    --c-btn-primary-text:   #111111;
-    --c-btn-secondary-bg:   #2a2a2a;
-    --c-btn-secondary-text: #f0f0f0;
-
-    --c-link:       #9a9a9a;
-    --c-link-hover: #FF8000;
+    --c-btn-primary-bg:     #1D5A85;
+    --c-btn-secondary-bg:   #132838;
 
     --c-status-success:    #86efac;
     --c-status-success-bg: #052e16;
     --c-status-error:      #fca5a5;
     --c-status-error-bg:   #450a0a;
-    --c-status-warning:    #fbbf24;
-    --c-status-warning-bg: #2d1b00;
-    --c-status-info:       #93c5fd;
-    --c-status-info-bg:    #0f1f4a;
+    --c-status-warning:    #FFC285;
+    --c-status-warning-bg: #2E1E0F;
+    --c-status-info:       #9CC3E0;
+    --c-status-info-bg:    #16324A;
 
-    --c-footer-border: #2a2a2a;
-    --c-footer-text:   #9a9a9a;
+    --c-warning-bg:     #2E1E0F;
+    --c-warning-border: #6B4217;
 
-    --c-warning-bg:     #2a2800;
-    --c-warning-border: #6b6800;
+    --c-heat-1: #15293A;  --c-heat-1-text: #C9D6E0;
+    --c-heat-2: #1F3B53;  --c-heat-2-text: #E8EEF2;
+    --c-heat-3: #2D5577;  --c-heat-3-text: #FFFFFF;
+    --c-heat-4: #6F9CC0;  --c-heat-4-text: #04121C;
+    --c-heat-5: #B9D2E4;  --c-heat-5-text: #04121C;
 
-    --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%239a9a9a' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+    --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%239FB2C1' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+
+    --shadow-card: 0 1px 0 var(--c-border), 0 12px 32px rgba(0, 0, 0, 0.35);
   }
 }
 
-/* Explicit dark override — used by theme toggle JS */
 :root[data-color-scheme="dark"] {
-  --c-bg:      #111111;
-  --c-surface: #1c1c1c;
-  --c-border:  #2a2a2a;
+  --c-bg:       #08141D;
+  --c-card:     #0F2130;
+  --c-card-alt: #132838;
+  --c-surface:  #1A3144;
+  --c-border:   #22394B;
+  --c-border-strong: #2E4A60;
 
-  --c-text:         #f0f0f0;
-  --c-text-muted:   #9a9a9a;
-  --c-text-inverse: #ffffff;
+  --c-text:         #E8EEF2;
+  --c-text-muted:   #9FB2C1;
+  --c-heading:      #FFFFFF;
 
-  --c-heading: #f0f0f0;
+  --c-brand:        #1D5A85;
+  --c-brand-text:   #9CC3E0;
+  --c-brand-tint:   #16324A;
+  --c-accent-text:  #FFA64D;
+  --c-accent-tint:  #2E1E0F;
+  --c-accent-ink:   #FFC285;
+  --c-leader-row:   #1A2530;
+  --c-focus:        var(--color-clay);
+  --c-input-border: #5F7A8E;
 
-  --c-nav-border:     #2a2a2a;
-  --c-nav-link:       #9a9a9a;
-  --c-nav-link-hover: #f0f0f0;
+  --c-shell-bg:     #050F17;
+  --c-shell-deep:   #030A10;
+  --c-shell-raised: #0C1E2C;
 
-  --c-table-row-alt: #1c1c1c;
-  --c-table-hover:   #242424;
-  --c-table-border:  #2a2a2a;
+  --c-table-hover:  #15293A;
+  --c-table-border: #1C3244;
 
-  --c-collapsible-text:     #f0f0f0;
-  --c-collapsible-hover-bg: #1c1c1c;
+  --c-link:       #9CC3E0;
+  --c-link-hover: #FFA64D;
 
-  --c-btn-primary-bg:     #f0f0f0;
-  --c-btn-primary-text:   #111111;
-  --c-btn-secondary-bg:   #2a2a2a;
-  --c-btn-secondary-text: #f0f0f0;
-
-  --c-link:       #9a9a9a;
-  --c-link-hover: #FF8000;
+  --c-btn-primary-bg:     #1D5A85;
+  --c-btn-secondary-bg:   #132838;
 
   --c-status-success:    #86efac;
   --c-status-success-bg: #052e16;
   --c-status-error:      #fca5a5;
   --c-status-error-bg:   #450a0a;
-  --c-status-warning:    #fbbf24;
-  --c-status-warning-bg: #2d1b00;
-  --c-status-info:       #93c5fd;
-  --c-status-info-bg:    #0f1f4a;
+  --c-status-warning:    #FFC285;
+  --c-status-warning-bg: #2E1E0F;
+  --c-status-info:       #9CC3E0;
+  --c-status-info-bg:    #16324A;
 
-  --c-footer-border: #2a2a2a;
-  --c-footer-text:   #9a9a9a;
+  --c-warning-bg:     #2E1E0F;
+  --c-warning-border: #6B4217;
 
-  --c-warning-bg:     #2a2800;
-  --c-warning-border: #6b6800;
+  --c-heat-1: #15293A;  --c-heat-1-text: #C9D6E0;
+  --c-heat-2: #1F3B53;  --c-heat-2-text: #E8EEF2;
+  --c-heat-3: #2D5577;  --c-heat-3-text: #FFFFFF;
+  --c-heat-4: #6F9CC0;  --c-heat-4-text: #04121C;
+  --c-heat-5: #B9D2E4;  --c-heat-5-text: #04121C;
 
-  --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%239a9a9a' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+  --c-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%239FB2C1' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+
+  --shadow-card: 0 1px 0 var(--c-border), 0 12px 32px rgba(0, 0, 0, 0.35);
 }
-

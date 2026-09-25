@@ -1,0 +1,148 @@
+/* ============================================================
+   Rules, About, Downloads — content pages (spec 006 phase 4)
+   ============================================================ */
+
+.main[data-route="/rules"],
+.main[data-route="/about"],
+.main[data-route="/downloads"] { padding-top: 0; }
+
+/* Dark page hero band */
+.page-hero { background: var(--c-shell-bg); color: #ffffff; margin-bottom: var(--space-12); }
+
+.page-hero__inner {
+  max-width: calc(var(--max-width) + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: var(--space-16) var(--gutter) var(--space-16);
+}
+
+.page-hero h1 { margin: var(--space-3) 0 var(--space-4); color: #ffffff; font-size: var(--display-xl); line-height: 0.95; }
+.page-hero__lede { margin: 0; max-width: 680px; font-size: var(--text-lg); line-height: 1.5; color: var(--c-shell-text); }
+
+/* Layout */
+rules-toc.rules-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: var(--space-12);
+  align-items: start;
+}
+
+.rules-toc {
+  position: sticky;
+  top: calc(var(--nav-height) + var(--space-6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
+
+.rules-toc__head { padding: 0 var(--space-3) var(--space-2); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-text-muted); }
+.rules-toc__list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+
+.rules-toc__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--c-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.rules-toc__link:hover { background: var(--c-surface); color: var(--c-text); }
+.rules-toc__link[aria-current="true"] { background: var(--c-accent-tint); color: var(--c-accent-ink); font-weight: 700; }
+.rules-toc__num { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--c-text-muted); width: 14px; }
+.rules-toc__print { margin-top: var(--space-3); width: 100%; }
+
+.rules-main { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
+
+/* Section cards */
+.rule-card { background: var(--c-card); border: 1px solid var(--c-border); border-radius: var(--radius-2xl); }
+
+.rule-card__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-8) var(--space-2);
+  list-style: none;
+  cursor: default;
+}
+
+.rule-card__summary::-webkit-details-marker { display: none; }
+.rule-card__chevron { display: none; color: var(--c-text-muted); transition: transform var(--t-base); }
+
+.rule-card__title { display: flex; align-items: center; gap: var(--space-4); margin: 0; font-size: 2rem; }
+
+.rule-card__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--c-brand);
+  color: #ffffff;
+  font-size: 1.375rem;
+}
+
+.rule-card__body { padding: var(--space-2) var(--space-8) var(--space-8); }
+
+.rule-card__body > ol { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: var(--space-3); font-size: 1.0625rem; line-height: 1.6; }
+.rule-card__body ol ol { margin: var(--space-3) 0 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: var(--space-2); }
+
+.rule-example { margin: var(--space-3) 0; padding: var(--space-4); border-radius: var(--radius-md); background: var(--c-card-alt); font-size: var(--text-sm); }
+
+.trophy-list i { font-style: normal; font-weight: 700; }
+
+/* Figures: ladder + yardage */
+.rules-figures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-6); margin-top: var(--space-6); }
+.rules-figure { margin: 0; }
+.rules-figure__cap { margin-bottom: var(--space-3); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-text-muted); }
+
+.ladder { display: flex; align-items: flex-end; gap: 6px; height: 176px; margin: 0; padding: 0 0 var(--space-1); list-style: none; border-bottom: 1px solid var(--c-border-strong); }
+.ladder__step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ladder__pts { font-size: 0.8125rem; font-weight: 600; }
+.ladder__bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--c-brand); }
+.ladder__step--top .ladder__bar { background: var(--c-accent); }
+.ladder__place { font-size: 0.75rem; color: var(--c-text-muted); margin-bottom: -22px; }
+
+.yardage-mini { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.yardage-mini th, .yardage-mini td { height: 32px; padding: 0 var(--space-3); text-align: left; }
+.yardage-mini thead th { font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-text-muted); border-bottom: 1px solid var(--c-border); }
+.yardage-mini tbody tr:nth-child(odd) { background: var(--c-card-alt); }
+.yardage-mini .num { font-family: var(--font-mono); }
+.yardage-mini td.num:last-child, .yardage-mini th.num { text-align: right; font-weight: 600; }
+
+/* Phones & tablets: accordion */
+@media screen and (max-width: 959px) {
+  rules-toc.rules-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  .rules-toc { position: static; }
+  .rules-toc__list { flex-direction: row; flex-wrap: wrap; }
+  .rules-toc__link { background: var(--c-card-alt); }
+  .rule-card__summary { cursor: pointer; padding: var(--space-4) var(--space-5); }
+  .rule-card__chevron { display: block; }
+  .rule-card[open] .rule-card__chevron { transform: rotate(180deg); }
+  .rule-card__title { font-size: 1.375rem; gap: var(--space-3); }
+  .rule-card__num { width: 32px; height: 32px; font-size: 1.125rem; }
+  .rule-card__body { padding: 0 var(--space-5) var(--space-5); }
+  .rules-figures { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
+}
+
+@media screen and (max-width: 639px) {
+  .page-hero__inner { padding: var(--space-10) var(--gutter); }
+  .rule-card__body > ol { font-size: 1rem; }
+}
+
+@media print {
+  .page-hero { background: #fff !important; color: #000 !important; margin-bottom: 12pt; }
+  .page-hero h1, .page-hero__lede { color: #000 !important; }
+  .rules-toc { display: none !important; }
+  rules-toc.rules-layout { display: block; }
+  .rule-card { border: 0; break-inside: avoid-page; }
+}

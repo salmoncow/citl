@@ -166,18 +166,28 @@ dist/
 │   │   └── logo_full_large_white_bg-[hash].png
 │   ├── styles/
 │   │   └── index-[hash].css
-│   └── js/
-│       └── index-[hash].js                ← Entire app bundle
+│   ├── js/
+│   │   └── index-[hash].js                ← Entire app bundle
+│   └── <family>-latin-<weight>-normal-[hash].woff2|.woff   ← @fontsource fonts
 └── (assets from public/ copied verbatim)
 ```
 
 ### Bundle Size Targets
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| JS bundle (gzipped) | <250 kB | ~34 kB ✅ |
-| CSS (gzipped) | <20 kB | ~2 kB ✅ |
-| Total initial load | <500 kB | ~36 kB ✅ |
+Measured 2026-09-24 after spec 006 (gzip; "before" is the pre-redesign build):
+
+| Metric | Target | Before | Current |
+|--------|--------|--------|---------|
+| JS bundle (gzipped) | <250 kB | 229.3 kB | 241.6 kB ✅ (little headroom) |
+| CSS (gzipped) | <20 kB | 7.6 kB | 15.6 kB ✅ |
+| Fonts (woff2, latin only) | — | 0 | 9 files, 187 kB total if every weight loads |
+| Total initial load | <500 kB | ~237 kB | ~444 kB worst case (fonts are fetched only for weights a page uses, then cached `immutable`) |
+
+**Fonts**: `src/main.ts` imports per-weight `@fontsource/<family>/latin-<weight>.css` files
+(Barlow 400/500/600/700, Barlow Condensed 600/700/800, IBM Plex Mono 500/600). Vite emits
+each weight's `.woff2` and fallback `.woff` to `dist/assets/` (the `assetFileNames` default
+branch), content-hashed and same-origin, so CSP `font-src 'self'` is unchanged and the
+`firebase.json` font cache rule applies. Import only weights the CSS uses (ADR-011).
 
 The Firebase SDK (`firebase` npm package) is tree-shaken — only imported modules are bundled.
 

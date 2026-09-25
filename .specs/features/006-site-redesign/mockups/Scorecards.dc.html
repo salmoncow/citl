@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CITL Scorecards</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Barlow:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Barlow',system-ui,sans-serif;background:#F3F1EC;color:#0E1B26}
+a{color:#0B3C5D}a:hover{color:#A84300}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1860px; box-sizing: border-box; display: flex; flex-direction: column; background: #F3F1EC; font-family: 'Barlow', system-ui, sans-serif; color: #0E1B26;">
+
+  <header style="height: 76px; flex-shrink: 0; background: #071C2B; display: flex; align-items: center; gap: 40px; padding: 0 120px;">
+    <a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #FFFFFF;">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="#FF8000" stroke-width="3"></circle><circle cx="17" cy="17" r="8" fill="#FF8000"></circle></svg>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.04em;">CITL</span>
+    </a>
+    <nav aria-label="Primary" style="display: flex; gap: 4px; flex-grow: 1;">
+      <a href="Main.dc.html" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">Home</a>
+      <a href="#" aria-current="page" style="padding: 10px 14px; border-radius: 8px; background: #12344C; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 15px;">Scorecards</a>
+      <a href="Rules.dc.html" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">Rules</a>
+      <a href="#" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">About</a>
+      <a href="#" style="padding: 10px 14px; border-radius: 8px; color: #C9D6E0; text-decoration: none; font-weight: 500; font-size: 15px;">Downloads</a>
+    </nav>
+    <a href="#" style="height: 44px; padding: 0 20px; border-radius: 10px; background: #FF8000; color: #0E1B26; text-decoration: none; font-weight: 700; font-size: 15px; display: flex; align-items: center;">Join the league</a>
+  </header>
+
+  <!-- Page header -->
+  <section style="padding: 56px 120px 0; display: flex; flex-direction: column; gap: 28px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #A84300;">SCORECARDS · THROUGH WEEK 6</span>
+        <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 64px; line-height: 1; text-transform: uppercase;">2026 Season</h1>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #D5D0C5; background: #FFFFFF; font: 600 14px 'Barlow', sans-serif; color: #0E1B26; display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M6 14h12v7H6z"></path></svg>Print</button>
+      </div>
+    </div>
+    <div role="tablist" aria-label="Season" style="display: flex; gap: 8px;">
+      <sc-for list="{{seasons}}" as="y" hint-placeholder-count="8">
+        <button type="button" role="tab" aria-selected="{{y.sel}}" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid {{y.border}}; background: {{y.bg}}; color: {{y.fg}}; font: 600 15px 'IBM Plex Mono', monospace;">{{y.year}}</button>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Team tabs -->
+  <section style="padding: 28px 120px 0;">
+    <div role="tablist" aria-label="Team" style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px;">
+      <sc-for list="{{teams}}" as="t" hint-placeholder-count="8">
+        <button type="button" role="tab" aria-selected="{{t.sel}}" style="height: 72px; padding: 0 14px; border-radius: 14px; border: 1px solid {{t.border}}; background: {{t.bg}}; color: {{t.fg}}; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; font-family: 'Barlow', sans-serif; text-align: left;">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.8;">{{t.place}}</span>
+          <span style="font-size: 17px; font-weight: 700;">{{t.name}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Team summary -->
+  <section style="padding: 24px 120px 0;">
+    <div style="background: #071C2B; color: #FFFFFF; border-radius: 20px; padding: 28px 32px; display: flex; align-items: center; gap: 40px;">
+      <div style="display: flex; align-items: center; gap: 18px; flex-grow: 1;">
+        <span style="width: 64px; height: 64px; border-radius: 16px; background: #FF8000; color: #0E1B26; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 36px;">1</span>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 44px; line-height: 1; text-transform: uppercase;">Eagles</span>
+          <span style="font-size: 15px; color: #9FB2C1;">Captain Greg Litchfield · 7 shooters · 2 rookies</span>
+        </div>
+      </div>
+      <sc-for list="{{summary}}" as="m" hint-placeholder-count="5">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding-left: 28px; border-left: 1px solid #1C4260;">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #9FB2C1; text-transform: uppercase;">{{m.k}}</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; line-height: 1;">{{m.v}}</span>
+          <span style="font-size: 13px; color: #9FB2C1;">{{m.sub}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Heat grid -->
+  <section style="padding: 24px 120px 0;">
+    <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; padding: 8px 16px 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0 12px;">
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 28px; text-transform: uppercase;">Shooter scorecard</h2>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #56616C;">
+          <span>Targets of 50</span>
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="5"><span style="display: flex; align-items: center; gap: 6px;"><span style="width: 18px; height: 18px; border-radius: 5px; background: {{l.bg}};"></span>{{l.label}}</span></sc-for>
+          <span style="display: flex; align-items: center; gap: 6px; margin-left: 8px;"><span style="width: 16px; height: 16px; border-radius: 5px; border: 2px solid #FF8000;"></span>Straight 50</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 200px 36px 60px repeat(15, 50px) 56px 64px; column-gap: 0; align-items: center; height: 40px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: #56616C; border-bottom: 1px solid #E2DED5;">
+        <span>SHOOTER</span><span style="text-align: center;">R</span><span style="text-align: center;">START</span>
+        <sc-for list="{{wkHeads}}" as="h" hint-placeholder-count="15"><span style="text-align: center; color: {{h.fg}};">{{h.label}}</span></sc-for>
+        <span style="text-align: center;">SHOT</span><span style="text-align: right; color: #0E1B26;">AVG</span>
+      </div>
+      <sc-for list="{{shooters}}" as="s" hint-placeholder-count="7">
+        <div style="display: grid; grid-template-columns: 200px 36px 60px repeat(15, 50px) 56px 64px; align-items: center; height: 52px; border-bottom: 1px solid #F0EDE7;">
+          <span style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px;">{{s.name}}<sc-if value="{{s.cap}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 5px; background: #0B3C5D; color: #FFFFFF;">C</span></sc-if></span>
+          <span style="text-align: center;"><sc-if value="{{s.rookie}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 5px; background: #FDEBD9; color: #8A3700;">R</span></sc-if></span>
+          <span style="text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #56616C;">{{s.start}}</span>
+          <sc-for list="{{s.cells}}" as="c" hint-placeholder-count="15">
+            <span style="display: flex; justify-content: center;"><span title="{{c.title}}" style="width: 44px; height: 38px; box-sizing: border-box; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; background: {{c.bg}}; color: {{c.fg}}; border: {{c.border}};">{{c.v}}</span></span>
+          </sc-for>
+          <span style="text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px;">{{s.shot}}</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 600;">{{s.avg}}</span>
+        </div>
+      </sc-for>
+      <sc-for list="{{totals}}" as="r" hint-placeholder-count="3">
+        <div style="display: grid; grid-template-columns: 200px 36px 60px repeat(15, 50px) 56px 64px; align-items: center; height: 48px; background: {{r.bg}}; border-radius: 10px; margin-top: 6px;">
+          <span style="padding-left: 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #3D4650;">{{r.label}}</span><span></span><span></span>
+          <sc-for list="{{r.cells}}" as="c" hint-placeholder-count="15"><span style="text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: {{c.fg}};">{{c.v}}</span></sc-for>
+          <span></span><span style="text-align: right; padding-right: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700;">{{r.sum}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Chart + highlights -->
+  <section style="padding: 24px 120px 0; display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: 24px;">
+    <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 28px; text-transform: uppercase;">Team targets by week</h2>
+        <div style="display: flex; gap: 18px; font-size: 13px; color: #56616C;">
+          <span style="display: flex; align-items: center; gap: 8px;"><span style="width: 18px; height: 3px; border-radius: 2px; background: #0B3C5D;"></span>Eagles</span>
+          <span style="display: flex; align-items: center; gap: 8px;"><span style="width: 18px; height: 0; border-top: 2px dashed #9AA3AB;"></span>League average</span>
+        </div>
+      </div>
+      <svg width="100%" height="280" viewBox="0 0 760 280" role="img" aria-label="Eagles team targets per week versus league average. Eagles: 223, 219, 215, 215, 230, 223. League: 214, 216, 212, 216, 220, 214." style="font-family: 'IBM Plex Mono', monospace;">
+        <g stroke="#EEEBE4" stroke-width="1"><line x1="48" y1="20" x2="752" y2="20"></line><line x1="48" y1="80" x2="752" y2="80"></line><line x1="48" y1="140" x2="752" y2="140"></line><line x1="48" y1="200" x2="752" y2="200"></line><line x1="48" y1="250" x2="752" y2="250" stroke="#D5D0C5"></line></g>
+        <g fill="#56616C" font-size="12" text-anchor="end"><text x="40" y="24">235</text><text x="40" y="84">225</text><text x="40" y="144">215</text><text x="40" y="204">205</text></g>
+        <g fill="#56616C" font-size="12" text-anchor="middle"><text x="96" y="272">W1</text><text x="220" y="272">W2</text><text x="344" y="272">W3</text><text x="468" y="272">W4</text><text x="592" y="272">W5</text><text x="716" y="272">W6</text></g>
+        <polyline points="96,146 220,134 344,158 468,134 592,110 716,146" fill="none" stroke="#9AA3AB" stroke-width="2" stroke-dasharray="5 5"></polyline>
+        <polyline points="96,92 220,116 344,140 468,140 592,50 716,92" fill="none" stroke="#0B3C5D" stroke-width="2.5" stroke-linejoin="round"></polyline>
+        <g fill="#0B3C5D" stroke="#FFFFFF" stroke-width="2"><circle cx="96" cy="92" r="5"></circle><circle cx="220" cy="116" r="5"></circle><circle cx="344" cy="140" r="5"></circle><circle cx="468" cy="140" r="5"></circle><circle cx="592" cy="50" r="6" fill="#FF8000"></circle><circle cx="716" cy="92" r="5"></circle></g>
+        <g font-size="13" font-weight="600" fill="#0E1B26" text-anchor="middle"><text x="592" y="36">230 · season high</text><text x="716" y="78">223</text></g>
+      </svg>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <sc-for list="{{highlights}}" as="h" hint-placeholder-count="4">
+        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; gap: 16px;">
+          <span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: {{h.iconBg}}; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{h.iconFg}}" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg></span>
+          <span style="flex-grow: 1; display: flex; flex-direction: column;"><span style="font-size: 13px; color: #56616C;">{{h.k}}</span><span style="font-size: 17px; font-weight: 700;">{{h.v}}</span></span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600;">{{h.n}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <footer style="margin-top: auto; background: #04121C; color: #9FB2C1; padding: 32px 120px; display: flex; justify-content: space-between; font-size: 14px;">
+    <span>Central Illinois Trap League · 2026</span>
+    <span>Scores are provisional until the week closes Friday at midnight.</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var bins = [
+      { max: 39, bg: '#EEF2F5', fg: '#0E1B26', label: '≤39' },
+      { max: 42, bg: '#D3E0EA', fg: '#0E1B26', label: '40–42' },
+      { max: 45, bg: '#A9C3D6', fg: '#0E1B26', label: '43–45' },
+      { max: 48, bg: '#3B6E95', fg: '#FFFFFF', label: '46–48' },
+      { max: 50, bg: '#0B3C5D', fg: '#FFFFFF', label: '49–50' }
+    ];
+    function bin(v) { for (var i = 0; i < bins.length; i++) if (v <= bins[i].max) return bins[i]; return bins[4]; }
+    var N = null;
+    var raw = [
+      ['Greg Litchfield', true, false, '45.2', [46, 47, N, 45, 48, 46], 5, '46.4'],
+      ['Aaron Klein', false, false, '46.8', [48, 47, 49, 46, 47, 50], 6, '47.8'],
+      ['Pete Sandoval', false, false, '43.1', [44, N, 45, 43, 46, 44], 5, '44.4'],
+      ['Rick Mancuso', false, false, '41.5', [42, 43, N, N, 44, N], 3, '43.0'],
+      ['Sam Whitt', false, false, '42.0', [43, 44, 42, N, 45, N], 4, '43.5'],
+      ['Luis Ortega', false, true, '35.0', [N, 38, 40, 41, N, 42], 4, '40.3'],
+      ['Dana Pierce', false, true, '35.0', [N, N, 39, 40, N, 41], 3, '40.0']
+    ];
+    var shooters = raw.map(function (r) {
+      var cells = [];
+      for (var w = 0; w < 15; w++) {
+        var v = w < 6 ? r[4][w] : undefined;
+        if (v === undefined) cells.push({ v: '', bg: 'transparent', fg: '#9AA3AB', border: '1px dashed #E2DED5', title: 'Week ' + (w + 1) + ': not shot yet' });
+        else if (v === null) cells.push({ v: '–', bg: '#F7F5F0', fg: '#9AA3AB', border: '0', title: 'Week ' + (w + 1) + ': did not shoot' });
+        else { var b = bin(v); cells.push({ v: v, bg: b.bg, fg: b.fg, border: v === 50 ? '2px solid #FF8000' : '0', title: 'Week ' + (w + 1) + ': ' + v + ' of 50' }); }
+      }
+      return { name: r[0], cap: r[1], rookie: r[2], start: r[3], cells: cells, shot: r[5], avg: r[6] };
+    });
+    function row(label, vals, sum, bg) {
+      var cells = [];
+      for (var w = 0; w < 15; w++) cells.push({ v: w < 6 ? vals[w] : '', fg: '#0E1B26' });
+      return { label: label, cells: cells, sum: sum, bg: bg };
+    }
+    var totals = [
+      row('TOTAL TARGETS', [223, 219, 215, 215, 230, 223], '1,325', '#F3F1EC'),
+      row('RANK POINTS', [30, 26, 30, 26, 30, 28], '170', '#F3F1EC'),
+      row('BONUS POINTS', [5, 5, 0, 0, 5, 5], '20', '#FFF3E6')
+    ];
+    var wkHeads = [];
+    for (var i = 1; i <= 15; i++) wkHeads.push({ label: 'W' + i, fg: i <= 6 ? '#0E1B26' : '#9AA3AB' });
+    var years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+    var seasons = years.map(function (y) { var s = y === 2026; return { year: y, sel: s ? 'true' : 'false', bg: s ? '#0B3C5D' : '#FFFFFF', fg: s ? '#FFFFFF' : '#0E1B26', border: s ? '#0B3C5D' : '#D5D0C5' }; });
+    var names = [['1ST', 'Eagles'], ['2ND', 'Hawks'], ['3RD', 'Falcons'], ['4TH', 'Kestrels'], ['5TH', 'Ospreys'], ['6TH', 'Harriers'], ['7TH', 'Merlins'], ['8TH', 'Condors']];
+    var teams = names.map(function (n, i) { var s = i === 0; return { place: n[0], name: n[1], sel: s ? 'true' : 'false', bg: s ? '#FFFFFF' : 'transparent', fg: '#0E1B26', border: s ? '#0B3C5D' : '#D5D0C5' }; });
+    var summary = [
+      { k: 'Points', v: '190', sub: '+4 over 2nd' },
+      { k: 'Targets', v: '1,325', sub: '220.8 / night' },
+      { k: 'Rank pts', v: '170', sub: '3 weekly wins' },
+      { k: 'Bonus', v: '20', sub: 'Beat avg 4 of 6' },
+      { k: 'Yardage', v: '27 yd', sub: 'Top-5 avg 221.7' }
+    ];
+    var highlights = [
+      { k: 'Best single night', v: 'Aaron Klein · Week 6', n: '50', iconBg: '#FFF3E6', iconFg: '#A84300' },
+      { k: 'Most consistent', v: 'Aaron Klein', n: '±1.3', iconBg: '#E9EEF2', iconFg: '#0B3C5D' },
+      { k: 'Biggest riser', v: 'Luis Ortega (R)', n: '+5.3', iconBg: '#E9EEF2', iconFg: '#0B3C5D' },
+      { k: 'Team best night', v: 'Week 5', n: '230', iconBg: '#E9EEF2', iconFg: '#0B3C5D' }
+    ];
+    return { shooters: shooters, totals: totals, wkHeads: wkHeads, seasons: seasons, teams: teams, summary: summary, highlights: highlights, legend: bins };
+  }
+}
+</script>
+</body>
+</html>

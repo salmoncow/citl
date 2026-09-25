@@ -173,3 +173,44 @@ export function buildWeekResults(input: BuildWeekResultsInput): WeekResult[] {
     };
   });
 }
+
+/**
+ * Places gained (+) or lost (−) by each team between week `throughWeek - 1`
+ * and `throughWeek`, both derived with computeStandingsFromWeeks. Teams with
+ * no prior-week standing (first published week, or newly added) map to 0.
+ */
+export function computeRankMovement(
+  weekResults: WeekResult[],
+  throughWeek: number,
+): Map<string, number> {
+  const movement = new Map<string, number>();
+  if (throughWeek <= 1) return movement;
+  const previous = new Map(
+    computeStandingsFromWeeks(weekResults, throughWeek - 1).map((r) => [r.teamId, r.rank]),
+  );
+  for (const row of computeStandingsFromWeeks(weekResults, throughWeek)) {
+    const prior = previous.get(row.teamId);
+    movement.set(row.teamId, prior === undefined ? 0 : prior - row.rank);
+  }
+  return movement;
+}
+
+/**
+ * Per-team weekly rank points for weeks 1..throughWeek (index 0 = week 1).
+ * A week the team has no stored result for is null (unpublished or absent).
+ */
+export function rankPointsByWeek(
+  weekResults: WeekResult[],
+  throughWeek: number,
+): Map<string, (number | null)[]> {
+  const out = new Map<string, (number | null)[]>();
+  for (const wr of weekResults) {
+    if (wr.weekNumber < 1 || wr.weekNumber > throughWeek) continue;
+    for (const tr of wr.teamResults ?? []) {
+      const row = out.get(tr.teamId) ?? Array.from({ length: throughWeek }, () => null);
+      row[wr.weekNumber - 1] = tr.rankPoints ?? null;
+      out.set(tr.teamId, row);
+    }
+  }
+  return out;
+}

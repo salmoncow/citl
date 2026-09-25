@@ -1,32 +1,6 @@
 /* ============================================================
-   Admin Tabs
+   Admin tab panels (the sidebar itself lives in admin-shell.css)
    ============================================================ */
-
-.admin-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--c-border);
-  margin-bottom: var(--space-6);
-}
-
-.admin-tab-btn {
-  padding: var(--space-3) var(--space-5);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--c-text-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: color var(--t-fast), border-color var(--t-fast);
-  margin-bottom: -1px;
-}
-
-.admin-tab-btn:hover { color: var(--c-text); }
-
-.admin-tab-btn.is-active {
-  color: var(--c-accent);
-  border-bottom-color: var(--c-accent);
-}
 
 .admin-tab-panel--hidden { display: none; }
 
@@ -45,7 +19,7 @@
 
 .admin-roster-table th {
   background: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
@@ -74,7 +48,7 @@
 
 .users-table th {
   background: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
@@ -102,7 +76,7 @@
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
-  background: var(--c-bg);
+  background: var(--c-card);
   color: var(--c-text);
   font-size: var(--text-sm);
 }
@@ -135,7 +109,7 @@ input[type="text"].ap-roster-name {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
-  background: var(--c-bg);
+  background: var(--c-card);
   color: var(--c-text);
   font-size: var(--text-sm);
   width: 100%;
@@ -165,7 +139,7 @@ input[type="text"].ap-roster-name:focus {
   margin-top: 2px;
   max-height: 180px;
   overflow-y: auto;
-  background: var(--c-bg);
+  background: var(--c-card);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-dropdown);
@@ -270,7 +244,7 @@ td:has(> .ac-wrapper) {
 .ann-editor__field { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-3); }
 .ann-editor__field label { font-size: var(--text-sm); font-weight: 500; color: var(--c-heading); }
 .ann-editor__input,
-.ann-editor__textarea { width: 100%; padding: 6px 10px; border: 1px solid var(--c-table-border); border-radius: var(--radius-md); font-size: var(--text-sm); background: var(--c-bg); color: var(--c-text); box-sizing: border-box; }
+.ann-editor__textarea { width: 100%; padding: 6px 10px; border: 1px solid var(--c-input-border); border-radius: var(--radius-md); font-size: var(--text-sm); background: var(--c-card); color: var(--c-text); box-sizing: border-box; }
 .ann-editor__textarea { resize: vertical; font-family: monospace; min-height: 120px; }
 .ann-editor__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .ann-admin-card { border: 1px solid var(--c-table-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); }
@@ -290,7 +264,7 @@ td:has(> .ac-wrapper) {
 
 .admin-team-table th {
   background: var(--c-table-header-bg);
-  color: var(--c-text-inverse);
+  color: var(--c-table-header-text);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--tracking-wide);

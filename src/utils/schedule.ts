@@ -96,3 +96,69 @@ export function currentShootWeek(year: number, today: Date = new Date()): number
   }
   return result;
 }
+
+/**
+ * Parse a stored `YYYY-MM-DD` (optionally followed by a time) as a LOCAL
+ * calendar date. `new Date('2026-06-09')` would be UTC midnight — the evening
+ * before in Central time — so overrides must never go through it.
+ */
+export function parseLocalDate(iso: string): Date {
+  const [y, m, d] = iso.substring(0, 10).split('-').map(Number);
+  return new Date(y!, (m ?? 1) - 1, d ?? 1);
+}
+
+/**
+ * Apply admin week-date overrides (season.weekDateOverrides) to a schedule.
+ * - string override: replace the shoot event's date; keep type 'shoot'
+ * - null override:   change the shoot event's type to 'cancelled'
+ */
+export function applyWeekDateOverrides(
+  events: ScheduleEvent[],
+  overrides: Partial<Record<string, string | null>>,
+): ScheduleEvent[] {
+  return events.map((event) => {
+    if (event.type !== 'shoot' || event.week === undefined) return event;
+    const key = String(event.week);
+    if (!(key in overrides)) return event;
+    const override = overrides[key];
+    if (override === undefined) return event;
+    if (override === null) return { ...event, type: 'cancelled' as const };
+    return { ...event, date: parseLocalDate(override) };
+  });
+}
+
+export type TimelineStatus = 'done' | 'next' | 'upcoming' | 'cancelled';
+
+export interface TimelineEntry {
+  date: Date;
+  type: 'practice' | 'shoot' | 'cancelled';
+  week?: number;
+  status: TimelineStatus;
+}
+
+function dayStart(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/**
+ * The season as a strip: practice day plus the 15 shoot weeks (holidays are
+ * not shooting nights and are dropped), in date order. The first practice or
+ * shoot event dated today or later is `next`; earlier ones are `done`.
+ */
+export function seasonTimeline(events: ScheduleEvent[], today: Date = new Date()): TimelineEntry[] {
+  const todayStart = dayStart(today);
+  let nextAssigned = false;
+  return events
+    .filter((e): e is ScheduleEvent & { type: TimelineEntry['type'] } => e.type !== 'holiday')
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((e) => {
+      let status: TimelineStatus;
+      if (e.type === 'cancelled') status = 'cancelled';
+      else if (dayStart(e.date) < todayStart) status = 'done';
+      else if (!nextAssigned) {
+        status = 'next';
+        nextAssigned = true;
+      } else status = 'upcoming';
+      return { date: e.date, type: e.type, week: e.week, status };
+    });
+}

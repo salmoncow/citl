@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CITL Scorecards mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Barlow:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Barlow',system-ui,sans-serif;background:#F3F1EC;color:#0E1B26}
+a{color:#0B3C5D}a:hover{color:#A84300}
+</style>
+</helmet>
+<div style="width: 390px; height: 1900px; box-sizing: border-box; display: flex; flex-direction: column; background: #F3F1EC; font-family: 'Barlow', system-ui, sans-serif; color: #0E1B26;">
+
+  <header style="height: 64px; flex-shrink: 0; background: #071C2B; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;">
+    <a href="HomeMobile.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;">
+      <svg width="28" height="28" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="#FF8000" stroke-width="3"></circle><circle cx="17" cy="17" r="8" fill="#FF8000"></circle></svg>
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: 0.04em;">CITL</span>
+    </a>
+    <button type="button" aria-label="Open menu" aria-expanded="false" style="width: 44px; height: 44px; border-radius: 10px; border: 0; background: #12344C; color: #FFFFFF; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+  </header>
+
+  <section style="padding: 24px 16px 0; display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: #A84300;">SCORECARDS · WK 6</span>
+        <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; text-transform: uppercase;">2026 Season</h1>
+      </div>
+      <label style="display: flex;"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Season</span><select style="height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid #D5D0C5; background: #FFFFFF; font: 600 14px 'IBM Plex Mono', monospace;"><option>2026</option></select></label>
+    </div>
+    <div role="tablist" aria-label="Team" style="display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 4px;">
+      <sc-for list="{{teams}}" as="t" hint-placeholder-count="8">
+        <button type="button" role="tab" aria-selected="{{t.sel}}" style="height: 44px; flex-shrink: 0; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.bg}}; color: {{t.fg}}; font: 600 15px 'Barlow', sans-serif; white-space: nowrap;">{{t.label}}</button>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding: 16px 16px 0;">
+    <div style="background: #071C2B; color: #FFFFFF; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span style="width: 48px; height: 48px; border-radius: 12px; background: #FF8000; color: #0E1B26; display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 28px;">1</span>
+        <div style="display: flex; flex-direction: column;"><span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 32px; line-height: 1; text-transform: uppercase;">Eagles</span><span style="font-size: 13px; color: #9FB2C1;">Capt. Greg Litchfield · 27 yd</span></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{summary}}" as="m" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #9FB2C1;">{{m.k}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 600;">{{m.v}}</span></div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; text-transform: uppercase;">Shooters</h2>
+      <span style="font-size: 12px; color: #56616C;">Weeks 1–6 · of 50</span>
+    </div>
+    <sc-for list="{{shooters}}" as="s" hint-placeholder-count="7">
+      <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 700; font-size: 16px; flex-grow: 1; display: flex; align-items: center; gap: 6px;">{{s.name}}<sc-if value="{{s.cap}}" hint-placeholder-val="{{false}}"><span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: #0B3C5D; color: #FFFFFF;">C</span></sc-if><sc-if value="{{s.rookie}}" hint-placeholder-val="{{false}}"><span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: #FDEBD9; color: #8A3700;">R</span></sc-if></span>
+          <span style="display: flex; flex-direction: column; align-items: flex-end;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; line-height: 1;">{{s.avg}}</span><span style="font-size: 11px; color: #56616C;">avg · {{s.shot}} nights</span></span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px;">
+          <sc-for list="{{s.cells}}" as="c" hint-placeholder-count="6">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;"><span style="font-size: 10px; color: #56616C;">W{{c.w}}</span><span style="width: 100%; height: 34px; box-sizing: border-box; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; background: {{c.bg}}; color: {{c.fg}}; border: {{c.border}};">{{c.v}}</span></div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+
+  <section style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 10px;">
+    <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; text-transform: uppercase;">Team by week</h2>
+    <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 14px; overflow: hidden;">
+      <div style="display: grid; grid-template-columns: 52px repeat(3, minmax(0, 1fr)); height: 36px; align-items: center; padding: 0 14px; background: #F7F5F0; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #56616C;"><span>WEEK</span><span style="text-align: right;">TARGETS</span><span style="text-align: right;">RANK</span><span style="text-align: right;">BONUS</span></div>
+      <sc-for list="{{byWeek}}" as="b" hint-placeholder-count="6">
+        <div style="display: grid; grid-template-columns: 52px repeat(3, minmax(0, 1fr)); height: 44px; align-items: center; padding: 0 14px; border-top: 1px solid #EEEBE4; font-family: 'IBM Plex Mono', monospace; font-size: 14px;"><span style="color: #56616C;">W{{b.w}}</span><span style="text-align: right; font-weight: 600;">{{b.t}}</span><span style="text-align: right;">{{b.r}}</span><span style="text-align: right;">{{b.b}}</span></div>
+      </sc-for>
+      <div style="display: grid; grid-template-columns: 52px repeat(3, minmax(0, 1fr)); height: 48px; align-items: center; padding: 0 14px; border-top: 1px solid #E2DED5; background: #FFF3E6; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700;"><span style="font-family: 'Barlow', sans-serif; font-size: 12px;">TOTAL</span><span style="text-align: right;">1,325</span><span style="text-align: right;">170</span><span style="text-align: right;">20</span></div>
+    </div>
+  </section>
+
+  <footer style="margin-top: auto; background: #04121C; color: #9FB2C1; padding: 24px 16px; font-size: 13px;">Scores are provisional until the week closes Friday at midnight.</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var bins = [[39, '#EEF2F5', '#0E1B26'], [42, '#D3E0EA', '#0E1B26'], [45, '#A9C3D6', '#0E1B26'], [48, '#3B6E95', '#FFFFFF'], [50, '#0B3C5D', '#FFFFFF']];
+    function bin(v) { for (var i = 0; i < bins.length; i++) if (v <= bins[i][0]) return bins[i]; return bins[4]; }
+    var N = null;
+    var raw = [
+      ['Greg Litchfield', true, false, [46, 47, N, 45, 48, 46], 5, '46.4'],
+      ['Aaron Klein', false, false, [48, 47, 49, 46, 47, 50], 6, '47.8'],
+      ['Pete Sandoval', false, false, [44, N, 45, 43, 46, 44], 5, '44.4'],
+      ['Rick Mancuso', false, false, [42, 43, N, N, 44, N], 3, '43.0'],
+      ['Sam Whitt', false, false, [43, 44, 42, N, 45, N], 4, '43.5'],
+      ['Luis Ortega', false, true, [N, 38, 40, 41, N, 42], 4, '40.3'],
+      ['Dana Pierce', false, true, [N, N, 39, 40, N, 41], 3, '40.0']
+    ];
+    var shooters = raw.map(function (r) {
+      return { name: r[0], cap: r[1], rookie: r[2], shot: r[4], avg: r[5], cells: r[3].map(function (v, i) {
+        if (v === null) return { w: i + 1, v: '–', bg: '#F7F5F0', fg: '#9AA3AB', border: '0' };
+        var b = bin(v); return { w: i + 1, v: v, bg: b[1], fg: b[2], border: v === 50 ? '2px solid #FF8000' : '0' };
+      }) };
+    });
+    var names = ['Eagles', 'Hawks', 'Falcons', 'Kestrels', 'Ospreys', 'Harriers', 'Merlins', 'Condors'];
+    var teams = names.map(function (n, i) { var s = i === 0; return { label: (i + 1) + ' · ' + n, sel: s ? 'true' : 'false', bg: s ? '#0B3C5D' : '#FFFFFF', fg: s ? '#FFFFFF' : '#0E1B26', border: s ? '#0B3C5D' : '#D5D0C5' }; });
+    var summary = [{ k: 'POINTS', v: '190' }, { k: 'TARGETS', v: '1,325' }, { k: 'RANK', v: '170' }, { k: 'BONUS', v: '20' }];
+    var t = [223, 219, 215, 215, 230, 223], r = [30, 26, 30, 26, 30, 28], b = [5, 5, 0, 0, 5, 5];
+    var byWeek = t.map(function (x, i) { return { w: i + 1, t: x, r: r[i], b: b[i] }; });
+    return { shooters: shooters, teams: teams, summary: summary, byWeek: byWeek };
+  }
+}
+</script>
+</body>
+</html>

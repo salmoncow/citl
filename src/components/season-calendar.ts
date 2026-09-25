@@ -1,182 +1,102 @@
 /**
  * season-calendar — Custom Element
  *
- * Displays the current season's shoot schedule as a multi-month calendar grid.
+ * The current season's schedule as a 16-cell strip: practice day plus the 15
+ * shoot weeks, each marked done / next up / upcoming / cancelled (spec 006).
  * No shadow DOM; uses global CSS classes.
  *
- * Business rules:
- *  - Practice day:    2nd Tuesday of April
- *  - Week 1:         3rd Tuesday of April
- *  - Season length:  15 shoot weeks
- *  - July 4th skip:  if July 4 falls Mon–Fri, the Tuesday of that Sun–Sat week
- *                    is skipped; season extends by one week
- *  - July 4th mark:  July 4 itself shown red when it is a weekday
- *  - Months shown:   April → month containing the 15th shoot Tuesday
- *  - Overrides:      admin may postpone (new date) or cancel (null) a week
+ * Business rules live in utils/schedule.ts (computeSchedule): practice on the
+ * 2nd Tuesday of April, week 1 on the 3rd, 15 weeks, the July 4 week skipped
+ * when July 4 is a weekday. Admin overrides may postpone (new date) or
+ * cancel (null) a week.
  */
 
 import { getServices } from '@/services/app-services';
-import { computeSchedule } from '@/utils/schedule';
-import type { ScheduleEvent } from '@/utils/schedule';
+import { applyWeekDateOverrides, computeSchedule, seasonTimeline } from '@/utils/schedule';
+import type { TimelineEntry } from '@/utils/schedule';
 
 const { scoreService } = getServices();
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+const SHORT_DATE: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
 
-const DAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+function fmtDate(d: Date): string {
+  return d.toLocaleDateString('en-US', SHORT_DATE);
+}
 
 class SeasonCalendar extends HTMLElement {
-  async connectedCallback(): Promise<void> {
-    this.innerHTML = SeasonCalendar._calendarSkeleton();
+  connectedCallback(): void {
+    this.innerHTML = SeasonCalendar._skeleton();
+    void this._load(new Date().getFullYear());
+  }
 
-    const year = new Date().getFullYear();
-
-    // Fetch override data; gracefully degrade on failure
+  private async _load(year: number): Promise<void> {
+    // Overrides are optional: degrade to the computed schedule on failure.
     let overrides: Partial<Record<string, string | null>> = {};
     const seasonResult = await scoreService.getSeason(year);
     if (seasonResult.success && seasonResult.data) {
       overrides = seasonResult.data.weekDateOverrides ?? {};
     }
 
-    const baseSchedule = computeSchedule(year);
-    const schedule = this._applyOverrides(baseSchedule, overrides);
-    this.innerHTML = this._renderCalendar(year, schedule);
+    const base = computeSchedule(year);
+    const timeline = seasonTimeline(applyWeekDateOverrides(base, overrides));
+    const hasHoliday = base.some((e) => e.type === 'holiday');
+    this.innerHTML = SeasonCalendar._render(year, timeline, hasHoliday);
   }
 
-  // ─── Override application ────────────────────────────────────────────────
+  private static _render(year: number, timeline: TimelineEntry[], hasHoliday: boolean): string {
+    const practice = timeline.find((e) => e.type === 'practice');
+    const shoots = timeline.filter((e) => e.week !== undefined);
+    const first = shoots[0];
+    const last = shoots[shoots.length - 1];
 
-  /**
-   * Apply admin week-date overrides to the base schedule.
-   * - string override: replace the shoot event's date; keep type 'shoot'
-   * - null override:   change the shoot event's type to 'cancelled'
-   */
-  private _applyOverrides(
-    events: ScheduleEvent[],
-    overrides: Partial<Record<string, string | null>>,
-  ): ScheduleEvent[] {
-    return events.map((event) => {
-      if (event.type !== 'shoot' || event.week === undefined) return event;
-      const key = String(event.week);
-      if (!(key in overrides)) return event;
-      const override = overrides[key];
-      if (override === undefined) return event;
-      if (override === null) {
-        return { ...event, type: 'cancelled' as const };
-      }
-      return { ...event, date: new Date(override) };
-    });
-  }
+    const meta = [
+      practice ? `Practice ${fmtDate(practice.date)}` : '',
+      first ? `Kickoff ${fmtDate(first.date)}` : '',
+      last ? `Finale ${fmtDate(last.date)}` : '',
+    ].filter(Boolean).join(' · ');
 
-  // ─── Rendering ───────────────────────────────────────────────────────────
+    const cells = timeline.map((e) => SeasonCalendar._cell(e, e === last)).join('');
 
-  private _renderCalendar(year: number, schedule: ScheduleEvent[]): string {
-    // Month range: April (3) → month of last non-cancelled shoot event
-    const shootEvents = schedule.filter((e) => e.type === 'shoot' || e.type === 'cancelled');
-    // For determining range use original (cancelled events keep their original date)
-    const lastShoot = shootEvents[shootEvents.length - 1];
-    const lastMonth = lastShoot?.date.getMonth() ?? 6; // fallback July
-
-    let monthsHtml = '';
-    for (let m = 3; m <= lastMonth; m++) {
-      monthsHtml += this._renderMonth(year, m, schedule);
-    }
-
-    const hasCancelled = schedule.some((e) => e.type === 'cancelled');
-    const legendHtml = this._renderLegend(hasCancelled);
+    const note = hasHoliday
+      ? '<p class="season-strip__note">No shoot the week of July 4 — the season runs one week later.</p>'
+      : '';
 
     return `
-      <section class="season-calendar">
-        <h2>${year} Season Schedule</h2>
-        <div class="calendar-months">
-          ${monthsHtml}
+      <section class="section season-calendar" aria-labelledby="season-calendar-title">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Schedule</span>
+            <h2 id="season-calendar-title">${year} Season calendar</h2>
+          </div>
+          <p class="section-head__meta">${meta}</p>
         </div>
-        ${legendHtml}
+        <ol class="season-strip">${cells}</ol>
+        ${note}
       </section>`;
   }
 
-  private _renderMonth(year: number, month: number, schedule: ScheduleEvent[]): string {
-    const firstDay = new Date(year, month, 1);
-    const startDayOfWeek = firstDay.getDay(); // 0 = Sun
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const today = new Date();
-    const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-
-    // Build lookup: dateKey → CSS class
-    // Priority: holiday > cancelled > shoot > practice
-    const scheduleMap = new Map<string, string>();
-    for (const event of schedule) {
-      const key = `${event.date.getFullYear()}-${event.date.getMonth()}-${event.date.getDate()}`;
-      if (!scheduleMap.has(key) || event.type === 'holiday') {
-        scheduleMap.set(key, `calendar-cell--${event.type}`);
-      }
-    }
-
-    const headersHtml = DAY_HEADERS.map((d) => `<div class="calendar-day-header">${d}</div>`).join('');
-
-    const emptyCells = Array.from({ length: startDayOfWeek }, () =>
-      '<div class="calendar-cell calendar-cell--empty"></div>',
-    ).join('');
-
-    let dayCells = '';
-    for (let d = 1; d <= daysInMonth; d++) {
-      const key = `${year}-${month}-${d}`;
-      const schedClass = scheduleMap.get(key) ?? '';
-      const todayClass = key === todayKey ? 'calendar-cell--today' : '';
-      const classes = ['calendar-cell', schedClass, todayClass].filter(Boolean).join(' ');
-      dayCells += `<div class="${classes}">${d}</div>`;
-    }
-
+  private static _cell(e: TimelineEntry, isFinale: boolean): string {
+    const label = e.type === 'practice' ? 'Practice' : `Wk ${e.week ?? ''}`;
+    let status = '';
+    if (e.status === 'next') status = 'Next up';
+    else if (e.status === 'cancelled') status = 'Cancelled';
+    else if (e.status === 'done') status = 'Done';
+    else if (isFinale) status = 'Finale';
+    const current = e.status === 'next' ? ' aria-current="date"' : '';
     return `
-      <div class="calendar-month">
-        <div class="calendar-month-title">${MONTH_NAMES[month] ?? ''} ${year}</div>
-        <div class="calendar-grid">
-          ${headersHtml}
-          ${emptyCells}
-          ${dayCells}
-        </div>
-      </div>`;
+      <li class="season-strip__cell season-strip__cell--${e.status}"${current}>
+        <span class="season-strip__label">${label}</span>
+        <span class="season-strip__date">${fmtDate(e.date)}</span>
+        <span class="season-strip__status">${status}</span>
+      </li>`;
   }
 
-  private _renderLegend(hasCancelled: boolean): string {
-    const items: Array<{ label: string; style: string }> = [
-      { label: 'Shoot Day', style: 'background: var(--c-table-header-bg)' },
-      { label: 'Practice Day', style: 'background: var(--c-accent)' },
-      { label: 'Holiday', style: 'background: #dc2626' },
-    ];
-
-    if (hasCancelled) {
-      items.push({ label: 'Cancelled', style: 'background: var(--c-text-muted); opacity: 0.5' });
-    }
-
-    const itemsHtml = items
-      .map(
-        ({ label, style }) => `
-      <div class="calendar-legend-item">
-        <div class="calendar-legend-swatch" style="${style}"></div>
-        <span>${label}</span>
-      </div>`,
-      )
-      .join('');
-
-    return `<div class="calendar-legend">${itemsHtml}</div>`;
-  }
-
-  private static _calendarSkeleton(): string {
-    const dayCell = `<span class="skeleton skeleton--md" style="flex:1"></span>`;
-    const weekRow = `<div class="skeleton-row">${dayCell.repeat(7)}</div>`;
-    const month = `
-      <span class="skeleton skeleton--lg" style="width:160px"></span>
-      <div class="skeleton-row">${dayCell.repeat(7)}</div>
-      ${weekRow.repeat(5)}`;
+  private static _skeleton(): string {
+    const cell = '<span class="skeleton" style="flex:1;height:104px;border-radius:var(--radius-lg)"></span>';
     return `
-      <div class="skeleton-group" style="padding-top:var(--space-2)">
-        ${month}
-        <div style="height:var(--space-4)"></div>
-        ${month}
+      <div class="section skeleton-group">
+        <span class="skeleton skeleton--lg" style="width:280px"></span>
+        <div class="skeleton-row">${cell.repeat(8)}</div>
       </div>`;
   }
 }

@@ -1,0 +1,213 @@
+/* ============================================================
+   Scorecards page (spec 006 DD-10)
+   ============================================================ */
+
+.page-head__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.sc-controls { margin-bottom: var(--space-5); }
+.sc-season-select { display: none; }
+
+/* Team tabs */
+.sc-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.sc-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border-strong);
+  background: transparent;
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.sc-tab:hover { background: var(--c-card); }
+
+.sc-tab[aria-selected="true"] {
+  background: var(--c-card);
+  border-color: var(--c-brand-text);
+  box-shadow: inset 0 -3px 0 var(--c-accent);
+}
+
+.sc-tab__place {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.sc-tab__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Summary strip */
+.sc-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6) var(--space-10);
+  padding: var(--space-6) var(--space-8);
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-2xl);
+  background: var(--c-shell-bg);
+  color: #ffffff;
+}
+
+.sc-summary__team { display: flex; align-items: center; gap: var(--space-4); flex: 1 1 280px; min-width: 0; }
+.sc-summary__pos { width: 56px; height: 56px; font-size: 2rem; border-radius: var(--radius-lg); }
+.sc-summary .pos--4 { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+.sc-summary__name { margin: 0; color: #ffffff; font-size: var(--display-md); line-height: 1; }
+.sc-summary__meta { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--c-shell-muted); }
+
+.sc-summary__metrics { display: flex; flex-wrap: wrap; gap: var(--space-5); margin: 0; }
+
+.sc-metric { padding-left: var(--space-5); border-left: 1px solid var(--c-shell-border); }
+.sc-metric dt { font-size: 0.75rem; font-weight: 700; letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--c-shell-muted); }
+.sc-metric dd { display: flex; flex-direction: column; margin: 4px 0 0; }
+.sc-metric .num { font-size: 1.75rem; font-weight: 600; line-height: 1; }
+.sc-metric__sub { margin-top: 4px; font-size: 0.8125rem; color: var(--c-shell-muted); }
+
+/* Sheet card */
+.sc-sheet { padding: var(--space-5) var(--space-5) var(--space-4); }
+.sc-sheet__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.sc-subhead { margin: 0; font-size: 1.625rem; font-weight: 800; text-transform: uppercase; }
+
+.sc-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); font-size: 0.8125rem; color: var(--c-text-muted); }
+.sc-legend__item { display: inline-flex; align-items: center; gap: 6px; }
+.sc-legend .sc-legend__swatch { width: 18px; height: 18px; min-width: 0; border-radius: 5px; }
+
+/* Heat cells */
+.heat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 36px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.heat--1 { background: var(--c-heat-1); color: var(--c-heat-1-text); }
+.heat--2 { background: var(--c-heat-2); color: var(--c-heat-2-text); }
+.heat--3 { background: var(--c-heat-3); color: var(--c-heat-3-text); }
+.heat--4 { background: var(--c-heat-4); color: var(--c-heat-4-text); }
+.heat--5 { background: var(--c-heat-5); color: var(--c-heat-5-text); }
+.heat--straight { box-shadow: 0 0 0 2px var(--c-accent); }
+.heat--dns { background: var(--c-heat-empty); color: var(--c-text-muted); }
+.heat--future { border: 1px dashed var(--c-border-strong); }
+
+/* Heat grid table */
+.sc-grid { width: 100%; border-collapse: collapse; }
+
+.sc-grid thead th {
+  height: 40px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--c-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sc-grid td,
+.sc-grid tbody th,
+.sc-grid tfoot th { padding: 4px 3px; border-bottom: 1px solid var(--c-table-border); text-align: center; white-space: nowrap; }
+
+.sc-grid .sc-name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 180px;
+  padding-right: var(--space-3);
+  background: var(--c-card);
+  text-align: left;
+  font-weight: 600;
+}
+
+.sc-grid .sc-name > span:first-child { margin-right: 6px; }
+.sc-grid .sc-name .badge { margin-right: 4px; padding: 1px 6px; }
+.sc-grid thead .sc-wk--future { color: var(--c-text-muted); font-weight: 500; }
+.sc-grid .sc-start { color: var(--c-text-muted); font-size: 0.875rem; }
+.sc-grid .sc-shot { font-size: 0.875rem; }
+.sc-grid .sc-avg { text-align: right; font-size: 1rem; font-weight: 600; padding-right: var(--space-2); }
+.sc-grid thead .sc-avg { color: var(--c-text); }
+
+.sc-row--dummy th, .sc-row--dummy td { font-style: italic; color: var(--c-text-muted); }
+
+.sc-grid tfoot tr { background: var(--c-card-alt); }
+.sc-grid tfoot .sc-name { background: var(--c-card-alt); font-size: 0.75rem; font-weight: 700; letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--c-text-muted); }
+.sc-grid tfoot td { height: 44px; font-size: 0.875rem; font-weight: 600; }
+.sc-grid tfoot .sc-total--bonus { background: var(--c-accent-tint); }
+.sc-grid tfoot .sc-total--bonus .sc-name { background: var(--c-accent-tint); }
+
+/* Mobile cards (hidden on desktop) */
+.sc-cards { display: none; }
+
+.sc-card-list { display: flex; flex-direction: column; gap: var(--space-3); margin: 0 0 var(--space-5); padding: 0; list-style: none; }
+
+.sc-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
+
+.sc-card__head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.sc-card__name { font-weight: 700; }
+.sc-card__name .badge { padding: 1px 6px; }
+.sc-card__avg { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.75rem; color: var(--c-text-muted); }
+.sc-card__avg .num { font-size: 1.25rem; font-weight: 600; color: var(--c-text); line-height: 1.1; }
+
+.sc-card__weeks { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.sc-card__wk { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.sc-card__wk-label { font-size: 0.6875rem; color: var(--c-text-muted); }
+.sc-card__wk .heat { width: 100%; min-width: 0; height: 34px; }
+
+.sc-week-table { width: 100%; margin-top: var(--space-3); border-collapse: collapse; font-size: var(--text-sm); }
+.sc-week-table th, .sc-week-table td { height: 40px; padding: 0 var(--space-3); border-bottom: 1px solid var(--c-table-border); text-align: left; }
+.sc-week-table thead th { font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-text-muted); background: var(--c-card-alt); }
+.sc-week-table .num { text-align: right; font-family: var(--font-mono); }
+.sc-week-table tbody th { font-family: var(--font-mono); font-weight: 500; color: var(--c-text-muted); }
+
+@media screen and (max-width: 959px) {
+  .sc-summary { padding: var(--space-5); gap: var(--space-4); }
+  .sc-summary__metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; gap: var(--space-3); }
+  .sc-metric { padding-left: 0; border-left: 0; }
+  .sc-metric .num { font-size: 1.25rem; }
+  .sc-metric__sub { display: none; }
+}
+
+@media screen and (max-width: 639px) {
+  .sc-season-chips { display: none; }
+  .sc-season-select { display: inline-flex; }
+  .sc-tabs { display: flex; overflow-x: auto; margin-left: calc(-1 * var(--gutter)); margin-right: calc(-1 * var(--gutter)); padding: 0 var(--gutter) var(--space-1); }
+  .sc-tab { flex-shrink: 0; min-height: var(--control-height); border-radius: var(--radius-pill); }
+  .sc-grid-wrap, .sc-legend { display: none; }
+  .sc-cards { display: block; }
+  .sc-sheet { padding: var(--space-4) var(--space-3); }
+  .sc-summary__pos { width: 44px; height: 44px; font-size: 1.5rem; }
+  .sc-summary__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

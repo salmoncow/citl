@@ -391,7 +391,7 @@ Vite continues to strip types via esbuild — no tsc emit, no build config chang
 ### ADR-008: CSS Design System + Visual Overhaul
 
 **Date**: 2026-03-01
-**Status**: Accepted
+**Status**: Accepted (brand-strip and header/nav specifics superseded by ADR-011)
 **Domains Affected**: UI, Platform
 
 **Context**
@@ -584,6 +584,74 @@ page driven by Firestore" — and `c1274e1` — post-Firestore cleanup.)
 - Supersedes: ADR-003's "permanent static JSON, never replaced by Firestore" decision and
   the `src/data/` layer described in it
 - Requires: the scorecard read paths to stay cached and query-bounded (§III.4, §VI.1)
+
+---
+
+### ADR-011: "Range Day" Redesign and Self-Hosted Fonts
+
+**Date**: 2026-09-24
+**Status**: Accepted (supersedes ADR-008's brand-strip and header/nav specifics; keeps its token and no-CDN principles)
+**Domains Affected**: UI, Platform
+
+**Context**
+
+The ADR-008 design system gave the site tokens and dark mode, but the look was still a
+white 80px logo strip over a plain nav, and the Home page was a standings table. Spec 006
+redesigned every public page and the Admin portal ("Range Day": ivory grounds, navy
+structure, clay accents, condensed display type, tabular mono numbers) and turned Home into
+a season dashboard. The new type needs three web fonts, and the constitution had no
+accessibility standard to hold the redesign to.
+
+**Decision**
+
+1. Keep the two-layer `--color-*` → `--c-*` token architecture; replace the values and add
+   token groups for the dark shell (`--c-shell-*`), focus (`--c-focus`, `--c-focus-on-dark`),
+   input borders (`--c-input-border`), and a 5-step score heat ramp (`--c-heat-*`), plus
+   type, radius, shadow, and `--control-height` tokens.
+2. Self-host fonts from the `@fontsource` npm packages (`barlow`, `barlow-condensed`,
+   `ibm-plex-mono`, `^5.3.0`), imported per weight and latin subset in `src/main.ts`; Vite
+   emits them as hashed same-origin assets.
+3. Replace ADR-008's white logo brand strip with a dark navy header: inline target-mark SVG,
+   wordmark, primary nav, theme toggle, and a "Join the league" CTA. The BEM nav class
+   names from ADR-008 are kept.
+4. Hold UI work to a new constitution §III.6 (WCAG AA contrast, visible focus, 44px targets,
+   no page overflow ≥360px, reduced motion). Where mockup colours failed AA, tokens were
+   adjusted (spec 006 DV-1 to DV-3).
+5. Presentation only: no data model, rules, routes, or admin write-path changes. New Home
+   numbers are pure derivations of data already loaded (`season-highlights.ts`,
+   `standings.ts`); the only new reads are the lazy-loaded award races.
+
+**Rationale**
+
+- Same-origin fonts keep CSP `font-src 'self'` unchanged and make no third-party requests
+- §IV.3 evaluation: static assets on existing Hosting (no new platform); CSS-only packages
+  with no runtime JS; maintained through Dependabot bumps
+- Tokens keep dark mode and future re-theming a one-file change
+
+**Alternatives Considered**
+
+- **Google Fonts CDN**: rejected — needs CSP changes (`fonts.googleapis.com`,
+  `fonts.gstatic.com`), leaks visitor IPs to a third party, and repeats the CDN dependency
+  ADR-008 removed
+- **System font stack only**: rejected — cannot deliver the condensed display face and
+  tabular mono numerals the design depends on
+- **CSS framework / component library**: rejected for the same reasons as in ADR-008 (§I.1)
+
+**Consequences**
+
+- Enables: a consistent visual system across public pages and Admin; AA-checked colours in
+  both schemes; a dashboard Home without extra Firestore reads beyond the lazy award races
+- Costs: JS gzip rose from ~229 kB to ~242 kB (budget 250, little headroom); CSS ~16 kB;
+  fonts 9 latin woff2 files / ~187 kB if every weight loads, cached `immutable`
+  ([build-system.md](../../.specs/technical/build-system.md#bundle-size-targets))
+- Constrains: add a font weight only when CSS uses it; new colours are added as tokens in
+  `tokens.css` (component CSS still carries some hex literals, mostly `#ffffff` on dark
+  regions); new UI must meet §III.6
+- Supersedes: ADR-008's header specifics — the always-white 80px brand strip (decision 2)
+  and the header/nav layout and icon set (decisions 3–4). ADR-008's token layering, inline
+  (not CDN) SVG icons, BEM nav class names, and no-CDN principle remain in force
+
+**Review Date**: 2026-12-24
 
 ---
 

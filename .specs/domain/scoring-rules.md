@@ -119,6 +119,32 @@ tests (`scoring-engine.test.ts` — "no-show team in W2, 0 targets → rank 2 = 
 - Per team: `max(improvementScore)` among shooters with weeksShot ≥ 6
 - Season winner: `max` across all teams
 
+### Yardage (rule 5.7)
+
+- A squad's starting yardage comes from the **total of the five participating shooters'
+  going-in averages** (`computeGoingInAverageSum`), looked up in `YARDAGE_TABLE`
+  (`src/utils/yardage.ts`) — 16 yd at ≤ 175.49 up to 27 yd at ≥ 215.50. Edit only that
+  constant to change the table; the Rules page, the Downloads yardage card, and the admin
+  preview all render from it.
+- `lookupYardage(total)`: rounds the total to 2 decimals (closing the .49/.50 gaps between
+  rows), returns `null` for negative or non-finite totals, and clamps totals above 250 to
+  the last row. Tested at every boundary in `src/utils/yardage.test.ts`.
+- Yardage is informational: it does not feed targets, bonuses, rank points, or awards.
+
+### Read-only compositions (spec 006)
+
+These display values but compute nothing new; the engine stays authoritative:
+
+- **Admin live preview** (`previewTeamNight`, `src/services/score-entry-preview.ts`): runs
+  the publish path's `computeSeasonTotals(buildSeasonData(…))` with the on-screen draft
+  substituted, then reads `computeGoingInAverageSum`, `computeTargetBonus`,
+  `computeRookieBonus`, `computeGoingInAverage`, and `lookupYardage`. Publish still computes
+  the official result.
+- **Home award races** (`computeAwardRaces`, `src/services/season-highlights.ts`): ranks
+  non-dummy shooters with ≥ 2 nights by `computeShooterAverage` / `computeMostImprovedScore`
+  and flags each row as award-eligible only at ≥ 6 nights shot. `computeSeasonAwards` is
+  unchanged and still decides the winners.
+
 ---
 
 ## Data Contracts

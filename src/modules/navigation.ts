@@ -24,6 +24,7 @@ export class NavigationModule {
 
   private readonly _boundClickOutsideHandler = this._handleClickOutside.bind(this);
   private readonly _boundKeydownHandler = this._handleKeydown.bind(this);
+  private readonly _boundInPageLinkHandler = this._handleInPageLink.bind(this);
 
   init(): void {
     this._topnav = document.getElementById('topnav');
@@ -31,6 +32,9 @@ export class NavigationModule {
     this._burgerBtn = document.getElementById('burger-btn') as HTMLButtonElement | null;
     this._dropBtn = document.getElementById('dropbtn') as HTMLButtonElement | null;
     this._themeToggleBtn = document.getElementById('theme-toggle') as HTMLButtonElement | null;
+
+    const footerYear = document.getElementById('footer-year');
+    if (footerYear) footerYear.textContent = String(new Date().getFullYear());
 
     if (this._burgerBtn) {
       this._burgerBtn.addEventListener('click', () => this._toggleBurgerNav());
@@ -49,6 +53,7 @@ export class NavigationModule {
     }
 
     document.addEventListener('click', this._boundClickOutsideHandler);
+    document.addEventListener('click', this._boundInPageLinkHandler);
     document.addEventListener('keydown', this._boundKeydownHandler);
   }
 
@@ -76,6 +81,7 @@ export class NavigationModule {
   closeBurgerNav(): void {
     if (this._topnav) {
       this._topnav.classList.remove('is-open');
+      this._burgerBtn?.setAttribute('aria-expanded', 'false');
     }
   }
 
@@ -96,6 +102,7 @@ export class NavigationModule {
 
   destroy(): void {
     document.removeEventListener('click', this._boundClickOutsideHandler);
+    document.removeEventListener('click', this._boundInPageLinkHandler);
     document.removeEventListener('keydown', this._boundKeydownHandler);
   }
 
@@ -103,7 +110,8 @@ export class NavigationModule {
 
   private _toggleBurgerNav(): void {
     if (!this._topnav) return;
-    this._topnav.classList.toggle('is-open');
+    const open = this._topnav.classList.toggle('is-open');
+    this._burgerBtn?.setAttribute('aria-expanded', String(open));
     this.closeDropdown();
   }
 
@@ -124,6 +132,32 @@ export class NavigationModule {
     if (dropContainer && !dropContainer.contains(event.target as Node)) {
       this.closeDropdown();
     }
+  }
+
+  /**
+   * The hash router owns every `#/…` URL, so a plain fragment link
+   * (`href="#standings"`, the skip link) would otherwise navigate Home.
+   * Intercept same-page fragments: scroll to the target and move focus to
+   * it, without touching the route (spec 006 DD-4).
+   */
+  private _handleInPageLink(event: Event): void {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
+    if (!link) return;
+    const href = link.getAttribute('href') ?? '';
+    if (href === '#' || href.startsWith('#/')) return;
+    let id: string;
+    try {
+      id = decodeURIComponent(href.slice(1));
+    } catch {
+      return; // malformed fragment (e.g. from announcement markdown) — let the browser handle it
+    }
+    const target = document.getElementById(id);
+    if (!target) return;
+    event.preventDefault();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+    target.focus({ preventScroll: true });
   }
 
   private _handleKeydown(event: KeyboardEvent): void {
