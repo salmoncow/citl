@@ -35,12 +35,6 @@ a{color:#0B3C5D}a:hover{color:#A84300}
     </label>
   </section>
 
-  <section aria-label="At a glance" style="padding: 16px 16px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
-    <sc-for list="{{glance}}" as="g" hint-placeholder-count="6">
-      <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 800; line-height: 1;">{{g.v}}</span><span style="font-size: 13px; line-height: 1.35; color: #56616C;">{{g.k}}</span></div>
-    </sc-for>
-  </section>
-
   <section style="padding: 16px 16px 0; display: flex; flex-direction: column; gap: 8px;">
     <sc-for list="{{closedTop}}" as="c" hint-placeholder-count="4">
       <button type="button" aria-expanded="false" style="height: 60px; padding: 0 14px; border-radius: 14px; border: 1px solid #E2DED5; background: #FFFFFF; display: flex; align-items: center; gap: 12px; font-family: 'Barlow', sans-serif; color: #0E1B26; text-align: left;">
@@ -93,18 +87,13 @@ a{color:#0B3C5D}a:hover{color:#A84300}
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1700}}'>
 class Component extends DCLogic {
   renderVals() {
-    var glance = [
-      { v: '5–15', k: 'shooters per team' }, { v: '50', k: 'targets per shooter' },
-      { v: '30', k: 'pts to the week’s top team' }, { v: '+5', k: 'beat going-in average' },
-      { v: '2 wks', k: 'to make up a round' }, { v: '6', k: 'nights for award eligibility' }
-    ];
     var closedTop = [
       { n: 1, title: 'General', count: '2 rules' }, { n: 2, title: 'Team structure', count: '4 rules' },
       { n: 3, title: 'League schedule', count: '9 rules' }, { n: 4, title: 'Makeup rounds', count: '3 rules' }
     ];
     var yt = [['0–175.49', 16], ['175.5–185.49', 17], ['185.5–187.49', 18], ['187.5–189.49', 19], ['189.5–191.49', 20], ['191.5–193.49', 21], ['193.5–196.49', 22], ['196.5–201.49', 23], ['201.5–207.49', 24], ['207.5–211.49', 25], ['211.5–215.49', 26], ['215.5–250', 27]];
     var yardage = yt.map(function (r, i) { return { range: r[0], yd: r[1] + ' yd', bg: i % 2 === 0 ? '#F7F5F0' : '#FFFFFF' }; });
-    return { glance: glance, closedTop: closedTop, yardage: yardage };
+    return { closedTop: closedTop, yardage: yardage };
   }
 }
 </script>

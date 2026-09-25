@@ -50,8 +50,7 @@ a{color:#0B3C5D}a:hover{color:#A84300}
     <!-- TOC -->
     <nav aria-label="Rule sections" style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 4px; padding: 20px; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px;">
       <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: #56616C; padding: 0 12px 8px;">ON THIS PAGE</span>
-      <a href="#glance" style="padding: 10px 12px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; background: #FFF3E6; color: #8A3700;">At a glance</a>
-      <a href="#general" style="padding: 10px 12px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; color: #0E1B26;">1 · General</a>
+      <a href="#general" style="padding: 10px 12px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; background: #FFF3E6; color: #8A3700;">1 · General</a>
       <a href="#teams" style="padding: 10px 12px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; color: #0E1B26;">2 · Team structure</a>
       <a href="#schedule" style="padding: 10px 12px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; color: #0E1B26;">3 · League schedule</a>
       <a href="#makeups" style="padding: 10px 12px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; color: #0E1B26;">4 · Makeup rounds</a>
@@ -61,16 +60,6 @@ a{color:#0B3C5D}a:hover{color:#A84300}
     </nav>
 
     <main style="display: flex; flex-direction: column; gap: 24px;">
-      <!-- At a glance -->
-      <section id="glance" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
-        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 800; line-height: 1;">5–15</span><span style="font-size: 15px; color: #56616C;">shooters per team · 5 shoot each night</span></div>
-        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 800; line-height: 1;">50</span><span style="font-size: 15px; color: #56616C;">targets per shooter · two bunkers</span></div>
-        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 800; line-height: 1;">30</span><span style="font-size: 15px; color: #56616C;">points to the week's top team, then 28, 26…</span></div>
-        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 800; line-height: 1;">+5</span><span style="font-size: 15px; color: #56616C;">bonus for beating the team's going-in average</span></div>
-        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 800; line-height: 1;">2 wks</span><span style="font-size: 15px; color: #56616C;">to make up a missed round (1 at season end)</span></div>
-        <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 800; line-height: 1;">6</span><span style="font-size: 15px; color: #56616C;">nights shot to qualify for awards</span></div>
-      </section>
-
       <!-- 1 General -->
       <section id="general" style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; padding: 32px; display: flex; flex-direction: column; gap: 18px;">
         <h2 style="margin: 0; display: flex; align-items: center; gap: 14px; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 32px; text-transform: uppercase;"><span style="width: 40px; height: 40px; border-radius: 10px; background: #0B3C5D; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 22px;">1</span>General</h2>
@@ -87,13 +76,14 @@ a{color:#0B3C5D}a:hover{color:#A84300}
           <li>A team has between five and fifteen shooters.</li>
           <li>Anyone is an eligible shooter. Under 16 requires a parent or guardian present.</li>
           <li>A shooter may be added to a team at any time.</li>
-          <li>Teams may shoot with up to 2 dummies to field a squad.</li>
+          <li>Teams may shoot with up to 2 dummies to field a squad.
+            <ol type="a" style="margin: 8px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px;">
+              <li>Dummy's going-in average equals the average of those shooting.</li>
+              <li>Dummy's score is the night's average of those shooting, minus 5.</li>
+              <li>Captain pays for dummies and gets a practice chit in return.</li>
+            </ol>
+          </li>
         </ol>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-left: 22px;">
-          <div style="background: #F7F5F0; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #56616C;">DUMMY GOING-IN AVG</span><span style="font-size: 15px; line-height: 1.45;">Average of those shooting</span></div>
-          <div style="background: #F7F5F0; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #56616C;">DUMMY SCORE</span><span style="font-size: 15px; line-height: 1.45;">Night's average of those shooting, minus 5</span></div>
-          <div style="background: #F7F5F0; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #56616C;">WHO PAYS</span><span style="font-size: 15px; line-height: 1.45;">Captain pays; receives a practice chit</span></div>
-        </div>
       </section>
 
       <!-- 3 Schedule -->
@@ -119,16 +109,7 @@ a{color:#0B3C5D}a:hover{color:#A84300}
           <li>A team may not fall more than two weeks behind. A missed week not made up by the close of the second week after it stays at zero.</li>
           <li>Missed weeks are made up in order. Two rounds in one week: the first counts as the missing week.</li>
         </ol>
-        <div style="background: #F7F5F0; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px;">
-          <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: #56616C;">EXAMPLE · MISSED WEEK 5</span>
-          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;">
-            <div style="padding: 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700;">Week 5</span><span style="font-size: 14px; color: #56616C;">Round missed</span></div>
-            <div style="padding: 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700;">Week 6</span><span style="font-size: 14px; color: #56616C;">Makeup allowed</span></div>
-            <div style="padding: 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700;">Week 7</span><span style="font-size: 14px; color: #56616C;">Last chance</span></div>
-            <div style="padding: 14px; border-radius: 10px; background: #FFF3E6; border: 1px solid #F5C08A; display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: #8A3700;">Fri, midnight</span><span style="font-size: 14px; color: #8A3700;">Week 7 closes · score forfeit</span></div>
-          </div>
-          <span style="font-size: 14px; color: #56616C;">At the end of the season the grace period is one week.</span>
-        </div>
+        <p style="margin: 0 0 0 22px; padding: 16px; border-radius: 10px; background: #F7F5F0; font-size: 15px; line-height: 1.55;">For example, if WEEK5 is not made up by the close of WEEK7, the score is forfeit. The close of a week is Friday at midnight of a given week. At the end of the season, this two week grace period will be reduced to one week.</p>
       </section>
 
       <!-- 5 Scoring -->
@@ -167,12 +148,11 @@ a{color:#0B3C5D}a:hover{color:#A84300}
       <!-- 6 Trophies -->
       <section id="trophies" style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; padding: 32px; display: flex; flex-direction: column; gap: 18px;">
         <h2 style="margin: 0; display: flex; align-items: center; gap: 14px; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 32px; text-transform: uppercase;"><span style="width: 40px; height: 40px; border-radius: 10px; background: #0B3C5D; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 22px;">6</span>Trophies</h2>
-        <p style="margin: 0; font-size: 17px; line-height: 1.55;">Trophies go to the 1st and 2nd place teams; members may fund their own and coordinate with the League Coordinator. Individual awards are participant-funded. Shooters must shoot at least 6 nights to be eligible.</p>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
-          <div style="border: 1px solid #E2DED5; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; text-transform: uppercase;">Top Gun</span><span style="font-size: 15px; color: #56616C;">Highest average</span></div>
-          <div style="border: 1px solid #E2DED5; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; text-transform: uppercase;">Rookie of the Year</span><span style="font-size: 15px; color: #56616C;">Highest rookie average</span></div>
-          <div style="border: 1px solid #E2DED5; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; text-transform: uppercase;">Most Improved</span><span style="font-size: 15px; color: #56616C;">Greatest improvement</span></div>
-        </div>
+        <ol style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 17px; line-height: 1.55;">
+          <li>Trophies go to the 1st and 2nd place teams; members may fund their own and coordinate with the League Coordinator.</li>
+          <li>Special trophies funded by the participant: <strong>Top Gun</strong> (highest average), <strong>Rookie of the Year</strong> (highest rookie average), <strong>Most Improved</strong> (greatest improvement).</li>
+          <li>Shooters must shoot at least 6 nights to be eligible for awards.</li>
+        </ol>
       </section>
     </main>
   </div>

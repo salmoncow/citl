@@ -782,8 +782,8 @@ Deviations from the design above, recorded at close-out (2026-09-24).
   cards and makeup timeline strip were removed (AC-4.2 no longer includes them); the section
   cards, rank-points ladder and yardage table remain. The League Coordinator address
   `lmckenna.citl@gmail.com` is `LEAGUE_EMAIL` in `src/utils/contact.ts`, linked from Home
-  ("Your first night"), About and the admin unauthorized card. The mockups in `mockups/` are
-  not updated and still show the earlier title and tiles.
+  ("Your first night"), About and the admin unauthorized card. The mockups in `mockups/` were
+  updated to match.
 - **Stretch S-8**: the static venue card was built (the map stays on About).
 - **Measured build (gzip)**: JS 229.3 KB before → 241.6 KB after (budget 250); CSS 7.6 →
   15.6 KB; fonts: 9 latin woff2 files, 187 KB total if every weight loads.
