@@ -19,30 +19,37 @@
  *   The snapshot listener is owned by AuthModule and lives only while
  *   a user is signed in — it tears down on sign-out so we don't leak
  *   listeners (per constitution §IV.2).
+ *
+ * Member accounts (spec 008):
+ *   - signIn(key) delegates provider work to modules/auth-providers.ts
+ *     (lazy-loaded). Google remains the default for existing callers.
+ *   - onUserDoc(cb) republishes the same users/{uid} snapshot (status
+ *     for the account gate, mirror existence for profile completion),
+ *     so there is still exactly one listener.
  */
 
 import { auth, db } from '@/firebase-config';
 import {
-  GoogleAuthProvider,
-  signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   type User,
-  type UserCredential,
 } from 'firebase/auth';
 import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { type Result, success, failure } from '@/types/result';
 import { createRepositoryFactory } from '@/repositories/repository-factory';
 import type { UserRepository } from '@/repositories/user-repository';
 import { getRole, refreshRole } from '@/modules/role';
-import type { Role } from '@/types/user';
+import type { Role, UserDoc } from '@/types/user';
+import type { UserDocState } from '@/modules/account-gate';
+import type { AuthOutcome, PopupProviderKey } from '@/modules/auth-providers';
 
 export class AuthModule {
-  private readonly _provider = new GoogleAuthProvider();
   private readonly _userRepo: UserRepository;
   private _snapshotUnsub: Unsubscribe | null = null;
   private _lastRoleChangedAtMs: number | null = null;
   private _internalAuthUnsub: () => void;
+  private _userDocState: UserDocState = { uid: null, loaded: false, doc: null };
+  private readonly _userDocListeners = new Set<(state: UserDocState) => void>();
 
   constructor() {
     this._userRepo = createRepositoryFactory({ db }).getUserRepository();
@@ -53,6 +60,7 @@ export class AuthModule {
     // consumers; this internal subscription is independent of it.
     this._internalAuthUnsub = firebaseOnAuthStateChanged(auth, (user) => {
       this._teardownSnapshot();
+      this._emitUserDoc({ uid: user?.uid ?? null, loaded: false, doc: null });
       if (user) {
         this._setupSnapshot(user.uid);
         void this._userRepo.touchLastSignIn(user.uid);
@@ -64,14 +72,29 @@ export class AuthModule {
     return auth.currentUser;
   }
 
-  async signIn(): Promise<Result<UserCredential>> {
-    try {
-      const credential = await signInWithPopup(auth, this._provider);
-      return success(credential);
-    } catch (error) {
-      console.error('[AuthModule] signIn error:', error);
-      return failure(String(error), 'AUTH_ERROR');
-    }
+  /**
+   * Popup sign-in with the given provider. The sign-in dialog imports
+   * auth-providers itself, so by the time a user clicks this import is
+   * already cached and the popup still opens inside the click gesture.
+   */
+  async signIn(key: PopupProviderKey = 'google'): Promise<AuthOutcome> {
+    const { signInWith } = await import('@/modules/auth-providers');
+    return signInWith(key);
+  }
+
+  /**
+   * Subscribe to the current user's users/{uid} mirror. Fires
+   * immediately with the latest state, then on every snapshot and on
+   * sign-in/out. Returns an unsubscribe.
+   */
+  onUserDoc(cb: (state: UserDocState) => void): () => void {
+    this._userDocListeners.add(cb);
+    cb(this._userDocState);
+    return () => this._userDocListeners.delete(cb);
+  }
+
+  get userDocState(): UserDocState {
+    return this._userDocState;
   }
 
   async signOut(): Promise<Result<void>> {
@@ -114,12 +137,14 @@ export class AuthModule {
   destroy(): void {
     this._teardownSnapshot();
     this._internalAuthUnsub();
+    this._userDocListeners.clear();
   }
 
   // ─── Internal: roleChangedAt snapshot listener ──────────────────────────
 
   private _setupSnapshot(uid: string): void {
     this._snapshotUnsub = onSnapshot(doc(db, 'users', uid), async (snap) => {
+      this._emitUserDoc({ uid, loaded: true, doc: snap.exists() ? (snap.data() as UserDoc) : null });
       if (!snap.exists()) return;
       const ts = snap.data()?.['roleChangedAt'];
       const tsMs = (ts && typeof ts.toMillis === 'function') ? (ts.toMillis() as number) : null;
@@ -144,6 +169,11 @@ export class AuthModule {
         this._lastRoleChangedAtMs = tsMs;
       }
     });
+  }
+
+  private _emitUserDoc(state: UserDocState): void {
+    this._userDocState = state;
+    for (const cb of this._userDocListeners) cb(state);
   }
 
   private _teardownSnapshot(): void {
