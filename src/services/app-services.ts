@@ -19,11 +19,20 @@ import { db } from '@/firebase-config';
 import { createRepositoryFactory, type RepositoryFactory } from '@/repositories/repository-factory';
 import { ScoreService } from '@/services/score-service';
 import { SeasonAwardsService } from '@/services/season-awards-service';
+import { AccountService } from '@/services/account-service';
+import { callable } from '@/infrastructure/functions';
+import type {
+  DeleteAccountRequest,
+  DeleteAccountResponse,
+  SetAccountStatusRequest,
+  SetAccountStatusResponse,
+} from '@/types/account';
 
 export interface AppServices {
   repositoryFactory: RepositoryFactory;
   scoreService: ScoreService;
   seasonAwardsService: SeasonAwardsService;
+  accountService: AccountService;
 }
 
 let instance: AppServices | null = null;
@@ -34,7 +43,13 @@ export function getServices(): AppServices {
     const repository = repositoryFactory.getScoreRepository();
     const scoreService = new ScoreService(repository);
     const seasonAwardsService = new SeasonAwardsService(repository, scoreService);
-    instance = Object.freeze({ repositoryFactory, scoreService, seasonAwardsService });
+    // Callables are resolved on first use so building the graph never
+    // initializes the Functions SDK.
+    const accountService = new AccountService(repositoryFactory.getProfileRepository(), () => ({
+      setAccountStatus: callable<SetAccountStatusRequest, SetAccountStatusResponse>('setAccountStatus'),
+      deleteAccount: callable<DeleteAccountRequest, DeleteAccountResponse>('deleteAccount'),
+    }));
+    instance = Object.freeze({ repositoryFactory, scoreService, seasonAwardsService, accountService });
   }
   return instance;
 }

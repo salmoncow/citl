@@ -1,12 +1,13 @@
 /**
  * Repository Factory
  *
- * Creates and caches a ScoreRepository backed by Cloud Firestore.
+ * Creates and caches the Firestore-backed repositories (score, user, profile).
  */
 
 import type { Firestore } from 'firebase/firestore';
 import { ScoreRepository } from '@/repositories/score-repository';
 import { UserRepository } from '@/repositories/user-repository';
+import { ProfileRepository } from '@/repositories/profile-repository';
 
 interface FactoryConfig {
   db: Firestore;
@@ -45,6 +46,20 @@ export class RepositoryFactory {
 
     const repo = new UserRepository(this.config.db);
     this.instances.set('user', repo);
+    return repo;
+  }
+
+  getProfileRepository(): ProfileRepository {
+    if (this.instances.has('profile')) return this.instances.get('profile') as ProfileRepository;
+
+    if (!this.config.db) {
+      throw new Error(
+        'RepositoryFactory: db is required. Pass { db } from firebase-config.ts.',
+      );
+    }
+
+    const repo = new ProfileRepository(this.config.db);
+    this.instances.set('profile', repo);
     return repo;
   }
 
