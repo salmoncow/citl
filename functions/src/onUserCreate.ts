@@ -45,6 +45,7 @@ export async function handleUserCreated(user: UserRecord | { uid: string; email?
     displayName: user.displayName ?? null,
     photoURL: user.photoURL ?? null,
     role: 'user',
+    status: 'active',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
     lastSignInAt: FieldValue.serverTimestamp(),

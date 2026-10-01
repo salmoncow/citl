@@ -16,3 +16,18 @@ export const setUserRoleInput = z.object({
 });
 
 export type SetUserRoleInput = z.infer<typeof setUserRoleInput>;
+
+export const ACCOUNT_STATUSES = ['active', 'deactivated'] as const;
+export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
+
+export const setAccountStatusInput = z.object({
+  status: z.enum(ACCOUNT_STATUSES),
+});
+
+export type SetAccountStatusInput = z.infer<typeof setAccountStatusInput>;
+
+export const deleteAccountInput = z.object({
+  confirm: z.literal('DELETE'),
+});
+
+export type DeleteAccountInput = z.infer<typeof deleteAccountInput>;

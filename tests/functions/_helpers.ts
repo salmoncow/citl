@@ -76,3 +76,36 @@ export async function loadHandleUserCreated() {
   const mod = await import('../../functions/src/onUserCreate.js');
   return mod.handleUserCreated;
 }
+
+export async function loadSetAccountStatus() {
+  return import('../../functions/src/setAccountStatus.js');
+}
+
+export async function loadDeleteAccount() {
+  return import('../../functions/src/deleteAccount.js');
+}
+
+/**
+ * Hand-built partial CallableRequest. The real types carry a dozen
+ * required fields irrelevant to these tests.
+ */
+export function callableRequest(args: {
+  uid: string | null;
+  role?: string;
+  authTime?: number;
+  data: unknown;
+}) {
+  const auth = args.uid
+    ? {
+        uid: args.uid,
+        token: {
+          role: args.role,
+          sub: args.uid,
+          aud: 'citl-fn-test',
+          auth_time: args.authTime ?? Math.floor(Date.now() / 1000),
+        },
+      }
+    : undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { data: args.data, auth } as any;
+}

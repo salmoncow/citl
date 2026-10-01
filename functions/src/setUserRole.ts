@@ -42,7 +42,8 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { setUserRoleInput, type Role } from './lib/validate.js';
 import { assertNotLastOwner } from './lib/lastOwnerGuard.js';
-import { checkAndBumpInTransaction } from './lib/rateLimit.js';
+import { checkAndBumpInTransaction, RATE_LIMITS } from './lib/rateLimit.js';
+import { queueAuditEntry } from './lib/audit.js';
 
 if (getApps().length === 0) {
   initializeApp();
@@ -79,7 +80,7 @@ export const setUserRole = onCall(
       const currentRole = (userSnap.data()?.['role'] as Role | undefined) ?? 'user';
 
       await assertNotLastOwner(tx, db, currentRole, newRole);
-      await checkAndBumpInTransaction(tx, db, actorUid);
+      await checkAndBumpInTransaction(tx, db, actorUid, RATE_LIMITS.setUserRole);
 
       // Claim-first: set the auth custom claim BEFORE queueing the
       // Firestore writes. Two failure-mode reasons (see spec §VI):
@@ -98,12 +99,12 @@ export const setUserRole = onCall(
         updatedAt: FieldValue.serverTimestamp(),
       });
 
-      tx.create(db.collection('audit').doc(), {
+      queueAuditEntry(tx, db, {
+        kind: 'role-change',
         actorUid,
         targetUid,
         fromRole: currentRole,
         toRole: newRole,
-        at: FieldValue.serverTimestamp(),
       });
 
       return { fromRole: currentRole, toRole: newRole };

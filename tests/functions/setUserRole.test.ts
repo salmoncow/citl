@@ -114,6 +114,7 @@ describe('happy path', () => {
     expect(entry['targetUid']).toBe(USER);
     expect(entry['fromRole']).toBe('user');
     expect(entry['toRole']).toBe('admin');
+    expect(entry['kind']).toBe('role-change');
   });
 
   it('demotes admin back to user', async () => {
