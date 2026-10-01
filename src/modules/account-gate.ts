@@ -63,13 +63,16 @@ export interface AccountGateDeps {
   termsVersion: string;
 }
 
+export type ProfileLoadState = 'idle' | 'loading' | 'ready' | 'error';
+
 export class AccountGate {
   private _uid: string | null = null;
   private _userDoc: UserDocState = { uid: null, loaded: false, doc: null };
-  private _profileLoaded = false;
+  private _profileState: ProfileLoadState = 'idle';
   private _profile: ProfileDoc | null = null;
   private _decision: GateDecision = 'none';
   private readonly _listeners = new Set<(d: GateDecision) => void>();
+  private readonly _updateListeners = new Set<() => void>();
   private readonly _unsub: () => void;
 
   constructor(private readonly deps: AccountGateDeps) {
@@ -84,10 +87,27 @@ export class AccountGate {
     return this._profile;
   }
 
+  get profileState(): ProfileLoadState {
+    return this._profileState;
+  }
+
+  get userDoc(): UserDocState {
+    return this._userDoc;
+  }
+
   /** Subscribe to decision changes; returns an unsubscribe. */
   onChange(cb: (d: GateDecision) => void): () => void {
     this._listeners.add(cb);
     return () => this._listeners.delete(cb);
+  }
+
+  /**
+   * Subscribe to any state change (user doc, profile, decision). Used by
+   * the account page so it shares the gate's single profile read.
+   */
+  onUpdate(cb: () => void): () => void {
+    this._updateListeners.add(cb);
+    return () => this._updateListeners.delete(cb);
   }
 
   /** Re-read the profile (after completion, edit, or terms acceptance). */
@@ -98,13 +118,14 @@ export class AccountGate {
   destroy(): void {
     this._unsub();
     this._listeners.clear();
+    this._updateListeners.clear();
   }
 
   private _onUserDoc(state: UserDocState): void {
     this._userDoc = state;
     if (state.uid !== this._uid) {
       this._uid = state.uid;
-      this._profileLoaded = false;
+      this._profileState = 'idle';
       this._profile = null;
       if (state.uid) void this._loadProfile(state.uid);
     }
@@ -112,19 +133,25 @@ export class AccountGate {
   }
 
   private async _loadProfile(uid: string): Promise<void> {
+    this._profileState = 'loading';
+    this._notifyUpdate();
     try {
       const profile = await this.deps.loadProfile(uid);
       if (this._uid !== uid) return;
       this._profile = profile;
-      this._profileLoaded = true;
+      this._profileState = 'ready';
     } catch (e) {
       // A failed read must not lock the user out of the site; the
       // account page shows its own error state.
       console.warn('[account-gate] profile load failed:', e);
       if (this._uid !== uid) return;
-      this._profileLoaded = false;
+      this._profileState = 'error';
     }
     this._recompute();
+  }
+
+  private _notifyUpdate(): void {
+    for (const cb of this._updateListeners) cb();
   }
 
   private _recompute(): void {
@@ -132,13 +159,14 @@ export class AccountGate {
       signedIn: this._uid !== null,
       userDocLoaded: this._userDoc.loaded,
       userStatus: accountStatusOf(this._userDoc.doc),
-      profileLoaded: this._profileLoaded,
+      profileLoaded: this._profileState === 'ready',
       hasProfile: this._profile !== null,
       profileTermsVersion: this._profile?.termsVersion ?? null,
       currentTermsVersion: this.deps.termsVersion,
     });
-    if (next === this._decision) return;
+    const changed = next !== this._decision;
     this._decision = next;
-    for (const cb of this._listeners) cb(next);
+    if (changed) for (const cb of this._listeners) cb(next);
+    this._notifyUpdate();
   }
 }

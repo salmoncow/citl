@@ -57,6 +57,9 @@ import './components/rules-toc';
 import { NavigationModule } from './modules/navigation';
 import { RouterModule } from './modules/router';
 import { AuthModule } from './modules/auth';
+import { AccountGate, isGatedPath } from './modules/account-gate';
+import { setAccountContext } from './modules/account-context';
+import { TERMS_VERSION } from './utils/legal';
 import { onRoleChange } from './modules/role';
 import type { Role } from './types/user';
 import { initAppCheck } from './infrastructure/appcheck';
@@ -68,6 +71,8 @@ import { rulesView } from './views/rules';
 import { aboutView } from './views/about';
 import { downloadsView } from './views/downloads';
 import { adminView } from './views/admin';
+import { accountView } from './views/account';
+import { privacyView } from './views/privacy';
 
 interface RouteDef {
   path: string;
@@ -80,6 +85,7 @@ class App {
   private _router: RouterModule | null = null;
   private _mainContent: HTMLElement | null = null;
   private _auth: AuthModule | null = null;
+  private _gate: AccountGate | null = null;
   private _roleUnsubscribe: (() => void) | null = null;
   private _currentRole: Role | null = null;
 
@@ -90,6 +96,8 @@ class App {
     this._navigation = new NavigationModule();
     this._router = new RouterModule();
     this._auth = new AuthModule();
+    this._gate = this._createAccountGate(this._auth);
+    setAccountContext({ auth: this._auth, gate: this._gate });
 
     this._navigation.init({ onSignIn: () => void this._openSignIn() });
 
@@ -107,6 +115,28 @@ class App {
     this._router.init();
 
     if (emailLinkUrl) void this._completeEmailLink(emailLinkUrl);
+  }
+
+  // ─── Account gate (spec 008 AC-10, AC-12, AC-15) ────────────────────────────
+
+  private _createAccountGate(authModule: AuthModule): AccountGate {
+    const gate = new AccountGate({
+      onUserDoc: (cb) => authModule.onUserDoc(cb),
+      loadProfile: async (uid) => {
+        const { getAccountService } = await import('./services/account-service');
+        const result = await getAccountService().loadProfile(uid);
+        if (!result.success) throw new Error(result.error);
+        return result.data;
+      },
+      termsVersion: TERMS_VERSION,
+    });
+    // When the decision turns blocking (sign-in, deactivation, terms
+    // bump), move the user to /account unless they're somewhere allowed.
+    gate.onChange((decision) => {
+      const path = this._router?.getCurrentRoute() ?? '/';
+      if (isGatedPath(decision, path)) window.location.hash = '#/account';
+    });
+    return gate;
   }
 
   // ─── Boot URL handling (spec 008 AC-5, DD-4) ────────────────────────────────
@@ -230,6 +260,12 @@ class App {
       { path: '/rules', view: rulesView },
       { path: '/about', view: aboutView },
       { path: '/downloads', view: downloadsView },
+      { path: '/privacy', view: privacyView },
+      {
+        path: '/account',
+        view: accountView,
+        after: () => { void import('./components/account-page'); },
+      },
       {
         path: '/admin',
         view: adminView,
@@ -244,6 +280,15 @@ class App {
     }
 
     this._router!.onBeforeNavigate((path) => {
+      // Account gate: a signed-in user who must complete their profile,
+      // accept updated terms, or reactivate is sent to /account (UX only;
+      // rules and callables enforce). The redirect is deferred so it
+      // lands after the router restores the current route.
+      if (isGatedPath(this._gate!.decision, path)) {
+        setTimeout(() => { window.location.hash = '#/account'; }, 0);
+        return false;
+      }
+
       // Route guard: signed-out users are allowed through /admin
       // (they'll see the sign-in gate via _applyAdminViewState). Only bounce
       // signed-in users whose role is 'user' — they can't act on

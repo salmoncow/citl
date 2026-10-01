@@ -173,6 +173,12 @@ account-page { display: block; }
 
 .account-required { font-weight: 400; color: var(--c-text-muted); }
 
+/* Loading skeleton widths */
+.account-skeleton [data-w="40"] { width: 40%; }
+.account-skeleton [data-w="75"] { width: 75%; }
+.account-skeleton [data-w="90"] { width: 90%; }
+.account-skeleton [data-w="100"] { width: 100%; }
+
 /* Linked sign-in methods */
 .account-providers { list-style: none; margin: 0; padding: 0; }
 
@@ -230,11 +236,3 @@ account-page { display: block; }
 
 /* Confirmation dialog body copy (reuses .confirm-dialog shell) */
 .account-confirm__body { margin: 0 0 var(--space-4); font-size: var(--text-sm); line-height: 1.5; }
-
-/* ── /privacy page ──────────────────────────────────────────── */
-.legal-page { max-width: var(--prose-width); }
-
-.legal-page section { margin-bottom: var(--space-10); }
-
-.legal-page__version { font-size: var(--text-sm); color: var(--c-text-muted); }
-
