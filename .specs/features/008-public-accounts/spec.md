@@ -2,7 +2,7 @@
 
 **Feature ID**: 008-public-accounts
 **Created**: 2026-10-01
-**Status**: Draft (not started)
+**Status**: Implemented, pending provider setup and deploy (PR #294)
 **Program**: Member accounts — M1 *Accounts and profile* (this spec) · M2 team proposals and
 rosters · M3 coordinator review/approval and captain handoff · M4 email notifications (Amazon
 SES). Only M1 is specified here; M2–M4 appear only as forward-compatibility notes.
