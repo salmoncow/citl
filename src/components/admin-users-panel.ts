@@ -6,7 +6,7 @@
  *
  * Responsibilities:
  *   - Render a paginated user list with displayName / email / role /
- *     last sign-in / created.
+ *     account status (spec 008) / last sign-in / created.
  *   - For owner: render a role <select> per row that calls
  *     setUserRole; for admin: plain-text role.
  *   - Confirmation dialog before any role change; toast feedback on
@@ -27,7 +27,7 @@ import {
   setUserRoleErrorMessage,
 } from '@/services/admin-user-service';
 import type { Role, UserDoc } from '@/types/user';
-import { ROLES } from '@/types/user';
+import { ROLES, accountStatusOf } from '@/types/user';
 
 const PAGE_SIZE = 20;
 
@@ -57,6 +57,7 @@ class AdminUsersPanel extends HTMLElement {
                 <th scope="col">Display name</th>
                 <th scope="col">Email</th>
                 <th scope="col">Role</th>
+                <th scope="col">Status</th>
                 <th scope="col">Last sign-in</th>
                 <th scope="col">Created</th>
               </tr>
@@ -154,6 +155,10 @@ class AdminUsersPanel extends HTMLElement {
     const email = escapeHtml(user.email ?? '—');
     const lastSignIn = escapeHtml(fmtTimestamp(user.lastSignInAt ?? null, true));
     const createdAt = escapeHtml(fmtTimestamp(user.createdAt ?? null, false));
+    // Text, not colour alone (AC-19). A missing status reads as Active.
+    const statusCell = accountStatusOf(user) === 'deactivated'
+      ? '<span class="users-table__status users-table__status--deactivated">Deactivated</span>'
+      : '<span class="users-table__status">Active</span>';
 
     const roleCell = isOwner
       ? `<select class="users-table__role-select" data-uid="${uid}" data-current="${user.role}" aria-label="Role for ${display}">
@@ -166,6 +171,7 @@ class AdminUsersPanel extends HTMLElement {
         <td>${display}</td>
         <td>${email}</td>
         <td>${roleCell}</td>
+        <td>${statusCell}</td>
         <td>${lastSignIn}</td>
         <td>${createdAt}</td>
       </tr>

@@ -65,11 +65,19 @@
 
 .users-table tr:last-child td { border-bottom: none; }
 
-.users-table td:nth-child(4),
-.users-table td:nth-child(5) {
+.users-table td:nth-child(5),
+.users-table td:nth-child(6) {
   font-variant-numeric: tabular-nums;
   color: var(--c-text-muted);
   white-space: nowrap;
+}
+
+.users-table__status { white-space: nowrap; }
+
+/* Deactivated: italic + muted, on top of the text label (not colour alone) */
+.users-table__status--deactivated {
+  font-style: italic;
+  color: var(--c-text-muted);
 }
 
 .users-table__role-select {

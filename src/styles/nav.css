@@ -201,6 +201,14 @@
   pointer-events: auto;
 }
 
+/* Narrow desktop: the account slots (spec 008) need the room the
+   wordmark subtitle used, so drop it until the row fits comfortably. */
+@media screen and (min-width: 1024px) and (max-width: 1279px) {
+  .site-nav__logo-sub { display: none; }
+  .site-nav__logo-link { margin-right: 0; }
+  .site-nav__inner { gap: var(--space-3); }
+}
+
 /* ============================================================
    Responsive header — links collapse behind the burger < 1024px
    ============================================================ */

@@ -26,6 +26,7 @@ import {
   WEEKS_PER_SEASON,
   ACTIVE_WEEKS_PUBLISHED,
   TEST_USERS,
+  SEED_TERMS_VERSION,
   ANNOUNCEMENTS,
   BANNER_MESSAGE,
   buildTeam,
@@ -49,7 +50,7 @@ initializeApp({ projectId: PROJECT_ID });
 const auth = getAuth();
 const db = getFirestore();
 
-const SEEDED_COLLECTIONS = ['users', 'audit', 'announcements', 'config', 'seasons'];
+const SEEDED_COLLECTIONS = ['users', 'profiles', 'audit', 'announcements', 'config', 'seasons'];
 
 function usage(message) {
   if (message) console.error(`Error: ${message}\n`);
@@ -118,7 +119,24 @@ async function seedUser(u) {
     updatedAt: FieldValue.serverTimestamp(),
     lastSignInAt: null,
     roleChangedAt: FieldValue.serverTimestamp(),
+    status: u.status ?? 'active',
+    ...(u.status === 'deactivated'
+      ? { deactivatedAt: FieldValue.serverTimestamp(), statusChangedAt: FieldValue.serverTimestamp() }
+      : {}),
   });
+
+  // Spec 008: seeded members get a completed profile so they skip the
+  // first-sign-in completion step.
+  if (u.profile) {
+    await db.doc(`profiles/${u.uid}`).set({
+      ...u.profile,
+      acceptedTermsAt: FieldValue.serverTimestamp(),
+      termsVersion: SEED_TERMS_VERSION,
+      adultAttested: true,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
 
   try {
     await auth.getUser(u.uid);
@@ -195,7 +213,7 @@ async function seedCommand() {
   console.log('✓ wiped seeded collections + test auth users');
 
   for (const u of TEST_USERS) await seedUser(u);
-  console.log(`✓ seeded ${TEST_USERS.length} test users (owner, admin, user)`);
+  console.log(`✓ seeded ${TEST_USERS.length} test users (owner, admin, user, deactivated user)`);
 
   await seedConfig();
   console.log('✓ seeded config/banner');
@@ -230,7 +248,7 @@ async function seedCommand() {
 
 async function statusCommand() {
   header('status');
-  for (const col of ['users', 'audit', 'announcements', 'config']) {
+  for (const col of ['users', 'profiles', 'audit', 'announcements', 'config']) {
     const snap = await db.collection(col).count().get();
     console.log(`${col.padEnd(15)} ${snap.data().count}`);
   }
