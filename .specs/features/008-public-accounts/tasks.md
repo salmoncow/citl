@@ -30,9 +30,7 @@ every box in it is checked and its validation gate passes. AC refs point to [spe
 - [ ] **1.2 (M)** Azure Entra ID app registration: personal and organizational accounts;
   redirect URI `https://citl-baed2.firebaseapp.com/__/auth/handler`; client secret. Enable the
   Microsoft provider in Firebase. Add a secret-expiry reminder.
-- [ ] **1.3 (M)** *Owner decision required ($99/yr)*. Apple Developer: Services ID with Sign in
-  with Apple; domain and return URL; .p8 key. Enable the Apple provider in Firebase. If deferred,
-  leave `apple` out of `VITE_AUTH_PROVIDERS`.
+- **1.3** *Removed*: Apple sign-in dropped (owner decision 2026-10-01; $99/yr fee outside budget).
 - [ ] **1.4 (S)** Authorized domains: confirm `citl.club`, `citl-baed2.web.app`,
   `citl-baed2.firebaseapp.com`, `localhost`. Add the stable `preview` channel host.
 - [ ] **1.5 (S)** Google OAuth consent screen: add the privacy/terms URL
@@ -116,7 +114,7 @@ every box in it is checked and its validation gate passes. AC refs point to [spe
 
 ## Group 5 — Auth providers module
 
-**Commit**: `feat(auth): add Apple, Microsoft, and email-link sign-in with account linking`
+**Commit**: `feat(auth): add Microsoft and email-link sign-in with account linking`
 **AC**: AC-4, AC-5, AC-6, AC-7
 
 - [ ] **5.1 (S)** `.env.example` and `src/vite-env.d.ts`: `VITE_AUTH_PROVIDERS`.
