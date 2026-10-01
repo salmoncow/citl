@@ -23,6 +23,14 @@ beforeEach(async () => {
       toRole: 'admin',
       at: new Date(),
     });
+    await setDoc(doc(db, 'audit', 'a2'), {
+      kind: 'account-status',
+      actorUid: 'u',
+      targetUid: 'u',
+      fromStatus: 'active',
+      toStatus: 'deactivated',
+      at: new Date(),
+    });
   });
 });
 afterAll(async () => { await env.cleanup(); });
@@ -47,4 +55,12 @@ it('no role can write to audit (Admin SDK only)', async () => {
   await assertFails(setDoc(doc(asRole(env, 'o', 'owner'), 'audit', 'new'), { x: 1 }));
   await assertFails(setDoc(doc(asRole(env, 'a', 'admin'), 'audit', 'new'), { x: 1 }));
   await assertFails(setDoc(doc(asRole(env, 'u', 'user'), 'audit', 'new'), { x: 1 }));
+});
+
+it('owner can read an account-status audit entry', async () => {
+  await assertSucceeds(getDoc(doc(asRole(env, 'o', 'owner'), 'audit', 'a2')));
+});
+
+it('user CANNOT read an account-status audit entry, even their own', async () => {
+  await assertFails(getDoc(doc(asRole(env, 'u', 'user'), 'audit', 'a2')));
 });

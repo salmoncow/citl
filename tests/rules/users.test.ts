@@ -183,6 +183,37 @@ describe('users/{uid} update — timestamps only; identity fields locked', () =>
   });
 });
 
+describe('users/{uid} update — account status is server-only (spec 008)', () => {
+  beforeEach(async () => {
+    await seedUser(env, USER_UID, 'user', { status: 'active' });
+  });
+
+  it('user CANNOT self-write status', async () => {
+    const db = asRole(env, USER_UID, 'user');
+    await assertFails(
+      updateDoc(doc(db, 'users', USER_UID), { status: 'deactivated' }),
+    );
+  });
+
+  it('user CANNOT self-write deactivatedAt', async () => {
+    const db = asRole(env, USER_UID, 'user');
+    await assertFails(
+      updateDoc(doc(db, 'users', USER_UID), { deactivatedAt: serverTimestamp() }),
+    );
+  });
+
+  it('deactivated user CANNOT reactivate by writing status', async () => {
+    await seedUser(env, USER_UID, 'user', { status: 'deactivated' });
+    const db = asRole(env, USER_UID, 'user');
+    await assertFails(
+      updateDoc(doc(db, 'users', USER_UID), {
+        status: 'active',
+        updatedAt: serverTimestamp(),
+      }),
+    );
+  });
+});
+
 describe('users/{uid} update — role field (the security boundary)', () => {
   beforeEach(async () => {
     await seedUser(env, OWNER_UID, 'owner');
