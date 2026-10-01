@@ -60,6 +60,7 @@ import { AuthModule } from './modules/auth';
 import { onRoleChange } from './modules/role';
 import type { Role } from './types/user';
 import { initAppCheck } from './infrastructure/appcheck';
+import { looksLikeEmailLink } from './utils/email-link';
 
 import { homeView } from './views/home';
 import { scorecardsView } from './views/scorecards';
@@ -90,7 +91,12 @@ class App {
     this._router = new RouterModule();
     this._auth = new AuthModule();
 
-    this._navigation.init();
+    this._navigation.init({ onSignIn: () => void this._openSignIn() });
+
+    // Spec 008: map the clean /privacy URL (used on provider consent
+    // screens) onto the hash route, and capture an email sign-in link
+    // before the router sees the URL.
+    const emailLinkUrl = this._captureBootUrl();
 
     // Wait for the initial role read (sign-in restore from local
     // persistence, or null) before registering routes so the /admin
@@ -99,6 +105,63 @@ class App {
 
     this._setupRoutes();
     this._router.init();
+
+    if (emailLinkUrl) void this._completeEmailLink(emailLinkUrl);
+  }
+
+  // ─── Boot URL handling (spec 008 AC-5, DD-4) ────────────────────────────────
+
+  /**
+   * Returns the email-link URL if this page load is one, after rewriting
+   * the address bar to /#/account so the one-time code never stays in
+   * history. Also maps pathname /privacy to #/privacy.
+   */
+  private _captureBootUrl(): string | null {
+    const href = window.location.href;
+    if (looksLikeEmailLink(href)) {
+      window.history.replaceState(null, '', '/#/account');
+      return href;
+    }
+    if (window.location.pathname === '/privacy') {
+      window.history.replaceState(null, '', '/#/privacy');
+    }
+    return null;
+  }
+
+  private async _completeEmailLink(url: string): Promise<void> {
+    const [{ completeEmailLink }, { showToast }] = await Promise.all([
+      import('./modules/auth-providers'),
+      import('./modules/ui'),
+    ]);
+    const outcome = await completeEmailLink(url);
+    switch (outcome.status) {
+      case 'signed-in':
+        showToast('success', 'Signed in.');
+        break;
+      case 'linked':
+        showToast('success', 'Email sign-in is now connected to your account.');
+        break;
+      case 'reauthenticated':
+        showToast('success', 'Confirmed. You can continue.');
+        break;
+      case 'needs-email': {
+        const { openSignInDialog } = await import('./components/sign-in-dialog');
+        await openSignInDialog({ mode: 'confirm-email', linkUrl: url });
+        break;
+      }
+      case 'error':
+        showToast('error', outcome.message);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ─── Sign-in dialog (lazy, AC-9) ────────────────────────────────────────────
+
+  private async _openSignIn(): Promise<void> {
+    const { openSignInDialog } = await import('./components/sign-in-dialog');
+    await openSignInDialog();
   }
 
   // ─── Role observation ───────────────────────────────────────────────────────
@@ -181,9 +244,8 @@ class App {
     }
 
     this._router!.onBeforeNavigate((path) => {
-      // Route guard: /admin is the SOLE entry point for sign-in, so
-      // signed-out users must be allowed through (they'll see the
-      // sign-in view via _applyAdminViewState DOM toggle). Only bounce
+      // Route guard: signed-out users are allowed through /admin
+      // (they'll see the sign-in gate via _applyAdminViewState). Only bounce
       // signed-in users whose role is 'user' — they can't act on
       // /admin and the redirect avoids a dead-end "unauthorized" view.
       // Server-side rules + the callable still enforce; this is UX.
@@ -215,7 +277,7 @@ class App {
 
   private _wireAdminAuthButtons(): void {
     document.getElementById('admin-sign-in')
-      ?.addEventListener('click', () => void this._auth!.signIn());
+      ?.addEventListener('click', () => void this._openSignIn());
     document.getElementById('admin-sign-out')
       ?.addEventListener('click', () => void this._auth!.signOut());
     document.getElementById('admin-sign-out-unauth')

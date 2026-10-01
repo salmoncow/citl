@@ -10,10 +10,19 @@
  * the callables (mirroring admin-user-service), so components never
  * handle raw Firestore or Functions errors. Error-code → message mapping
  * lives here (accountErrorMessage) so components don't grow copies.
+ *
+ * Not part of the app-services composition root on purpose: every
+ * consumer (the account gate and the account components) loads it with
+ * a dynamic import, which keeps it and its Firestore write helpers out of
+ * the main bundle (§III.4, AC-9). getAccountService() is the memoized
+ * live instance.
  */
 
 import type { HttpsCallable } from 'firebase/functions';
+import { db } from '@/firebase-config';
+import { createRepositoryFactory } from '@/repositories/repository-factory';
 import type { ProfileRepository } from '@/repositories/profile-repository';
+import { callable } from '@/infrastructure/functions';
 import { type Result, success, failure } from '@/types/result';
 import type {
   DeleteAccountRequest,
@@ -141,4 +150,20 @@ export class AccountService {
       return failure(String(e), (e as { code?: string })?.code ?? 'WRITE_ERROR');
     }
   }
+}
+
+let instance: AccountService | null = null;
+
+/** The live, Firestore-backed AccountService (memoized). */
+export function getAccountService(): AccountService {
+  if (!instance) {
+    const profiles = createRepositoryFactory({ db }).getProfileRepository();
+    // Callables are resolved on first use so construction never
+    // initializes the Functions SDK.
+    instance = new AccountService(profiles, () => ({
+      setAccountStatus: callable<SetAccountStatusRequest, SetAccountStatusResponse>('setAccountStatus'),
+      deleteAccount: callable<DeleteAccountRequest, DeleteAccountResponse>('deleteAccount'),
+    }));
+  }
+  return instance;
 }

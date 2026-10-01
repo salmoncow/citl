@@ -29,6 +29,7 @@ import {
   isSignInWithEmailLink,
   linkWithCredential,
   linkWithPopup,
+  onAuthStateChanged,
   reauthenticateWithCredential,
   reauthenticateWithPopup,
   sendSignInLinkToEmail,
@@ -40,6 +41,7 @@ import {
   type User,
 } from 'firebase/auth';
 import type { AuthProviderId } from '@/types/account';
+import { showToast } from '@/modules/ui';
 
 export { looksLikeEmailLink } from '@/utils/email-link';
 
@@ -156,6 +158,24 @@ function errorOutcome(e: unknown): AuthOutcome {
 // ─── Pending credential (account-exists linking, AC-6) ──────────────────────
 
 let pending: { email: string | null; credential: AuthCredential } | null = null;
+let pendingWatchUnsub: (() => void) | null = null;
+
+/**
+ * Hold the credential and watch for the next sign-in. The watcher covers
+ * the email-link case: the link is usually opened in another tab, and
+ * Firebase syncs that sign-in back to this tab, which still holds the
+ * credential in memory.
+ */
+function setPending(value: { email: string | null; credential: AuthCredential }): void {
+  pending = value;
+  pendingWatchUnsub?.();
+  let first = true;
+  pendingWatchUnsub = onAuthStateChanged(auth, (user) => {
+    // The first callback reports the current (signed-out) state.
+    if (first) { first = false; if (!user) return; }
+    if (user && pending) void applyPendingLink(user);
+  });
+}
 
 /**
  * Pull the email and pending OAuth credential out of an
@@ -184,20 +204,52 @@ export function hasPendingLink(): boolean {
 
 export function clearPendingLink(): void {
   pending = null;
+  pendingWatchUnsub?.();
+  pendingWatchUnsub = null;
 }
 
 /** After any successful sign-in, attach the held credential (if any). */
 async function applyPendingLink(user: User): Promise<AuthProviderId | undefined> {
   if (!pending) return undefined;
   const { credential } = pending;
-  pending = null;
+  clearPendingLink();
+  const providerId = credential.providerId as AuthProviderId;
+  const label = PROVIDER_LABELS[providerKeyOf(providerId) ?? 'email'];
   try {
     await linkWithCredential(user, credential);
-    return credential.providerId as AuthProviderId;
+    showToast('success', `${label} is now connected to your account.`);
+    return providerId;
   } catch (e) {
     console.warn('[auth-providers] pending link failed:', e);
+    showToast('error', `Signed in, but ${label} couldn’t be connected. You can connect it from your account page.`);
     return undefined;
   }
+}
+
+// ─── Current user (components never import firebase/auth) ───────────────────
+
+export interface CurrentUserInfo {
+  uid: string;
+  email: string | null;
+  providerIds: AuthProviderId[];
+}
+
+export function currentUserInfo(): CurrentUserInfo | null {
+  const user = auth.currentUser;
+  if (!user) return null;
+  return {
+    uid: user.uid,
+    email: user.email,
+    providerIds: user.providerData
+      .map((p) => p.providerId)
+      .filter((id): id is AuthProviderId => providerKeyOf(id) !== null),
+  };
+}
+
+/** Re-read provider data after link/unlink (the User object mutates in place). */
+export async function reloadCurrentUser(): Promise<CurrentUserInfo | null> {
+  await auth.currentUser?.reload();
+  return currentUserInfo();
 }
 
 // ─── Popup sign-in, link, unlink, reauthenticate ────────────────────────────
@@ -210,7 +262,7 @@ export async function signInWith(key: PopupProviderKey): Promise<AuthOutcome> {
   } catch (e) {
     const exists = extractAccountExists(e);
     if (exists) {
-      pending = exists;
+      setPending(exists);
       return { status: 'account-exists', email: exists.email };
     }
     return errorOutcome(e);

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/firebase-config', () => ({ auth: { currentUser: null } }));
+vi.mock('@/modules/ui', () => ({ showToast: vi.fn() }));
 vi.mock('firebase/auth', () => {
   class GoogleAuthProvider {
     static credentialFromError = vi.fn(() => null);
@@ -17,6 +18,7 @@ vi.mock('firebase/auth', () => {
     isSignInWithEmailLink: vi.fn(),
     linkWithCredential: vi.fn(),
     linkWithPopup: vi.fn(),
+    onAuthStateChanged: vi.fn(),
     reauthenticateWithCredential: vi.fn(),
     reauthenticateWithPopup: vi.fn(),
     sendSignInLinkToEmail: vi.fn(),

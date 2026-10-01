@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/firebase-config', () => ({ db: {} }));
+vi.mock('@/infrastructure/functions', () => ({ callable: vi.fn() }));
 import { AccountService, REQUIRES_RECENT_LOGIN, accountErrorMessage } from './account-service';
 import type { ProfileRepository } from '@/repositories/profile-repository';
 

@@ -18,8 +18,8 @@ export function adminView(): string {
     <section id="admin-login" class="admin-gate card">
       <span class="eyebrow">Admin portal</span>
       <h1>Sign in</h1>
-      <p>Sign in with your Google account to access the admin panel.</p>
-      <button id="admin-sign-in" class="btn-primary btn-lg">Sign in with Google</button>
+      <p>Sign in to access the admin panel.</p>
+      <button type="button" id="admin-sign-in" class="btn-primary btn-lg">Sign in</button>
     </section>
 
     <section id="admin-unauthorized" class="admin-gate card" hidden>

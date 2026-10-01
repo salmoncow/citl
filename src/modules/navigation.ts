@@ -6,6 +6,9 @@
  * - Resources dropdown open/close (click + outside-click + Escape)
  * - Scroll progress bar
  * - Active link highlighting per current route
+ * - Account slots (spec 008): Sign in / Account / Admin in the header,
+ *   plus the footer Admin link. Visibility is UX only; rules and
+ *   callables enforce access.
  */
 
 import type { User } from 'firebase/auth';
@@ -21,12 +24,18 @@ export class NavigationModule {
   private _dropBtn: HTMLButtonElement | null = null;
   private _themeToggleBtn: HTMLButtonElement | null = null;
   private _dropdownOpen = false;
+  private _onSignIn: ((trigger: HTMLElement) => void) | null = null;
 
   private readonly _boundClickOutsideHandler = this._handleClickOutside.bind(this);
   private readonly _boundKeydownHandler = this._handleKeydown.bind(this);
   private readonly _boundInPageLinkHandler = this._handleInPageLink.bind(this);
 
-  init(): void {
+  /**
+   * @param opts.onSignIn called when the header Sign in button is pressed;
+   *   main.ts lazy-loads and opens the sign-in dialog.
+   */
+  init(opts: { onSignIn?: (trigger: HTMLElement) => void } = {}): void {
+    this._onSignIn = opts.onSignIn ?? null;
     this._topnav = document.getElementById('topnav');
     this._dropdown = document.getElementById('dropdown');
     this._burgerBtn = document.getElementById('burger-btn') as HTMLButtonElement | null;
@@ -51,6 +60,12 @@ export class NavigationModule {
         this._toggleDropdown();
       });
     }
+
+    const signInBtn = document.getElementById('nav-sign-in');
+    signInBtn?.addEventListener('click', () => {
+      this.closeBurgerNav();
+      this._onSignIn?.(signInBtn);
+    });
 
     document.addEventListener('click', this._boundClickOutsideHandler);
     document.addEventListener('click', this._boundInPageLinkHandler);
@@ -86,18 +101,18 @@ export class NavigationModule {
   }
 
   /**
-   * React to changes in sign-in state and role. Currently scoped to the
-   * footer Admin link visibility:
-   *   - shown when signed out (so users can find the sign-in page)
-   *   - shown when role is owner or admin (legitimate access)
-   *   - hidden when role is user (the unauthorized case — keeps the
-   *     link from being a dead-end click for non-elevated users)
+   * React to changes in sign-in state and role:
+   *   - header Sign in: shown only when signed out
+   *   - header Account: shown only when signed in
+   *   - header + footer Admin: shown only for owner/admin
    */
-  updateAuthState(_user: User | null, role: Role | null): void {
-    const link = document.querySelector<HTMLAnchorElement>('.footer__admin-link');
-    if (!link) return;
-    const hide = role === 'user';
-    link.toggleAttribute('hidden', hide);
+  updateAuthState(user: User | null, role: Role | null): void {
+    const signedIn = user !== null;
+    const elevated = signedIn && (role === 'owner' || role === 'admin');
+    document.getElementById('nav-sign-in')?.toggleAttribute('hidden', signedIn);
+    document.getElementById('nav-account-link')?.toggleAttribute('hidden', !signedIn);
+    document.getElementById('nav-admin-link')?.toggleAttribute('hidden', !elevated);
+    document.querySelector('.footer__admin-link')?.toggleAttribute('hidden', !elevated);
   }
 
   destroy(): void {

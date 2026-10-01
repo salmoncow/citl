@@ -65,6 +65,15 @@
             <a href="https://shootata.com/" target="_blank" rel="noopener noreferrer">Amateur Trapshooting Association (ATA)</a>
           </div>
         </div>
+
+        <!-- Account slots (spec 008) — toggled by navigation.ts updateAuthState.
+             All hidden until the first auth state arrives, so a signed-in
+             visitor never sees a flash of "Sign in". -->
+        <div class="site-nav__account">
+          <a href="#/admin" class="site-nav__link" data-route="/admin" id="nav-admin-link" hidden>Admin</a>
+          <a href="#/account" class="site-nav__link" data-route="/account" id="nav-account-link" hidden>Account</a>
+          <button type="button" class="site-nav__link site-nav__signin" id="nav-sign-in" hidden>Sign in</button>
+        </div>
       </nav>
 
       <!-- Theme toggle — always visible -->
@@ -101,10 +110,10 @@
         <span class="footer__col-title">Resources</span>
         <a href="https://www.darnalls.com/" target="_blank" rel="noopener noreferrer">Darnall's Gun Works</a>
         <a href="https://shootata.com/" target="_blank" rel="noopener noreferrer">Amateur Trapshooting Association</a>
-        <a href="#/admin" class="footer__admin-link">Admin</a>
+        <a href="#/admin" class="footer__admin-link" hidden>Admin</a>
       </nav>
     </div>
-    <p class="footer__legal">Central Illinois Trap League &middot; <span id="footer-year">2026</span></p>
+    <p class="footer__legal">Central Illinois Trap League &middot; <span id="footer-year">2026</span> &middot; <a href="#/privacy">Privacy &amp; terms</a></p>
   </footer>
 
   <div id="toast-container" aria-live="polite"></div>
