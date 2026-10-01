@@ -31,3 +31,10 @@ export const deleteAccountInput = z.object({
 });
 
 export type DeleteAccountInput = z.infer<typeof deleteAccountInput>;
+
+/** HttpsError details reason when an owner/admin calls a self-service account callable (DD-7). */
+export const PRIVILEGED_ROLE_REASON = 'privileged-role';
+
+export function isPrivileged(role: unknown): boolean {
+  return role === 'owner' || role === 'admin';
+}

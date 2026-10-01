@@ -66,6 +66,13 @@ describe('rejections', () => {
       .rejects.toMatchObject({ code: 'failed-precondition' });
   });
 
+  it('rejects a caller whose mirror says owner even if the token still says user', async () => {
+    await adminDb().doc(`users/${USER}`).update({ role: 'owner' });
+    await expect(call(USER, 'user', { status: 'deactivated' }))
+      .rejects.toMatchObject({ code: 'failed-precondition', details: { reason: 'privileged-role' } });
+    expect(await auditEntries()).toHaveLength(0);
+  });
+
   it('returns not-found when the mirror is missing', async () => {
     await expect(call('uGhost', 'user', { status: 'deactivated' }))
       .rejects.toMatchObject({ code: 'not-found' });

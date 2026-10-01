@@ -339,16 +339,19 @@ last-owner invariant from spec 002 without a new owner count. The only owner can
 so they can't delete themselves.
 
 **DD-8 — Delete ordering (retry-safe, Auth last).**
-1. Guards (auth, App Check, zod, recent auth, role, captain).
-2. `recursiveDelete(profiles/{uid})`.
-3. One batch: delete `notificationSettings/{uid}` and `users/{uid}`, and create the audit entry.
+1. Guards (auth, App Check, zod, recent auth, role from the token claim and the `users/{uid}`
+   mirror, captain).
+2. One batch: delete `notificationSettings/{uid}` and `users/{uid}`, and create the audit entry.
+   Removing the mirror first closes the rules' `isActiveMember` window before the profile goes.
+3. `recursiveDelete(profiles/{uid})`.
 4. `revokeRefreshTokens(uid)`, then `deleteUser(uid)`.
 
-If step 4 fails, the user can still sign in, sees "no profile", and can retry the delete. Every
-step tolerates already-deleted state. A retry after a step-4 failure may write a second audit
-entry, which is accepted. Deleting Auth first was rejected because it would leave PII with no
-owner who could retry. A deleted user's live ID token (≤1 h) can't recreate a profile, because
-of the `isActiveMember` mirror check.
+If step 3 or 4 fails, the user can still sign in, lands on the completion form, and after a
+15 s grace with no `users/{uid}` mirror the account page shows a "Finish deleting your account"
+panel that retries the delete. Every step tolerates already-deleted state. A retry may write a
+second audit entry, which is accepted. Deleting Auth first was rejected because it would leave
+PII with no owner who could retry. A deleted user's live ID token (≤1 h) can't recreate a
+profile, because of the `isActiveMember` mirror check.
 
 **DD-9 — Deactivation does not disable the Auth user.** The user must be able to sign in to
 reactivate (owner decision). In M1, deactivation blocks profile writes and puts the UI into

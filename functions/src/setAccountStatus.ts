@@ -7,6 +7,7 @@
  *   2. Caller must be authenticated.
  *   3. zod-validated input ({ status: 'active' | 'deactivated' }).
  *   4. Owners and admins are refused (DD-7): they must be demoted first.
+ *      Checked on the token claim here and on the mirror inside the TX.
  *   5. Inside one Firestore transaction:
  *      - Read users/{uid}; missing → not-found.
  *      - No-op (already in the requested status) → return, write nothing.
@@ -28,7 +29,12 @@
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
-import { setAccountStatusInput, type AccountStatus } from './lib/validate.js';
+import {
+  PRIVILEGED_ROLE_REASON,
+  isPrivileged,
+  setAccountStatusInput,
+  type AccountStatus,
+} from './lib/validate.js';
 import { checkAndBumpInTransaction, RATE_LIMITS } from './lib/rateLimit.js';
 import { queueAuditEntry } from './lib/audit.js';
 import { assertNotCaptain } from './lib/captainGuard.js';
@@ -61,14 +67,13 @@ export function makeSetAccountStatusHandler(guard: typeof assertNotCaptain = ass
 
     const parsed = setAccountStatusInput.safeParse(req.data);
     if (!parsed.success) {
-      throw new HttpsError('invalid-argument', parsed.error.message);
+      throw new HttpsError('invalid-argument', 'Status must be "active" or "deactivated".');
     }
     const { status: toStatus } = parsed.data;
 
-    const role = req.auth.token['role'];
-    if (role === 'owner' || role === 'admin') {
-      throw new HttpsError('failed-precondition', PRIVILEGED_ROLE_MESSAGE);
-    }
+    const privileged = () =>
+      new HttpsError('failed-precondition', PRIVILEGED_ROLE_MESSAGE, { reason: PRIVILEGED_ROLE_REASON });
+    if (isPrivileged(req.auth.token['role'])) throw privileged();
 
     const db = getFirestore();
     const userRef = db.doc(`users/${uid}`);
@@ -78,6 +83,9 @@ export function makeSetAccountStatusHandler(guard: typeof assertNotCaptain = ass
       if (!snap.exists) {
         throw new HttpsError('not-found', 'Account record not found.');
       }
+      // The mirror can be ahead of the token claim (up to an hour after a
+      // promotion), so check both (DD-7).
+      if (isPrivileged(snap.data()?.['role'])) throw privileged();
       const fromStatus = (snap.data()?.['status'] as AccountStatus | undefined) ?? 'active';
       if (fromStatus === toStatus) {
         return { ok: true as const, status: toStatus, changed: false };

@@ -38,6 +38,8 @@ import { TERMS_VERSION } from '@/utils/legal';
 
 /** Reason carried in HttpsError details when a fresh sign-in is required. */
 export const REQUIRES_RECENT_LOGIN = 'requires-recent-login';
+/** Reason carried in HttpsError details when an owner/admin calls a self-service callable. */
+export const PRIVILEGED_ROLE = 'privileged-role';
 
 export type CallableOutcome<T> =
   | ({ ok: true } & T)
@@ -70,11 +72,14 @@ export function accountErrorMessage(code: string, reason?: string): string {
   if (reason === REQUIRES_RECENT_LOGIN) {
     return 'For your security, please sign in again to confirm.';
   }
+  if (reason === PRIVILEGED_ROLE) {
+    return 'Owners and admins can’t do this. Ask an owner to change your role first.';
+  }
   switch (bareCode(code)) {
     case 'unauthenticated':
       return 'You need to be signed in.';
     case 'failed-precondition':
-      return 'Owners and admins can’t do this. Ask an owner to change your role first.';
+      return 'This isn’t available for your account right now.';
     case 'not-found':
       return 'Your account record isn’t ready yet. Wait a moment and try again.';
     case 'resource-exhausted':

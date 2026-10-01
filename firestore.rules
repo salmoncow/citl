@@ -89,7 +89,10 @@ service cloud.firestore {
                     && isValidProfile(request.resource.data)
                     && request.resource.data.updatedAt == request.time
                     && (!('acceptedTermsAt' in request.resource.data.diff(resource.data).affectedKeys())
-                        || request.resource.data.acceptedTermsAt == request.time);
+                        || request.resource.data.acceptedTermsAt == request.time)
+                    // A new termsVersion is only recorded with a fresh acceptance.
+                    && (!('termsVersion' in request.resource.data.diff(resource.data).affectedKeys())
+                        || 'acceptedTermsAt' in request.resource.data.diff(resource.data).affectedKeys());
       allow delete: if false;
 
       // Reserved for M2 (dependents on an adult account).

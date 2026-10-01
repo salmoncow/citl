@@ -159,6 +159,14 @@ function errorOutcome(e: unknown): AuthOutcome {
 
 let pending: { email: string | null; credential: AuthCredential } | null = null;
 let pendingWatchUnsub: (() => void) | null = null;
+let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * How long a held credential waits for the matching sign-in. Bounded so
+ * that on a shared computer it can't attach to someone else's later
+ * sign-in in the same tab.
+ */
+export const PENDING_LINK_TTL_MS = 10 * 60 * 1000;
 
 /**
  * Hold the credential and watch for the next sign-in. The watcher covers
@@ -167,8 +175,9 @@ let pendingWatchUnsub: (() => void) | null = null;
  * credential in memory.
  */
 function setPending(value: { email: string | null; credential: AuthCredential }): void {
+  clearPendingLink();
   pending = value;
-  pendingWatchUnsub?.();
+  pendingTimer = setTimeout(clearPendingLink, PENDING_LINK_TTL_MS);
   let first = true;
   pendingWatchUnsub = onAuthStateChanged(auth, (user) => {
     // The first callback reports the current (signed-out) state.
@@ -206,6 +215,8 @@ export function clearPendingLink(): void {
   pending = null;
   pendingWatchUnsub?.();
   pendingWatchUnsub = null;
+  if (pendingTimer) clearTimeout(pendingTimer);
+  pendingTimer = null;
 }
 
 /** After any successful sign-in, attach the held credential (if any). */

@@ -187,6 +187,10 @@ describe('profiles/{uid} update', () => {
     await assertSucceeds(update({ termsVersion: '2027-01', acceptedTermsAt: serverTimestamp() }));
   });
 
+  it('rejects a termsVersion change without a fresh acceptedTermsAt', async () => {
+    await assertFails(update({ termsVersion: '2027-01' }));
+  });
+
   it('rejects an update without updatedAt == request.time', async () => {
     await assertFails(
       updateDoc(doc(asRole(env, USER_UID, 'user'), 'profiles', USER_UID), { displayName: 'X' }),

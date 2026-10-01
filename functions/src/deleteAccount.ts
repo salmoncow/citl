@@ -4,13 +4,17 @@
  *
  * Order (DD-8: retry-safe, Auth last):
  *   1. Guards: App Check, auth, zod ({ confirm: 'DELETE' }), recent
- *      sign-in (auth_time within 5 min), owner/admin refused (DD-7),
- *      captain guard (M1 no-op seam, DD-5).
- *   2. recursiveDelete(profiles/{uid}) — covers the future dependents
- *      subcollection.
- *   3. One batch: delete notificationSettings/{uid} and users/{uid}, and
+ *      sign-in (auth_time within 5 min), owner/admin refused by token
+ *      claim AND by the users/{uid} mirror (DD-7; a just-promoted user's
+ *      token can lag the mirror by up to an hour), captain guard (M1
+ *      no-op seam, DD-5).
+ *   2. One batch: delete users/{uid} and notificationSettings/{uid}, and
  *      create one `account-status` audit entry (toStatus 'deleted', uids
- *      only, no PII).
+ *      only, no PII). Removing the mirror first closes the rules'
+ *      isActiveMember check, so no client can recreate the profile while
+ *      step 3 runs.
+ *   3. recursiveDelete(profiles/{uid}) — covers the future dependents
+ *      subcollection.
  *   4. revokeRefreshTokens(uid), then deleteUser(uid).
  *
  * Every step tolerates already-deleted state, so a retry after a partial
@@ -26,7 +30,12 @@ import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
-import { deleteAccountInput, type AccountStatus } from './lib/validate.js';
+import {
+  PRIVILEGED_ROLE_REASON,
+  deleteAccountInput,
+  isPrivileged,
+  type AccountStatus,
+} from './lib/validate.js';
 import { queueAuditEntry } from './lib/audit.js';
 import { assertNotCaptain } from './lib/captainGuard.js';
 import { assertRecentAuth } from './lib/recentAuth.js';
@@ -59,20 +68,16 @@ export function makeDeleteAccountHandler(guard: typeof assertNotCaptain = assert
 
     assertRecentAuth(req.auth.token);
 
-    const role = req.auth.token['role'];
-    if (role === 'owner' || role === 'admin') {
-      throw new HttpsError('failed-precondition', PRIVILEGED_ROLE_MESSAGE);
-    }
-
     const db = getFirestore();
-    await guard(db, uid);
-
-    // 2. Profile and any subcollections (no-op if already gone).
-    await db.recursiveDelete(db.doc(`profiles/${uid}`));
-
-    // 3. Mirror, reserved settings doc, and audit entry, atomically.
     const userRef = db.doc(`users/${uid}`);
     const userSnap = await userRef.get();
+    if (isPrivileged(req.auth.token['role']) || isPrivileged(userSnap.data()?.['role'])) {
+      throw new HttpsError('failed-precondition', PRIVILEGED_ROLE_MESSAGE, { reason: PRIVILEGED_ROLE_REASON });
+    }
+
+    await guard(db, uid);
+
+    // 2. Mirror, reserved settings doc, and audit entry, atomically.
     const fromStatus = (userSnap.data()?.['status'] as AccountStatus | undefined) ?? 'active';
     const batch = db.batch();
     batch.delete(db.doc(`notificationSettings/${uid}`));
@@ -85,6 +90,9 @@ export function makeDeleteAccountHandler(guard: typeof assertNotCaptain = assert
       toStatus: 'deleted',
     });
     await batch.commit();
+
+    // 3. Profile and any subcollections (no-op if already gone).
+    await db.recursiveDelete(db.doc(`profiles/${uid}`));
 
     // 4. Auth last.
     const adminAuth = getAuth();

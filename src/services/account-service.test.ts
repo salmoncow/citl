@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/firebase-config', () => ({ db: {} }));
 vi.mock('@/infrastructure/functions', () => ({ callable: vi.fn() }));
-import { AccountService, REQUIRES_RECENT_LOGIN, accountErrorMessage } from './account-service';
+import { AccountService, PRIVILEGED_ROLE, REQUIRES_RECENT_LOGIN, accountErrorMessage } from './account-service';
 import type { ProfileRepository } from '@/repositories/profile-repository';
 
 describe('accountErrorMessage', () => {
@@ -13,7 +13,7 @@ describe('accountErrorMessage', () => {
 
   it.each([
     ['functions/unauthenticated', /signed in/],
-    ['functions/failed-precondition', /Owners and admins/],
+    ['functions/failed-precondition', /isn’t available/],
     ['functions/not-found', /isn’t ready/],
     ['functions/resource-exhausted', /Too many/],
     ['functions/invalid-argument', /wasn’t valid/],
@@ -22,6 +22,10 @@ describe('accountErrorMessage', () => {
     ['functions/internal', /went wrong/],
   ])('maps %s', (code, pattern) => {
     expect(accountErrorMessage(code)).toMatch(pattern);
+  });
+
+  it('maps the privileged-role reason to the demote-first message', () => {
+    expect(accountErrorMessage('functions/failed-precondition', PRIVILEGED_ROLE)).toMatch(/Owners and admins/);
   });
 
   it('treats prefixed and bare codes alike', () => {

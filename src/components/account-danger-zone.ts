@@ -10,6 +10,10 @@
  * - Owners and admins see the DD-7 message instead of the two buttons;
  *   the callables refuse them regardless.
  *
+ * - `delete-only` renders just the delete row. The account page uses it
+ *   when a previous delete removed the users/{uid} mirror but not the
+ *   Auth user, so the member can finish deleting.
+ *
  * Confirmation dialogs are native <dialog> (focus trap, Escape closes),
  * with focus starting on Cancel.
  */
@@ -117,6 +121,11 @@ class AccountDangerZone extends HTMLElement {
   }
 
   private async _init(): Promise<void> {
+    if (this.hasAttribute('delete-only')) {
+      this.innerHTML = this._deleteRow();
+      this.querySelector('[data-action="delete"]')?.addEventListener('click', () => void this._delete());
+      return;
+    }
     const role = await getRole();
     const privileged = role === 'owner' || role === 'admin';
 
@@ -132,13 +141,7 @@ class AccountDangerZone extends HTMLElement {
            </div>
            <button type="button" class="btn-secondary" data-action="deactivate">Deactivate</button>
          </div>
-         <div class="account-danger__row">
-           <div>
-             <h3>Delete account</h3>
-             <p>Permanently remove your profile and sign-in. Your name stays on published scorecards.</p>
-           </div>
-           <button type="button" class="btn-danger" data-action="delete">Delete account</button>
-         </div>`;
+         ${this._deleteRow()}`;
 
     this.innerHTML = `
       <div class="account-danger__row">
@@ -153,6 +156,16 @@ class AccountDangerZone extends HTMLElement {
     this.querySelector('[data-action="sign-out"]')?.addEventListener('click', () => void this._signOut());
     this.querySelector('[data-action="deactivate"]')?.addEventListener('click', () => void this._deactivate());
     this.querySelector('[data-action="delete"]')?.addEventListener('click', () => void this._delete());
+  }
+
+  private _deleteRow(): string {
+    return `<div class="account-danger__row">
+           <div>
+             <h3>Delete account</h3>
+             <p>Permanently remove your profile and sign-in. Your name stays on published scorecards.</p>
+           </div>
+           <button type="button" class="btn-danger" data-action="delete">Delete account</button>
+         </div>`;
   }
 
   private _setBusy(busy: boolean): void {

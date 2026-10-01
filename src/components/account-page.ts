@@ -11,6 +11,11 @@
  *   terms       terms re-acceptance
  *   normal      Profile, Sign-in methods, Account sections
  *
+ * In complete mode, if the users/{uid} mirror is still missing after
+ * ORPHAN_GRACE_MS, a previous delete most likely stopped part-way
+ * (mirror gone, Auth user left). A delete-only panel lets the member
+ * finish it.
+ *
  * Shares the gate's single profile read and AuthModule's users/{uid}
  * listener (AC-23). Focus moves to the <h1> whenever the mode changes.
  * Subscriptions are torn down in disconnectedCallback.
@@ -25,11 +30,14 @@ import { escapeHtml, showToast } from '@/modules/ui';
 import { getAccountContext } from '@/modules/account-context';
 import { accountErrorMessage, getAccountService } from '@/services/account-service';
 
+const ORPHAN_GRACE_MS = 15_000;
+
 type PageMode = 'signed-out' | 'loading' | 'error' | 'reactivate' | 'complete' | 'terms' | 'normal';
 
 class AccountPage extends HTMLElement {
   private _mode: PageMode | null = null;
   private _unsub: (() => void) | null = null;
+  private _orphanTimer: ReturnType<typeof setTimeout> | null = null;
 
   connectedCallback(): void {
     const { gate } = getAccountContext();
@@ -40,6 +48,20 @@ class AccountPage extends HTMLElement {
   disconnectedCallback(): void {
     this._unsub?.();
     this._unsub = null;
+    this._clearOrphanTimer();
+  }
+
+  private _clearOrphanTimer(): void {
+    if (this._orphanTimer) clearTimeout(this._orphanTimer);
+    this._orphanTimer = null;
+  }
+
+  private _checkOrphan(): void {
+    this._orphanTimer = null;
+    const { userDoc } = getAccountContext().gate;
+    if (this._mode !== 'complete' || !userDoc.loaded || userDoc.doc !== null) return;
+    const panel = this.querySelector<HTMLElement>('[data-orphan]');
+    if (panel) panel.hidden = false;
   }
 
   private _computeMode(): PageMode {
@@ -58,7 +80,11 @@ class AccountPage extends HTMLElement {
     const mode = this._computeMode();
     if (mode === this._mode) return;
     this._mode = mode;
+    this._clearOrphanTimer();
     this._render(mode);
+    if (mode === 'complete') {
+      this._orphanTimer = setTimeout(() => this._checkOrphan(), ORPHAN_GRACE_MS);
+    }
     if (mode !== 'loading') {
       this.querySelector<HTMLElement>('h1')?.focus();
     }
@@ -114,7 +140,12 @@ class AccountPage extends HTMLElement {
           <section class="card account-section">
             <account-profile-form mode="complete"></account-profile-form>
           </section>
-          ${this._signOutRow()}`;
+          ${this._signOutRow()}
+          <section class="card account-section account-danger" aria-labelledby="acct-orphan" data-orphan hidden>
+            <h2 id="acct-orphan">Finish deleting your account</h2>
+            <p class="account-section__desc">If you started deleting your account and it didn’t finish, you can complete it here.</p>
+            <account-danger-zone delete-only></account-danger-zone>
+          </section>`;
         break;
       case 'terms':
         html = `

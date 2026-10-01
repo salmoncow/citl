@@ -111,10 +111,12 @@ class App {
     // guard sees a valid value on first deep-link.
     await this._initRoleObserver();
 
+    // Email-link completion starts before the router (AC-5); it is not
+    // awaited, so the first view renders while sign-in finishes.
+    if (emailLinkUrl) void this._completeEmailLink(emailLinkUrl);
+
     this._setupRoutes();
     this._router.init();
-
-    if (emailLinkUrl) void this._completeEmailLink(emailLinkUrl);
   }
 
   // ─── Account gate (spec 008 AC-10, AC-12, AC-15) ────────────────────────────

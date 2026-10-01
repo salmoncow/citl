@@ -93,6 +93,14 @@ describe('rejections', () => {
     expect(await exists(`users/${ADMIN}`)).toBe(true);
   });
 
+  it('rejects a caller whose mirror says admin even if the token still says user', async () => {
+    await adminDb().doc(`users/${USER}`).update({ role: 'admin' });
+    await expect(call(USER, 'user', { confirm: 'DELETE' }))
+      .rejects.toMatchObject({ code: 'failed-precondition', details: { reason: 'privileged-role' } });
+    expect(await exists(`users/${USER}`)).toBe(true);
+    expect(await exists(`profiles/${USER}`)).toBe(true);
+  });
+
   it('a throwing captain guard stops the call before any write', async () => {
     const guard = vi.fn().mockRejectedValue(new Error('captain'));
     const handler = mod.makeDeleteAccountHandler(guard);
@@ -164,6 +172,13 @@ describe('retry', () => {
     await adminDb().recursiveDelete(adminDb().doc(`profiles/${USER}`));
     await expect(call(USER, 'user', { confirm: 'DELETE' })).resolves.toEqual({ ok: true });
     expect(await exists(`users/${USER}`)).toBe(false);
+  });
+
+  it('succeeds when the mirror is gone but the profile remains (step-3 failure)', async () => {
+    await adminDb().doc(`users/${USER}`).delete();
+    await expect(call(USER, 'user', { confirm: 'DELETE' })).resolves.toEqual({ ok: true });
+    expect(await exists(`profiles/${USER}`)).toBe(false);
+    expect(await exists(`profiles/${USER}/dependents/d1`)).toBe(false);
   });
 
   it('succeeds when only the Auth user remains (step-4 failure)', async () => {
