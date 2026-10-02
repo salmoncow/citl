@@ -155,7 +155,7 @@ sign-in-options { display: block; }
 /* ── /account page ──────────────────────────────────────────── */
 account-page { display: block; }
 
-.account-page { max-width: var(--prose-width); }
+.account-page { max-width: var(--prose-width); margin-inline: auto; }
 
 .account-page h1 { margin: var(--space-1) 0 var(--space-3); }
 
