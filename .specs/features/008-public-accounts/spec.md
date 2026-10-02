@@ -2,7 +2,7 @@
 
 **Feature ID**: 008-public-accounts
 **Created**: 2026-10-01
-**Status**: Draft (not started)
+**Status**: Implemented, pending provider setup and deploy (PR #294)
 **Program**: Member accounts — M1 *Accounts and profile* (this spec) · M2 team proposals and
 rosters · M3 coordinator review/approval and captain handoff · M4 email notifications (Amazon
 SES). Only M1 is specified here; M2–M4 appear only as forward-compatibility notes.
@@ -18,7 +18,7 @@ into `users/{uid}` with role `user` ([`functions/src/onUserCreate.ts`](../../../
 so the account substrate exists; there is just no member-facing surface on top of it.
 
 M1 makes accounts a first-class public feature: a **Sign in** control in the site nav for any
-visitor; three sign-in methods (Google, Microsoft, passwordless email link) with
+visitor; two sign-in methods (Google, passwordless email link) with
 account linking; a new **`/account`** page (profile, linked sign-in methods, sign out,
 deactivate, delete); a member-editable **`profiles/{uid}`** document separate from the locked
 RBAC mirror; a first-sign-in completion step that records terms/privacy acceptance and an
@@ -35,7 +35,7 @@ verified adult account, a profile, and a status flag to build on.
 **Visitor (signed out)**
 - As a visitor, I see a **Sign in** button in the site nav on every page, so I don't need to
   know about `/admin`.
-- As a visitor, I can sign in with Google, Microsoft, or an emailed sign-in link, so I
+- As a visitor, I can sign in with Google or an emailed sign-in link, so I
   can use whichever account I already have.
 - As a visitor who opens `/#/account`, I see the same sign-in options instead of an error.
 
@@ -82,7 +82,7 @@ verified adult account, a profile, and a status flag to build on.
   The existing `/admin` route guard and lazy `<admin-panel>` mount behave as before.
 
 **F2 — Providers and linking**
-- [ ] AC-4: Google and Microsoft (`microsoft.com`, tenant `common`) sign in by popup. Email link sends a link with `handleCodeInApp: true`
+- [ ] AC-4: Google signs in by popup. Email link sends a link with `handleCodeInApp: true`
   and completes on return. The enabled set comes from `VITE_AUTH_PROVIDERS` (see Assumptions).
 - [ ] AC-5: Email-link completion runs once at app boot, before router init. It uses the email
   stored in `localStorage`, or asks for the email if the link was opened on another device.
@@ -189,9 +189,9 @@ verified adult account, a profile, and a status flag to build on.
   No unbounded reads. The `users/{uid}` listener in `AuthModule` stays the only listener.
 - **§VI.1**: Blaze with a $5/mo budget alert. The two new functions are justified in DD-1. No
   Identity Platform upgrade (DD-2). Auth stays free-tier.
-- **§I.2 Platforms**: Microsoft Entra ID is an identity-provider registration
-  configured *through* Firebase Auth, not hosting or data platforms. The platform count stays
-  at 2 (recorded in ADR-012). M4's Amazon SES *is* a new platform and needs its own §I.2
+- **§I.2 Platforms**: no new platform in M1 (Google and email link are built into Firebase
+  Auth; Microsoft was dropped, owner decision 2026-10-02). The platform count stays at 2 (recorded in
+  ADR-012). M4's Amazon SES *is* a new platform and needs its own §I.2
   justification at that time.
 - **App Check** stays enforced on all callables (owner decision).
 
@@ -204,7 +204,7 @@ verified adult account, a profile, and a status flag to build on.
 | Layer | Files | Change |
 |-------|-------|--------|
 | Types | `src/types/user.ts` | add `AccountStatus = 'active' \| 'deactivated'`; `UserDoc.status?`, `deactivatedAt?`, `statusChangedAt?` |
-| Types | `src/types/account.ts` (new) | `ProfileDoc`, `ProfileInput`, `AuthProviderId` (`'google.com' \| 'microsoft.com' \| 'password'`), callable request/response types |
+| Types | `src/types/account.ts` (new) | `ProfileDoc`, `ProfileInput`, `AuthProviderId` (`'google.com' \| 'password'`), callable request/response types |
 | Repositories | `src/repositories/profile-repository.ts` (new) | `findById`, `create`, `update` on `profiles/{uid}`; server timestamps; throws (same convention as `user-repository.ts`) |
 | Repositories | `src/repositories/repository-factory.ts` | add `getProfileRepository()` |
 | Services | `src/services/profile-validation.ts` (new) | pure: `normalizeDisplayName`, `validateProfileInput`, `normalizePhone`. Mirrors the rules limits |
@@ -305,14 +305,14 @@ callable ops), `security-principles` (least privilege, server-authoritative stat
   fixed, retry-safe order. A client-side `user.delete()` cannot do the cascade.
 - Volume is a few calls per month: about $0 against the §VI.1 ceilings.
 
-**DD-2 — No blocking functions, no Identity Platform.** Google, Microsoft, and email
-link are all in standard Firebase Auth. `beforeUserCreated` would need the Identity Platform
+**DD-2 — No blocking functions, no Identity Platform.** Google and email link are
+both in standard Firebase Auth. `beforeUserCreated` would need the Identity Platform
 upgrade (MAU billing), so the existing async v1 `onUserCreate` stays, and the client waits for
 the mirror before enabling profile submit (rules require it, AC-13).
 
 **DD-3 — Popup sign-in and current `authDomain`.** Popups match today's behaviour and avoid the
 cross-site storage problems `signInWithRedirect` has on Safari. `authDomain` stays
-`citl-baed2.firebaseapp.com`, so the OAuth redirect URI registered with Azure is
+`citl-baed2.firebaseapp.com`, so the OAuth handler is
 `https://citl-baed2.firebaseapp.com/__/auth/handler`. Switching `authDomain` to `citl.club` is a
 possible later change and would need a second redirect URI.
 
@@ -339,16 +339,21 @@ last-owner invariant from spec 002 without a new owner count. The only owner can
 so they can't delete themselves.
 
 **DD-8 — Delete ordering (retry-safe, Auth last).**
-1. Guards (auth, App Check, zod, recent auth, role, captain).
-2. `recursiveDelete(profiles/{uid})`.
-3. One batch: delete `notificationSettings/{uid}` and `users/{uid}`, and create the audit entry.
+1. Guards (auth, App Check, zod, recent auth, role from the token claim and the `users/{uid}`
+   mirror, captain).
+2. One batch: delete `notificationSettings/{uid}` and `users/{uid}`, and create the audit entry.
+   Removing the mirror first closes the rules' `isActiveMember` window before the profile goes.
+3. `recursiveDelete(profiles/{uid})`.
 4. `revokeRefreshTokens(uid)`, then `deleteUser(uid)`.
 
-If step 4 fails, the user can still sign in, sees "no profile", and can retry the delete. Every
-step tolerates already-deleted state. A retry after a step-4 failure may write a second audit
-entry, which is accepted. Deleting Auth first was rejected because it would leave PII with no
-owner who could retry. A deleted user's live ID token (≤1 h) can't recreate a profile, because
-of the `isActiveMember` mirror check.
+If step 3 or 4 fails, the user can still sign in, lands on the completion form, and after a
+15 s grace with no `users/{uid}` mirror the account page shows an "Account setup didn't finish"
+panel that retries the delete (owners/admins, who can't self-delete, get a contact-an-owner
+notice instead). The same panel covers a mirror that `onUserCreate` never wrote; that trigger
+retries on failure (`failurePolicy`). Every step tolerates already-deleted state. A retry may write a
+second audit entry, which is accepted. Deleting Auth first was rejected because it would leave
+PII with no owner who could retry. A deleted user's live ID token (≤1 h) can't recreate a
+profile, because of the `isActiveMember` mirror check.
 
 **DD-9 — Deactivation does not disable the Auth user.** The user must be able to sign in to
 reactivate (owner decision). In M1, deactivation blocks profile writes and puts the UI into
@@ -380,11 +385,8 @@ Server work comes before the client UI that depends on it.
 - **Email link**: enable Email/Password with "Email link (passwordless sign-in)". Keep email
   enumeration protection on. Optionally set a custom sender domain (DNS verification for
   `citl.club`) to reduce spam-folder delivery.
-- **Microsoft**: in Azure (Entra ID), register an app with "Accounts in any organizational
-  directory and personal Microsoft accounts" and redirect URI
-  `https://citl-baed2.firebaseapp.com/__/auth/handler`. Create a client secret and enter the
-  Application ID and secret in Firebase. **The secret expires (≤ 24 months)**: put a rotation
-  reminder in `firebase-deployment.md`.
+- **Microsoft**: not enabled. Owner decision 2026-10-02: dropped from scope. Adding it later is an Entra ID registration plus a `VITE_AUTH_PROVIDERS` value and
+  popup branch.
 - **Apple**: not enabled. Owner decision 2026-10-01: the Apple Developer Program fee ($99/yr)
   is outside the budget. Adding Apple later is a provider registration plus a new
   `VITE_AUTH_PROVIDERS` value and popup branch.
@@ -421,7 +423,7 @@ no provider avatars are rendered. Verify on preview (task 11.5).
 
 - **Sign-in dialog**: native `<dialog>` with `showModal()`, which gives a focus trap and
   Escape-to-close. It is labelled by its heading via `aria-labelledby`, and focus returns to the
-  trigger on close. Provider buttons have text labels ("Continue with Microsoft"), brand marks
+  trigger on close. Provider buttons have text labels ("Continue with Google"), brand marks
   are `aria-hidden`, and each button is at least `--control-height` tall.
 - **Email field**: `<label>`, `type="email"`, `autocomplete="email"`. Errors are tied with
   `aria-describedby` and announced through `role="alert"`. The "Check your email" confirmation
@@ -499,11 +501,11 @@ no provider avatars are rendered. Verify on preview (task 11.5).
   `requires-recent-login`.
 
 **Manual / E2E**
-- [ ] Emulator walkthrough: every provider path the Auth emulator supports (Google and email
-  link; Microsoft via the emulator's fake-IdP popup), completion, edit, link/unlink,
+- [ ] Emulator walkthrough: every provider path the Auth emulator supports (Google via the
+  emulator's fake-IdP popup, and email link), completion, edit, link/unlink,
   deactivate → sign in → reactivate, delete with fresh and stale auth.
 - [ ] Preview-channel walkthrough against real providers, including account-exists linking
-  (e.g. email-link account, then Microsoft with the same address) and email link opened on a
+  (e.g. email-link account, then Google with the same address) and email link opened on a
   second device.
 - [ ] Keyboard-only and screen-reader pass of the dialog and the account page at 360px, in light
   and dark mode.
@@ -514,9 +516,9 @@ no provider avatars are rendered. Verify on preview (task 11.5).
 
 ## Assumptions
 
-1. **Provider toggle**: `VITE_AUTH_PROVIDERS` (default `google,microsoft,email`) controls
+1. **Provider toggle**: `VITE_AUTH_PROVIDERS` (default `google,email`) controls
    which buttons render. Apple is not implemented (owner decision 2026-10-01: the $99/yr Apple
-   Developer Program fee is outside the $5/mo budget).
+   Developer Program fee is outside the $5/mo budget). Microsoft is not implemented (owner decision 2026-10-02).
 2. **Owner/admin self-deactivate/delete is blocked** (DD-7). Demotion via `setUserRole` comes
    first. Confirmed by the owner 2026-10-01.
 3. **Deactivation also runs the captain guard** (no-op in M1). Deactivating a captain will be
@@ -532,7 +534,7 @@ no provider avatars are rendered. Verify on preview (task 11.5).
    `TERMS_VERSION = '2026-10'`.
 8. **Phone** is free-form within the allow-set (no E.164 normalization or verification). It is
    private (self + owner/admin), never public.
-9. **No avatar display.** Initials only, which avoids a CSP `img-src` change for Microsoft.
+9. **No avatar display.** Initials only, which avoids a CSP `img-src` change for provider photos.
 10. **Profile reads are not cached** beyond the component's lifetime (one read per account-page
     visit or session gate). That is volume-negligible.
 

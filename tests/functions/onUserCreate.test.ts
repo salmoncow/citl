@@ -41,3 +41,12 @@ it('handles missing email/displayName/photoURL gracefully', async () => {
   expect(mirror?.['displayName']).toBeNull();
   expect(mirror?.['photoURL']).toBeNull();
 });
+
+it('seeds status: active on a new mirror', async () => {
+  const uid = newUid();
+  await adminAuth().createUser({ uid, email: `${uid}@example.com` });
+  await handleUserCreated({ uid, email: `${uid}@example.com` });
+
+  const mirror = (await adminDb().doc(`users/${uid}`).get()).data();
+  expect(mirror?.['status']).toBe('active');
+});

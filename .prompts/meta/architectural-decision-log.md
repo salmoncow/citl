@@ -245,7 +245,7 @@ Implement a three-layer data access architecture:
 ### ADR-005: Admin-Only Authentication (No Public Auth)
 
 **Date**: 2026-02-27
-**Status**: Accepted (deferred to Phase 5)
+**Status**: Superseded by ADR-012 (2026-10-01). Public pages stay unauthenticated; sign-in is now optional for every visitor
 **Domains Affected**: Security, UI
 
 **Context**
@@ -652,6 +652,80 @@ accessibility standard to hold the redesign to.
   (not CDN) SVG icons, BEM nav class names, and no-CDN principle remain in force
 
 **Review Date**: 2026-12-24
+
+---
+
+### ADR-012: Public Member Accounts (Supersedes ADR-005)
+
+**Date**: 2026-10-01
+**Status**: Accepted
+**Domains Affected**: Security, UI, Data, Platform, Cost
+
+**Context**
+
+Spec 002 already seeds every new Auth user into `users/{uid}` with role `user`, but sign-in
+was reachable only through the hidden `/admin` route, Google only, and led to "no admin
+access". The member-accounts program (M1 accounts and profile, M2 team proposals and
+rosters, M3 coordinator review and captain handoff, M4 email notifications) needs a
+verified adult account, a profile, and a trustworthy account status to build on. Spec 008
+(M1) makes accounts a public feature.
+
+**Decision**
+
+1. **Optional public sign-in.** A Sign in control in the site nav for every visitor; public
+   pages stay unauthenticated. Providers: Google (popup) and
+   passwordless email link, both in standard Firebase Auth (no Identity Platform upgrade);
+   `authDomain` unchanged. Apple was dropped (owner decision 2026-10-01: the $99/yr developer
+   fee is outside the $5/mo budget). Microsoft was dropped (owner decision 2026-10-02).
+2. **Account linking** for `account-exists-with-different-credential` with an in-memory
+   pending credential; `fetchSignInMethodsForEmail` is not used, so email enumeration
+   protection stays on.
+3. **Profile separate from the RBAC mirror.** Member-supplied data lives in `profiles/{uid}`
+   (self-writable under a rules allowlist); `users/{uid}` stays server-only.
+4. **Adults only (18+).** Accounts require an 18+ attestation and terms acceptance at first
+   sign-in. Minors never hold accounts; M2 adds dependents (under-18 shooters) under an
+   adult's `profiles/{uid}/dependents/{id}`, placed on the same team and shown publicly as
+   first name + last initial.
+5. **Server-authoritative status.** `setAccountStatus` (deactivate/reactivate) and
+   `deleteAccount` callables write `users/{uid}.status` and an `audit` entry (`kind:
+   'account-status'`). Deactivation is reversible and keeps the Auth user so the member can
+   sign in to reactivate. Delete removes profile, mirror and Auth user; published scores are
+   keyed by shooter name and are never touched. Owners/admins must be demoted first.
+
+**Rationale**
+
+- §I.2 Platforms: both providers are built into Firebase Auth; the platform count stays
+  at 2 (Firebase + GitHub). M4's Amazon SES will be a new platform and needs its own §I.2
+  justification then.
+- §VI.1: the two functions solve problems rules cannot (a client-unwritable status with an
+  atomic audit entry; a cascade over docs clients cannot delete, with Auth deleted last).
+  Volume is a few calls per month. Auth stays free tier; steady-state reads add one profile
+  read per signed-in session.
+- A separate `profiles/{uid}` keeps the impersonation guard on `users/{uid}` (spec 002)
+  intact while letting members edit their own name.
+
+**Alternatives Considered**
+
+- **Keep admin-only auth**: rejected — M2–M4 need member identity
+- **Client-writable `users/{uid}.status`**: rejected — reopens the locked mirror and loses
+  the atomic audit entry
+- **Blocking `beforeUserCreated` function**: rejected — requires the Identity Platform
+  upgrade (MAU billing); the async `onUserCreate` stays and the client waits for the mirror
+- **Apple sign-in**: rejected on cost (above)
+- **Microsoft sign-in**: dropped by the owner (above); re-adding it is an Entra ID
+  registration plus a provider branch
+- **Minor accounts with parental consent**: rejected — dependents on an adult account cover
+  the need without collecting minors' credentials
+
+**Consequences**
+
+- Enables: M2 rosters/dependents, M3 captain eligibility (`status`, `assertNotCaptain` seam),
+  M4 notification preferences (`notificationSettings/{uid}`, already removed on delete)
+- Constrains: the account UI is code-split to protect the JS budget; the email-link continue URL and preview host
+  must be authorized domains; terms changes bump `TERMS_VERSION` and trigger re-acceptance
+- Supersedes: ADR-005
+
+**Review Date**: 2027-01-01
 
 ---
 

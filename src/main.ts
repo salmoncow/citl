@@ -57,9 +57,13 @@ import './components/rules-toc';
 import { NavigationModule } from './modules/navigation';
 import { RouterModule } from './modules/router';
 import { AuthModule } from './modules/auth';
+import { AccountGate, isGatedPath } from './modules/account-gate';
+import { setAccountContext } from './modules/account-context';
+import { TERMS_VERSION } from './utils/legal';
 import { onRoleChange } from './modules/role';
 import type { Role } from './types/user';
 import { initAppCheck } from './infrastructure/appcheck';
+import { looksLikeEmailLink } from './utils/email-link';
 
 import { homeView } from './views/home';
 import { scorecardsView } from './views/scorecards';
@@ -67,6 +71,8 @@ import { rulesView } from './views/rules';
 import { aboutView } from './views/about';
 import { downloadsView } from './views/downloads';
 import { adminView } from './views/admin';
+import { accountView } from './views/account';
+import { privacyView } from './views/privacy';
 
 interface RouteDef {
   path: string;
@@ -79,6 +85,7 @@ class App {
   private _router: RouterModule | null = null;
   private _mainContent: HTMLElement | null = null;
   private _auth: AuthModule | null = null;
+  private _gate: AccountGate | null = null;
   private _roleUnsubscribe: (() => void) | null = null;
   private _currentRole: Role | null = null;
 
@@ -89,16 +96,104 @@ class App {
     this._navigation = new NavigationModule();
     this._router = new RouterModule();
     this._auth = new AuthModule();
+    this._gate = this._createAccountGate(this._auth);
+    setAccountContext({ auth: this._auth, gate: this._gate });
 
-    this._navigation.init();
+    this._navigation.init({ onSignIn: () => void this._openSignIn() });
+
+    // Spec 008: map the clean /privacy URL (used on provider consent
+    // screens) onto the hash route, and capture an email sign-in link
+    // before the router sees the URL.
+    const emailLinkUrl = this._captureBootUrl();
 
     // Wait for the initial role read (sign-in restore from local
     // persistence, or null) before registering routes so the /admin
     // guard sees a valid value on first deep-link.
     await this._initRoleObserver();
 
+    // Email-link completion starts before the router (AC-5); it is not
+    // awaited, so the first view renders while sign-in finishes.
+    if (emailLinkUrl) void this._completeEmailLink(emailLinkUrl);
+
     this._setupRoutes();
     this._router.init();
+  }
+
+  // ─── Account gate (spec 008 AC-10, AC-12, AC-15) ────────────────────────────
+
+  private _createAccountGate(authModule: AuthModule): AccountGate {
+    const gate = new AccountGate({
+      onUserDoc: (cb) => authModule.onUserDoc(cb),
+      loadProfile: async (uid) => {
+        const { getAccountService } = await import('./services/account-service');
+        const result = await getAccountService().loadProfile(uid);
+        if (!result.success) throw new Error(result.error);
+        return result.data;
+      },
+      termsVersion: TERMS_VERSION,
+    });
+    // When the decision turns blocking (sign-in, deactivation, terms
+    // bump), move the user to /account unless they're somewhere allowed.
+    gate.onChange((decision) => {
+      const path = this._router?.getCurrentRoute() ?? '/';
+      if (isGatedPath(decision, path)) window.location.hash = '#/account';
+    });
+    return gate;
+  }
+
+  // ─── Boot URL handling (spec 008 AC-5, DD-4) ────────────────────────────────
+
+  /**
+   * Returns the email-link URL if this page load is one, after rewriting
+   * the address bar to /#/account so the one-time code never stays in
+   * history. Also maps pathname /privacy to #/privacy.
+   */
+  private _captureBootUrl(): string | null {
+    const href = window.location.href;
+    if (looksLikeEmailLink(href)) {
+      window.history.replaceState(null, '', '/#/account');
+      return href;
+    }
+    if (window.location.pathname === '/privacy') {
+      window.history.replaceState(null, '', '/#/privacy');
+    }
+    return null;
+  }
+
+  private async _completeEmailLink(url: string): Promise<void> {
+    const [{ completeEmailLink }, { showToast }] = await Promise.all([
+      import('./modules/auth-providers'),
+      import('./modules/ui'),
+    ]);
+    const outcome = await completeEmailLink(url);
+    switch (outcome.status) {
+      case 'signed-in':
+        showToast('success', 'Signed in.');
+        break;
+      case 'linked':
+        showToast('success', 'Email sign-in is now connected to your account.');
+        break;
+      case 'reauthenticated':
+        showToast('success', 'Confirmed. You can continue.');
+        break;
+      case 'needs-email': {
+        const { openSignInDialog } = await import('./components/sign-in-dialog');
+        await openSignInDialog({ mode: 'confirm-email', linkUrl: url });
+        break;
+      }
+      case 'error':
+        showToast('error', outcome.message);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ─── Sign-in dialog (lazy, AC-9) ────────────────────────────────────────────
+
+  private async _openSignIn(): Promise<void> {
+    const { openSignInDialog } = await import('./components/sign-in-dialog');
+    await openSignInDialog();
   }
 
   // ─── Role observation ───────────────────────────────────────────────────────
@@ -167,6 +262,12 @@ class App {
       { path: '/rules', view: rulesView },
       { path: '/about', view: aboutView },
       { path: '/downloads', view: downloadsView },
+      { path: '/privacy', view: privacyView },
+      {
+        path: '/account',
+        view: accountView,
+        after: () => { void import('./components/account-page'); },
+      },
       {
         path: '/admin',
         view: adminView,
@@ -181,9 +282,17 @@ class App {
     }
 
     this._router!.onBeforeNavigate((path) => {
-      // Route guard: /admin is the SOLE entry point for sign-in, so
-      // signed-out users must be allowed through (they'll see the
-      // sign-in view via _applyAdminViewState DOM toggle). Only bounce
+      // Account gate: a signed-in user who must complete their profile,
+      // accept updated terms, or reactivate is sent to /account (UX only;
+      // rules and callables enforce). The redirect is deferred so it
+      // lands after the router restores the current route.
+      if (isGatedPath(this._gate!.decision, path)) {
+        setTimeout(() => { window.location.hash = '#/account'; }, 0);
+        return false;
+      }
+
+      // Route guard: signed-out users are allowed through /admin
+      // (they'll see the sign-in gate via _applyAdminViewState). Only bounce
       // signed-in users whose role is 'user' — they can't act on
       // /admin and the redirect avoids a dead-end "unauthorized" view.
       // Server-side rules + the callable still enforce; this is UX.
@@ -215,7 +324,7 @@ class App {
 
   private _wireAdminAuthButtons(): void {
     document.getElementById('admin-sign-in')
-      ?.addEventListener('click', () => void this._auth!.signIn());
+      ?.addEventListener('click', () => void this._openSignIn());
     document.getElementById('admin-sign-out')
       ?.addEventListener('click', () => void this._auth!.signOut());
     document.getElementById('admin-sign-out-unauth')

@@ -99,3 +99,22 @@ export async function seedUser(
     });
   });
 }
+
+/** Seed a profiles/{uid} doc (valid shape by default). */
+export async function seedProfile(
+  env: RulesTestEnvironment,
+  uid: string,
+  extra: Record<string, unknown> = {},
+): Promise<void> {
+  await seed(env, async (db) => {
+    await setDoc(doc(db, 'profiles', uid), {
+      displayName: `Name ${uid}`,
+      acceptedTermsAt: new Date(),
+      termsVersion: '2026-10',
+      adultAttested: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...extra,
+    });
+  });
+}

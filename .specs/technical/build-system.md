@@ -174,11 +174,11 @@ dist/
 
 ### Bundle Size Targets
 
-Measured 2026-09-24 after spec 006 (gzip; "before" is the pre-redesign build):
+Measured 2026-10-01 after spec 008 (gzip; "before" is the pre-redesign build):
 
 | Metric | Target | Before | Current |
 |--------|--------|--------|---------|
-| JS bundle (gzipped) | <250 kB | 229.3 kB | 241.6 kB ✅ (little headroom) |
+| JS bundle (gzipped) | <250 kB | 229.3 kB | 245.9 kB main chunk ✅ (little headroom; spec 006 was 241.6 kB). Lazy chunks: account page 5.1 kB, sign-in dialog 2.7 kB, auth providers 2.7 kB, account service 1.4 kB |
 | CSS (gzipped) | <20 kB | 7.6 kB | 15.6 kB ✅ |
 | Fonts (woff2, latin only) | — | 0 | 9 files, 187 kB total if every weight loads |
 | Total initial load | <500 kB | ~237 kB | ~444 kB worst case (fonts are fetched only for weights a page uses, then cached `immutable`) |

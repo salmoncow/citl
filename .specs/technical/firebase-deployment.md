@@ -2,9 +2,9 @@
 
 **Firebase Project**: `citl-baed2`
 **Project Number**: `983886495824`
-**Hosting Region**: Global CDN (Hosting) / `us-east1` (Firestore + Functions)
+**Hosting Region**: Global CDN (Hosting) / Functions `us-central1` (see below)
 **Plan**: Blaze (pay-as-you-go; usage targets Spark-equivalent quotas)
-**Last Updated**: 2026-07-10
+**Last Updated**: 2026-10-01
 
 > **First-time deploy to a new Firebase project?** Operational gotchas (IAM
 > propagation for the GCF source bucket, 2nd-gen callable invoker binding,
@@ -121,8 +121,16 @@ Before running `npm run deploy` or `npm run deploy:preview`:
 
 ## Cloud Functions Deployment
 
-citl-baed2 has Cloud Functions deployed in `us-east1` (RBAC `setUserRole` callable
-plus the on-create user-mirror trigger). The first deploy occurred on 2026-05-04.
+citl-baed2 has Cloud Functions deployed in **`us-central1`**: the RBAC `setUserRole`
+callable and the on-create user-mirror trigger (first deploy 2026-05-04), plus the spec 008
+account callables `setAccountStatus` and `deleteAccount`.
+
+**Region**: earlier revisions of this doc said `us-east1`. The deployed region is whatever
+the `region` option in `functions/src/*.ts` says, and the browser client
+(`src/infrastructure/functions.ts`) calls `us-central1`; `setUserRole` working in production
+means it runs there. Confirm once with
+`gcloud run services list --project=citl-baed2` (spec 008 task 1.7) — not yet run from a
+credentialed shell.
 
 ### Subsequent deploys
 
@@ -141,14 +149,24 @@ so the browser can reach it via Firebase's `httpsCallable` path. Use the
 
 ```bash
 gcloud run services add-iam-policy-binding {function-name} \
-  --region=us-east1 \
+  --region=us-central1 \
   --member=allUsers \
   --role=roles/run.invoker \
   --project=citl-baed2
 ```
 
-This is **not** an authorization weakening — the in-function check on
-`req.auth.token.role` is the actual boundary. See the global
+Bindings in place / required:
+
+| Cloud Run service | Callable | Binding |
+|-------------------|----------|---------|
+| `setuserrole` | `setUserRole` (spec 002) | Applied at first deploy (2026-05-04) |
+| `setaccountstatus` | `setAccountStatus` (spec 008) | **Run once after the spec 008 deploy** |
+| `deleteaccount` | `deleteAccount` (spec 008) | **Run once after the spec 008 deploy** |
+
+Without the binding, browser calls fail with a CORS / 403 error.
+
+This is **not** an authorization weakening — the in-function checks (`req.auth`, the
+`role` claim, recent sign-in for delete) are the actual boundary. See the global
 `firebase-deploy-runbook` skill (Gotcha 2) for the full rationale.
 
 ### First-time deploy to a different project
@@ -161,6 +179,31 @@ first `firebase deploy --only functions` will fail with the well-known
 **See the global `firebase-deploy-runbook` skill** (`~/.claude/skills/firebase-deploy-runbook/SKILL.md`)
 for the full first-time-deploy checklist (IAM propagation, invoker binding,
 Artifact Registry cleanup policy).
+
+---
+
+## Sign-in Providers (spec 008)
+
+Firebase console → Authentication → Sign-in method. Record the date each step is done.
+
+| Provider | Setup | Status |
+|----------|-------|--------|
+| Google | Already enabled. Add `https://citl.club/privacy` as the privacy/terms URL on the Google OAuth consent screen. | Enabled; consent-screen URL: _pending_ |
+| Email link | Enable Email/Password with **Email link (passwordless sign-in)**. Keep **email enumeration protection on** (the client never calls `fetchSignInMethodsForEmail`). Optional: custom sender domain (DNS verification for `citl.club`, records in Route 53). | Enabled 2026-10-01; enumeration protection: _confirm_ |
+| Microsoft | Not enabled (owner decision 2026-10-02). | — |
+| Apple | Not enabled (owner decision 2026-10-01: $99/yr developer fee is outside budget). | — |
+
+**Authorized domains** (Authentication → Settings): `citl.club`, `citl-baed2.web.app`,
+`citl-baed2.firebaseapp.com`, `localhost`, and the exact host of the stable `preview`
+channel (`citl-baed2--preview-*.web.app`) so popups and email links work on preview deploys.
+The email-link continue URL is the origin root (`<origin>/`), so the origin must be listed.
+
+**Client toggle**: `VITE_AUTH_PROVIDERS` (default `google,email`) controls which
+buttons render. Enable a provider in the console before adding it to the list.
+
+**CSP**: no change. Popups and the auth handler run on `*.firebaseapp.com` (`frame-src`),
+callables on `*.run.app` / `*.cloudfunctions.net` (`connect-src`); no provider avatars are
+rendered. Verify on preview (spec 008 task 11.5).
 
 ---
 

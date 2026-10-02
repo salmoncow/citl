@@ -1,6 +1,6 @@
 # Firestore Schema Reference
 
-Last updated: 2026-07-13
+Last updated: 2026-10-01 (spec 008: member accounts)
 
 ---
 
@@ -16,6 +16,8 @@ field types, access patterns, and key operational patterns.
 |-------|------|---------------|
 | Repository | `src/repositories/score-repository.ts` | Raw Firestore ops; returns `Result<T>`; no business logic |
 | Service | `src/services/score-service.ts` | Validation + business logic; 1-hr cache (5-min for latest week) |
+| Repository | `src/repositories/user-repository.ts`, `profile-repository.ts` | `users/{uid}` reads + `lastSignInAt`; `profiles/{uid}` reads/writes (throw on error) |
+| Service | `src/services/account-service.ts` | Profile validation + writes, account callables (`setAccountStatus`, `deleteAccount`) |
 
 Cache is invalidated on every write. No exceptions are thrown across module boundaries.
 
@@ -40,6 +42,12 @@ which bypasses rules).
 | `updatedAt` | `Timestamp` | Bumped on any server or self-update |
 | `lastSignInAt` | `Timestamp \| null` | Self-updated on sign-in via `touchLastSignIn` |
 | `roleChangedAt` | `Timestamp` | Set when `setUserRole` changes the role |
+| `status` | `'active' \| 'deactivated'` | Spec 008. Server-only (`setAccountStatus`); seeded `'active'` by `onUserCreate`. **Missing means active** (no backfill) |
+| `deactivatedAt` | `Timestamp \| null` | Spec 008. Set on deactivate, `null` on reactivate |
+| `statusChangedAt` | `Timestamp` | Spec 008. Set on every status change |
+
+The doc is **deleted** (not scrubbed) by `deleteAccount`; the uid then survives only in
+`audit/`.
 
 **Access:** Read — self (`request.auth.uid == uid`) or owner/admin. Create/delete —
 disallowed for clients (`if false`); only the Admin SDK seeds/removes docs. Update — a
@@ -47,46 +55,91 @@ client may update **only** its own doc and **only** the `lastSignInAt` / `update
 (`affectedKeys().hasOnly(['lastSignInAt', 'updatedAt'])`). Role and identity fields
 (`email`, `displayName`, `photoURL`, `role`) are server-only; a client-mutable identity
 mirror would allow impersonation in the admin Users tab, the exact UI used to grant roles.
+The spec 008 status fields are outside the self-update allowlist, so they are server-only
+with no rules change.
 
-**TypeScript interface:** `UserDoc`, `Role` — `src/types/user.ts`
+**TypeScript interface:** `UserDoc`, `Role`, `AccountStatus` — `src/types/user.ts`
 
 ---
 
-### `audit/{id}` — append-only role-change log
+### `profiles/{uid}` — member profile (spec 008)
 
-Auto-ID. Written server-side by `setUserRole` (Admin SDK) inside the same transaction as
-the role change. One document per role change.
+Document ID: Firebase Auth `uid`. Created by the member at first sign-in (profile
+completion) and edited on `/account`. This is the **member-supplied** name;
+`users/{uid}.displayName` stays the provider-supplied identity mirror. Private.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `actorUid` | `string` | uid of the owner/admin who made the change |
-| `targetUid` | `string` | uid whose role changed |
-| `fromRole` | `'owner' \| 'admin' \| 'user'` | Previous role |
-| `toRole` | `'owner' \| 'admin' \| 'user'` | New role |
+| `displayName` | `string` | Required; 1–60 chars, stored trimmed (`== trim()`) |
+| `phone` | `string` (optional) | `^[0-9+() .-]{7,20}$`; omitted when not given; never public |
+| `acceptedTermsAt` | `Timestamp` | Must equal `request.time` whenever written |
+| `termsVersion` | `string` | 1–20 chars; compared with `TERMS_VERSION` (`src/utils/legal.ts`) to trigger re-acceptance |
+| `adultAttested` | `true` | 18+ attestation; must be `true` |
+| `createdAt` | `Timestamp` | `== request.time` on create; immutable |
+| `updatedAt` | `Timestamp` | `== request.time` on every write |
+
+**Access:** Read — self or owner/admin. Create — self, only with an existing and
+active `users/{uid}` mirror (`isActiveMember`, the only rules `get()`), key allowlist +
+required keys, field validation, server timestamps. Update — self + active mirror;
+`affectedKeys().hasOnly(['displayName','phone','acceptedTermsAt','termsVersion','updatedAt'])`;
+same validation. Delete — disallowed for clients; `deleteAccount` removes it recursively.
+
+**Reserved subcollection** `profiles/{uid}/dependents/{id}` — M2 (under-18 shooters on an
+adult account). Denied for all clients until M2.
+
+**TypeScript interface:** `ProfileDoc`, `ProfileInput` — `src/types/account.ts`
+
+---
+
+### `notificationSettings/{uid}` — reserved (M4)
+
+Not created in M1. Explicitly denied for all clients. `deleteAccount` already deletes it so
+M4 (email notifications) does not change the delete path.
+
+---
+
+### `audit/{id}` — append-only role-change and account-status log
+
+Auto-ID. Written server-side (Admin SDK) via `queueAuditEntry` in the same transaction or
+batch as the change it records. Entries carry uids only, never email or name, so an entry
+can outlive a deleted account without holding PII.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `kind` | `'role-change' \| 'account-status'` | Spec 008. **Missing means `'role-change'`** (entries written before spec 008) |
+| `actorUid` | `string` | uid of the caller (owner for role changes; the member for status changes) |
+| `targetUid` | `string` | uid affected |
+| `fromRole` / `toRole` | `'owner' \| 'admin' \| 'user'` | `role-change` only |
+| `fromStatus` | `'active' \| 'deactivated'` | `account-status` only |
+| `toStatus` | `'active' \| 'deactivated' \| 'deleted'` | `account-status` only |
 | `at` | `Timestamp` | Server timestamp of the change |
+
+Writers: `setUserRole` (role-change), `setAccountStatus` (deactivate/reactivate),
+`deleteAccount` (`toStatus: 'deleted'`; a retry after a partial failure may write a second
+entry).
 
 **Access:** Read — owner only. Write — disallowed for all clients (`if false`); only the
 Admin SDK appends. Append-only by convention (no update/delete path exists).
 
-**TypeScript interface:** none (written and read only in `functions/src/setUserRole.ts`).
+**TypeScript interface:** `AuditEntry` (functions-internal) — `functions/src/lib/audit.ts`.
 
 ---
 
 ### `rateLimits/{path}` — function-internal counters
 
-Function-internal sliding-window rate-limit counters. The `setUserRole` limiter stores its
-counter at `rateLimits/setUserRole/actors/{actorUid}`. The rules match the whole subtree via
-`rateLimits/{path=**}`.
+Function-internal sliding-window rate-limit counters at `rateLimits/{name}/actors/{uid}`:
+`setUserRole` (20/hr per actor) and `setAccountStatus` (10/hr per uid, spec 008). The rules
+match the whole subtree via `rateLimits/{path=**}`.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `windowStart` | `number` | ms epoch marking the start of the current 1-hour window |
-| `count` | `number` | Calls in the current window; limit is 20/hr per actor |
+| `count` | `number` | Calls in the current window (limit per counter, above) |
 
 **Access:** Read — owner only. Write — disallowed for all clients (`if false`); counters are
-read and bumped only inside the `setUserRole` transaction via the Admin SDK.
+read and bumped only inside the guarded callable's transaction via the Admin SDK.
 
-**TypeScript interface:** `RateCounter` (functions-internal) — `functions/src/lib/rateLimit.ts`.
+**TypeScript interface:** `RateCounter`, `RATE_LIMITS` (functions-internal) — `functions/src/lib/rateLimit.ts`.
 
 ---
 
@@ -342,3 +395,5 @@ this section — the two must always match.
 | `Season`, `SeasonAwards`, `SeasonStandings`, `AwardShooterInput` | `src/types/season.ts` |
 | `ScorecardShooter` (display layer only) | `src/types/scorecard.ts` |
 | `Announcement` | `src/types/announcement.ts` |
+| `UserDoc`, `Role`, `AccountStatus` | `src/types/user.ts` |
+| `ProfileDoc`, `ProfileInput`, `AuthProviderId`, account callable I/O | `src/types/account.ts` |

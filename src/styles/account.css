@@ -1,0 +1,238 @@
+/* ============================================================
+   Member accounts (spec 008): sign-in dialog and options,
+   /account page, profile form, linked methods, danger zone,
+   /privacy page. Imported by the lazily-loaded account
+   components so it ships in their chunk, not the main CSS.
+   Colours come from tokens.css only.
+   ============================================================ */
+
+/* ── Sign-in dialog ─────────────────────────────────────────── */
+.signin-dialog {
+  width: min(440px, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100vh - 2 * var(--space-4));
+  padding: var(--space-6);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: var(--shadow-modal);
+  overflow-y: auto;
+}
+
+.signin-dialog::backdrop { background: var(--c-scrim); }
+
+.signin-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.signin-dialog__title { margin: 0; font-size: var(--text-2xl); }
+
+.signin-dialog__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--control-height);
+  height: var(--control-height);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--c-text);
+  cursor: pointer;
+}
+
+.signin-dialog__close:hover { background: var(--c-card); }
+
+.signin-dialog__intro,
+.signin-dialog__legal {
+  margin: var(--space-3) 0 var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+}
+
+.signin-dialog__legal { margin: var(--space-5) 0 0; }
+
+/* ── Sign-in options (dialog and inline on /account) ───────── */
+sign-in-options { display: block; }
+
+.signin__providers { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.signin__provider {
+  justify-content: center;
+  width: 100%;
+  min-height: var(--control-height);
+  gap: var(--space-3);
+}
+
+.signin__mark { flex-shrink: 0; }
+
+.signin__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+}
+
+.signin__divider::before,
+.signin__divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--c-border);
+}
+
+.signin__email { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.signin__lede { margin: 0 0 var(--space-2); font-size: var(--text-sm); }
+
+.signin__submit { width: 100%; margin-top: var(--space-2); justify-content: center; }
+
+.signin__alert {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-status-warning-bg);
+  color: var(--c-text);
+  font-size: var(--text-sm);
+}
+
+.signin__status-title { margin: 0 0 var(--space-2); font-size: var(--text-lg); }
+
+.signin__status p { margin: 0; font-size: var(--text-sm); }
+
+/* ── Shared form fields ─────────────────────────────────────── */
+.signin__label,
+.account-field__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.signin__input,
+.account-field__input {
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--c-input-border);
+  border-radius: var(--radius-md);
+  background: var(--c-card);
+  color: var(--c-text);
+  font: inherit;
+  width: 100%;
+}
+
+.signin__input[aria-invalid="true"],
+.account-field__input[aria-invalid="true"] { border-color: var(--c-status-error); }
+
+.signin__field-error,
+.account-field__error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--c-status-error);
+}
+
+.account-field { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.account-field__hint { margin: 0; font-size: var(--text-sm); color: var(--c-text-muted); }
+
+.account-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.account-check input {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--c-accent);
+}
+
+/* ── /account page ──────────────────────────────────────────── */
+account-page { display: block; }
+
+.account-page { max-width: var(--prose-width); margin-inline: auto; }
+
+.account-page h1 { margin: var(--space-1) 0 var(--space-3); }
+
+.account-page__lede { margin: 0 0 var(--space-8); color: var(--c-text-muted); }
+
+.account-section { margin-bottom: var(--space-6); }
+
+.account-section h2 { margin: 0 0 var(--space-2); font-size: var(--text-xl); }
+
+.account-section__desc { margin: 0 0 var(--space-5); font-size: var(--text-sm); color: var(--c-text-muted); }
+
+.account-form { display: flex; flex-direction: column; gap: var(--space-5); }
+
+.account-form__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+.account-required { font-weight: 400; color: var(--c-text-muted); }
+
+/* Loading skeleton widths */
+.account-skeleton [data-w="40"] { width: 40%; }
+.account-skeleton [data-w="75"] { width: 75%; }
+.account-skeleton [data-w="90"] { width: 90%; }
+.account-skeleton [data-w="100"] { width: 100%; }
+
+/* Linked sign-in methods */
+.account-providers { list-style: none; margin: 0; padding: 0; }
+
+.account-providers__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--c-border);
+}
+
+.account-providers__item:first-child { border-top: 0; }
+
+.account-providers__name { font-weight: 600; }
+
+.account-providers__state { display: block; font-size: var(--text-sm); color: var(--c-text-muted); }
+
+.account-providers__state--on::before { content: "✓ "; }
+
+.account-providers__note { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--c-text-muted); }
+
+/* Danger zone */
+.account-danger { border-color: var(--c-status-error); }
+
+.account-danger__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--c-border);
+}
+
+.account-danger__row:first-of-type { border-top: 0; padding-top: 0; }
+
+.account-danger__row h3 { margin: 0 0 var(--space-1); font-size: var(--text-base); }
+
+.account-danger__row p { margin: 0; font-size: var(--text-sm); color: var(--c-text-muted); max-width: 46ch; }
+
+.account-notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-status-info-bg);
+  font-size: var(--text-sm);
+}
+
+.account-error {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-status-error-bg);
+}
+
+/* Confirmation dialog body copy (reuses .confirm-dialog shell) */
+.account-confirm__body { margin: 0 0 var(--space-4); font-size: var(--text-sm); line-height: 1.5; }

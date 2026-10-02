@@ -15,7 +15,7 @@
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { auth } from 'firebase-functions/v1';
+import { runWith } from 'firebase-functions/v1';
 import type { UserRecord } from 'firebase-admin/auth';
 
 if (getApps().length === 0) {
@@ -45,10 +45,13 @@ export async function handleUserCreated(user: UserRecord | { uid: string; email?
     displayName: user.displayName ?? null,
     photoURL: user.photoURL ?? null,
     role: 'user',
+    status: 'active',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
     lastSignInAt: FieldValue.serverTimestamp(),
   });
 }
 
-export const onUserCreate = auth.user().onCreate(handleUserCreated);
+// Retry on failure: without the mirror a new member can't finish
+// setup (spec 008). The handler is idempotent, so a retry is safe.
+export const onUserCreate = runWith({ failurePolicy: true }).auth.user().onCreate(handleUserCreated);

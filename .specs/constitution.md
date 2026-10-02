@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.7.1
-**Last Updated:** 2026-09-24
+**Version:** 1.8.0
+**Last Updated:** 2026-10-01
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
 
@@ -62,30 +62,30 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-09-24
-**Last Architecture Review**: 2026-09-24
+**Last Updated**: 2026-10-01
+**Last Architecture Review**: 2026-10-01
 
 | Domain | Current State | Status |
 |--------|---------------|--------|
-| **UI Components** | Web Components under `src/components/` (13 custom elements + 2 render-helper modules + 9 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
-| **Security** | Firebase Auth (Google) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim + mirror | Complete |
-| **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, and audit log | Live |
-| **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (47 cases); function unit tests (15 cases). See §III.1. | Active |
+| **UI Components** | Web Components under `src/components/` (18 custom elements + 2 render-helper modules + 9 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
+| **Security** | Firebase Auth (Google, email link; optional public member accounts, spec 008 / ADR-012) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim, mirror and account status | Complete |
+| **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, member profiles, and audit log | Live |
+| **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (96 cases); function unit tests (37 cases). See §III.1. | Active |
 | **Deployment** | GitHub Actions CI/CD: PR/push runs typecheck + build + three test suites; production deploy is gated on CI success (`workflow_run`) → Firebase Hosting + Firestore rules/indexes + Functions | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
 | **Cost** | Firebase Blaze (pay-as-you-go); usage discipline targets Spark-equivalent quotas | Near 0% usage |
 | **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
 
-**Key Metrics** (as of 2026-09-24):
+**Key Metrics** (as of 2026-10-01):
 - **Status**: Live in production at https://citl.club (Firebase Hosting); AWS/CloudFront decommissioned
-- **SPA Views**: 6 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`)
-- **Components**: 13 custom elements + 2 render helpers (`home-standings-parts`, `scorecard-render`) under `src/components/`; 9 `admin-tabs/` modules
-- **Services**: 9 (`admin-user-service`, `app-services`, `score-entry-preview`, `score-service`, `scorecard-builder`, `scoring-engine`, `season-awards-service`, `season-highlights`, `standings`)
-- **Modules**: 5 (`auth`, `navigation`, `role`, `router`, `ui`)
-- **Repositories**: 3 (`score-repository`, `user-repository`, `repository-factory`)
-- **Types**: 6 (`announcement`, `score`, `scorecard`, `season`, `shooter`, `user`)
+- **SPA Views**: 8 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`, `account`, `privacy`)
+- **Components**: 18 custom elements + 2 render helpers (`home-standings-parts`, `scorecard-render`) under `src/components/`; 9 `admin-tabs/` modules
+- **Services**: 11 (`account-service`, `admin-user-service`, `app-services`, `profile-validation`, `score-entry-preview`, `score-service`, `scorecard-builder`, `scoring-engine`, `season-awards-service`, `season-highlights`, `standings`)
+- **Modules**: 8 (`account-context`, `account-gate`, `auth`, `auth-providers`, `navigation`, `role`, `router`, `ui`)
+- **Repositories**: 4 (`profile-repository`, `score-repository`, `user-repository`, `repository-factory`)
+- **Types**: 7 (`account`, `announcement`, `score`, `scorecard`, `season`, `shooter`, `user`)
 - **Team Size**: 1 developer
-- **Firebase Usage**: Hosting live; Firestore live (scorecards + weekly results); Cloud Functions deployed (RBAC role-writer + auth trigger); Blaze plan, near-zero spend
+- **Firebase Usage**: Hosting live; Firestore live (scorecards + weekly results); Cloud Functions deployed (RBAC role-writer + auth trigger; account status + delete callables, spec 008); Blaze plan, near-zero spend
 
 > Prefer the live `src/` tree over hard counts above — recount at review time rather than trusting these numbers.
 
@@ -164,8 +164,8 @@ See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for 
 
 **Current state**: three test suites, all run in CI (see `.specs/technical/cicd-pipeline.md`):
 - **Unit** (`src/**/*.test.ts`, Vitest): scoring engine, score service, schedule/yardage/markdown utils, UI helpers.
-- **Firestore rules** (`tests/rules/`, `@firebase/rules-unit-testing` on the emulator): 47 cases covering the RBAC allow/deny matrix.
-- **Cloud Functions** (`tests/functions/`, emulator): 15 cases covering `setUserRole` and `onUserCreate`.
+- **Firestore rules** (`tests/rules/`, `@firebase/rules-unit-testing` on the emulator): 96 cases covering the RBAC allow/deny matrix and member profiles.
+- **Cloud Functions** (`tests/functions/`, emulator): 37 cases covering `setUserRole`, `onUserCreate`, `setAccountStatus` and `deleteAccount`.
 
 **Coverage posture**: business logic (scoring engine, score service) and security surfaces
 (rules, functions, auth-adjacent utilities) are the priority for test coverage. The UI and
@@ -181,9 +181,15 @@ not a hard gate.
 ### III.2 Security Standards
 
 **Authentication & Authorization**:
-- CITL uses **admin-only auth** (Google sign-in). Public pages are unauthenticated.
+- Public pages are unauthenticated; sign-in is **optional**. Any visitor may create a
+  **member account** (Google or passwordless email link; spec 008, ADR-012).
+  Accounts are adults only (18+ attestation and terms acceptance at first sign-in).
+- Member-supplied data lives in `profiles/{uid}` under a rules field allowlist; the
+  `users/{uid}` mirror (role, identity, account status) stays server-only. Status changes
+  and deletion go through audited callables; owners/admins must be demoted first.
+- Elevated access (owner/admin) is the `role` custom claim, set only by `setUserRole`.
 - Never rely on client-side auth checks alone — enforce with Firestore security rules
-- Scores/standings: public read, admin-only write (custom claim `admin: true`)
+- Scores/standings: public read, owner/admin-only write (custom claim `role`)
 
 **Data Protection**:
 - Validate all inputs before writing to Firestore
@@ -244,7 +250,7 @@ private static _skeleton(): string {
 - Page Load Time: <3 seconds (p95)
 - Time to Interactive (TTI): <5 seconds (p95)
 - First Contentful Paint (FCP): <1.5 seconds (p95)
-- JS bundle: <250 kB gzipped (currently ~242 kB gzipped, measured 2026-09-24 ✅ — little headroom left)
+- JS bundle: <250 kB gzipped (currently ~246 kB gzipped, measured 2026-10-01 ✅ — little headroom left; account and sign-in UI is code-split)
 - CSS: <20 kB gzipped (currently ~16 kB); fonts: self-hosted latin woff2 only, 9 files / ~187 kB if every weight loads, cached `immutable`. Figures and method: [build-system.md](technical/build-system.md#bundle-size-targets)
 
 **Firebase Quota Constraints**: the daily target ceilings and 70% alert thresholds are
@@ -325,8 +331,8 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
 - **Platform**: Firebase (`citl-baed2` project, Blaze plan with Spark-equivalent usage discipline per §VI.1)
   - Firestore (NoSQL, `us-central1` region, production mode)
   - Hosting (SPA rewrite, security headers, cache rules)
-  - Auth (Google, role-based custom claims)
-  - Cloud Functions (TypeScript, Node 22, us-central1 — RBAC role-writer + auth trigger)
+  - Auth (Google, email link; role-based custom claims; optional member accounts)
+  - Cloud Functions (TypeScript, Node 22, us-central1 — RBAC role-writer + auth trigger; `setAccountStatus` + `deleteAccount`, justified in spec 008 DD-1)
   - App Check (reCAPTCHA Enterprise, enforced in prod, relaxed under FUNCTIONS_EMULATOR)
 - **SDK**: `firebase` npm package (installed; imported as ES modules); `firebase-admin` + `firebase-functions` in `functions/` package
 
@@ -463,6 +469,11 @@ unlock Cloud Functions, which the RBAC role-writer pattern requires.
 - Set a Blaze budget alert at $5/mo as a safety net; investigate any
   spend above $1/mo immediately.
 
+**Justified functions**: `setUserRole` + `onUserCreate` (spec 002);
+`setAccountStatus` + `deleteAccount` (spec 008 DD-1: client-unwritable status with an
+atomic audit entry, and a delete cascade over docs clients cannot delete; a few calls per
+month).
+
 
 ### VI.2 Cost Optimization
 
@@ -570,3 +581,4 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.6.0 (2026-07-11): Component contract adopted as a standard (spec 003-service-decomposition) — §II.4 points to src/components/README.md; composition root (`src/services/app-services.ts`) is the sole production construction site for ScoreService; new hook rule `no-private-service-in-component`
 - 1.7.0 (2026-09-24): "Range Day" site redesign (spec 006, ADR-011) — added §III.6 Accessibility & Responsive Standards; §IV.1 styling line covers self-hosted `@fontsource` fonts and the new token groups/heat ramp; §III.3 skeleton path corrected to `admin-tables.css`; §III.4 JS figure re-measured (~242 kB) with CSS and font budgets; §II.1 inventory recounted
 - 1.7.1 (2026-09-25): Design-token hygiene (spec 007) — §IV.1 styling line: the token contract is now enforced by `src/styles/tokens.test.ts` (no colour literals or primitive references in component CSS; identical dark blocks)
+- 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)

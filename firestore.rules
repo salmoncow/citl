@@ -12,6 +12,36 @@ service cloud.firestore {
     function isOwnerOrAdmin()  { return isOwner() || isAdmin(); }
     function isSelf(uid)       { return isSignedIn() && request.auth.uid == uid; }
 
+    // ── Account helpers (spec 008) ──────────────────────────────────────────
+    function userDocPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+    // The users/{uid} mirror exists and is not deactivated. A missing
+    // `status` means active (no backfill). This is the only rules get();
+    // it runs on profile writes only.
+    function isActiveMember(uid) {
+      return exists(userDocPath(uid))
+          && get(userDocPath(uid)).data.get('status', 'active') == 'active';
+    }
+
+    // Field-level validation of a profiles/{uid} document. Limits mirror
+    // src/services/profile-validation.ts.
+    function isValidProfile(data) {
+      return data.displayName is string
+          && data.displayName == data.displayName.trim()
+          && data.displayName.size() >= 1
+          && data.displayName.size() <= 60
+          && (!('phone' in data)
+              || (data.phone is string && data.phone.matches('^[0-9+() .-]{7,20}$')))
+          && data.termsVersion is string
+          && data.termsVersion.size() >= 1
+          && data.termsVersion.size() <= 20
+          && data.adultAttested == true
+          && data.acceptedTermsAt is timestamp
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
     // ── users/{uid} — RBAC mirror ───────────────────────────────────────────
     // Written server-side by the onUserCreate trigger and the setUserRole
     // callable / scripts/set-role.js CLI. Clients may read their own doc
@@ -34,7 +64,49 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── audit/{id} — append-only role-change log ────────────────────────────
+    // ── profiles/{uid} — member-editable profile (spec 008) ─────────────────
+    // Private: self or owner/admin. Writes require an active users/{uid}
+    // mirror, so a deactivated member (or a deleted member's still-valid
+    // token) cannot write. Delete is Admin SDK only (deleteAccount).
+    match /profiles/{uid} {
+      allow read:   if isSelf(uid) || isOwnerOrAdmin();
+      allow create: if isSelf(uid)
+                    && isActiveMember(uid)
+                    && request.resource.data.keys().hasOnly([
+                         'displayName', 'phone', 'acceptedTermsAt', 'termsVersion',
+                         'adultAttested', 'createdAt', 'updatedAt'])
+                    && request.resource.data.keys().hasAll([
+                         'displayName', 'acceptedTermsAt', 'termsVersion',
+                         'adultAttested', 'createdAt', 'updatedAt'])
+                    && isValidProfile(request.resource.data)
+                    && request.resource.data.acceptedTermsAt == request.time
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.updatedAt == request.time;
+      allow update: if isSelf(uid)
+                    && isActiveMember(uid)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                         'displayName', 'phone', 'acceptedTermsAt', 'termsVersion', 'updatedAt'])
+                    && isValidProfile(request.resource.data)
+                    && request.resource.data.updatedAt == request.time
+                    && (!('acceptedTermsAt' in request.resource.data.diff(resource.data).affectedKeys())
+                        || request.resource.data.acceptedTermsAt == request.time)
+                    // A new termsVersion is only recorded with a fresh acceptance.
+                    && (!('termsVersion' in request.resource.data.diff(resource.data).affectedKeys())
+                        || 'acceptedTermsAt' in request.resource.data.diff(resource.data).affectedKeys());
+      allow delete: if false;
+
+      // Reserved for M2 (dependents on an adult account).
+      match /dependents/{id} {
+        allow read, write: if false;
+      }
+    }
+
+    // ── notificationSettings/{uid} — reserved for M4 ────────────────────────
+    match /notificationSettings/{uid} {
+      allow read, write: if false;
+    }
+
+    // ── audit/{id} — append-only role-change and account-status log ─────────
     match /audit/{id} {
       allow read:  if isOwner();
       allow write: if false;

@@ -110,6 +110,20 @@
   font-weight: 600;
 }
 
+/* Account slots (spec 008): pushed to the end of the link row */
+.site-nav__account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.site-nav__link[hidden] { display: none; }
+
+.site-nav__signin {
+  border: 1px solid var(--c-shell-border);
+}
+
 /* Icon buttons */
 .site-nav__burger,
 .site-nav__theme-toggle {
@@ -187,6 +201,14 @@
   pointer-events: auto;
 }
 
+/* Narrow desktop: the account slots (spec 008) need the room the
+   wordmark subtitle used, so drop it until the row fits comfortably. */
+@media screen and (min-width: 1024px) and (max-width: 1279px) {
+  .site-nav__logo-sub { display: none; }
+  .site-nav__logo-link { margin-right: 0; }
+  .site-nav__inner { gap: var(--space-3); }
+}
+
 /* ============================================================
    Responsive header — links collapse behind the burger < 1024px
    ============================================================ */
@@ -226,6 +248,15 @@
   }
 
   .site-nav__dropdown { width: 100%; }
+
+  .site-nav__account {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    margin: var(--space-2) 0 0;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--c-shell-border);
+  }
 
   /* Mobile dropdown: display toggle, no animation, nested under the button */
   .site-nav__dropdown-menu {
