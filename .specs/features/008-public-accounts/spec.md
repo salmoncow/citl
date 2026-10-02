@@ -347,8 +347,10 @@ so they can't delete themselves.
 4. `revokeRefreshTokens(uid)`, then `deleteUser(uid)`.
 
 If step 3 or 4 fails, the user can still sign in, lands on the completion form, and after a
-15 s grace with no `users/{uid}` mirror the account page shows a "Finish deleting your account"
-panel that retries the delete. Every step tolerates already-deleted state. A retry may write a
+15 s grace with no `users/{uid}` mirror the account page shows an "Account setup didn't finish"
+panel that retries the delete (owners/admins, who can't self-delete, get a contact-an-owner
+notice instead). The same panel covers a mirror that `onUserCreate` never wrote; that trigger
+retries on failure (`failurePolicy`). Every step tolerates already-deleted state. A retry may write a
 second audit entry, which is accepted. Deleting Auth first was rejected because it would leave
 PII with no owner who could retry. A deleted user's live ID token (≤1 h) can't recreate a
 profile, because of the `isActiveMember` mirror check.

@@ -12,9 +12,10 @@
  *   normal      Profile, Sign-in methods, Account sections
  *
  * In complete mode, if the users/{uid} mirror is still missing after
- * ORPHAN_GRACE_MS, a previous delete most likely stopped part-way
- * (mirror gone, Auth user left). A delete-only panel lets the member
- * finish it.
+ * ORPHAN_GRACE_MS, either a previous delete stopped part-way (mirror
+ * gone, Auth user left) or onUserCreate never ran. A delete-only panel
+ * lets a member finish or start over. Owners/admins can't self-delete
+ * (DD-7), so they get a notice to ask an owner instead.
  *
  * Shares the gate's single profile read and AuthModule's users/{uid}
  * listener (AC-23). Focus moves to the <h1> whenever the mode changes.
@@ -27,6 +28,7 @@ import '@/components/account-profile-form';
 import '@/components/account-providers';
 import '@/components/account-danger-zone';
 import { escapeHtml, showToast } from '@/modules/ui';
+import { getRole } from '@/modules/role';
 import { getAccountContext } from '@/modules/account-context';
 import { accountErrorMessage, getAccountService } from '@/services/account-service';
 
@@ -56,11 +58,14 @@ class AccountPage extends HTMLElement {
     this._orphanTimer = null;
   }
 
-  private _checkOrphan(): void {
+  private async _checkOrphan(): Promise<void> {
     this._orphanTimer = null;
     const { userDoc } = getAccountContext().gate;
     if (this._mode !== 'complete' || !userDoc.loaded || userDoc.doc !== null) return;
-    const panel = this.querySelector<HTMLElement>('[data-orphan]');
+    const role = await getRole();
+    if (this._mode !== 'complete') return;
+    const privileged = role === 'owner' || role === 'admin';
+    const panel = this.querySelector<HTMLElement>(privileged ? '[data-orphan-privileged]' : '[data-orphan]');
     if (panel) panel.hidden = false;
   }
 
@@ -83,7 +88,7 @@ class AccountPage extends HTMLElement {
     this._clearOrphanTimer();
     this._render(mode);
     if (mode === 'complete') {
-      this._orphanTimer = setTimeout(() => this._checkOrphan(), ORPHAN_GRACE_MS);
+      this._orphanTimer = setTimeout(() => void this._checkOrphan(), ORPHAN_GRACE_MS);
     }
     if (mode !== 'loading') {
       this.querySelector<HTMLElement>('h1')?.focus();
@@ -142,10 +147,14 @@ class AccountPage extends HTMLElement {
           </section>
           ${this._signOutRow()}
           <section class="card account-section account-danger" aria-labelledby="acct-orphan" data-orphan hidden>
-            <h2 id="acct-orphan">Finish deleting your account</h2>
-            <p class="account-section__desc">If you started deleting your account and it didn’t finish, you can complete it here.</p>
+            <h2 id="acct-orphan">Account setup didn’t finish</h2>
+            <p class="account-section__desc">If you were deleting your account, or setup is stuck, delete it here. You can sign in again afterwards to start over.</p>
             <account-danger-zone delete-only></account-danger-zone>
-          </section>`;
+          </section>
+          <div class="account-notice" role="status" data-orphan-privileged hidden>
+            <p>Your league account record is missing, so setup can’t finish. Contact a league owner
+            for help.</p>
+          </div>`;
         break;
       case 'terms':
         html = `
