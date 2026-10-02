@@ -42,8 +42,11 @@ npm run dev               # terminal 3 — Vite against the seeded emulators
 ```
 
 The seed script is idempotent — re-running it clears the seeded collections
-(`users`, `audit`, `announcements`, `config`, `seasons`) plus the three
-`seed-*@citl.test` auth users, then rewrites them. Other emulator state (e.g.
+(`users`, `profiles`, `audit`, `announcements`, `config`, `seasons`) plus the
+four `*@citl.test` auth users, then rewrites them. Any other Auth user (e.g. a
+fake-Google account you signed in with) gets its `users/{uid}` mirror written
+back with its existing role, and goes through profile setup again on next
+sign-in. Other emulator state (e.g.
 docs you've created by hand while clicking around) is left alone but will get
 swept by `--export-on-exit` if you let the emulator persist on shutdown.
 

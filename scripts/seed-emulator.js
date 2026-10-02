@@ -98,10 +98,48 @@ async function clearCommand({ quiet = false } = {}) {
   if (!quiet) header('clear');
   await clearSeededFirestore();
   await clearSeededAuthUsers();
+  const restored = await restoreOtherMirrors();
   if (!quiet) {
     console.log(`✓ cleared ${SEEDED_COLLECTIONS.map((c) => `${c}/`).join(', ')}`);
     console.log(`✓ cleared seeded Auth users (${TEST_USERS.length})`);
+    console.log(`✓ restored users/ mirror for ${restored} other Auth user(s)`);
   }
+}
+
+/**
+ * Clearing users/ also removes the mirror of every Auth user the seed did
+ * not create (e.g. a fake-Google account made while testing). Without a
+ * mirror that account can't finish profile setup (spec 008), so write it
+ * back from the Auth record, keeping its role claim. Profiles stay
+ * cleared; the account goes through first-sign-in setup again.
+ */
+async function restoreOtherMirrors() {
+  const seeded = new Set(TEST_USERS.map((u) => u.uid));
+  let count = 0;
+  let pageToken;
+  do {
+    const page = await auth.listUsers(1000, pageToken);
+    for (const r of page.users) {
+      if (seeded.has(r.uid)) continue;
+      const role = r.customClaims?.role ?? 'user';
+      if (!r.customClaims?.role) await auth.setCustomUserClaims(r.uid, { ...r.customClaims, role });
+      await db.doc(`users/${r.uid}`).set({
+        uid: r.uid,
+        email: r.email ?? null,
+        displayName: r.displayName ?? null,
+        photoURL: r.photoURL ?? null,
+        role,
+        status: 'active',
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        lastSignInAt: null,
+        roleChangedAt: FieldValue.serverTimestamp(),
+      });
+      count++;
+    }
+    pageToken = page.pageToken;
+  } while (pageToken);
+  return count;
 }
 
 // ── Seed: users ─────────────────────────────────────────────────────────────
@@ -210,7 +248,7 @@ async function seedSeason(year, { status, currentWeek, publishedWeekCount, draft
 async function seedCommand() {
   header('seed');
   await clearCommand({ quiet: true });
-  console.log('✓ wiped seeded collections + test auth users');
+  console.log('✓ wiped seeded collections + test auth users; restored other users\' mirrors');
 
   for (const u of TEST_USERS) await seedUser(u);
   console.log(`✓ seeded ${TEST_USERS.length} test users (owner, admin, user, deactivated user)`);
