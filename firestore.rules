@@ -26,8 +26,28 @@ service cloud.firestore {
 
     // Field-level validation of a profiles/{uid} document. Limits mirror
     // src/services/profile-validation.ts.
+    // First/last name (2026-10-02): a letter, then letters, spaces and
+    // ' . - (mirrors NAME_PART_PATTERN in profile-validation.ts).
+    function isValidNamePart(v) {
+      return v is string
+          && v == v.trim()
+          && v.size() >= 1
+          && v.size() <= 30
+          && v.matches('^\\p{L}[\\p{L}\\p{M} .\'-]*$');
+    }
+
+    // Both or neither (profiles saved before the split have neither); when
+    // present, displayName must be exactly "First Last".
+    function hasValidNameParts(data) {
+      return (!('firstName' in data) && !('lastName' in data))
+          || (isValidNamePart(data.get('firstName', null))
+              && isValidNamePart(data.get('lastName', null))
+              && data.displayName == data.firstName + ' ' + data.lastName);
+    }
+
     function isValidProfile(data) {
-      return data.displayName is string
+      return hasValidNameParts(data)
+          && data.displayName is string
           && data.displayName == data.displayName.trim()
           && data.displayName.size() >= 1
           && data.displayName.size() <= 60
@@ -73,11 +93,11 @@ service cloud.firestore {
       allow create: if isSelf(uid)
                     && isActiveMember(uid)
                     && request.resource.data.keys().hasOnly([
-                         'displayName', 'phone', 'acceptedTermsAt', 'termsVersion',
-                         'adultAttested', 'createdAt', 'updatedAt'])
+                         'firstName', 'lastName', 'displayName', 'phone', 'acceptedTermsAt',
+                         'termsVersion', 'adultAttested', 'createdAt', 'updatedAt'])
                     && request.resource.data.keys().hasAll([
-                         'displayName', 'acceptedTermsAt', 'termsVersion',
-                         'adultAttested', 'createdAt', 'updatedAt'])
+                         'firstName', 'lastName', 'displayName', 'acceptedTermsAt',
+                         'termsVersion', 'adultAttested', 'createdAt', 'updatedAt'])
                     && isValidProfile(request.resource.data)
                     && request.resource.data.acceptedTermsAt == request.time
                     && request.resource.data.createdAt == request.time
@@ -85,7 +105,10 @@ service cloud.firestore {
       allow update: if isSelf(uid)
                     && isActiveMember(uid)
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                         'displayName', 'phone', 'acceptedTermsAt', 'termsVersion', 'updatedAt'])
+                         'firstName', 'lastName', 'displayName', 'phone', 'acceptedTermsAt',
+                         'termsVersion', 'updatedAt'])
+                    // Once split, the name parts can change but not be removed.
+                    && (!('firstName' in resource.data) || 'firstName' in request.resource.data)
                     && isValidProfile(request.resource.data)
                     && request.resource.data.updatedAt == request.time
                     && (!('acceptedTermsAt' in request.resource.data.diff(resource.data).affectedKeys())

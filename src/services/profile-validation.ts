@@ -5,16 +5,38 @@
  */
 
 import type { ProfileInput } from '@/types/account';
+export { joinName } from '@/utils/person-name';
 
-export const DISPLAY_NAME_MAX = 60;
+/** Per-part limit for first and last name. */
+export const NAME_PART_MAX = 30;
 export const PHONE_MIN = 7;
 export const PHONE_MAX = 20;
+
 /** Same pattern as firestore.rules: digits, space and + ( ) - . */
 export const PHONE_PATTERN = /^[0-9+() .-]{7,20}$/;
 
-/** Trim and collapse internal whitespace runs to one space. */
-export function normalizeDisplayName(raw: string): string {
-  return raw.trim().replace(/\s+/g, ' ');
+/**
+ * Same pattern as firestore.rules: starts with a letter; then letters,
+ * spaces, apostrophes, periods and hyphens ("Mary-Kate", "O'Brien",
+ * "St. John", "José"). No digits or other symbols, so names line up with
+ * roster names.
+ */
+export const NAME_PART_PATTERN = /^\p{L}[\p{L}\p{M} .'-]*$/u;
+
+/** Trim, collapse internal whitespace, and use a straight apostrophe. */
+export function normalizeNamePart(raw: string): string {
+  return raw.trim().replace(/\s+/g, ' ').replace(/[\u2018\u2019]/g, "'");
+}
+
+/**
+ * Best-effort split of a legacy single-field name: last word is the last
+ * name. Used only to prefill the edit form for profiles made before the
+ * name was split.
+ */
+export function splitLegacyName(displayName: string): { firstName: string; lastName: string } {
+  const parts = normalizeNamePart(displayName).split(' ').filter(Boolean);
+  if (parts.length <= 1) return { firstName: parts[0] ?? '', lastName: '' };
+  return { firstName: parts.slice(0, -1).join(' '), lastName: parts[parts.length - 1]! };
 }
 
 /** Trim; an empty result means "no phone". */
@@ -24,7 +46,8 @@ export function normalizePhone(raw: string | undefined): string | undefined {
 }
 
 export interface ProfileFieldErrors {
-  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
 }
 
@@ -32,16 +55,23 @@ export type ProfileValidation =
   | { ok: true; value: ProfileInput }
   | { ok: false; errors: ProfileFieldErrors };
 
+function namePartError(value: string, label: string): string | undefined {
+  if (value.length === 0) return `Enter your ${label}.`;
+  if (value.length > NAME_PART_MAX) return `${label[0]!.toUpperCase()}${label.slice(1)} must be ${NAME_PART_MAX} characters or fewer.`;
+  if (!NAME_PART_PATTERN.test(value)) return 'Use letters, spaces, apostrophes, periods or hyphens only.';
+  return undefined;
+}
+
 export function validateProfileInput(input: ProfileInput): ProfileValidation {
-  const displayName = normalizeDisplayName(input.displayName);
+  const firstName = normalizeNamePart(input.firstName);
+  const lastName = normalizeNamePart(input.lastName);
   const phone = normalizePhone(input.phone);
   const errors: ProfileFieldErrors = {};
 
-  if (displayName.length === 0) {
-    errors.displayName = 'Enter your name.';
-  } else if (displayName.length > DISPLAY_NAME_MAX) {
-    errors.displayName = `Name must be ${DISPLAY_NAME_MAX} characters or fewer.`;
-  }
+  const firstErr = namePartError(firstName, 'first name');
+  if (firstErr) errors.firstName = firstErr;
+  const lastErr = namePartError(lastName, 'last name');
+  if (lastErr) errors.lastName = lastErr;
 
   if (phone !== undefined) {
     if (phone.length > PHONE_MAX) {
@@ -51,6 +81,8 @@ export function validateProfileInput(input: ProfileInput): ProfileValidation {
     }
   }
 
-  if (errors.displayName || errors.phone) return { ok: false, errors };
-  return { ok: true, value: phone === undefined ? { displayName } : { displayName, phone } };
+  if (errors.firstName || errors.lastName || errors.phone) return { ok: false, errors };
+  const value: ProfileInput = { firstName, lastName };
+  if (phone !== undefined) value.phone = phone;
+  return { ok: true, value };
 }

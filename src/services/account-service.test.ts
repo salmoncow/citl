@@ -68,7 +68,7 @@ describe('AccountService profile writes', () => {
   it('rejects invalid input without touching the repository', async () => {
     const create = vi.fn();
     const svc = new AccountService({ create } as unknown as ProfileRepository, () => ({}) as never);
-    const r = await svc.completeProfile('u', { displayName: '  ' });
+    const r = await svc.completeProfile('u', { firstName: '  ', lastName: 'Shooter' });
     expect(r).toMatchObject({ success: false, code: 'VALIDATION' });
     expect(create).not.toHaveBeenCalled();
   });
@@ -76,8 +76,8 @@ describe('AccountService profile writes', () => {
   it('passes normalized input and the current terms version', async () => {
     const create = vi.fn().mockResolvedValue(undefined);
     const svc = new AccountService({ create } as unknown as ProfileRepository, () => ({}) as never);
-    const r = await svc.completeProfile('u', { displayName: ' Pat ', phone: '' });
+    const r = await svc.completeProfile('u', { firstName: ' Pat ', lastName: ' Shooter', phone: '' });
     expect(r).toEqual({ success: true, data: undefined });
-    expect(create).toHaveBeenCalledWith('u', { displayName: 'Pat' }, expect.any(String));
+    expect(create).toHaveBeenCalledWith('u', { firstName: 'Pat', lastName: 'Shooter' }, expect.any(String));
   });
 });

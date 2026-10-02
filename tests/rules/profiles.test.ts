@@ -3,8 +3,10 @@
  *
  * Matrix: read {self, other, owner, admin, anon}; create {valid with and
  * without phone, each rejected field, mirror missing, deactivated, other
- * uid, anon}; update {name, phone, remove phone, terms re-acceptance,
- * each rejected change}; delete (Admin SDK only); reserved dependents
+ * uid, anon}; first/last name rules (both required on create, character
+ * set, length, displayName must equal "First Last"); update {name,
+ * phone, remove phone, terms re-acceptance, each rejected change} for a
+ * profile saved before the name split (legacy) and after; delete (Admin SDK only); reserved dependents
  * subcollection and notificationSettings/{uid} (denied).
  */
 
@@ -36,9 +38,13 @@ const ADMIN_UID = 'uAdmin';
 const USER_UID = 'uUser';
 const OTHER_UID = 'uOther';
 
+function names(firstName: string, lastName: string): Record<string, unknown> {
+  return { firstName, lastName, displayName: `${firstName} ${lastName}` };
+}
+
 function validProfile(extra: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    displayName: 'Pat Shooter',
+    ...names('Pat', 'Shooter'),
     acceptedTermsAt: serverTimestamp(),
     termsVersion: '2026-10',
     adultAttested: true,
@@ -113,20 +119,46 @@ describe('profiles/{uid} create', () => {
     await assertFails(create({ role: 'admin' }));
   });
 
-  it('rejects an empty or whitespace-only name', async () => {
-    await assertFails(create({ displayName: '' }));
-    await assertFails(create({ displayName: '   ' }));
+  it('rejects a profile without firstName or lastName', async () => {
+    const noFirst = validProfile();
+    delete noFirst['firstName'];
+    await assertFails(setDoc(doc(asRole(env, USER_UID, 'user'), 'profiles', USER_UID), noFirst));
+    const noLast = validProfile();
+    delete noLast['lastName'];
+    await assertFails(setDoc(doc(asRole(env, USER_UID, 'user'), 'profiles', USER_UID), noLast));
   });
 
-  it('rejects an untrimmed name', async () => {
-    await assertFails(create({ displayName: ' Pat ' }));
+  it('rejects a displayName that is not exactly "First Last"', async () => {
+    await assertFails(create({ displayName: 'Someone Else' }));
+    await assertFails(create({ displayName: 'Pat  Shooter' }));
   });
 
-  it('accepts a 60-char name and rejects a 61-char name', async () => {
-    await assertSucceeds(create({ displayName: 'a'.repeat(60) }));
+  it('rejects an empty, whitespace-only or untrimmed name part', async () => {
+    await assertFails(create(names('', 'Shooter')));
+    await assertFails(create(names('   ', 'Shooter')));
+    await assertFails(create(names(' Pat', 'Shooter')));
+    await assertFails(create(names('Pat', 'Shooter ')));
+  });
+
+  it('accepts a 30-char name part and rejects 31', async () => {
+    await assertSucceeds(create(names('a'.repeat(30), 'Shooter')));
     await env.clearFirestore();
     await seedUser(env, USER_UID, 'user');
-    await assertFails(create({ displayName: 'a'.repeat(61) }));
+    await assertFails(create(names('Pat', 'a'.repeat(31))));
+  });
+
+  it("accepts hyphens, apostrophes, periods, spaces and accented letters", async () => {
+    await assertSucceeds(create(names('Mary-Kate', "O'Brien")));
+    await env.clearFirestore();
+    await seedUser(env, USER_UID, 'user');
+    await assertSucceeds(create(names('José', 'St. John')));
+  });
+
+  it('rejects digits, symbols, or a name part not starting with a letter', async () => {
+    await assertFails(create(names('Pat2', 'Shooter')));
+    await assertFails(create(names('Pat', 'Shooter!')));
+    await assertFails(create(names('-Pat', 'Shooter')));
+    await assertFails(create(names('<b>', 'Shooter')));
   });
 
   it('rejects an invalid phone', async () => {
@@ -159,7 +191,7 @@ describe('profiles/{uid} create', () => {
   });
 });
 
-describe('profiles/{uid} update', () => {
+describe('profiles/{uid} update (legacy profile without name parts)', () => {
   beforeEach(async () => {
     await seedUser(env, USER_UID, 'user', { status: 'active' });
     await seedProfile(env, USER_UID, { phone: '217 555 0100' });
@@ -171,8 +203,42 @@ describe('profiles/{uid} update', () => {
       ...data,
     });
 
-  it('self can update displayName', async () => {
-    await assertSucceeds(update({ displayName: 'New Name' }));
+  it('can add first and last name', async () => {
+    await assertSucceeds(update(names('Pat', 'Shooter')));
+  });
+
+  it('can still update phone or re-accept terms without names', async () => {
+    await assertSucceeds(update({ phone: '(217) 555-0199' }));
+    await assertSucceeds(update({ termsVersion: '2027-01', acceptedTermsAt: serverTimestamp() }));
+  });
+
+  it('rejects adding only one name part', async () => {
+    await assertFails(update({ firstName: 'Pat', displayName: 'Pat' }));
+  });
+});
+
+describe('profiles/{uid} update', () => {
+  beforeEach(async () => {
+    await seedUser(env, USER_UID, 'user', { status: 'active' });
+    await seedProfile(env, USER_UID, { phone: '217 555 0100', ...names('Pat', 'Shooter') });
+  });
+
+  const update = (data: Record<string, unknown>) =>
+    updateDoc(doc(asRole(env, USER_UID, 'user'), 'profiles', USER_UID), {
+      updatedAt: serverTimestamp(),
+      ...data,
+    });
+
+  it('self can update first and last name', async () => {
+    await assertSucceeds(update(names('Patricia', 'Shooter-Lee')));
+  });
+
+  it('rejects removing the name parts', async () => {
+    await assertFails(update({ firstName: deleteField(), lastName: deleteField(), displayName: 'Anything' }));
+  });
+
+  it('rejects changing displayName without the parts', async () => {
+    await assertFails(update({ displayName: 'Someone Else' }));
   });
 
   it('self can update phone', async () => {
@@ -210,18 +276,19 @@ describe('profiles/{uid} update', () => {
   });
 
   it('rejects an invalid name on update', async () => {
-    await assertFails(update({ displayName: 'a'.repeat(61) }));
+    await assertFails(update(names('Pat', 'a'.repeat(31))));
+    await assertFails(update(names('Pat', 'Shooter3')));
   });
 
   it('rejects update while deactivated', async () => {
     await seedUser(env, USER_UID, 'user', { status: 'deactivated' });
-    await assertFails(update({ displayName: 'New Name' }));
+    await assertFails(update(names('New', 'Name')));
   });
 
   it('rejects another user updating the profile', async () => {
     await assertFails(
       updateDoc(doc(asRole(env, OTHER_UID, 'user'), 'profiles', USER_UID), {
-        displayName: 'Hacked',
+        ...names('Hacked', 'Name'),
         updatedAt: serverTimestamp(),
       }),
     );
