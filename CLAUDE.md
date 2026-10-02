@@ -62,7 +62,7 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `src/firebase-config.ts` | Firebase SDK init, exports `db` and `auth` |
 | `src/services/score-service.ts` | Firestore reads + 1-hr cache |
 | `src/modules/auth.ts` | AuthModule: sign-in/out, role claim, single `users/{uid}` listener (`onUserDoc`) |
-| `src/modules/auth-providers.ts` | Google / Microsoft / email-link sign-in, linking, re-auth (lazy-loaded, spec 008) |
+| `src/modules/auth-providers.ts` | Google / email-link sign-in, linking, re-auth (lazy-loaded, spec 008) |
 | `src/modules/account-gate.ts` | Sends signed-in users to `/account` to complete profile, accept terms, or reactivate |
 | `src/services/account-service.ts` | Profile writes + `setAccountStatus` / `deleteAccount` callables; error messages |
 | `src/repositories/profile-repository.ts` | `profiles/{uid}` reads/writes |

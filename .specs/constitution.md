@@ -68,7 +68,7 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 | Domain | Current State | Status |
 |--------|---------------|--------|
 | **UI Components** | Web Components under `src/components/` (18 custom elements + 2 render-helper modules + 9 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
-| **Security** | Firebase Auth (Google, Microsoft, email link; optional public member accounts, spec 008 / ADR-012) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim, mirror and account status | Complete |
+| **Security** | Firebase Auth (Google, email link; optional public member accounts, spec 008 / ADR-012) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim, mirror and account status | Complete |
 | **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, member profiles, and audit log | Live |
 | **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (96 cases); function unit tests (37 cases). See §III.1. | Active |
 | **Deployment** | GitHub Actions CI/CD: PR/push runs typecheck + build + three test suites; production deploy is gated on CI success (`workflow_run`) → Firebase Hosting + Firestore rules/indexes + Functions | Active |
@@ -182,7 +182,7 @@ not a hard gate.
 
 **Authentication & Authorization**:
 - Public pages are unauthenticated; sign-in is **optional**. Any visitor may create a
-  **member account** (Google, Microsoft, or passwordless email link; spec 008, ADR-012).
+  **member account** (Google or passwordless email link; spec 008, ADR-012).
   Accounts are adults only (18+ attestation and terms acceptance at first sign-in).
 - Member-supplied data lives in `profiles/{uid}` under a rules field allowlist; the
   `users/{uid}` mirror (role, identity, account status) stays server-only. Status changes
@@ -331,7 +331,7 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
 - **Platform**: Firebase (`citl-baed2` project, Blaze plan with Spark-equivalent usage discipline per §VI.1)
   - Firestore (NoSQL, `us-central1` region, production mode)
   - Hosting (SPA rewrite, security headers, cache rules)
-  - Auth (Google, Microsoft, email link; role-based custom claims; optional member accounts)
+  - Auth (Google, email link; role-based custom claims; optional member accounts)
   - Cloud Functions (TypeScript, Node 22, us-central1 — RBAC role-writer + auth trigger; `setAccountStatus` + `deleteAccount`, justified in spec 008 DD-1)
   - App Check (reCAPTCHA Enterprise, enforced in prod, relaxed under FUNCTIONS_EMULATOR)
 - **SDK**: `firebase` npm package (installed; imported as ES modules); `firebase-admin` + `firebase-functions` in `functions/` package
@@ -581,4 +581,4 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.6.0 (2026-07-11): Component contract adopted as a standard (spec 003-service-decomposition) — §II.4 points to src/components/README.md; composition root (`src/services/app-services.ts`) is the sole production construction site for ScoreService; new hook rule `no-private-service-in-component`
 - 1.7.0 (2026-09-24): "Range Day" site redesign (spec 006, ADR-011) — added §III.6 Accessibility & Responsive Standards; §IV.1 styling line covers self-hosted `@fontsource` fonts and the new token groups/heat ramp; §III.3 skeleton path corrected to `admin-tables.css`; §III.4 JS figure re-measured (~242 kB) with CSS and font budgets; §II.1 inventory recounted
 - 1.7.1 (2026-09-25): Design-token hygiene (spec 007) — §IV.1 styling line: the token contract is now enforced by `src/styles/tokens.test.ts` (no colour literals or primitive references in component CSS; identical dark blocks)
-- 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, Microsoft, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)
+- 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)

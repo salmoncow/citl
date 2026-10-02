@@ -28,8 +28,7 @@ import {
 } from '@/modules/auth-providers';
 
 const GOOGLE_MARK = `<svg class="signin__mark" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.35 11.1H12v2.9h5.35c-.25 1.45-1.65 4.25-5.35 4.25-3.2 0-5.85-2.65-5.85-5.95S8.8 6.35 12 6.35c1.85 0 3.05.8 3.75 1.45l2.55-2.45C16.7 3.85 14.55 2.9 12 2.9 6.95 2.9 2.9 6.95 2.9 12s4.05 9.1 9.1 9.1c5.25 0 8.75-3.7 8.75-8.9 0-.6-.05-1.05-.15-1.5z"/></svg>`;
-const MICROSOFT_MARK = `<svg class="signin__mark" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 3h8.5v8.5H3zM12.5 3H21v8.5h-8.5zM3 12.5h8.5V21H3zM12.5 12.5H21V21h-8.5z"/></svg>`;
-const MARKS: Record<PopupProviderKey, string> = { google: GOOGLE_MARK, microsoft: MICROSOFT_MARK };
+const MARKS: Record<PopupProviderKey, string> = { google: GOOGLE_MARK };
 
 let idCounter = 0;
 

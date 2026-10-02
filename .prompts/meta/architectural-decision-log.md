@@ -673,10 +673,10 @@ verified adult account, a profile, and a trustworthy account status to build on.
 **Decision**
 
 1. **Optional public sign-in.** A Sign in control in the site nav for every visitor; public
-   pages stay unauthenticated. Providers: Google, Microsoft (Entra ID, tenant `common`), and
-   passwordless email link, all in standard Firebase Auth (no Identity Platform upgrade), by
-   popup; `authDomain` unchanged. Apple was dropped (owner decision 2026-10-01: the $99/yr
-   developer fee is outside the $5/mo budget).
+   pages stay unauthenticated. Providers: Google (popup) and
+   passwordless email link, both in standard Firebase Auth (no Identity Platform upgrade);
+   `authDomain` unchanged. Apple was dropped (owner decision 2026-10-01: the $99/yr developer
+   fee is outside the $5/mo budget). Microsoft was dropped (owner decision 2026-10-02).
 2. **Account linking** for `account-exists-with-different-credential` with an in-memory
    pending credential; `fetchSignInMethodsForEmail` is not used, so email enumeration
    protection stays on.
@@ -694,8 +694,7 @@ verified adult account, a profile, and a trustworthy account status to build on.
 
 **Rationale**
 
-- §I.2 Platforms: Microsoft Entra ID is an identity-provider *registration* configured
-  through Firebase Auth, not a hosting, data or compute platform; the platform count stays
+- §I.2 Platforms: both providers are built into Firebase Auth; the platform count stays
   at 2 (Firebase + GitHub). M4's Amazon SES will be a new platform and needs its own §I.2
   justification then.
 - §VI.1: the two functions solve problems rules cannot (a client-unwritable status with an
@@ -713,6 +712,8 @@ verified adult account, a profile, and a trustworthy account status to build on.
 - **Blocking `beforeUserCreated` function**: rejected — requires the Identity Platform
   upgrade (MAU billing); the async `onUserCreate` stays and the client waits for the mirror
 - **Apple sign-in**: rejected on cost (above)
+- **Microsoft sign-in**: dropped by the owner (above); re-adding it is an Entra ID
+  registration plus a provider branch
 - **Minor accounts with parental consent**: rejected — dependents on an adult account cover
   the need without collecting minors' credentials
 
@@ -720,8 +721,7 @@ verified adult account, a profile, and a trustworthy account status to build on.
 
 - Enables: M2 rosters/dependents, M3 captain eligibility (`status`, `assertNotCaptain` seam),
   M4 notification preferences (`notificationSettings/{uid}`, already removed on delete)
-- Constrains: the account UI is code-split to protect the JS budget; a Microsoft client
-  secret must be rotated before it expires; the email-link continue URL and preview host
+- Constrains: the account UI is code-split to protect the JS budget; the email-link continue URL and preview host
   must be authorized domains; terms changes bump `TERMS_VERSION` and trigger re-acceptance
 - Supersedes: ADR-005
 

@@ -2,8 +2,8 @@
  * Auth providers — sign-in, linking and re-authentication for every
  * enabled provider (spec 008 F2).
  *
- * Providers: Google and Microsoft (popup, DD-3) and passwordless email
- * link (DD-4). The enabled set comes from VITE_AUTH_PROVIDERS.
+ * Providers: Google (popup, DD-3) and passwordless email link (DD-4).
+ * Microsoft was dropped 2026-10-02 (owner decision). The enabled set comes from VITE_AUTH_PROVIDERS.
  *
  * Account linking (AC-6): when a popup sign-in fails with
  * `auth/account-exists-with-different-credential`, the pending credential
@@ -25,7 +25,6 @@ import { auth } from '@/firebase-config';
 import {
   EmailAuthProvider,
   GoogleAuthProvider,
-  OAuthProvider,
   isSignInWithEmailLink,
   linkWithCredential,
   linkWithPopup,
@@ -47,20 +46,18 @@ export { looksLikeEmailLink } from '@/utils/email-link';
 
 // ─── Provider configuration ─────────────────────────────────────────────────
 
-export type ProviderKey = 'google' | 'microsoft' | 'email';
+export type ProviderKey = 'google' | 'email';
 export type PopupProviderKey = Exclude<ProviderKey, 'email'>;
 
-export const ALL_PROVIDERS: readonly ProviderKey[] = ['google', 'microsoft', 'email'];
+export const ALL_PROVIDERS: readonly ProviderKey[] = ['google', 'email'];
 
 export const PROVIDER_IDS: Record<ProviderKey, AuthProviderId> = {
   google: 'google.com',
-  microsoft: 'microsoft.com',
   email: 'password',
 };
 
 export const PROVIDER_LABELS: Record<ProviderKey, string> = {
   google: 'Google',
-  microsoft: 'Microsoft',
   email: 'Email link',
 };
 
@@ -71,7 +68,7 @@ export function providerKeyOf(providerId: string): ProviderKey | null {
 }
 
 /**
- * Parse VITE_AUTH_PROVIDERS ("google,microsoft,email"). Unknown names are
+ * Parse VITE_AUTH_PROVIDERS ("google,email"). Unknown names are
  * ignored, duplicates dropped, order kept. Empty or unset → all providers.
  */
 export function parseEnabledProviders(raw: string | undefined): ProviderKey[] {
@@ -87,12 +84,7 @@ export function enabledProviders(): ProviderKey[] {
   return parseEnabledProviders(import.meta.env['VITE_AUTH_PROVIDERS']);
 }
 
-function popupProvider(key: PopupProviderKey): AuthProvider {
-  if (key === 'microsoft') {
-    const p = new OAuthProvider('microsoft.com');
-    p.setCustomParameters({ prompt: 'select_account', tenant: 'common' });
-    return p;
-  }
+function popupProvider(_key: PopupProviderKey): AuthProvider {
   return new GoogleAuthProvider();
 }
 
@@ -196,9 +188,7 @@ export function extractAccountExists(
 ): { email: string | null; credential: AuthCredential } | null {
   const err = error as { code?: string; customData?: { email?: string } } | null;
   if (err?.code !== 'auth/account-exists-with-different-credential') return null;
-  const credential =
-    OAuthProvider.credentialFromError(error as never) ??
-    GoogleAuthProvider.credentialFromError(error as never);
+  const credential = GoogleAuthProvider.credentialFromError(error as never);
   if (!credential) return null;
   return { email: err.customData?.email ?? null, credential };
 }
@@ -315,7 +305,7 @@ export async function reauthenticate(): Promise<AuthOutcome> {
   if (!user) return { status: 'error', code: 'auth/no-current-user', message: 'Sign in first.' };
   const popupKey = user.providerData
     .map((p) => providerKeyOf(p.providerId))
-    .find((k): k is PopupProviderKey => k === 'google' || k === 'microsoft');
+    .find((k): k is PopupProviderKey => k === 'google');
   if (popupKey) {
     try {
       await reauthenticateWithPopup(user, popupProvider(popupKey));

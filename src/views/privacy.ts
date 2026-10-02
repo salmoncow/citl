@@ -42,7 +42,7 @@ export function privacyView(): string {
         <h2>Privacy Policy</h2>
         <h3>What we collect</h3>
         <ul>
-          <li>From your sign-in provider (Google, Microsoft, or an emailed link): your email address and account identifier.</li>
+          <li>From your sign-in provider (Google or an emailed link): your email address and account identifier.</li>
           <li>From you: your name, and a phone number if you choose to give one.</li>
           <li>Records of when you accepted these terms, confirmed you are 18 or older, and changed your account status.</li>
         </ul>

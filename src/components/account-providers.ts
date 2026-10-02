@@ -2,7 +2,7 @@
  * <account-providers> — linked sign-in methods (spec 008 AC-7, AC-24).
  *
  * Lists every enabled provider with a text status ("Connected" / "Not
- * connected"). Link: popup for Google/Microsoft; for email, a sign-in
+ * connected"). Link: popup for Google; for email, a sign-in
  * link sent with the `link` intent. Unlink is disabled with a visible
  * reason when only one method is connected (DD-6; UX only).
  */

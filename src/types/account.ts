@@ -10,7 +10,7 @@ import type { AccountStatus } from '@/types/user';
  * Firebase Auth provider ids the site supports. Email link signs in
  * under the 'password' provider (sign-in method 'emailLink').
  */
-export type AuthProviderId = 'google.com' | 'microsoft.com' | 'password';
+export type AuthProviderId = 'google.com' | 'password';
 
 /**
  * Shape of a `profiles/{uid}` document: the member-supplied profile,

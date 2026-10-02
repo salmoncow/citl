@@ -26,10 +26,9 @@ every box in it is checked and its validation gate passes. AC refs point to [spe
 **AC**: AC-4, AC-26. Record what was done, with dates, in `firebase-deployment.md` (task 10.4).
 
 - [ ] **1.1 (S)** Firebase console: enable Email/Password with **Email link**. Confirm email
-  enumeration protection is **on**.
-- [ ] **1.2 (M)** Azure Entra ID app registration: personal and organizational accounts;
-  redirect URI `https://citl-baed2.firebaseapp.com/__/auth/handler`; client secret. Enable the
-  Microsoft provider in Firebase. Add a secret-expiry reminder.
+  enumeration protection is **on**. *Email link enabled by the owner 2026-10-01; enumeration
+  protection still to confirm.*
+- **1.2** *Removed*: Microsoft sign-in dropped (owner decision 2026-10-02).
 - **1.3** *Removed*: Apple sign-in dropped (owner decision 2026-10-01; $99/yr fee outside budget).
 - [ ] **1.4 (S)** Authorized domains: confirm `citl.club`, `citl-baed2.web.app`,
   `citl-baed2.firebaseapp.com`, `localhost`. Add the stable `preview` channel host.
@@ -114,7 +113,7 @@ every box in it is checked and its validation gate passes. AC refs point to [spe
 
 ## Group 5 — Auth providers module
 
-**Commit**: `feat(auth): add Microsoft and email-link sign-in with account linking`
+**Commit**: `feat(auth): add Microsoft and email-link sign-in with account linking` (Microsoft later removed, 2026-10-02)
 **AC**: AC-4, AC-5, AC-6, AC-7
 
 - [x] **5.1 (S)** `.env.example` and `src/vite-env.d.ts`: `VITE_AUTH_PROVIDERS`.
@@ -202,8 +201,8 @@ every box in it is checked and its validation gate passes. AC refs point to [spe
   line. Keyboard-only pass.
   *Result (2026-10-01)*: email-link sign-in, completion (validation, mirror wait), gate
   redirect and /privacy allowance, edit, deactivate → sign in → reactivate, typed-DELETE
-  delete, owner demote-first notice, deactivated seed user. Not covered locally: Google /
-  Microsoft fake-IdP popups, stale-auth delete re-auth, and a full keyboard/screen-reader
+  delete, owner demote-first notice, deactivated seed user. Not covered locally: Google
+  fake-IdP popup (owner verified Google, Microsoft and email link on the emulator 2026-10-01), stale-auth delete re-auth, and a full keyboard/screen-reader
   pass; do these on the preview walkthrough (11.4).
 
 ---
@@ -245,7 +244,7 @@ every box in it is checked and its validation gate passes. AC refs point to [spe
 - [x] **10.4 (S)** `.specs/technical/firebase-deployment.md`:
   - correct the functions region (from 1.7);
   - list the `setaccountstatus` / `deleteaccount` invoker bindings;
-  - the provider registrations, the Azure secret-rotation date, and the authorized domains.
+  - the provider registrations and the authorized domains.
 - [x] **10.5 (S)** `CLAUDE.md` Key Files: `auth-providers.ts`, `account-gate.ts`,
   `account-service.ts`, `profile-repository.ts`, `account-*.ts` components.
 

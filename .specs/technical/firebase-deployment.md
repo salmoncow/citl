@@ -189,20 +189,16 @@ Firebase console → Authentication → Sign-in method. Record the date each ste
 | Provider | Setup | Status |
 |----------|-------|--------|
 | Google | Already enabled. Add `https://citl.club/privacy` as the privacy/terms URL on the Google OAuth consent screen. | Enabled; consent-screen URL: _pending_ |
-| Email link | Enable Email/Password with **Email link (passwordless sign-in)**. Keep **email enumeration protection on** (the client never calls `fetchSignInMethodsForEmail`). Optional: custom sender domain (DNS verification for `citl.club`, records in Route 53). | _pending_ |
-| Microsoft | Azure portal → Entra ID → App registrations: "Accounts in any organizational directory and personal Microsoft accounts"; redirect URI `https://citl-baed2.firebaseapp.com/__/auth/handler`; create a client secret; enter Application (client) ID + secret in Firebase. | _pending_ |
+| Email link | Enable Email/Password with **Email link (passwordless sign-in)**. Keep **email enumeration protection on** (the client never calls `fetchSignInMethodsForEmail`). Optional: custom sender domain (DNS verification for `citl.club`, records in Route 53). | Enabled 2026-10-01; enumeration protection: _confirm_ |
+| Microsoft | Not enabled (owner decision 2026-10-02). | — |
 | Apple | Not enabled (owner decision 2026-10-01: $99/yr developer fee is outside budget). | — |
-
-**Microsoft client secret rotation**: Entra client secrets expire (24 months max). Record
-the expiry here when created and set a calendar reminder a month before:
-_secret expiry: pending_.
 
 **Authorized domains** (Authentication → Settings): `citl.club`, `citl-baed2.web.app`,
 `citl-baed2.firebaseapp.com`, `localhost`, and the exact host of the stable `preview`
 channel (`citl-baed2--preview-*.web.app`) so popups and email links work on preview deploys.
 The email-link continue URL is the origin root (`<origin>/`), so the origin must be listed.
 
-**Client toggle**: `VITE_AUTH_PROVIDERS` (default `google,microsoft,email`) controls which
+**Client toggle**: `VITE_AUTH_PROVIDERS` (default `google,email`) controls which
 buttons render. Enable a provider in the console before adding it to the list.
 
 **CSP**: no change. Popups and the auth handler run on `*.firebaseapp.com` (`frame-src`),

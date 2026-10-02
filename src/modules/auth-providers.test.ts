@@ -4,16 +4,10 @@ vi.mock('@/firebase-config', () => ({ auth: { currentUser: null } }));
 vi.mock('@/modules/ui', () => ({ showToast: vi.fn() }));
 vi.mock('firebase/auth', () => {
   class GoogleAuthProvider {
-    static credentialFromError = vi.fn(() => null);
-  }
-  class OAuthProvider {
-    constructor(public providerId: string) {}
-    setCustomParameters = vi.fn();
     static credentialFromError = vi.fn((err: { _cred?: unknown }) => err._cred ?? null);
   }
   return {
     GoogleAuthProvider,
-    OAuthProvider,
     EmailAuthProvider: {},
     isSignInWithEmailLink: vi.fn(),
     linkWithCredential: vi.fn(),
@@ -40,17 +34,17 @@ const {
 
 describe('parseEnabledProviders', () => {
   it('defaults to all providers when unset or empty', () => {
-    expect(parseEnabledProviders(undefined)).toEqual(['google', 'microsoft', 'email']);
-    expect(parseEnabledProviders('')).toEqual(['google', 'microsoft', 'email']);
-    expect(parseEnabledProviders(' , ')).toEqual(['google', 'microsoft', 'email']);
+    expect(parseEnabledProviders(undefined)).toEqual(['google', 'email']);
+    expect(parseEnabledProviders('')).toEqual(['google', 'email']);
+    expect(parseEnabledProviders(' , ')).toEqual(['google', 'email']);
   });
 
   it('keeps order, trims, lowercases, drops unknown and duplicates', () => {
-    expect(parseEnabledProviders(' Email, google ,apple,google')).toEqual(['email', 'google']);
+    expect(parseEnabledProviders(' Email, google ,microsoft,google')).toEqual(['email', 'google']);
   });
 
   it('falls back to all when only unknown names are given', () => {
-    expect(parseEnabledProviders('apple')).toEqual(['google', 'microsoft', 'email']);
+    expect(parseEnabledProviders('apple')).toEqual(['google', 'email']);
   });
 });
 
@@ -68,9 +62,9 @@ describe('canUnlink', () => {
 describe('providerKeyOf', () => {
   it('maps Firebase provider ids to keys', () => {
     expect(providerKeyOf('google.com')).toBe('google');
-    expect(providerKeyOf('microsoft.com')).toBe('microsoft');
     expect(providerKeyOf('password')).toBe('email');
     expect(providerKeyOf('apple.com')).toBeNull();
+    expect(providerKeyOf('microsoft.com')).toBeNull();
   });
 });
 
@@ -93,7 +87,7 @@ describe('looksLikeEmailLink', () => {
 
 describe('extractAccountExists', () => {
   it('returns email and credential for account-exists errors', () => {
-    const cred = { providerId: 'microsoft.com' };
+    const cred = { providerId: 'google.com' };
     const err = {
       code: 'auth/account-exists-with-different-credential',
       customData: { email: 'pat@example.com' },
