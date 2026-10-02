@@ -27,7 +27,7 @@
     "@types/node": "^22.20.4",
     "firebase-functions-test": "^3.4.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.2"
   },
   "overrides": {
     "google-gax": {
