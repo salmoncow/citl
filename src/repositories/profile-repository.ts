@@ -19,6 +19,7 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import type { ProfileDoc, ProfileInput } from '@/types/account';
+import { joinName } from '@/utils/person-name';
 
 export class ProfileRepository {
   constructor(private readonly db: Firestore) {}
@@ -31,7 +32,9 @@ export class ProfileRepository {
   /** First-sign-in completion: profile plus terms acceptance and 18+ attestation. */
   async create(uid: string, input: ProfileInput, termsVersion: string): Promise<void> {
     await setDoc(doc(this.db, 'profiles', uid), {
-      displayName: input.displayName,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      displayName: joinName(input.firstName, input.lastName),
       ...(input.phone !== undefined ? { phone: input.phone } : {}),
       acceptedTermsAt: serverTimestamp(),
       termsVersion,
@@ -44,7 +47,9 @@ export class ProfileRepository {
   /** Edit name and phone; an undefined phone removes the field. */
   async update(uid: string, input: ProfileInput): Promise<void> {
     await updateDoc(doc(this.db, 'profiles', uid), {
-      displayName: input.displayName,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      displayName: joinName(input.firstName, input.lastName),
       phone: input.phone !== undefined ? input.phone : deleteField(),
       updatedAt: serverTimestamp(),
     });

@@ -107,7 +107,9 @@ verified adult account, a profile, and a status flag to build on.
 **F4 — Profile and first-sign-in completion**
 - [ ] AC-10: A signed-in user with no `profiles/{uid}` doc is sent to `/account` in completion
   mode from any route except `/privacy`, until they submit. They can still sign out.
-- [ ] AC-11: Completion collects display name (required, 1–60 chars after trim) and phone
+- [ ] AC-11: Completion collects first and last name (each required, 1–30 chars after trim,
+  letters/spaces/`'`/`.`/`-`, starting with a letter; `displayName` is stored as "First Last";
+  changed from one free-form name on 2026-10-02 to ease matching to roster names) and phone
   (optional, ≤ 20 chars, digits/space/`+()-.`). It also requires two checkboxes: terms/privacy
   acceptance and "I am 18 or older". On submit it creates `profiles/{uid}` with
   `acceptedTermsAt` = server time, `termsVersion` = current `TERMS_VERSION`, and

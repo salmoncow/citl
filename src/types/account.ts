@@ -19,6 +19,10 @@ export type AuthProviderId = 'google.com' | 'password';
  * mirrored in services/profile-validation.ts.
  */
 export interface ProfileDoc {
+  /** Present on profiles saved after the name split (2026-10-02). */
+  firstName?: string;
+  lastName?: string;
+  /** Always `${firstName} ${lastName}` when both are present (rules check this). */
   displayName: string;
   phone?: string;
   acceptedTermsAt: Timestamp;
@@ -30,7 +34,8 @@ export interface ProfileDoc {
 
 /** Member-editable profile fields. */
 export interface ProfileInput {
-  displayName: string;
+  firstName: string;
+  lastName: string;
   /** Omitted or empty means no phone. */
   phone?: string;
 }

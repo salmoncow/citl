@@ -272,11 +272,11 @@ export const TEST_USERS = [
   { uid: 'seed-owner', email: 'owner@citl.test', displayName: 'Seed Owner', role: 'owner' },
   { uid: 'seed-admin', email: 'admin@citl.test', displayName: 'Seed Admin', role: 'admin' },
   { uid: 'seed-user', email: 'user@citl.test', displayName: 'Seed User', role: 'user',
-    profile: { displayName: 'Seed User', phone: '217 555 0100' } },
+    profile: { firstName: 'Seed', lastName: 'User', displayName: 'Seed User', phone: '217 555 0100' } },
   // Spec 008: a deactivated member, for the Users tab Status column and
   // the /account reactivation panel.
   { uid: 'seed-deactivated', email: 'deactivated@citl.test', displayName: 'Seed Deactivated', role: 'user',
-    status: 'deactivated', profile: { displayName: 'Seed Deactivated' } },
+    status: 'deactivated', profile: { firstName: 'Seed', lastName: 'Deactivated', displayName: 'Seed Deactivated' } },
 ];
 
 /** Must match TERMS_VERSION in src/utils/legal.ts so seeded profiles aren't asked to re-accept. */

@@ -15,7 +15,8 @@ import { escapeHtml, showToast } from '@/modules/ui';
 import { getAccountContext } from '@/modules/account-context';
 import { accountErrorMessage, getAccountService } from '@/services/account-service';
 import {
-  DISPLAY_NAME_MAX,
+  NAME_PART_MAX,
+  splitLegacyName,
   PHONE_MAX,
   validateProfileInput,
   type ProfileFieldErrors,
@@ -67,17 +68,28 @@ class AccountProfileForm extends HTMLElement {
   private _render(): void {
     const id = this._id;
     const profile = getAccountContext().gate.profile;
-    const name = profile?.displayName ?? '';
+    const legacy = profile && !profile.firstName ? splitLegacyName(profile.displayName) : null;
+    const first = profile?.firstName ?? legacy?.firstName ?? '';
+    const last = profile?.lastName ?? legacy?.lastName ?? '';
     const phone = profile?.phone ?? '';
 
     const fields = this.mode === 'accept-terms' ? '' : `
-      <div class="account-field">
-        <label class="account-field__label" for="${id}-name">Name <span class="account-required">(required)</span></label>
-        <input id="${id}-name" name="displayName" class="account-field__input" type="text"
-               autocomplete="name" maxlength="${DISPLAY_NAME_MAX + 20}" required
-               value="${escapeHtml(name)}" aria-describedby="${id}-name-hint ${id}-name-error">
-        <p id="${id}-name-hint" class="account-field__hint">Your first and last name, as the league knows you.</p>
-        <p id="${id}-name-error" class="account-field__error" hidden></p>
+      <p id="${id}-name-hint" class="account-field__hint">Use your name as the league knows you, so it matches team rosters.</p>
+      <div class="account-field-row">
+        <div class="account-field">
+          <label class="account-field__label" for="${id}-first">First name <span class="account-required">(required)</span></label>
+          <input id="${id}-first" name="firstName" class="account-field__input" type="text"
+                 autocomplete="given-name" maxlength="${NAME_PART_MAX + 10}" required
+                 value="${escapeHtml(first)}" aria-describedby="${id}-name-hint ${id}-first-error">
+          <p id="${id}-first-error" class="account-field__error" hidden></p>
+        </div>
+        <div class="account-field">
+          <label class="account-field__label" for="${id}-last">Last name <span class="account-required">(required)</span></label>
+          <input id="${id}-last" name="lastName" class="account-field__input" type="text"
+                 autocomplete="family-name" maxlength="${NAME_PART_MAX + 10}" required
+                 value="${escapeHtml(last)}" aria-describedby="${id}-name-hint ${id}-last-error">
+          <p id="${id}-last-error" class="account-field__error" hidden></p>
+        </div>
       </div>
       <div class="account-field">
         <label class="account-field__label" for="${id}-phone">Phone <span class="account-required">(optional)</span></label>
@@ -126,7 +138,8 @@ class AccountProfileForm extends HTMLElement {
       if (el) { el.textContent = msg ?? ''; el.hidden = !msg; }
       input?.setAttribute('aria-invalid', String(!!msg));
     };
-    set('name', errors.displayName);
+    set('first', errors.firstName);
+    set('last', errors.lastName);
     set('phone', errors.phone);
     set('checks', errors.checks);
     const first = this.querySelector<HTMLElement>('[aria-invalid="true"]')
@@ -144,7 +157,8 @@ class AccountProfileForm extends HTMLElement {
 
     const errors: ProfileFieldErrors & { checks?: string } = {};
     const input = {
-      displayName: String(data.get('displayName') ?? ''),
+      firstName: String(data.get('firstName') ?? ''),
+      lastName: String(data.get('lastName') ?? ''),
       phone: String(data.get('phone') ?? ''),
     };
     if (this.mode !== 'accept-terms') {
@@ -158,7 +172,7 @@ class AccountProfileForm extends HTMLElement {
         : 'Check the box to continue.';
     }
     this._showErrors(errors);
-    if (errors.displayName || errors.phone || errors.checks) return;
+    if (errors.firstName || errors.lastName || errors.phone || errors.checks) return;
 
     this._busy = true;
     this._updateSubmit();

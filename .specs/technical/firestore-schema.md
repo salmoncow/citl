@@ -70,7 +70,9 @@ completion) and edited on `/account`. This is the **member-supplied** name;
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `displayName` | `string` | Required; 1–60 chars, stored trimmed (`== trim()`) |
+| `firstName` | `string` | Required on create (added 2026-10-02); 1–30 chars, trimmed; starts with a letter, then letters/spaces/`'`/`.`/`-` (`\p{L}`, so accents are allowed) |
+| `lastName` | `string` | Same rules as `firstName`. Both or neither: profiles created before 2026-10-02 have neither until the member saves an edit; once set they can't be removed |
+| `displayName` | `string` | Required; 1–60 chars, trimmed. When `firstName`/`lastName` exist it must equal `firstName + ' ' + lastName` |
 | `phone` | `string` (optional) | `^[0-9+() .-]{7,20}$`; omitted when not given; never public |
 | `acceptedTermsAt` | `Timestamp` | Must equal `request.time` whenever written |
 | `termsVersion` | `string` | 1–20 chars; compared with `TERMS_VERSION` (`src/utils/legal.ts`) to trigger re-acceptance |
@@ -81,7 +83,7 @@ completion) and edited on `/account`. This is the **member-supplied** name;
 **Access:** Read — self or owner/admin. Create — self, only with an existing and
 active `users/{uid}` mirror (`isActiveMember`, the only rules `get()`), key allowlist +
 required keys, field validation, server timestamps. Update — self + active mirror;
-`affectedKeys().hasOnly(['displayName','phone','acceptedTermsAt','termsVersion','updatedAt'])`;
+`affectedKeys().hasOnly(['firstName','lastName','displayName','phone','acceptedTermsAt','termsVersion','updatedAt'])`;
 same validation. Delete — disallowed for clients; `deleteAccount` removes it recursively.
 
 **Reserved subcollection** `profiles/{uid}/dependents/{id}` — M2 (under-18 shooters on an
