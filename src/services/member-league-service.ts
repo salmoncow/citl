@@ -24,6 +24,7 @@ import type {
   Dependent,
   DependentInput,
   LeagueTeam,
+  LinkRequestStatus,
   ProposalStatus,
   Registration,
   RegistrationInput,
@@ -168,12 +169,18 @@ export class MemberLeagueService {
 
   // ─── Shooter link request ─────────────────────────────────────────────────
 
-  async saveLinkRequest(uid: string, input: ShooterLinkInput, existing: boolean): Promise<Result<void>> {
+  /**
+   * Create, edit (while submitted), or re-send after a decline. Rules
+   * forbid editing a declined request, so a re-send replaces it.
+   */
+  async saveLinkRequest(uid: string, input: ShooterLinkInput, existing: LinkRequestStatus | null): Promise<Result<void>> {
     const v = validateLinkInput(input);
     if (!v.ok) return failure(v.error, 'VALIDATION');
-    return this._write(() => existing
-      ? this.league.updateLinkRequest(uid, v.value)
-      : this.league.createLinkRequest(uid, v.value));
+    return this._write(async () => {
+      if (existing === 'submitted') return this.league.updateLinkRequest(uid, v.value);
+      if (existing === 'declined') await this.league.deleteLinkRequest(uid);
+      return this.league.createLinkRequest(uid, v.value);
+    });
   }
 
   async withdrawLinkRequest(uid: string): Promise<Result<void>> {

@@ -9,5 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MEASUREMENT_ID?: string;
   /** Comma-separated sign-in providers: google,email (default: all). */
   readonly VITE_AUTH_PROVIDERS?: string;
+  /** Spec 009 league requests: 'true' | 'false'; unset = on only with the emulators. */
+  readonly VITE_LEAGUE_REQUESTS?: string;
 }
 interface ImportMeta { readonly env: ImportMetaEnv; }

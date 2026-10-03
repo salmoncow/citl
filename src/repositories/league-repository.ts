@@ -19,6 +19,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -33,6 +35,9 @@ import type {
   TeamProposal,
 } from '@/types/league';
 
+/** The league has had about a dozen teams; this bounds the list read. */
+const LEAGUE_TEAMS_READ_LIMIT = 200;
+
 /** Doc id shared by a member's proposal and registration for one season. */
 export function requestId(year: number, uid: string): string {
   return `${year}_${uid}`;
@@ -42,7 +47,7 @@ export class LeagueRepository {
   constructor(private readonly db: Firestore) {}
 
   async listLeagueTeams(): Promise<LeagueTeam[]> {
-    const snap = await getDocs(collection(this.db, 'leagueTeams'));
+    const snap = await getDocs(query(collection(this.db, 'leagueTeams'), limit(LEAGUE_TEAMS_READ_LIMIT)));
     return snap.docs.map((d) => {
       const data = d.data();
       return {

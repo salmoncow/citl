@@ -14,11 +14,15 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  limit,
+  query,
   serverTimestamp,
   updateDoc,
   type Firestore,
 } from 'firebase/firestore';
 import type { Dependent, DependentInput } from '@/types/league';
+
+const DEPENDENTS_READ_LIMIT = 20;
 
 export class DependentRepository {
   constructor(private readonly db: Firestore) {}
@@ -28,7 +32,8 @@ export class DependentRepository {
   }
 
   async list(uid: string): Promise<Dependent[]> {
-    const snap = await getDocs(this._col(uid));
+    // The UI caps dependents at 6; the limit bounds a hand-written excess.
+    const snap = await getDocs(query(this._col(uid), limit(DEPENDENTS_READ_LIMIT)));
     return snap.docs.map((d) => {
       const data = d.data();
       return {

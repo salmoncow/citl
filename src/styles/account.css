@@ -242,3 +242,85 @@ account-page { display: block; }
 
 /* Confirmation dialog body copy (reuses .confirm-dialog shell) */
 .account-confirm__body { margin: 0 0 var(--space-4); font-size: var(--text-sm); line-height: 1.5; }
+
+/* ── League section (spec 009) ──────────────────────────────── */
+account-league,
+account-dependents { display: block; }
+
+.league-list { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
+
+.league-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--c-border);
+}
+
+.league-list__item:first-child { border-top: 0; padding-top: 0; }
+
+.league-list__name { display: block; font-weight: 600; }
+
+.league-list__meta { display: block; font-size: var(--text-sm); color: var(--c-text-muted); }
+
+.league-list__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.league-facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+}
+
+.league-facts > div { display: grid; grid-template-columns: 9rem 1fr; gap: var(--space-3); }
+
+.league-facts dt { font-size: var(--text-sm); font-weight: 600; color: var(--c-text-muted); }
+
+.league-facts dd { margin: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 479px) {
+  .league-facts > div { grid-template-columns: 1fr; gap: 0; }
+}
+
+.league-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.league-textarea { min-height: auto; padding: var(--space-2) var(--space-3); resize: vertical; }
+
+.league-field--year { max-width: 10rem; }
+
+.league-dialog { width: min(520px, calc(100vw - 2 * var(--space-4))); max-height: calc(100vh - 2 * var(--space-4)); overflow-y: auto; }
+
+.league-dialog__title { margin: 0 0 var(--space-4); font-size: var(--text-xl); }
+
+.league-matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.league-match {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-card);
+  color: var(--c-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.league-match:hover,
+.league-match:focus-visible { background: var(--c-surface); }
