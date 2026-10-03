@@ -180,7 +180,7 @@ Firebase SDK out because lazy chunks import it too); the figure below is their s
 
 | Metric | Target | Before | Current |
 |--------|--------|--------|---------|
-| JS bundle (gzipped) | <250 kB | 229.3 kB | 249.1 kB main path ✅ (index 84.3 + firebase-config 164.8; under 1 kB headroom; main after spec 008 and #305 was 248.5 kB). Lazy chunks: account page 5.8 kB, account league 5.1 kB, team proposal page 5.2 kB, league dialogs 3.4 kB, sign-in dialog 2.7 kB, auth providers 2.5 kB, account service 1.8 kB |
+| JS bundle (gzipped) | <250 kB | 229.3 kB | 231.0 kB main path ✅ (index 66.1 + firebase-config 165.0; was 249.1 kB before spec 010 lazy-loaded the admin panel). Lazy chunks: admin panel 16.3 kB, account league 6.2 kB, requests tab 6.1 kB, account page 5.9 kB, team proposal page 5.5 kB, member league service 3.5 kB, sign-in dialog 2.7 kB, auth providers 2.5 kB, account service 1.8 kB |
 | CSS (gzipped) | <20 kB | 7.6 kB | 15.6 kB ✅ |
 | Fonts (woff2, latin only) | — | 0 | 9 files, 187 kB total if every weight loads |
 | Total initial load | <500 kB | ~237 kB | ~444 kB worst case (fonts are fetched only for weights a page uses, then cached `immutable`) |

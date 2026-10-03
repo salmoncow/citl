@@ -163,6 +163,8 @@ Bindings in place / required:
 | `setaccountstatus` | `setAccountStatus` (spec 008) | **Run once after the spec 008 deploy** |
 | `deleteaccount` | `deleteAccount` (spec 008) | **Run once after the spec 008 deploy** |
 | `teamproposal` | `teamProposal` (spec 009) | **Run once after the spec 009 deploy** |
+| `reviewrequest` | `reviewRequest` (spec 010) | **Run once after the spec 010 deploy** |
+| `captainhandoff` | `captainHandoff` (spec 010) | **Run once after the spec 010 deploy** |
 
 Without the binding, browser calls fail with a CORS / 403 error.
 

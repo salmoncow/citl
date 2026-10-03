@@ -27,15 +27,48 @@ export interface AccountStatusEntry {
   toStatus: AccountStatus | 'deleted';
 }
 
-/** Spec 009: a captain submitted or withdrew a team proposal. */
+/** Spec 009/010: a captain or the coordinator acted on a team proposal. */
 export interface ProposalEntry {
   kind: 'proposal';
   actorUid: string;
   subjectId: string;
-  action: 'submitted' | 'withdrawn' | 'deleted';
+  action:
+    | 'submitted' | 'withdrawn' | 'deleted' | 'reopened' | 'discarded'
+    | 'approved' | 'rejected' | 'changes-requested';
 }
 
-export type AuditEntry = RoleChangeEntry | AccountStatusEntry | ProposalEntry;
+/** Spec 010: the coordinator placed or declined a registration. */
+export interface RegistrationEntry {
+  kind: 'registration';
+  actorUid: string;
+  subjectId: string;
+  action: 'placed' | 'declined';
+}
+
+/** Spec 010: the coordinator decided a shooter link request (subjectId = member uid). */
+export interface ShooterLinkEntry {
+  kind: 'shooter-link';
+  actorUid: string;
+  subjectId: string;
+  action: 'approved' | 'declined';
+}
+
+/** Spec 010: a captain handoff step (subjectId = league team id). */
+export interface CaptainEntry {
+  kind: 'captain';
+  actorUid: string;
+  subjectId: string;
+  action: 'nominated' | 'cancelled' | 'accepted' | 'declined' | 'approved' | 'rejected' | 'cleared';
+  targetUid?: string;
+}
+
+export type AuditEntry =
+  | RoleChangeEntry
+  | AccountStatusEntry
+  | ProposalEntry
+  | RegistrationEntry
+  | ShooterLinkEntry
+  | CaptainEntry;
 
 /** Queue an audit entry (with server `at`) on a transaction or batch. */
 export function queueAuditEntry(

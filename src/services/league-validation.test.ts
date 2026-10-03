@@ -51,6 +51,10 @@ describe('registrationYear', () => {
     expect(registrationYear([{ year: 2026, status: 'complete' }], NOW)).toBe(2027);
   });
 
+  it('targets an upcoming season doc with no status (spec 010: approval creates it)', () => {
+    expect(registrationYear([{ year: 2027, status: undefined as unknown as string }, { year: 2026, status: 'complete' }], NOW)).toBe(2027);
+  });
+
   it('clamps to this year or next', () => {
     expect(registrationYear([{ year: 2024, status: 'complete' }], NOW)).toBe(2026);
     expect(registrationYear([{ year: 2027, status: 'complete' }], NOW)).toBe(2027);

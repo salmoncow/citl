@@ -11,6 +11,7 @@
  *   - Score Entry     — weekly entry form, date override, publish
  *   - Announcements   — site banner + per-year announcements
  *   - Season End      — preview + finalize season awards (spec 004)
+ *   - Requests        — coordinator review queue (spec 010), loaded on first open
  *   - Users           — hosts <admin-users-panel> (owner-only dropdown)
  *
  * No shadow DOM. All user values rendered via textContent (never innerHTML),
@@ -33,7 +34,7 @@ const { scoreService, seasonAwardsService } = getServices();
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-type TabName = 'team-mgmt' | 'score-entry' | 'announcements' | 'season-end' | 'users';
+type TabName = 'team-mgmt' | 'score-entry' | 'announcements' | 'season-end' | 'requests' | 'users';
 
 class AdminPanel extends HTMLElement {
   private _teamsData: Team[] | null = null;
@@ -45,6 +46,8 @@ class AdminPanel extends HTMLElement {
   private readonly _scoreEntryTab = new ScoreEntryTab(scoreService);
   private readonly _announcementsTab = new AnnouncementsTab(scoreService);
   private readonly _seasonEndTab = new SeasonEndTab(seasonAwardsService);
+  /** Spec 010: the Requests tab is a lazy chunk, mounted on first open. */
+  private _requestsTab: Promise<AdminTab> | null = null;
 
   /** All tabs that implement the AdminTab lifecycle (excludes self-managed Users tab). */
   private get _lifecycleTabs(): AdminTab[] {
@@ -70,6 +73,7 @@ class AdminPanel extends HTMLElement {
           ${navItem('score-entry', 'Score Entry', 'M4 4h16v16H4zM4 10h16M10 4v16')}
           ${navItem('announcements', 'Announcements', 'M3 11l15-6v14L3 13zM7 12v6')}
           ${navItem('season-end', 'Season End', 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z')}
+          ${navItem('requests', 'Requests', 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9')}
           ${navItem('users', 'Users', 'M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z')}
         </nav>
       </aside>
@@ -91,6 +95,7 @@ class AdminPanel extends HTMLElement {
           <div id="ap-panel-score-entry" class="admin-tab-content admin-tab-panel--hidden"></div>
           <div id="ap-panel-announcements" class="admin-tab-content admin-tab-panel--hidden"></div>
           <div id="ap-panel-season-end" class="admin-tab-content admin-tab-panel--hidden"></div>
+          <div id="ap-panel-requests" class="admin-tab-content admin-tab-panel--hidden"></div>
           <div id="ap-panel-users" class="admin-tab-content admin-tab-panel--hidden">
             <admin-users-panel></admin-users-panel>
           </div>
@@ -139,6 +144,7 @@ class AdminPanel extends HTMLElement {
       { id: 'ap-panel-score-entry', name: 'score-entry' },
       { id: 'ap-panel-announcements', name: 'announcements' },
       { id: 'ap-panel-season-end', name: 'season-end' },
+      { id: 'ap-panel-requests', name: 'requests' },
       { id: 'ap-panel-users', name: 'users' },
     ]) {
       const el = this.querySelector(`#${id}`);
@@ -146,11 +152,21 @@ class AdminPanel extends HTMLElement {
     }
 
     const yearRow = this.querySelector<HTMLElement>('#ap-year-row');
-    if (yearRow) yearRow.classList.toggle('admin-form-row--hidden', tab === 'users');
+    if (yearRow) yearRow.classList.toggle('admin-form-row--hidden', tab === 'users' || tab === 'requests');
 
     if (tab === 'score-entry') this._scoreEntryTab.onActivate?.();
     else if (tab === 'announcements') this._announcementsTab.onActivate?.();
     else if (tab === 'season-end') this._seasonEndTab.onActivate?.();
+    else if (tab === 'requests') void this._activateRequests();
+  }
+
+  private async _activateRequests(): Promise<void> {
+    this._requestsTab ??= import('./admin-tabs/requests-tab').then(({ RequestsTab }) => {
+      const t = new RequestsTab();
+      t.mount(this.querySelector<HTMLElement>('#ap-panel-requests')!, this._buildContext());
+      return t;
+    });
+    (await this._requestsTab).onActivate?.();
   }
 
   // ── Shared data refresh ──────────────────────────────────────────────────

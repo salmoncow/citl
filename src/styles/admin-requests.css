@@ -1,0 +1,45 @@
+/* ============================================================
+   Admin Requests tab (spec 010): review queue cards.
+   Imported by the lazily-loaded requests tab, so it ships in
+   that chunk. Colours come from tokens.css only.
+   ============================================================ */
+
+.req-card { display: grid; gap: var(--space-3); }
+.req-card .ann-admin-card__header,
+.req-card .admin-table-wrapper { margin-bottom: 0; }
+.req-card[aria-busy="true"] { opacity: 0.6; }
+
+.req-line { margin: 0; font-size: var(--text-sm); }
+.req-muted { color: var(--c-text-muted); font-size: var(--text-xs); }
+.req-flag { color: var(--c-status-error); }
+
+.req-warning {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--c-status-error);
+  background: var(--c-status-error-bg);
+}
+
+.req-count {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--c-brand-tint);
+  color: var(--c-brand-text);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.req-table { overflow-x: auto; }
+.req-avg { width: 5.5em; }
+.req-row--dropped td { color: var(--c-text-muted); text-decoration: line-through; }
+.req-row--dropped td:nth-child(2) { text-decoration: none; }
+
+.req-card__actions { flex-wrap: wrap; }
+.req-card__error { margin: 0; }
+
+[data-summary]:focus { outline: none; }
+[data-summary]:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; }

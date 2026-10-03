@@ -48,7 +48,6 @@ import './components/home-award-races';
 import './components/home-announcements';
 import './components/site-banner';
 import './components/season-scorecards';
-import './components/admin-panel';
 import './components/scoresheet-generator';
 import './components/yardage-table';
 import './components/season-calendar';
@@ -242,6 +241,9 @@ class App {
     if (mount) {
       const isMounted = mount.querySelector('admin-panel') !== null;
       if (elevated && !isMounted) {
+        // Spec 010 DD-6: the admin panel is a lazy chunk; the element
+        // upgrades when its module defines it.
+        void import('./components/admin-panel');
         mount.innerHTML = '<admin-panel></admin-panel>';
       } else if (!elevated && isMounted) {
         // Clearing innerHTML disconnects the components, firing their

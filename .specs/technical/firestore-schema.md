@@ -114,12 +114,13 @@ on create and update. The client caps the list at 6.
 
 Doc ID = the season team doc id (name slug: `name.trim().toLowerCase()` with whitespace
 runs → `-`), so a team keeps one id across years. Written only by the Admin SDK:
-`scripts/backfill-league-teams.js` (from `seasons/*/teams`), and M3 approvals.
+`scripts/backfill-league-teams.js` (from `seasons/*/teams`), and the `reviewRequest` and
+`captainHandoff` callables (spec 010).
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `name` | `string` | Latest season's display name |
-| `captainUid` | `string \| null` | One captain per team; `null` until M3 approves one |
+| `captainUid` | `string \| null` | One captain per team; set by proposal approval or an approved handoff, cleared by the coordinator |
 | `seasons` | `number[]` | Years the team played, ascending |
 | `formerIds` | `string[]` (optional) | Season team ids the team used before a rename (backfill `--merge old=new`); those seasons' docs keep the old id |
 | `createdAt`, `updatedAt` | `Timestamp` | Server timestamps |
@@ -131,22 +132,24 @@ runs → `-`), so a team keeps one id across years. Written only by the Admin SD
 ### `teamProposals/{year}_{uid}` — captain's proposed team (spec 009)
 
 One per member per season. Written only by the `teamProposal` callable (rules can't
-iterate the roster list), and by M3 review.
+iterate the roster list), and by the `reviewRequest` callable (spec 010).
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `captainUid`, `year` | `string`, `number` | Match the doc id |
-| `purpose` | `'initial'` | M3 adds `'change'` |
+| `purpose` | `'initial' \| 'change'` | `change`: an approved captain's roster change (`reopen`); team fields stay fixed |
 | `teamSource` | `'returning' \| 'new'` | `returning` requires `leagueTeamId` with `captainUid == null`; `new` requires the slug to be unused |
-| `leagueTeamId` | `string \| null` | |
+| `leagueTeamId` | `string \| null` | Set on approval of a new team |
 | `teamName` | `string` | 2–40 chars |
 | `shooters` | `RosterEntry[]` | `{kind: 'self'\|'dependent'\|'named', name, rookie, minor, dependentId?, guardianName?}`; 5–15 to submit, ≤15 to save; minors named `First L.` and need an adult guardian on the roster |
-| `status` | `ProposalStatus` | `draft \| submitted \| changes-requested \| approved \| rejected`; M2 writes only `draft`/`submitted` |
-| `reviewNote`, `reviewedBy`, `reviewedAt` | `null` until M3 | Kept on save |
+| `status` | `ProposalStatus` | `draft \| submitted \| changes-requested \| approved \| rejected`; review sets the last three. A rejected or discarded change returns to `approved` with the published roster |
+| `reviewNote`, `reviewedBy`, `reviewedAt` | `string \| null`, `string \| null`, `Timestamp \| null` | Set by review; `reviewNote` required for `changes-requested` |
 | `createdAt`, `updatedAt`, `submittedAt` | `Timestamp` (`submittedAt` nullable) | Server timestamps |
 
 **Access:** Read — the captain or owner/admin. Write — disallowed for clients. Submit,
-withdraw, and delete append an `audit` entry (`kind: 'proposal'`).
+withdraw, delete, reopen, discard, and every review decision append an `audit` entry
+(`kind: 'proposal'`). Approval writes `seasons/{year}` (merge), the season team doc
+(adds `leagueTeamId`, `captainUid`, `sourceProposalId`), and `leagueTeams` in one transaction.
 
 ---
 
@@ -160,12 +163,14 @@ One per member per season; refused while `teamProposals/{year}_{uid}` exists.
 | `dependentIds` | `string[]` | ≤6 ids from the member's `dependents` |
 | `preferredLeagueTeamId` | `string \| null` | 1–100 chars |
 | `note` | `string \| null` | ≤280 chars |
-| `status` | `'submitted'` | M3 adds `placed \| declined`, `placedLeagueTeamId`, `reviewNote` |
+| `status` | `'submitted' \| 'placed' \| 'declined'` | Review adds `placedLeagueTeamId`, `reviewNote`, `reviewedBy`, `reviewedAt` |
 | `createdAt`, `updatedAt` | `Timestamp` | `== request.time` |
 
 **Access:** Read — self or owner/admin. Create — active member with a profile, key
 allowlist, `status == 'submitted'`. Update — self while `submitted`, only
-`dependentIds`/`preferredLeagueTeamId`/`note`/`updatedAt`. Delete — self while `submitted`.
+`dependentIds`/`preferredLeagueTeamId`/`note`/`updatedAt`. Delete — self while `submitted`
+or `declined`. Placement adds the member and their dependents to the season team in one
+transaction (spec 010).
 
 ---
 
@@ -177,16 +182,37 @@ A request asks the coordinator to link the account to a name on past scorecards.
 |-------|------|-------|
 | `shooterName` | `string` | 1–60 chars, trimmed |
 | `note` | `string` (optional) | ≤280 chars |
-| `status` | `'submitted'` | M3 adds `approved \| declined`, `reviewNote` |
+| `status` | `'submitted' \| 'approved' \| 'declined'` | Review adds `reviewNote`, `reviewedBy`, `reviewedAt` |
 | `createdAt`, `updatedAt` | `Timestamp` | `== request.time` |
 
 **Access:** Read — self or owner/admin. Create — active member, `status == 'submitted'`.
 Update — self while `submitted` (`shooterName`, `note`, `updatedAt`). Delete — self while
 `submitted` or `declined` (a re-send after a decline deletes then creates).
 
-`shooterLinks/{uid}` is reserved for M3 (`shooterName`, `nameKey`, `linkedAt`,
-`linkedBy`). Read — self or owner/admin. Write — disallowed for clients. When present,
+`shooterLinks/{uid}` is written when the coordinator approves (`shooterName`, `nameKey`,
+`linkedAt`, `linkedBy`); a `nameKey` already linked to another account is refused. Read — self or owner/admin. Write — disallowed for clients. When present,
 `teamProposal` uses its `shooterName` for the captain's roster entry.
+
+---
+
+### `captainChanges/{leagueTeamId}` — captain handoff (spec 010)
+
+One per league team. Written only by `captainHandoff` (nominate, cancel, accept, decline)
+and `reviewRequest` (approve, reject, clear).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `leagueTeamId`, `teamName` | `string` | |
+| `fromUid`, `fromName` | `string` | Nominating captain |
+| `toUid`, `toName` | `string` | Nominee, found by account email |
+| `status` | `HandoffStatus` | `nominated → accepted → approved`; or `cancelled`, `declined` (nominee), `rejected` (coordinator) |
+| `reviewNote` | `string \| null` | Coordinator's note |
+| `createdAt`, `updatedAt` | `Timestamp` | Server timestamps |
+
+Approval sets `leagueTeams.captainUid` to the nominee; season docs keep the captain who
+played that season. `deleteAccount` deletes docs where the member is the nominee.
+
+**Access:** Read — `fromUid`, `toUid`, or owner/admin. Write — disallowed for clients.
 
 ---
 
@@ -197,7 +223,7 @@ M4 (email notifications) does not change the delete path.
 
 ---
 
-### `audit/{id}` — append-only role-change and account-status log
+### `audit/{id}` — append-only audit log
 
 Auto-ID. Written server-side (Admin SDK) via `queueAuditEntry` in the same transaction or
 batch as the change it records. Entries carry uids only, never email or name, so an entry
@@ -205,18 +231,19 @@ can outlive a deleted account without holding PII.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `kind` | `'role-change' \| 'account-status' \| 'proposal'` | Spec 008; `proposal` spec 009. **Missing means `'role-change'`** (entries written before spec 008) |
+| `kind` | `'role-change' \| 'account-status' \| 'proposal' \| 'registration' \| 'shooter-link' \| 'captain'` | Spec 008; `proposal` spec 009; the last three spec 010. **Missing means `'role-change'`** (entries written before spec 008) |
 | `actorUid` | `string` | uid of the caller (owner for role changes; the member for status changes) |
 | `targetUid` | `string` | uid affected |
 | `fromRole` / `toRole` | `'owner' \| 'admin' \| 'user'` | `role-change` only |
 | `fromStatus` | `'active' \| 'deactivated'` | `account-status` only |
 | `toStatus` | `'active' \| 'deactivated' \| 'deleted'` | `account-status` only |
-| `subjectId` | `string` | `proposal` only: the `teamProposals` doc id |
-| `action` | `'submitted' \| 'withdrawn' \| 'deleted'` | `proposal` only |
+| `subjectId` | `string` | Request kinds: the `teamProposals` or `registrations` doc id, the member uid (`shooter-link`), or the league team id (`captain`) |
+| `action` | `string` | Request kinds only: `proposal` `submitted \| withdrawn \| deleted \| reopened \| discarded \| approved \| rejected \| changes-requested`; `registration` `placed \| declined`; `shooter-link` `approved \| declined`; `captain` `nominated \| cancelled \| accepted \| declined \| approved \| rejected \| cleared` (`targetUid` is the nominee or removed captain) |
 | `at` | `Timestamp` | Server timestamp of the change |
 
 Writers: `setUserRole` (role-change), `setAccountStatus` (deactivate/reactivate),
-`teamProposal` (submit/withdraw/delete), `deleteAccount` (`toStatus: 'deleted'`; a retry after a
+`teamProposal` (submit/withdraw/delete/reopen/discard), `reviewRequest` and `captainHandoff`
+(spec 010), `deleteAccount` (`toStatus: 'deleted'`; a retry after a
 partial failure may write a second entry).
 
 **Access:** Read — owner only. Write — disallowed for all clients (`if false`); only the
@@ -321,6 +348,7 @@ Document ID: slugified team name — lowercase, hyphens (e.g. `crazy-guns`).
 | `id` | `string` | Same as document ID |
 | `name` | `string` | Display name |
 | `captain` | `string` | May be empty string at creation time |
+| `leagueTeamId`, `captainUid`, `sourceProposalId` | `string` (optional) | Written by proposal approval (spec 010); the captain who played that season |
 | `shooters` | `Shooter[]` | See sub-type below |
 | `totals` | `TeamTotals` | See sub-type below |
 

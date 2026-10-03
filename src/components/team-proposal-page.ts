@@ -5,7 +5,9 @@
  * A member proposes a new team or claims a returning league team with no
  * captain (or their own), drafts the roster, and saves, submits,
  * withdraws, or deletes the proposal through the teamProposal callable.
- * Submitted, approved and rejected proposals are read-only.
+ * Submitted, approved and rejected proposals are read-only. Spec 010: an
+ * approved roster can be reopened as a change request (team fields
+ * locked); discarding the change restores the published roster.
  *
  * Reads: the cached season list (registration season), the member's
  * league overview (proposal, registration, link request, dependents),
@@ -111,6 +113,11 @@ class TeamProposalPage extends HTMLElement {
     return !p || EDITABLE.has(p.status);
   }
 
+  /** A post-approval change request (spec 010 AC-15): the team is fixed. */
+  private get _isChange(): boolean {
+    return this._overview?.proposal?.purpose === 'change';
+  }
+
   private _message(title: string, bodyHtml: string): void {
     this.innerHTML = `
       <div class="account-page">
@@ -155,11 +162,13 @@ class TeamProposalPage extends HTMLElement {
     const o = this._overview!;
     const p = o.proposal;
     const editable = this._editable;
-    const ro = editable ? '' : 'disabled';
+    const teamRo = editable && !this._isChange ? '' : 'disabled';
     const uid = this._uid;
     const claimable = this._teams.filter((t) => !t.captainUid || t.captainUid === uid);
     const status = p
-      ? { draft: 'Draft, not sent yet', submitted: 'Submitted for review. Withdraw it to make changes.', 'changes-requested': 'The coordinator asked for changes.', approved: 'Approved.', rejected: 'Not approved.' }[p.status]
+      ? this._isChange
+        ? { draft: 'Roster change, not sent yet. Your published roster stays until the coordinator approves the change.', submitted: 'Roster change submitted for review. Withdraw it to make more changes.', 'changes-requested': 'The coordinator asked for changes to your roster change.', approved: 'Approved. This is your published roster.', rejected: 'Not approved.' }[p.status]
+        : { draft: 'Draft, not sent yet', submitted: 'Submitted for review. Withdraw it to make changes.', 'changes-requested': 'The coordinator asked for changes.', approved: 'Approved. This is your published roster.', rejected: 'Not approved.' }[p.status]
       : 'New proposal. Nothing is saved until you choose Save draft.';
     const team = this._teams.find((t) => t.id === this._leagueTeamId);
     const lastSeason = team ? Math.max(...team.seasons) : null;
@@ -173,7 +182,7 @@ class TeamProposalPage extends HTMLElement {
 
         <section class="card account-section" aria-labelledby="tp-team">
           <h2 id="tp-team">Team</h2>
-          <fieldset class="league-fieldset" ${ro}>
+          <fieldset class="league-fieldset" ${teamRo}>
             <legend class="account-field__label">Is this a new team?</legend>
             <label class="account-check"><input type="radio" name="source" value="new" ${this._source === 'new' ? 'checked' : ''}><span>A new team</span></label>
             <label class="account-check"><input type="radio" name="source" value="returning" ${this._source === 'returning' ? 'checked' : ''} ${claimable.length ? '' : 'disabled'}><span>A team that played before</span></label>
@@ -181,7 +190,7 @@ class TeamProposalPage extends HTMLElement {
           ${this._source === 'returning' ? `
           <div class="account-field">
             <label class="account-field__label" for="tp-league-team">Returning team</label>
-            <select id="tp-league-team" class="account-field__input" ${ro} aria-describedby="tp-league-hint">
+            <select id="tp-league-team" class="account-field__input" ${teamRo} aria-describedby="tp-league-hint">
               <option value="">Choose…</option>
               ${claimable.map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === this._leagueTeamId ? 'selected' : ''}>${escapeHtml(t.name)} (${escapeHtml(t.seasons.join(', '))})</option>`).join('')}
             </select>
@@ -189,7 +198,7 @@ class TeamProposalPage extends HTMLElement {
           </div>` : ''}
           <div class="account-field">
             <label class="account-field__label" for="tp-name">Team name</label>
-            <input id="tp-name" class="account-field__input" type="text" maxlength="${TEAM_NAME_MAX}" value="${escapeHtml(this._teamName)}" ${ro}>
+            <input id="tp-name" class="account-field__input" type="text" maxlength="${TEAM_NAME_MAX}" value="${escapeHtml(this._teamName)}" ${teamRo}>
           </div>
         </section>
 
@@ -197,7 +206,7 @@ class TeamProposalPage extends HTMLElement {
           <h2 id="tp-roster">Roster</h2>
           <p class="account-section__desc">Teams have 5 to ${ROSTER_MAX} shooters, including you. Shooters under 18 are
           shown as first name and last initial, and need a guardian on the team. Starting averages are set by the coordinator.</p>
-          ${editable && team && lastSeason ? `<p><button type="button" class="btn-secondary" data-action="prefill">Add shooters from the ${lastSeason} roster</button></p>` : ''}
+          ${editable && !this._isChange && team && lastSeason ? `<p><button type="button" class="btn-secondary" data-action="prefill">Add shooters from the ${lastSeason} roster</button></p>` : ''}
           <roster-entry-list></roster-entry-list>
         </section>
 
@@ -219,10 +228,12 @@ class TeamProposalPage extends HTMLElement {
     const b = (action: string, label: string, cls = 'btn-secondary') =>
       `<button type="button" class="${cls}" data-action="${action}">${label}</button>`;
     if (!status || EDITABLE.has(status)) {
-      return b('submit', 'Submit for review', 'btn-primary') + b('save', 'Save draft') + (status ? b('delete', 'Delete proposal', 'btn-danger') : '');
+      const remove = this._isChange ? b('delete', 'Discard changes', 'btn-danger') : status ? b('delete', 'Delete proposal', 'btn-danger') : '';
+      return b('submit', 'Submit for review', 'btn-primary') + b('save', 'Save draft') + remove;
     }
     if (status === 'submitted') return b('withdraw', 'Withdraw to edit');
     if (status === 'rejected') return b('delete', 'Delete proposal', 'btn-danger');
+    if (status === 'approved') return b('reopen', 'Request roster changes', 'btn-primary');
     return '';
   }
 
@@ -251,6 +262,7 @@ class TeamProposalPage extends HTMLElement {
     on('save', () => void this._save(false));
     on('submit', () => void this._save(true));
     on('withdraw', () => void this._act('withdraw'));
+    on('reopen', () => void this._act('reopen'));
     on('delete', () => void this._delete());
   }
 
@@ -317,23 +329,33 @@ class TeamProposalPage extends HTMLElement {
     await this._load();
   }
 
-  private async _act(action: 'withdraw'): Promise<void> {
+  private async _act(action: 'withdraw' | 'reopen'): Promise<void> {
     if (this._busy) return;
     this._busy = true;
     const res = await getMemberLeagueService().proposalAction(this._overview!.year, action);
     this._busy = false;
     if (!res.ok) { showToast('error', leagueErrorMessage(res.code, res.reason, res.message)); return; }
-    showToast('success', 'Withdrawn. You can edit and submit again.');
+    showToast('success', action === 'reopen'
+      ? 'Edit the roster, then submit the change. Your published roster stays until it’s approved.'
+      : 'Withdrawn. You can edit and submit again.');
     await this._load();
   }
 
   private async _delete(): Promise<void> {
-    const ok = await confirmLeague('Delete this proposal?', 'The team and roster you drafted will be removed.', 'Delete', true);
+    const change = this._isChange;
+    const ok = change
+      ? await confirmLeague('Discard your changes?', 'Your roster goes back to the published one.', 'Discard', true)
+      : await confirmLeague('Delete this proposal?', 'The team and roster you drafted will be removed.', 'Delete', true);
     if (!ok || this._busy) return;
     this._busy = true;
     const res = await getMemberLeagueService().proposalAction(this._overview!.year, 'delete');
     this._busy = false;
     if (!res.ok) { showToast('error', leagueErrorMessage(res.code, res.reason, res.message)); return; }
+    if (change) {
+      showToast('success', 'Changes discarded.');
+      await this._load();
+      return;
+    }
     showToast('success', 'Proposal deleted.');
     window.location.hash = '#/account';
   }

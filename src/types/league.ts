@@ -1,7 +1,8 @@
 /**
  * League request types (spec 009): persistent league teams, team
  * proposals and their roster entries, dependents, individual
- * registrations, and shooter link requests. Field limits are enforced by
+ * registrations, and shooter link requests; spec 010 adds captain
+ * handoffs and the coordinator's review calls. Field limits are enforced by
  * firestore.rules and the teamProposal callable, and mirrored in
  * services/league-validation.ts.
  */
@@ -87,6 +88,9 @@ export interface Registration {
   note: string | null;
   status: RegistrationStatus;
   reviewNote?: string | null;
+  /** The season team the coordinator placed the member on (spec 010). */
+  placedLeagueTeamId?: string | null;
+  createdAt?: Timestamp;
 }
 
 export interface RegistrationInput {
@@ -100,6 +104,7 @@ export type LinkRequestStatus = 'submitted' | 'approved' | 'declined';
 /** `shooterLinkRequests/{uid}`. */
 export interface ShooterLinkRequest {
   shooterName: string;
+  createdAt?: Timestamp;
   note?: string;
   status: LinkRequestStatus;
   reviewNote?: string | null;
@@ -120,9 +125,54 @@ export type TeamProposalRequest =
       teamName: string;
       shooters: RosterEntryInput[];
     }
-  | { action: 'submit' | 'withdraw' | 'delete'; year: number };
+  | { action: 'submit' | 'withdraw' | 'delete' | 'reopen'; year: number };
 
 export interface TeamProposalResponse {
   ok: true;
   status: ProposalStatus | null;
+}
+
+// ── Spec 010: captain handoff and coordinator review ───────────────────────
+
+export type HandoffStatus = 'nominated' | 'accepted' | 'declined' | 'cancelled' | 'approved' | 'rejected';
+
+/** `captainChanges/{leagueTeamId}`: at most one handoff per team. */
+export interface CaptainChange {
+  leagueTeamId: string;
+  teamName: string;
+  fromUid: string;
+  fromName: string;
+  toUid: string;
+  toName: string;
+  status: HandoffStatus;
+  reviewNote: string | null;
+  createdAt?: Timestamp;
+}
+
+export type CaptainHandoffRequest =
+  | { action: 'nominate'; leagueTeamId: string; email: string }
+  | { action: 'cancel' | 'accept' | 'decline'; leagueTeamId: string };
+
+export interface CaptainHandoffResponse {
+  ok: true;
+  status: HandoffStatus;
+  toName?: string;
+}
+
+/** A new shooter's starting average and rookie flag, set by the coordinator at approval. */
+export interface ShooterSetting {
+  name: string;
+  startingAvg: number;
+  rookie: boolean;
+}
+
+export type ReviewRequest =
+  | { type: 'proposal'; id: string; action: 'approve' | 'reject' | 'request-changes'; settings?: ShooterSetting[]; note?: string | null }
+  | { type: 'registration'; id: string; action: 'place' | 'decline'; teamId?: string | null; settings?: ShooterSetting[]; note?: string | null }
+  | { type: 'link'; uid: string; action: 'approve' | 'decline'; shooterName?: string | null; note?: string | null }
+  | { type: 'captain'; leagueTeamId: string; action: 'approve' | 'decline' | 'clear'; note?: string | null };
+
+export interface ReviewResponse {
+  ok: true;
+  status: string;
 }
