@@ -282,8 +282,11 @@ export const TEST_USERS = [
     status: 'deactivated', profile: { firstName: 'Seed', lastName: 'Deactivated', displayName: 'Seed Deactivated' } },
 ];
 
-/** Must match TERMS_VERSION in src/utils/legal.ts so seeded profiles aren't asked to re-accept. */
-export const SEED_TERMS_VERSION = '2026-10';
+/**
+ * Must match LEAGUE_TERMS_VERSION in src/utils/legal.ts (league requests are on
+ * against the emulator) so seeded profiles aren't asked to re-accept.
+ */
+export const SEED_TERMS_VERSION = '2026-10.2';
 
 export const ANNOUNCEMENTS = [
   {
