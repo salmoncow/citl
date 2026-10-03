@@ -54,8 +54,10 @@ export function slugifyTeamName(name: string): string {
 // ─── Seasons and ages ───────────────────────────────────────────────────────
 
 /**
- * The season requests target (AC-19): the latest season if it is active,
- * else the year after it, clamped to this UTC year or next (the only
+ * The season requests target (AC-19): the latest season unless it is
+ * complete, else the year after it. A season doc with no status (made by
+ * Add team or by a spec 010 approval for next season) is upcoming, so it
+ * is the target. Clamped to this UTC year or next (the only
  * years the rules and callable accept).
  */
 export function registrationYear(
@@ -64,7 +66,7 @@ export function registrationYear(
 ): number {
   const thisYear = now.getUTCFullYear();
   const latest = [...seasons].sort((a, b) => b.year - a.year)[0];
-  const target = !latest ? thisYear : latest.status === 'active' ? latest.year : latest.year + 1;
+  const target = !latest ? thisYear : latest.status === 'complete' ? latest.year + 1 : latest.year;
   return Math.min(Math.max(target, thisYear), thisYear + 1);
 }
 
