@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FieldValue } from 'firebase-admin/firestore';
 // @ts-expect-error -- plain JS module without type declarations
-import { planLeagueTeams, syncLeagueTeams } from '../../scripts/lib/league-teams.js';
+import { parseMerges, planLeagueTeams, syncLeagueTeams } from '../../scripts/lib/league-teams.js';
 import { adminDb, clearFirestore } from './_helpers.js';
 
 describe('planLeagueTeams', () => {
@@ -33,6 +33,36 @@ describe('planLeagueTeams', () => {
       { year: 2024, id: 'hawks', name: 'Hawks' },
     ], existing);
     expect(plan).toEqual([{ id: 'eagles', create: false, data: { name: 'Eagles', seasons: [2024, 2025] } }]);
+  });
+});
+
+describe('merges (renamed teams)', () => {
+  const rename = [
+    { year: 2024, id: 'smoking-guns', name: 'Smoking Guns' },
+    { year: 2025, id: 'smoking-guns', name: 'Smoking Guns' },
+    { year: 2026, id: 'the-smoking-guns', name: 'The Smoking Guns' },
+  ];
+
+  it('folds the old id into the current one and records it', () => {
+    const plan = planLeagueTeams(rename, new Map(), new Map([['smoking-guns', 'the-smoking-guns']]));
+    expect(plan).toEqual([{
+      id: 'the-smoking-guns', create: true,
+      data: { name: 'The Smoking Guns', seasons: [2024, 2025, 2026], captainUid: null, formerIds: ['smoking-guns'] },
+    }]);
+  });
+
+  it('is idempotent once applied', () => {
+    const existing = new Map([['the-smoking-guns',
+      { name: 'The Smoking Guns', seasons: [2024, 2025, 2026], captainUid: null, formerIds: ['smoking-guns'] }]]);
+    expect(planLeagueTeams(rename, existing, new Map([['smoking-guns', 'the-smoking-guns']]))).toEqual([]);
+  });
+
+  it('rejects unknown ids, self-merges, chains, and malformed pairs', () => {
+    expect(() => planLeagueTeams(rename, new Map(), new Map([['nope', 'the-smoking-guns']]))).toThrow(/no season has team "nope"/);
+    expect(() => parseMerges(['--merge', 'a=a'])).toThrow(/itself/);
+    expect(() => parseMerges(['--merge', 'a=b', '--merge', 'b=c'])).toThrow(/itself merged/);
+    expect(() => parseMerges(['--merge', 'a'])).toThrow(/old=new/);
+    expect([...parseMerges(['--dry-run', '--merge', 'a=b'])]).toEqual([['a', 'b']]);
   });
 });
 

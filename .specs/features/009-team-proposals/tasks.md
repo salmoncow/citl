@@ -142,7 +142,8 @@ nothing calls `teamProposal`, and an empty `leagueTeams` means the captain guard
 
 - [ ] **8.1 (S)** Run `backfill-league-teams.js --dry-run` against prod; the owner checks the
   team ids per season (DD-5).
-- [ ] **8.2 (S)** Run the backfill against prod.
+- [ ] **8.2 (S)** Run the backfill against prod. A team renamed between seasons shows as
+  two ids in the dry run; pass `--merge old-id=new-id` to keep it one league team.
 - [ ] **8.3 (S)** After the merge deploy, run the one-time invoker binding for
   `teamproposal` (`firebase-deployment.md` §"Adding a new callable function").
 - [ ] **8.4 (S)** Set `VITE_LEAGUE_REQUESTS=true` when M3 deploys; walk through on a preview
