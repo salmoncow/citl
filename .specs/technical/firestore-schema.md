@@ -18,6 +18,8 @@ field types, access patterns, and key operational patterns.
 | Service | `src/services/score-service.ts` | Validation + business logic; 1-hr cache (5-min for latest week) |
 | Repository | `src/repositories/user-repository.ts`, `profile-repository.ts` | `users/{uid}` reads + `lastSignInAt`; `profiles/{uid}` reads/writes (throw on error) |
 | Service | `src/services/account-service.ts` | Profile validation + writes, account callables (`setAccountStatus`, `deleteAccount`) |
+| Repository | `src/repositories/league-repository.ts`, `dependent-repository.ts` | Spec 009 league teams, proposals (read), registrations, link requests; dependents (throw on error) |
+| Service | `src/services/member-league-service.ts` | Spec 009 validation + writes, `teamProposal` callable (lazy-loaded, not in app-services) |
 
 Cache is invalidated on every write. No exceptions are thrown across module boundaries.
 
@@ -86,10 +88,104 @@ required keys, field validation, server timestamps. Update — self + active mir
 `affectedKeys().hasOnly(['firstName','lastName','displayName','phone','acceptedTermsAt','termsVersion','updatedAt'])`;
 same validation. Delete — disallowed for clients; `deleteAccount` removes it recursively.
 
-**Reserved subcollection** `profiles/{uid}/dependents/{id}` — M2 (under-18 shooters on an
-adult account). Denied for all clients until M2.
+**Subcollection** `profiles/{uid}/dependents/{depId}` — see below (spec 009).
 
 **TypeScript interface:** `ProfileDoc`, `ProfileInput` — `src/types/account.ts`
+
+---
+
+### `profiles/{uid}/dependents/{depId}` — under-18 shooters (spec 009)
+
+Auto-ID. Minors have no accounts (spec 009 DD-4); a member registers them here and brings
+them onto a roster or registration. Removed with the profile by `deleteAccount`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `firstName`, `lastName` | `string` | `isValidNamePart` (spec 008). Shown publicly as `First L.` only |
+| `birthYear` | `int` | Under 18: `>= year − 18` and `<= year` (`request.time.year()`); birth year only |
+| `createdAt`, `updatedAt` | `Timestamp` | `== request.time` |
+
+**Access:** self (active member) read/create/update/delete, owner/admin read. Key allowlist
+on create and update. The client caps the list at 6.
+
+---
+
+### `leagueTeams/{teamId}` — persistent team identity (spec 009)
+
+Doc ID = the season team doc id (name slug: `name.trim().toLowerCase()` with whitespace
+runs → `-`), so a team keeps one id across years. Written only by the Admin SDK:
+`scripts/backfill-league-teams.js` (from `seasons/*/teams`), and M3 approvals.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | `string` | Latest season's display name |
+| `captainUid` | `string \| null` | One captain per team; `null` until M3 approves one |
+| `seasons` | `number[]` | Years the team played, ascending |
+| `createdAt`, `updatedAt` | `Timestamp` | Server timestamps |
+
+**Access:** Read — signed in. Write — disallowed for clients.
+
+---
+
+### `teamProposals/{year}_{uid}` — captain's proposed team (spec 009)
+
+One per member per season. Written only by the `teamProposal` callable (rules can't
+iterate the roster list), and by M3 review.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `captainUid`, `year` | `string`, `number` | Match the doc id |
+| `purpose` | `'initial'` | M3 adds `'change'` |
+| `teamSource` | `'returning' \| 'new'` | `returning` requires `leagueTeamId` with `captainUid == null`; `new` requires the slug to be unused |
+| `leagueTeamId` | `string \| null` | |
+| `teamName` | `string` | 2–40 chars |
+| `shooters` | `RosterEntry[]` | `{kind: 'self'\|'dependent'\|'named', name, rookie, minor, dependentId?, guardianName?}`; 5–15 to submit, ≤15 to save; minors named `First L.` and need an adult guardian on the roster |
+| `status` | `ProposalStatus` | `draft \| submitted \| changes-requested \| approved \| rejected`; M2 writes only `draft`/`submitted` |
+| `reviewNote`, `reviewedBy`, `reviewedAt` | `null` until M3 | Kept on save |
+| `createdAt`, `updatedAt`, `submittedAt` | `Timestamp` (`submittedAt` nullable) | Server timestamps |
+
+**Access:** Read — the captain or owner/admin. Write — disallowed for clients. Submit and
+withdraw append an `audit` entry (`kind: 'proposal'`).
+
+---
+
+### `registrations/{year}_{uid}` — individual join request (spec 009)
+
+One per member per season; refused while `teamProposals/{year}_{uid}` exists.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `uid`, `year` | `string`, `number` | Match the doc id; year is this UTC year or next |
+| `dependentIds` | `string[]` | ≤6 ids from the member's `dependents` |
+| `preferredLeagueTeamId` | `string \| null` | 1–100 chars |
+| `note` | `string \| null` | ≤280 chars |
+| `status` | `'submitted'` | M3 adds `placed \| declined`, `placedLeagueTeamId`, `reviewNote` |
+| `createdAt`, `updatedAt` | `Timestamp` | `== request.time` |
+
+**Access:** Read — self or owner/admin. Create — active member with a profile, key
+allowlist, `status == 'submitted'`. Update — self while `submitted`, only
+`dependentIds`/`preferredLeagueTeamId`/`note`/`updatedAt`. Delete — self while `submitted`.
+
+---
+
+### `shooterLinkRequests/{uid}` and `shooterLinks/{uid}` — scorecard name link (spec 009)
+
+A request asks the coordinator to link the account to a name on past scorecards.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `shooterName` | `string` | 1–60 chars, trimmed |
+| `note` | `string` (optional) | ≤280 chars |
+| `status` | `'submitted'` | M3 adds `approved \| declined`, `reviewNote` |
+| `createdAt`, `updatedAt` | `Timestamp` | `== request.time` |
+
+**Access:** Read — self or owner/admin. Create — active member, `status == 'submitted'`.
+Update — self while `submitted` (`shooterName`, `note`, `updatedAt`). Delete — self while
+`submitted` or `declined` (a re-send after a decline deletes then creates).
+
+`shooterLinks/{uid}` is reserved for M3 (`shooterName`, `nameKey`, `linkedAt`,
+`linkedBy`). Read — self or owner/admin. Write — disallowed for clients. When present,
+`teamProposal` uses its `shooterName` for the captain's roster entry.
 
 ---
 
@@ -108,17 +204,19 @@ can outlive a deleted account without holding PII.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `kind` | `'role-change' \| 'account-status'` | Spec 008. **Missing means `'role-change'`** (entries written before spec 008) |
+| `kind` | `'role-change' \| 'account-status' \| 'proposal'` | Spec 008; `proposal` spec 009. **Missing means `'role-change'`** (entries written before spec 008) |
 | `actorUid` | `string` | uid of the caller (owner for role changes; the member for status changes) |
 | `targetUid` | `string` | uid affected |
 | `fromRole` / `toRole` | `'owner' \| 'admin' \| 'user'` | `role-change` only |
 | `fromStatus` | `'active' \| 'deactivated'` | `account-status` only |
 | `toStatus` | `'active' \| 'deactivated' \| 'deleted'` | `account-status` only |
+| `subjectId` | `string` | `proposal` only: the `teamProposals` doc id |
+| `action` | `'submitted' \| 'withdrawn'` | `proposal` only |
 | `at` | `Timestamp` | Server timestamp of the change |
 
 Writers: `setUserRole` (role-change), `setAccountStatus` (deactivate/reactivate),
-`deleteAccount` (`toStatus: 'deleted'`; a retry after a partial failure may write a second
-entry).
+`teamProposal` (submit/withdraw), `deleteAccount` (`toStatus: 'deleted'`; a retry after a
+partial failure may write a second entry).
 
 **Access:** Read — owner only. Write — disallowed for all clients (`if false`); only the
 Admin SDK appends. Append-only by convention (no update/delete path exists).
@@ -130,7 +228,8 @@ Admin SDK appends. Append-only by convention (no update/delete path exists).
 ### `rateLimits/{path}` — function-internal counters
 
 Function-internal sliding-window rate-limit counters at `rateLimits/{name}/actors/{uid}`:
-`setUserRole` (20/hr per actor) and `setAccountStatus` (10/hr per uid, spec 008). The rules
+`setUserRole` (20/hr per actor), `setAccountStatus` (10/hr per uid, spec 008), and
+`teamProposal` (60/hr per uid, spec 009). The rules
 match the whole subtree via `rateLimits/{path=**}`.
 
 | Field | Type | Notes |
@@ -379,6 +478,9 @@ and from `accolades` in any published week.
 Every other query is served by a direct document-ID lookup or an automatic single-field
 index:
 
+- `leagueTeams where captainUid ==` (captain guard), `teamProposals where captainUid ==`
+  and `registrations where uid ==` (`deleteAccount` cascade) — single-field equality.
+
 - `seasons/{year}/entries` — range queries on `weekNumber` use the automatic single-field
   index; the `"{weekNumber}_{teamId}"` composite ID also lets the repository build entry
   references directly with no query at all.
@@ -398,4 +500,5 @@ this section — the two must always match.
 | `ScorecardShooter` (display layer only) | `src/types/scorecard.ts` |
 | `Announcement` | `src/types/announcement.ts` |
 | `UserDoc`, `Role`, `AccountStatus` | `src/types/user.ts` |
+| `LeagueTeam`, `TeamProposal`, `RosterEntry`, `Registration`, `ShooterLinkRequest`, `Dependent` | `src/types/league.ts` |
 | `ProfileDoc`, `ProfileInput`, `AuthProviderId`, account callable I/O | `src/types/account.ts` |

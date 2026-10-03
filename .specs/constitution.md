@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.8.0
-**Last Updated:** 2026-10-01
+**Version:** 1.9.0
+**Last Updated:** 2026-10-03
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
 
@@ -152,7 +152,15 @@ into Firestore on 2026-02-28.
 seasons/{year}                              → Season metadata + awards
 seasons/{year}/teams/{teamId}              → Team roster + totals arrays
 seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapshot + accolades
+leagueTeams/{teamId}                       → Persistent team identity + captain (spec 009)
+teamProposals/{year}_{uid}                 → Captain's proposed roster (callable-only writes)
+registrations/{year}_{uid}                 → Individual "join a team" request
+shooterLinkRequests/{uid}, shooterLinks/{uid} → Account-to-scorecard-name link (M3 approves)
+profiles/{uid}/dependents/{depId}          → Minors a member registers with them
 ```
+
+Season data (`seasons/**`) stays admin-written. Member requests never write it; the
+coordinator's approval (M3) is the only path from a request into a season.
 
 See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for the full schema reference.
 
@@ -250,7 +258,7 @@ private static _skeleton(): string {
 - Page Load Time: <3 seconds (p95)
 - Time to Interactive (TTI): <5 seconds (p95)
 - First Contentful Paint (FCP): <1.5 seconds (p95)
-- JS bundle: <250 kB gzipped (currently ~246 kB gzipped, measured 2026-10-01 ✅ — little headroom left; account and sign-in UI is code-split)
+- JS bundle: <250 kB gzipped (currently ~249 kB gzipped, measured 2026-10-03 ✅ — under 1 kB headroom; account, sign-in, and league request UI is code-split, and the next main-path addition needs a trim first)
 - CSS: <20 kB gzipped (currently ~16 kB); fonts: self-hosted latin woff2 only, 9 files / ~187 kB if every weight loads, cached `immutable`. Figures and method: [build-system.md](technical/build-system.md#bundle-size-targets)
 
 **Firebase Quota Constraints**: the daily target ceilings and 70% alert thresholds are
@@ -472,7 +480,9 @@ unlock Cloud Functions, which the RBAC role-writer pattern requires.
 **Justified functions**: `setUserRole` + `onUserCreate` (spec 002);
 `setAccountStatus` + `deleteAccount` (spec 008 DD-1: client-unwritable status with an
 atomic audit entry, and a delete cascade over docs clients cannot delete; a few calls per
-month).
+month); `teamProposal` (spec 009 DD-2: roster checks over a list, which rules can't
+iterate, plus the one-captain-per-team and one-request-per-season checks, in one
+transaction; a few dozen calls per season).
 
 
 ### VI.2 Cost Optimization
@@ -582,3 +592,4 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.7.0 (2026-09-24): "Range Day" site redesign (spec 006, ADR-011) — added §III.6 Accessibility & Responsive Standards; §IV.1 styling line covers self-hosted `@fontsource` fonts and the new token groups/heat ramp; §III.3 skeleton path corrected to `admin-tables.css`; §III.4 JS figure re-measured (~242 kB) with CSS and font budgets; §II.1 inventory recounted
 - 1.7.1 (2026-09-25): Design-token hygiene (spec 007) — §IV.1 styling line: the token contract is now enforced by `src/styles/tokens.test.ts` (no colour literals or primitive references in component CSS; identical dark blocks)
 - 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)
+- 1.9.0 (2026-10-03): Team proposals and member requests (spec 009, ADR-013) — §II.5 lists the persistent `leagueTeams` and the member request collections; §VI.1 justifies `teamProposal`; §III.4 JS figure re-measured (~249 kB, under 1 kB headroom)

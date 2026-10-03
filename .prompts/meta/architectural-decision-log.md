@@ -729,6 +729,70 @@ verified adult account, a profile, and a trustworthy account status to build on.
 
 ---
 
+### ADR-013: Persistent League Teams and Member Requests
+
+**Date**: 2026-10-03
+**Status**: Accepted
+**Domains Affected**: Data, Security, UI, Cost
+
+**Context**
+
+Teams were stored only per season (`seasons/{year}/teams/{teamId}`), with no owner. M2 of
+the member-accounts program (spec 009) lets members propose a team and roster, ask to be
+placed on a team, register under-18 dependents, and ask to link their account to a name
+on past scorecards. The owner decided teams persist across years with one captain each,
+registration is open all season, and minors never hold accounts. All of it must reach the
+coordinator for approval (M3) without members ever writing season data.
+
+**Decision**
+
+1. **`leagueTeams/{teamId}`** holds the persistent identity and `captainUid`. The id is the
+   season team slug, so existing season docs map to it without a migration; a one-off
+   Admin SDK backfill creates the docs from `seasons/*/teams`.
+2. **Requests are separate collections**, one doc per member per season (`teamProposals`
+   and `registrations` keyed `{year}_{uid}`; `shooterLinkRequests/{uid}`). M3's review
+   turns an approved request into season data. Members never write `seasons/**`.
+3. **Proposals go through a `teamProposal` callable.** Rules can't iterate a roster list,
+   and the checks (roster size and shape, minors with an adult guardian, one captain per
+   team, a proposal and a registration never both) need one transaction. Registrations,
+   dependents and link requests are flat, so they are client writes under rules.
+4. **Minors live under the guardian's profile** (`profiles/{uid}/dependents`) and are
+   stored on rosters as `First L.`. A named minor without an account needs an adult on
+   the same roster as guardian.
+5. **Hidden behind `VITE_LEAGUE_REQUESTS`** in production until M3 (review) deploys, so no
+   request can be sent that no one can act on.
+
+**Rationale**
+
+- §VI.1: one callable at a few dozen calls per season; reads are a handful per `/account`
+  visit and the team list loads only when a dialog needs it.
+- §III.4: all league UI and the league repositories load lazily; the main path grew
+  under 1 kB gzip.
+- Keeping requests apart from season data means a bad request can't corrupt published
+  standings, and M3 approval is the single, auditable write path.
+
+**Alternatives Considered**
+
+- **Captain field on season team docs**: rejected; a captain spans seasons and the season
+  docs are admin-written
+- **Client-written proposals under rules**: rejected; rules can't validate the roster list
+- **Accounts for minors**: rejected (ADR-012)
+- **Free-text team requests by email**: rejected; nothing to review or audit
+
+**Consequences**
+
+- Enables: M3 review queue (proposals, registrations, link requests), captain handoff
+  (`leagueTeams.captainUid`), roster prefill from the last season
+- Constrains: team ids are slugs, so a rename keeps the old id; the captain guard now
+  blocks deactivate/delete for a team's captain until the captaincy moves; the JS budget
+  has under 1 kB left on the main path
+- Requires (owner ops): run the backfill, deploy rules and functions, add the invoker
+  binding for `teamproposal`
+
+**Review Date**: 2027-01-01
+
+---
+
 ## How AI Agents Should Use This Log
 
 1. **Before implementing a new feature**: Check if a relevant decision exists that constrains

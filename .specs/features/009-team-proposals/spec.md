@@ -199,11 +199,9 @@ coordinator approves something in M3.
 | Types | `src/types/league.ts` (new) | `LeagueTeam`, `TeamProposal`, `RosterEntry` (`self \| dependent \| named`), `ProposalStatus`, `Registration`, `ShooterLinkRequest`, `Dependent`, callable request/response types |
 | Repositories | `src/repositories/league-repository.ts` (new) | `leagueTeams` list; `teamProposals/{id}` get; `registrations/{id}` get/create/update/delete; `shooterLinkRequests/{uid}` get/set/delete |
 | Repositories | `src/repositories/dependent-repository.ts` (new) | `profiles/{uid}/dependents` list/create/update/delete |
-| Repositories | `src/repositories/repository-factory.ts` | add both getters |
 | Services | `src/services/league-validation.ts` (new) | pure: `validateTeamName`, `validateRosterDraft`, `validateRosterForSubmit`, `minorDisplayName`, `registrationYear`, `isAgingOut`, `validateDependentInput`. Limits mirror the rules and zod |
-| Services | `src/services/member-league-service.ts` (new) | `teamProposal` callable wrapper, repository calls, error-code → message map |
+| Services | `src/services/member-league-service.ts` (new) | `teamProposal` callable wrapper, repository calls, error-code → message map. Lazy (`getMemberLeagueService()`); it builds both repositories itself so they stay off the main path |
 | Services | `src/services/shooter-directory.ts` (new) | builds the name → seasons index from cached `getAllSeasons` + `getTeams(year)` |
-| Services | `src/services/app-services.ts` | expose the new services |
 | Modules | `src/main.ts` | route `/account/team` (lazy). The account gate applies to it as to `/account` |
 | Components | `src/components/account-league.ts` (new) | `/account` League section: season request card, link-request card |
 | Components | `src/components/account-dependents.ts` (new) | dependents list and form |
@@ -211,7 +209,7 @@ coordinator approves something in M3.
 | Components | `src/components/shooter-link-form.ts` (new) | name search and request dialog |
 | Components | `src/components/team-proposal-page.ts` (new) | roster builder shell, team source, actions |
 | Components | `src/components/roster-entry-list.ts` (new) | entry rows, add/remove, rookie/minor/guardian controls |
-| Components | `src/components/name-suggest.ts` (new) | `attachAutocomplete` moved out of `admin-tabs/admin-shared.ts` (it has no admin deps) and re-exported there |
+| Utils | `src/utils/features.ts` (new) | `leagueRequestsEnabled`: `VITE_LEAGUE_REQUESTS=true`, or on by default against the emulator |
 | Views | `src/views/account-team.ts` (new) | shell for `/account/team` |
 | Styles | `src/styles/account.css` | tokens only |
 | Server | `functions/src/teamProposal.ts` (new), `functions/src/index.ts` | callable |
