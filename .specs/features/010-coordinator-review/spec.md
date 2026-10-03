@@ -128,7 +128,7 @@ averages; it never touches weeks, entries, or standings.
 - [ ] AC-12: **Approve captain change** (status `accepted`): the league team's `captainUid` must
   still be the nominating captain (`stale-handoff`), and the nominee must be active with a
   profile and captain no other team. Sets `captainUid` to the nominee and the change `approved`.
-  **Decline** sets `declined`.
+  **Decline** sets `rejected` (`declined` is the nominee saying no).
 - [ ] AC-13: **Remove captain** sets the league team's `captainUid` to null and cancels any open
   handoff for it.
 

@@ -799,6 +799,67 @@ coordinator for approval (M3) without members ever writing season data.
 
 ---
 
+### ADR-014: Coordinator Review Through One Callable
+
+**Date**: 2026-10-03
+**Status**: Accepted
+**Domains Affected**: Data, Security, UI, Cost
+
+**Context**
+
+M2 (spec 009, ADR-013) stores member requests apart from season data. M3 (spec 010) adds
+the coordinator's review: approving a team proposal publishes the team and roster,
+placing a registration adds the member and dependents to a team, approving a link writes
+`shooterLinks`, and captains can hand their team to another member. Each decision writes
+several documents that clients cannot write, and must be audited.
+
+**Decision**
+
+1. **One `reviewRequest` callable** (admin/owner only) with an input discriminated on
+   request type (`proposal`, `registration`, `link`, `captain`). Each type is a handler
+   under `functions/src/review/`; each decision is one transaction with its audit entry.
+2. **A separate `captainHandoff` callable** for members: nominate by account email
+   (`getUserByEmail`), cancel, accept, decline. State lives in
+   `captainChanges/{leagueTeamId}`; the coordinator approves through `reviewRequest`.
+3. **The published season team doc is the source of truth after approval.** A captain's
+   roster change reopens the approved proposal from the team doc; reject or discard
+   restores it. Dropping a shooter with scores is refused (admin cascade only).
+   Averages are set by the coordinator at approval; stored shooters keep theirs.
+4. **Captaincy lives on `leagueTeams.captainUid`.** Season team docs record who captained
+   that season and are not rewritten by a handoff.
+5. **`<admin-panel>` is lazy-loaded** when an elevated user signs in, freeing ~18 kB gzip
+   on the main path for every visitor.
+6. **The terms version follows `VITE_LEAGUE_REQUESTS`.** Turning the flag on shows the
+   league privacy text and asks every member to re-accept, with no code change.
+
+**Rationale**
+
+- §VI.1: two functions, tens of calls per season. One review callable means one invoker
+  binding for four request types.
+- §III.2: every review write is server-side; rules deny client writes to
+  `captainChanges`, `shooterLinks`, and review fields.
+- §III.4: main path 249.1 → 231.0 kB gzip.
+
+**Alternatives Considered**
+
+- **A callable per request type**: rejected; four deploys and bindings for one admin page
+- **Handoff inside `teamProposal`**: rejected; different callers and rate limits
+- **Client writes under rules for link approval**: rejected; the name-taken check is a query
+- **Cascading dropped shooters' scores on approval**: rejected; destructive, stays in Team Management
+
+**Consequences**
+
+- Enables: the flag-on release of member league requests; M4 notifications can hook the
+  same review outcomes
+- Constrains: a team's captain changes only by approval, handoff, or coordinator removal;
+  competing proposals resolve by first approval
+- Requires (owner ops): invoker bindings for `reviewrequest` and `captainhandoff`; set the
+  `VITE_LEAGUE_REQUESTS` repository variable to `true` and redeploy
+
+**Review Date**: 2027-01-01
+
+---
+
 ## How AI Agents Should Use This Log
 
 1. **Before implementing a new feature**: Check if a relevant decision exists that constrains

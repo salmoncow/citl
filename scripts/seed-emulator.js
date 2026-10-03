@@ -340,7 +340,7 @@ async function seedCommand() {
   console.log(`✓ seeded ${COMPLETE_YEAR} (complete, ${WEEKS_PER_SEASON} weeks + awards)`);
 
   await seedLeagueRequests();
-  console.log(`✓ seeded league teams and ${REQUEST_YEAR} requests (draft proposal, registration, link request, dependent)`);
+  console.log(`✓ seeded league teams and ${REQUEST_YEAR} requests (submitted proposal, registration, link request, dependent)`);
 
   console.log('───────────────────────────────────────────────────');
   console.log('Test sign-in (any password works on the auth emulator):');

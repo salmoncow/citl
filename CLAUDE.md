@@ -69,8 +69,12 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `src/components/{sign-in-dialog,account-*}.ts` | Sign-in dialog; `/account` page, profile form, sign-in methods, danger zone |
 | `src/services/member-league-service.ts` | Spec 009 member requests: dependents, registration, scorecard-name link, `teamProposal` callable (lazy) |
 | `src/services/league-validation.ts` | Pure roster/dependent/registration rules mirrored from `firestore.rules` and `functions/src/lib/roster.ts` |
-| `src/components/{account-league,team-proposal-page,roster-entry-list}.ts` | `/account` League cards; `/account/team` roster builder (behind `VITE_LEAGUE_REQUESTS`, `src/utils/features.ts`) |
-| `functions/src/teamProposal.ts` | Save/submit/withdraw/delete a team proposal in one transaction (ADR-013) |
+| `src/components/{account-league,team-proposal-page,roster-entry-list}.ts` | `/account` League cards; `/account/team` roster builder (behind `VITE_LEAGUE_REQUESTS`, `src/utils/features.ts`; the flag also sets the terms version, `src/utils/legal.ts`) |
+| `functions/src/teamProposal.ts` | Save/submit/withdraw/delete/reopen a team proposal in one transaction (ADR-013) |
+| `functions/src/reviewRequest.ts`, `functions/src/review/*.ts` | Coordinator review: approve/reject proposals, place registrations, link names, captain handoffs (ADR-014) |
+| `functions/src/captainHandoff.ts`, `functions/src/lib/publish.ts` | Member-side captain handoff; pure roster merge used on approval |
+| `src/services/league-review-service.ts`, `src/components/admin-tabs/{requests-tab,request-cards}.ts` | Admin Requests tab (lazy) |
+| `src/components/account-captain.ts` | `/account` captain card and nomination card |
 | `src/services/scoring-engine.ts` | Pure scoring calculations (ADR-006) |
 | `src/services/season-highlights.ts` | Pure Home stats: award races, league average, top averages, straights |
 | `src/services/score-entry-preview.ts` | `previewTeamNight()` — admin live preview (read-only engine composition) |
