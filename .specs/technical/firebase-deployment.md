@@ -162,6 +162,7 @@ Bindings in place / required:
 | `setuserrole` | `setUserRole` (spec 002) | Applied at first deploy (2026-05-04) |
 | `setaccountstatus` | `setAccountStatus` (spec 008) | **Run once after the spec 008 deploy** |
 | `deleteaccount` | `deleteAccount` (spec 008) | **Run once after the spec 008 deploy** |
+| `teamproposal` | `teamProposal` (spec 009) | **Run once after the spec 009 deploy** |
 
 Without the binding, browser calls fail with a CORS / 403 error.
 
