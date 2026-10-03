@@ -121,6 +121,7 @@ runs → `-`), so a team keeps one id across years. Written only by the Admin SD
 | `name` | `string` | Latest season's display name |
 | `captainUid` | `string \| null` | One captain per team; `null` until M3 approves one |
 | `seasons` | `number[]` | Years the team played, ascending |
+| `formerIds` | `string[]` (optional) | Season team ids the team used before a rename (backfill `--merge old=new`); those seasons' docs keep the old id |
 | `createdAt`, `updatedAt` | `Timestamp` | Server timestamps |
 
 **Access:** Read — signed in. Write — disallowed for clients.
