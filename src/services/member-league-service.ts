@@ -15,9 +15,8 @@
 
 import type { HttpsCallable } from 'firebase/functions';
 import { db } from '@/firebase-config';
-import { createRepositoryFactory } from '@/repositories/repository-factory';
-import type { LeagueRepository } from '@/repositories/league-repository';
-import type { DependentRepository } from '@/repositories/dependent-repository';
+import { LeagueRepository } from '@/repositories/league-repository';
+import { DependentRepository } from '@/repositories/dependent-repository';
 import { callable } from '@/infrastructure/functions';
 import { type Result, success, failure } from '@/types/result';
 import type {
@@ -230,12 +229,13 @@ let instance: MemberLeagueService | null = null;
 /** The live, Firestore-backed MemberLeagueService (memoized). */
 export function getMemberLeagueService(): MemberLeagueService {
   if (!instance) {
-    const factory = createRepositoryFactory({ db });
-    // The callable is resolved on first use so construction never
-    // initializes the Functions SDK.
+    // The repositories are built here, not in RepositoryFactory, so they
+    // stay in this lazy chunk and out of the main bundle (§III.4). The
+    // callable is resolved on first use so construction never initializes
+    // the Functions SDK.
     instance = new MemberLeagueService(
-      factory.getLeagueRepository(),
-      factory.getDependentRepository(),
+      new LeagueRepository(db),
+      new DependentRepository(db),
       () => callable<TeamProposalRequest, TeamProposalResponse>('teamProposal'),
     );
   }

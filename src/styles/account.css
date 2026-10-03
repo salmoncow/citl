@@ -324,3 +324,63 @@ account-dependents { display: block; }
 
 .league-match:hover,
 .league-match:focus-visible { background: var(--c-surface); }
+
+/* ── Roster builder (spec 009) ──────────────────────────────── */
+team-proposal-page,
+roster-entry-list { display: block; }
+
+.roster-table { width: 100%; border-collapse: collapse; margin-bottom: var(--space-4); }
+
+.roster-table__caption {
+  caption-side: top;
+  text-align: left;
+  padding-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+}
+
+.roster-table th {
+  text-align: left;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text-muted);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.roster-table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--c-border);
+  vertical-align: middle;
+}
+
+.roster-table__name-fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); min-width: 14rem; }
+
+.roster-table__check { width: 20px; height: 20px; accent-color: var(--c-accent); }
+
+.roster-table__na { color: var(--c-text-muted); }
+
+.roster-table__empty { color: var(--c-text-muted); font-size: var(--text-sm); }
+
+.roster-add { align-items: center; }
+
+.roster-add__select { width: auto; min-width: 10rem; }
+
+@media (max-width: 479px) {
+  .roster-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  .roster-table tr { display: block; padding: var(--space-3) 0; border-bottom: 1px solid var(--c-border); }
+
+  .roster-table td {
+    display: grid;
+    grid-template-columns: 6rem 1fr;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    border: 0;
+  }
+
+  .roster-table td::before { content: attr(data-label); font-size: var(--text-sm); color: var(--c-text-muted); }
+
+  .roster-table__name-fields { grid-template-columns: 1fr; min-width: 0; }
+}

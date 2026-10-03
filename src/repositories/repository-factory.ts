@@ -1,16 +1,13 @@
 /**
  * Repository Factory
  *
- * Creates and caches the Firestore-backed repositories (score, user, profile,
- * league, dependent).
+ * Creates and caches the Firestore-backed repositories (score, user, profile).
  */
 
 import type { Firestore } from 'firebase/firestore';
 import { ScoreRepository } from '@/repositories/score-repository';
 import { UserRepository } from '@/repositories/user-repository';
 import { ProfileRepository } from '@/repositories/profile-repository';
-import { LeagueRepository } from '@/repositories/league-repository';
-import { DependentRepository } from '@/repositories/dependent-repository';
 
 interface FactoryConfig {
   db: Firestore;
@@ -64,28 +61,6 @@ export class RepositoryFactory {
     const repo = new ProfileRepository(this.config.db);
     this.instances.set('profile', repo);
     return repo;
-  }
-
-  getLeagueRepository(): LeagueRepository {
-    return this._memo('league', () => new LeagueRepository(this._requireDb()));
-  }
-
-  getDependentRepository(): DependentRepository {
-    return this._memo('dependent', () => new DependentRepository(this._requireDb()));
-  }
-
-  private _memo<T>(key: string, make: () => T): T {
-    if (!this.instances.has(key)) this.instances.set(key, make());
-    return this.instances.get(key) as T;
-  }
-
-  private _requireDb(): Firestore {
-    if (!this.config.db) {
-      throw new Error(
-        'RepositoryFactory: db is required. Pass { db } from firebase-config.ts.',
-      );
-    }
-    return this.config.db;
   }
 
   reconfigure(config: Partial<FactoryConfig>): void {
