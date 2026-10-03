@@ -55,6 +55,8 @@ const SEEDED_COLLECTIONS = [
   'users', 'profiles', 'audit', 'announcements', 'config', 'seasons',
   // Spec 009
   'leagueTeams', 'teamProposals', 'registrations', 'shooterLinkRequests', 'shooterLinks',
+  // Spec 010
+  'captainChanges',
 ];
 
 function usage(message) {
@@ -257,7 +259,8 @@ async function seedLeagueRequests() {
   await syncLeagueTeams(db, { FieldValue });
   const now = FieldValue.serverTimestamp();
 
-  // seed-user: one dependent and a draft proposal claiming a returning team.
+  // seed-user: one dependent and a submitted proposal claiming a returning
+  // team, so the admin Requests tab (spec 010) has one of each request type.
   await db.doc('profiles/seed-user/dependents/seed-dep-1').set({
     firstName: 'Riley', lastName: 'User', birthYear: REQUEST_YEAR - 13, createdAt: now, updatedAt: now,
   });
@@ -272,10 +275,12 @@ async function seedLeagueRequests() {
       { kind: 'self', name: 'Seed User', rookie: false, minor: false },
       { kind: 'dependent', name: 'Riley U.', rookie: true, minor: true, dependentId: 'seed-dep-1' },
       { kind: 'named', name: 'Dave Brennan', rookie: false, minor: false },
+      { kind: 'named', name: 'Jordan Pike', rookie: true, minor: false },
+      { kind: 'named', name: 'Casey Moore', rookie: true, minor: false },
     ],
-    status: 'draft',
+    status: 'submitted',
     reviewNote: null,
-    submittedAt: null,
+    submittedAt: now,
     reviewedBy: null,
     reviewedAt: null,
     createdAt: now,
@@ -348,7 +353,7 @@ async function seedCommand() {
 
 async function statusCommand() {
   header('status');
-  for (const col of ['users', 'profiles', 'audit', 'announcements', 'config', 'leagueTeams', 'teamProposals', 'registrations', 'shooterLinkRequests']) {
+  for (const col of ['users', 'profiles', 'audit', 'announcements', 'config', 'leagueTeams', 'teamProposals', 'registrations', 'shooterLinkRequests', 'captainChanges']) {
     const snap = await db.collection(col).count().get();
     console.log(`${col.padEnd(15)} ${snap.data().count}`);
   }

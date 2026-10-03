@@ -675,6 +675,9 @@ export class ScoreService {
    * and bumps the generation, so a read that started before the write can
    * neither be joined by later callers nor cache its (pre-write) result.
    */
+  /** Drop cached teams and seasons after a server-side roster write (spec 010 review). */
+  invalidateTeams(year: number): void { for (const k of [`teams:${year}`, `season:${year}`, 'seasons:all']) this._invalidate(k); }
+
   private _invalidate(key: string): void {
     this.cache.delete(key);
     this.inflight.delete(key);

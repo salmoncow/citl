@@ -20,6 +20,9 @@ import { DependentRepository } from '@/repositories/dependent-repository';
 import { callable } from '@/infrastructure/functions';
 import { type Result, success, failure } from '@/types/result';
 import type {
+  CaptainChange,
+  CaptainHandoffRequest,
+  CaptainHandoffResponse,
   Dependent,
   DependentInput,
   LeagueTeam,
@@ -53,6 +56,16 @@ export interface LeagueOverview {
   /** The approved scorecard name, when the link request was approved (M3). */
   linkedName: string | null;
   dependents: Dependent[];
+}
+
+/** The member's captaincy and handoffs (spec 010 AC-19). */
+export interface CaptaincyOverview {
+  /** The league team the member captains, if any. */
+  team: LeagueTeam | null;
+  /** The open or latest handoff the member started for that team. */
+  outgoing: CaptainChange | null;
+  /** Nominations waiting for the member's answer. */
+  incoming: CaptainChange[];
 }
 
 export interface ProposalDraft {
@@ -97,6 +110,7 @@ export class MemberLeagueService {
     private readonly league: LeagueRepository,
     private readonly dependents: DependentRepository,
     private readonly proposalCallable: () => HttpsCallable<TeamProposalRequest, TeamProposalResponse>,
+    private readonly handoffCallable: () => HttpsCallable<CaptainHandoffRequest, CaptainHandoffResponse>,
   ) {}
 
   async loadOverview(uid: string, year: number): Promise<Result<LeagueOverview>> {
@@ -201,8 +215,38 @@ export class MemberLeagueService {
     });
   }
 
-  async proposalAction(year: number, action: 'submit' | 'withdraw' | 'delete'): Promise<CallableOutcome<{ status: ProposalStatus | null }>> {
+  async proposalAction(year: number, action: 'submit' | 'withdraw' | 'delete' | 'reopen'): Promise<CallableOutcome<{ status: ProposalStatus | null }>> {
     return this._call({ action, year });
+  }
+
+  // ─── Captaincy and handoff (spec 010) ─────────────────────────────────────
+
+  async loadCaptaincy(uid: string): Promise<Result<CaptaincyOverview>> {
+    try {
+      const [teams, outgoing, incoming] = await Promise.all([
+        this.league.findCaptaincy(uid),
+        this.league.findHandoffs(uid, 'fromUid'),
+        this.league.findHandoffs(uid, 'toUid'),
+      ]);
+      const team = teams[0] ?? null;
+      return success({
+        team,
+        outgoing: (team && outgoing.find((c) => c.leagueTeamId === team.id)) ?? null,
+        incoming: incoming.filter((c) => c.status === 'nominated' || c.status === 'accepted'),
+      });
+    } catch (e) {
+      console.error('[MemberLeagueService] loadCaptaincy failed:', e);
+      return failure(String(e), codeOf(e, 'LOAD_ERROR'));
+    }
+  }
+
+  async handoff(req: CaptainHandoffRequest): Promise<CallableOutcome<{ status: CaptainHandoffResponse['status']; toName?: string }>> {
+    try {
+      const res = await this.handoffCallable()(req);
+      return { ok: true, status: res.data.status, ...(res.data.toName ? { toName: res.data.toName } : {}) };
+    } catch (e) {
+      return toOutcomeError(e);
+    }
   }
 
   private async _call(req: TeamProposalRequest): Promise<CallableOutcome<{ status: ProposalStatus | null }>> {
@@ -237,6 +281,7 @@ export function getMemberLeagueService(): MemberLeagueService {
       new LeagueRepository(db),
       new DependentRepository(db),
       () => callable<TeamProposalRequest, TeamProposalResponse>('teamProposal'),
+      () => callable<CaptainHandoffRequest, CaptainHandoffResponse>('captainHandoff'),
     );
   }
   return instance;

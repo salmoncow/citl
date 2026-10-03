@@ -2,7 +2,8 @@
  * <account-league> — the League sections of /account (spec 009 AC-12,
  * AC-14, AC-15, AC-16, AC-19, AC-21).
  *
- * Three cards:
+ * Captaincy cards (spec 010) come first, from <account-captain>. Then
+ * three cards:
  *   - "{year} season": propose a team (→ #/account/team) or join a team
  *     (registration dialog); once one exists, its status and actions.
  *   - Dependents: <account-dependents>.
@@ -20,6 +21,7 @@
  */
 
 import '@/components/account-dependents';
+import '@/components/account-captain';
 import { escapeHtml, showToast } from '@/modules/ui';
 import { getAccountContext } from '@/modules/account-context';
 import { getServices } from '@/services/app-services';
@@ -87,7 +89,8 @@ class AccountLeague extends HTMLElement {
       return;
     }
     this._overview = res.data;
-    if (res.data.registration?.preferredLeagueTeamId && !this._teams) await this._loadTeams();
+    const reg = res.data.registration;
+    if ((reg?.preferredLeagueTeamId || reg?.placedLeagueTeamId) && !this._teams) await this._loadTeams();
     if (seq !== this._loadSeq) return;
     this._render();
   }
@@ -135,6 +138,7 @@ class AccountLeague extends HTMLElement {
       ? active.closest('section')?.getAttribute('aria-labelledby') ?? null
       : null;
     this.innerHTML = `
+      <account-captain></account-captain>
       <section class="card account-section" aria-labelledby="league-season">
         <h2 id="league-season" tabindex="-1">${o.year} season</h2>
         ${this._seasonBody(o)}
@@ -158,6 +162,7 @@ class AccountLeague extends HTMLElement {
     on('join', () => void this._join());
     on('edit-registration', () => void this._join());
     on('withdraw-registration', () => void this._withdrawRegistration());
+    on('clear-registration', () => void this._withdrawRegistration(true));
     on('link', () => void this._link());
     on('withdraw-link', () => void this._withdrawLink());
 
@@ -177,7 +182,7 @@ class AccountLeague extends HTMLElement {
         </dl>
         ${note}
         <div class="account-form__actions">
-          <a class="btn-primary" href="#/account/team">${p.status === 'draft' || p.status === 'changes-requested' ? 'Edit roster' : 'View roster'}</a>
+          <a class="btn-primary" href="#/account/team">${p.status === 'draft' || p.status === 'changes-requested' ? 'Edit roster' : p.status === 'approved' ? 'View or change roster' : 'View roster'}</a>
         </div>`;
     }
     if (o.registration) {
@@ -189,18 +194,26 @@ class AccountLeague extends HTMLElement {
         .map((id) => o.dependents.find((d) => d.id === id))
         .map((d) => (d ? minorDisplayName(d.firstName, d.lastName) : 'A removed dependent'));
       const open = r.status === 'submitted';
+      const placed = r.placedLeagueTeamId
+        ? this._teams?.find((t) => t.id === r.placedLeagueTeamId)?.name ?? r.placedLeagueTeamId
+        : null;
       return `
         <p class="account-section__desc">You asked to join a team for ${o.year}.</p>
         <dl class="league-facts">
           <div><dt>Status</dt><dd>${REGISTRATION_LABEL[r.status]}</dd></div>
-          <div><dt>Preferred team</dt><dd>${escapeHtml(team)}</dd></div>
+          ${placed ? `<div><dt>Team</dt><dd>${escapeHtml(placed)}</dd></div>` : `<div><dt>Preferred team</dt><dd>${escapeHtml(team)}</dd></div>`}
           <div><dt>With you</dt><dd>${deps.length ? escapeHtml(deps.join(', ')) : 'Just you'}</dd></div>
           ${r.note ? `<div><dt>Note</dt><dd>${escapeHtml(r.note)}</dd></div>` : ''}
         </dl>
+        ${r.reviewNote ? `<p class="account-notice">Coordinator’s note: ${escapeHtml(r.reviewNote)}</p>` : ''}
         ${open ? `
         <div class="account-form__actions">
           <button type="button" class="btn-secondary" data-action="edit-registration">Edit request</button>
           <button type="button" class="btn-secondary" data-action="withdraw-registration">Withdraw</button>
+        </div>` : ''}
+        ${r.status === 'declined' ? `
+        <div class="account-form__actions">
+          <button type="button" class="btn-secondary" data-action="clear-registration">Remove request</button>
         </div>` : ''}`;
     }
     return `
@@ -253,15 +266,18 @@ class AccountLeague extends HTMLElement {
     }
   }
 
-  private async _withdrawRegistration(): Promise<void> {
+  /** Withdraw a submitted request, or clear a declined one (spec 010 AC-20). */
+  private async _withdrawRegistration(declined = false): Promise<void> {
     const uid = this._uid;
     const o = this._overview;
     if (!uid || !o) return;
-    const ok = await confirmLeague('Withdraw your request?', 'The coordinator won’t place you on a team. You can ask again later.', 'Withdraw');
+    const ok = declined
+      ? await confirmLeague('Remove this request?', 'You can then ask to join again or propose a team.', 'Remove')
+      : await confirmLeague('Withdraw your request?', 'The coordinator won’t place you on a team. You can ask again later.', 'Withdraw');
     if (!ok) return;
     const res = await getMemberLeagueService().withdrawRegistration(uid, o.year);
     if (!res.success) { showToast('error', resultMessage(res)); return; }
-    showToast('success', 'Request withdrawn.');
+    showToast('success', declined ? 'Request removed.' : 'Request withdrawn.');
     await this._load();
   }
 

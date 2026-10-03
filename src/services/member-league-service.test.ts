@@ -12,6 +12,7 @@ function makeService(overrides: { league?: Partial<LeagueRepository>; deps?: Par
     (overrides.league ?? {}) as LeagueRepository,
     (overrides.deps ?? {}) as DependentRepository,
     () => call as never,
+    () => call as never,
   );
   return { svc, call };
 }
@@ -86,5 +87,32 @@ describe('MemberLeagueService', () => {
     const { svc } = makeService({ league: { createRegistration } });
     await svc.saveRegistration('u', 2026, { dependentIds: [], preferredLeagueTeamId: null, note: '  ' }, false);
     expect(createRegistration).toHaveBeenCalledWith(2026, 'u', { dependentIds: [], preferredLeagueTeamId: null, note: null });
+  });
+});
+
+describe('MemberLeagueService captaincy (spec 010)', () => {
+  it('loadCaptaincy keeps the outgoing handoff for the captained team and open nominations only', async () => {
+    const findHandoffs = vi.fn().mockImplementation(async (_uid: string, side: string) => side === 'fromUid'
+      ? [{ leagueTeamId: 'old-team', status: 'approved' }, { leagueTeamId: 'crazy-guns', status: 'nominated' }]
+      : [{ leagueTeamId: 'x', status: 'nominated' }, { leagueTeamId: 'y', status: 'declined' }]);
+    const { svc } = makeService({
+      league: {
+        findCaptaincy: vi.fn().mockResolvedValue([{ id: 'crazy-guns', name: 'Crazy Guns', captainUid: 'u', seasons: [] }]),
+        findHandoffs,
+      },
+    });
+    const res = await svc.loadCaptaincy('u');
+    if (!res.success) throw new Error(res.error);
+    expect(res.data.team?.id).toBe('crazy-guns');
+    expect(res.data.outgoing).toMatchObject({ leagueTeamId: 'crazy-guns', status: 'nominated' });
+    expect(res.data.incoming.map((c) => c.leagueTeamId)).toEqual(['x']);
+  });
+
+  it('handoff passes the request and returns the nominee name', async () => {
+    const call = vi.fn().mockResolvedValue({ data: { ok: true, status: 'nominated', toName: 'Pat New' } });
+    const { svc } = makeService({ call });
+    await expect(svc.handoff({ action: 'nominate', leagueTeamId: 't', email: 'a@b.co' }))
+      .resolves.toEqual({ ok: true, status: 'nominated', toName: 'Pat New' });
+    expect(call).toHaveBeenCalledWith({ action: 'nominate', leagueTeamId: 't', email: 'a@b.co' });
   });
 });
