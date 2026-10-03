@@ -6,7 +6,11 @@
  *   - save:     create or replace the draft (status draft | changes-requested)
  *   - submit:   draft | changes-requested → submitted (audited)
  *   - withdraw: submitted → draft (audited)
- *   - delete:   remove a draft, changes-requested or rejected proposal
+ *   - delete:   remove a draft, changes-requested or rejected proposal;
+ *               for a change request, discard it (back to approved with
+ *               the published roster; spec 010 AC-15)
+ *   - reopen:   approved → draft change request, rebuilt from the
+ *               published team doc (spec 010 AC-14)
  *
  * Sequence:
  *   1. App Check in production; auth; zod input; year ∈ {this UTC year, next}.
@@ -24,20 +28,15 @@
  *   - failed-precondition: inactive or no profile (not-eligible), a
  *     registration for the season (has-registration), a transition not
  *     allowed from the current status (bad-status)
- *   - permission-denied: the returning team has another captain (team-has-captain)
+ *   - permission-denied: the returning team has another captain
+ *     (team-has-captain); reopen by someone no longer the captain (not-captain)
  *   - already-exists: a new team's name matches a league team (league-team-exists)
  *   - not-found: no proposal (withdraw/submit/delete), or no such league team
  *   - resource-exhausted: rate limit hit
  */
 
 import { initializeApp, getApps } from 'firebase-admin/app';
-import {
-  getFirestore,
-  FieldValue,
-  type DocumentSnapshot,
-  type Firestore,
-  type Transaction,
-} from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, type DocumentSnapshot } from 'firebase-admin/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { teamProposalInput, type TeamProposalInput } from './lib/validate.js';
 import { checkAndBumpInTransaction, RATE_LIMITS } from './lib/rateLimit.js';
@@ -48,10 +47,10 @@ import {
   refreshRoster,
   resolveRoster,
   slugifyTeamName,
-  type DependentNames,
   type RosterEntry,
   type RosterEntryInput,
 } from './lib/roster.js';
+import { fail, isEligible, readDependents, rebuildFromTeam, selfNameFrom } from './lib/members.js';
 
 if (getApps().length === 0) {
   initializeApp();
@@ -61,7 +60,7 @@ const isEmulator = process.env['FUNCTIONS_EMULATOR'] === 'true';
 
 export type ProposalStatus = 'draft' | 'submitted' | 'changes-requested' | 'approved' | 'rejected';
 
-const EDITABLE: readonly ProposalStatus[] = ['draft', 'changes-requested'];
+export const EDITABLE: readonly ProposalStatus[] = ['draft', 'changes-requested'];
 const DELETABLE: readonly ProposalStatus[] = ['draft', 'changes-requested', 'rejected'];
 
 export interface TeamProposalResult {
@@ -70,38 +69,10 @@ export interface TeamProposalResult {
   status: ProposalStatus | null;
 }
 
-function fail(code: 'failed-precondition' | 'permission-denied' | 'already-exists' | 'not-found', reason: string, message: string): HttpsError {
-  return new HttpsError(code, message, { reason });
-}
-
 /** Years a request may target: this UTC year's season or next year's. */
 export function isRegistrationYear(year: number, now: Date = new Date()): boolean {
   const y = now.getUTCFullYear();
   return year === y || year === y + 1;
-}
-
-async function readDependents(
-  tx: Transaction,
-  db: Firestore,
-  uid: string,
-  ids: readonly string[],
-): Promise<Map<string, DependentNames>> {
-  const unique = [...new Set(ids)];
-  const snaps = await Promise.all(unique.map((id) => tx.get(db.doc(`profiles/${uid}/dependents/${id}`))));
-  const map = new Map<string, DependentNames>();
-  for (const snap of snaps) {
-    const d = snap.data();
-    if (snap.exists && typeof d?.['firstName'] === 'string' && typeof d?.['lastName'] === 'string') {
-      map.set(snap.id, { firstName: d['firstName'], lastName: d['lastName'] });
-    }
-  }
-  return map;
-}
-
-function selfNameFrom(profile: DocumentSnapshot, link: DocumentSnapshot): string {
-  const linked = link.data()?.['shooterName'];
-  if (typeof linked === 'string' && linked.length > 0) return linked;
-  return String(profile.data()?.['displayName'] ?? '');
 }
 
 function assertLeagueTeamOpen(team: DocumentSnapshot, uid: string): void {
@@ -144,12 +115,12 @@ export async function handleTeamProposal(req: CallableRequest<unknown>): Promise
         tx.get(db.doc(`profiles/${uid}`)),
         tx.get(proposalRef),
       ]);
-      const userStatus = userSnap.data()?.['status'] ?? 'active';
-      if (!userSnap.exists || userStatus !== 'active' || !profileSnap.exists) {
+      if (!isEligible(userSnap, profileSnap)) {
         throw fail('failed-precondition', 'not-eligible', 'Complete your profile on an active account first.');
       }
       const current = proposalSnap.data();
       const status = current?.['status'] as ProposalStatus | undefined;
+      const isChange = current?.['purpose'] === 'change';
 
       switch (input.action) {
         case 'save': {
@@ -157,14 +128,30 @@ export async function handleTeamProposal(req: CallableRequest<unknown>): Promise
             throw fail('failed-precondition', 'bad-status', 'Withdraw the proposal before editing it.');
           }
           const depIds = input.shooters.flatMap((e) => (e.kind === 'dependent' ? [e.dependentId] : []));
+          // A change request keeps its published team (spec 010 AC-15).
+          const teamLookup = isChange
+            ? String(current?.['leagueTeamId'])
+            : input.teamSource === 'returning' && input.leagueTeamId
+              ? input.leagueTeamId
+              : slugifyTeamName(input.teamName);
           const [regSnap, linkSnap, teamSnap, dependents] = await Promise.all([
             tx.get(db.doc(`registrations/${proposalId}`)),
             tx.get(db.doc(`shooterLinks/${uid}`)),
-            input.teamSource === 'returning' && input.leagueTeamId
-              ? tx.get(db.doc(`leagueTeams/${input.leagueTeamId}`))
-              : tx.get(db.doc(`leagueTeams/${slugifyTeamName(input.teamName)}`)),
+            tx.get(db.doc(`leagueTeams/${teamLookup}`)),
             readDependents(tx, db, uid, depIds),
           ]);
+          const shooters = resolveRoster(input.shooters as RosterEntryInput[], {
+            selfName: selfNameFrom(profileSnap, linkSnap),
+            dependents,
+          });
+          const now = FieldValue.serverTimestamp();
+
+          if (isChange) {
+            assertLeagueTeamOpen(teamSnap, uid);
+            tx.update(proposalRef, { shooters, updatedAt: now });
+            return { ok: true as const, status: status ?? 'draft' };
+          }
+
           if (regSnap.exists) {
             throw fail('failed-precondition', 'has-registration',
               'You asked to join a team this season. Withdraw that request to propose a team instead.');
@@ -181,11 +168,6 @@ export async function handleTeamProposal(req: CallableRequest<unknown>): Promise
               'A league team with this name already exists. Choose it as a returning team instead.');
           }
 
-          const shooters = resolveRoster(input.shooters as RosterEntryInput[], {
-            selfName: selfNameFrom(profileSnap, linkSnap),
-            dependents,
-          });
-          const now = FieldValue.serverTimestamp();
           tx.set(proposalRef, {
             captainUid: uid,
             year: input.year,
@@ -247,9 +229,36 @@ export async function handleTeamProposal(req: CallableRequest<unknown>): Promise
           if (!status || !DELETABLE.includes(status)) {
             throw fail('failed-precondition', 'bad-status', 'Withdraw the proposal before deleting it.');
           }
+          if (isChange) {
+            const shooters = await rebuildFromTeam(tx, db, current);
+            tx.update(proposalRef, { shooters, status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+            queueAuditEntry(tx, db, { kind: 'proposal', actorUid: uid, subjectId: proposalId, action: 'discarded' });
+            return { ok: true as const, status: 'approved' as const };
+          }
           tx.delete(proposalRef);
           queueAuditEntry(tx, db, { kind: 'proposal', actorUid: uid, subjectId: proposalId, action: 'deleted' });
           return { ok: true as const, status: null };
+        }
+
+        case 'reopen': {
+          if (!current) throw fail('not-found', 'no-proposal', 'There is no proposal to change.');
+          if (status !== 'approved') {
+            throw fail('failed-precondition', 'bad-status', 'Only an approved roster can be changed.');
+          }
+          const teamSnap = await tx.get(db.doc(`leagueTeams/${String(current['leagueTeamId'] ?? '')}`));
+          if (!teamSnap.exists || teamSnap.data()?.['captainUid'] !== uid) {
+            throw fail('permission-denied', 'not-captain', 'You are no longer this team’s captain.');
+          }
+          const shooters = await rebuildFromTeam(tx, db, current);
+          tx.update(proposalRef, {
+            shooters,
+            purpose: 'change',
+            status: 'draft',
+            reviewNote: null,
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+          queueAuditEntry(tx, db, { kind: 'proposal', actorUid: uid, subjectId: proposalId, action: 'reopened' });
+          return { ok: true as const, status: 'draft' as const };
         }
       }
     });

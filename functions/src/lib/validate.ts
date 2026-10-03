@@ -79,6 +79,59 @@ export const teamProposalInput = z.discriminatedUnion('action', [
   z.object({ action: z.literal('submit'), year }),
   z.object({ action: z.literal('withdraw'), year }),
   z.object({ action: z.literal('delete'), year }),
+  z.object({ action: z.literal('reopen'), year }),
 ]);
 
 export type TeamProposalInput = z.infer<typeof teamProposalInput>;
+
+// ── reviewRequest and captainHandoff (spec 010) ─────────────────────────────
+
+const note = z.string().trim().max(500).nullish();
+const shooterSetting = z.object({
+  name: z.string().trim().min(1).max(61),
+  // Range is checked with a specific message in lib/publish.ts.
+  startingAvg: z.number().finite(),
+  rookie: z.boolean(),
+});
+const settings = z.array(shooterSetting).max(50);
+const uid = z.string().min(1).max(128).regex(/^[^/]+$/);
+
+export const reviewRequestInput = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('proposal'),
+    id: docId,
+    action: z.enum(['approve', 'reject', 'request-changes']),
+    settings: settings.default([]),
+    note,
+  }),
+  z.object({
+    type: z.literal('registration'),
+    id: docId,
+    action: z.enum(['place', 'decline']),
+    teamId: docId.nullish(),
+    settings: settings.default([]),
+    note,
+  }),
+  z.object({
+    type: z.literal('link'),
+    uid,
+    action: z.enum(['approve', 'decline']),
+    shooterName: z.string().trim().min(1).max(60).nullish(),
+    note,
+  }),
+  z.object({
+    type: z.literal('captain'),
+    leagueTeamId: docId,
+    action: z.enum(['approve', 'decline', 'clear']),
+    note,
+  }),
+]);
+
+export type ReviewRequestInput = z.infer<typeof reviewRequestInput>;
+
+export const captainHandoffInput = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('nominate'), leagueTeamId: docId, email: z.string().trim().email().max(254) }),
+  z.object({ action: z.enum(['cancel', 'accept', 'decline']), leagueTeamId: docId }),
+]);
+
+export type CaptainHandoffInput = z.infer<typeof captainHandoffInput>;

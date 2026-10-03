@@ -113,3 +113,11 @@ export function callableRequest(args: {
 export async function loadTeamProposal() {
   return import('../../functions/src/teamProposal.js');
 }
+
+export async function loadReviewRequest() {
+  return import('../../functions/src/reviewRequest.js');
+}
+
+export async function loadCaptainHandoff() {
+  return import('../../functions/src/captainHandoff.js');
+}

@@ -15,7 +15,8 @@
  *      step 3 runs.
  *   3. Member requests (spec 009 AC-18): the member's teamProposals and
  *      registrations (single-field equality queries), shooterLinkRequests/{uid}
- *      and shooterLinks/{uid}, in one batch.
+ *      and shooterLinks/{uid}, and captain nominations to them (spec 010
+ *      AC-21), in one batch.
  *   4. recursiveDelete(profiles/{uid}) — covers the dependents
  *      subcollection.
  *   5. revokeRefreshTokens(uid), then deleteUser(uid).
@@ -95,12 +96,13 @@ export function makeDeleteAccountHandler(guard: typeof assertNotCaptain = assert
     await batch.commit();
 
     // 3. Member requests (spec 009). Published seasons/** are never touched.
-    const [proposals, registrations] = await Promise.all([
+    const [proposals, registrations, nominations] = await Promise.all([
       db.collection('teamProposals').where('captainUid', '==', uid).get(),
       db.collection('registrations').where('uid', '==', uid).get(),
+      db.collection('captainChanges').where('toUid', '==', uid).get(),
     ]);
     const requests = db.batch();
-    for (const d of [...proposals.docs, ...registrations.docs]) requests.delete(d.ref);
+    for (const d of [...proposals.docs, ...registrations.docs, ...nominations.docs]) requests.delete(d.ref);
     requests.delete(db.doc(`shooterLinkRequests/${uid}`));
     requests.delete(db.doc(`shooterLinks/${uid}`));
     await requests.commit();
