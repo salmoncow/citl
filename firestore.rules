@@ -62,6 +62,61 @@ service cloud.firestore {
           && data.updatedAt is timestamp;
     }
 
+    // ── League request helpers (spec 009) ───────────────────────────────────
+    // Request doc ids are "{year}_{uid}"; the owner is read from the id so a
+    // member can probe for their own (possibly missing) request.
+    function isRequestOwner(id) {
+      return isSignedIn()
+          && id.split('_').size() == 2
+          && id.split('_')[1] == request.auth.uid;
+    }
+
+    // Requests target this calendar year's season or next year's.
+    function isRegistrationYear(y) {
+      return y is int && (y == request.time.year() || y == request.time.year() + 1);
+    }
+
+    function DEPENDENT_KEYS() {
+      return ['firstName', 'lastName', 'birthYear', 'createdAt', 'updatedAt'];
+    }
+
+    // Under 18 = born no earlier than (this year - 18); birth year only.
+    // Limits mirror src/services/league-validation.ts.
+    function isValidDependent(data) {
+      return isValidNamePart(data.firstName)
+          && isValidNamePart(data.lastName)
+          && data.birthYear is int
+          && data.birthYear >= request.time.year() - 18
+          && data.birthYear <= request.time.year()
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
+    function REGISTRATION_KEYS() {
+      return ['uid', 'year', 'dependentIds', 'preferredLeagueTeamId', 'note', 'status',
+              'createdAt', 'updatedAt'];
+    }
+
+    // Element checks on dependentIds happen at M3 placement (rules can't
+    // iterate a list).
+    function isValidRegistration(data) {
+      return data.dependentIds is list
+          && data.dependentIds.size() <= 6
+          && (data.preferredLeagueTeamId == null
+              || (data.preferredLeagueTeamId is string
+                  && data.preferredLeagueTeamId.size() >= 1
+                  && data.preferredLeagueTeamId.size() <= 100))
+          && (data.note == null || (data.note is string && data.note.size() <= 280));
+    }
+
+    function isValidLinkRequest(data) {
+      return data.shooterName is string
+          && data.shooterName == data.shooterName.trim()
+          && data.shooterName.size() >= 1
+          && data.shooterName.size() <= 60
+          && (!('note' in data) || (data.note is string && data.note.size() <= 280));
+    }
+
     // ── users/{uid} — RBAC mirror ───────────────────────────────────────────
     // Written server-side by the onUserCreate trigger and the setUserRole
     // callable / scripts/set-role.js CLI. Clients may read their own doc
@@ -118,10 +173,98 @@ service cloud.firestore {
                         || 'acceptedTermsAt' in request.resource.data.diff(resource.data).affectedKeys());
       allow delete: if false;
 
-      // Reserved for M2 (dependents on an adult account).
-      match /dependents/{id} {
-        allow read, write: if false;
+      // ── profiles/{uid}/dependents/{depId} — under-18 shooters (spec 009) ──
+      // Owned by the guardian. Minors never hold accounts; the full name stays
+      // here (private) and rosters carry "First L." only.
+      match /dependents/{depId} {
+        allow read:   if isSelf(uid) || isOwnerOrAdmin();
+        allow create: if isSelf(uid)
+                      && isActiveMember(uid)
+                      && request.resource.data.keys().hasOnly(DEPENDENT_KEYS())
+                      && request.resource.data.keys().hasAll(DEPENDENT_KEYS())
+                      && isValidDependent(request.resource.data)
+                      && request.resource.data.createdAt == request.time
+                      && request.resource.data.updatedAt == request.time;
+        allow update: if isSelf(uid)
+                      && isActiveMember(uid)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['firstName', 'lastName', 'birthYear', 'updatedAt'])
+                      && isValidDependent(request.resource.data)
+                      && request.resource.data.updatedAt == request.time;
+        allow delete: if isSelf(uid);
       }
+    }
+
+    // ── leagueTeams/{teamId} — persistent team identity (spec 009) ──────────
+    // Backfilled from season team doc ids; captainUid is set by M3 Functions.
+    match /leagueTeams/{teamId} {
+      allow read:  if isSignedIn();
+      allow write: if false;
+    }
+
+    // ── teamProposals/{year}_{uid} — captain roster proposals (spec 009) ────
+    // Written only by the teamProposal callable (rules can't validate a
+    // roster list). The doc id carries the captain's uid, so a read of a
+    // proposal that doesn't exist yet is still allowed for its captain.
+    match /teamProposals/{proposalId} {
+      allow read:  if isRequestOwner(proposalId) || isOwnerOrAdmin();
+      allow write: if false;
+    }
+
+    // ── registrations/{year}_{uid} — individual registration (spec 009) ─────
+    // One per member per season. A member can't hold a team proposal and a
+    // registration for the same season. Placement is M3 (Functions).
+    match /registrations/{regId} {
+      allow read:   if isRequestOwner(regId) || isOwnerOrAdmin();
+      allow create: if isSignedIn()
+                    && regId == string(request.resource.data.year) + '_' + request.auth.uid
+                    && request.resource.data.uid == request.auth.uid
+                    && isActiveMember(request.auth.uid)
+                    && exists(/databases/$(database)/documents/profiles/$(request.auth.uid))
+                    && !exists(/databases/$(database)/documents/teamProposals/$(regId))
+                    && request.resource.data.keys().hasOnly(REGISTRATION_KEYS())
+                    && request.resource.data.keys().hasAll(REGISTRATION_KEYS())
+                    && isRegistrationYear(request.resource.data.year)
+                    && isValidRegistration(request.resource.data)
+                    && request.resource.data.status == 'submitted'
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.updatedAt == request.time;
+      allow update: if isRequestOwner(regId)
+                    && resource.data.status == 'submitted'
+                    && isActiveMember(request.auth.uid)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['dependentIds', 'preferredLeagueTeamId', 'note', 'updatedAt'])
+                    && isValidRegistration(request.resource.data)
+                    && request.resource.data.updatedAt == request.time;
+      allow delete: if isRequestOwner(regId) && resource.data.status == 'submitted';
+    }
+
+    // ── shooterLinkRequests/{uid} — link to a scorecard name (spec 009) ─────
+    // Review (approved | declined) is M3 (Functions).
+    match /shooterLinkRequests/{uid} {
+      allow read:   if isSelf(uid) || isOwnerOrAdmin();
+      allow create: if isSelf(uid)
+                    && isActiveMember(uid)
+                    && request.resource.data.keys().hasOnly(['shooterName', 'note', 'status', 'createdAt', 'updatedAt'])
+                    && request.resource.data.keys().hasAll(['shooterName', 'status', 'createdAt', 'updatedAt'])
+                    && isValidLinkRequest(request.resource.data)
+                    && request.resource.data.status == 'submitted'
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.updatedAt == request.time;
+      allow update: if isSelf(uid)
+                    && isActiveMember(uid)
+                    && resource.data.status == 'submitted'
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['shooterName', 'note', 'updatedAt'])
+                    && isValidLinkRequest(request.resource.data)
+                    && request.resource.data.updatedAt == request.time;
+      allow delete: if isSelf(uid) && resource.data.status in ['submitted', 'declined'];
+    }
+
+    // ── shooterLinks/{uid} — approved links, reserved for M3 ────────────────
+    match /shooterLinks/{uid} {
+      allow read:  if isSelf(uid) || isOwnerOrAdmin();
+      allow write: if false;
     }
 
     // ── notificationSettings/{uid} — reserved for M4 ────────────────────────

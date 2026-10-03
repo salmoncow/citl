@@ -9,7 +9,8 @@
  *   reactivate  only Reactivate and Sign out (deactivated account)
  *   complete    first-sign-in profile form (terms + 18+)
  *   terms       terms re-acceptance
- *   normal      Profile, Sign-in methods, Account sections
+ *   normal      Profile, League (spec 009, when enabled), Sign-in methods,
+ *               Account sections
  *
  * In complete mode, if the users/{uid} mirror is still missing after
  * ORPHAN_GRACE_MS, either a previous delete stopped part-way (mirror
@@ -31,6 +32,7 @@ import { escapeHtml, showToast } from '@/modules/ui';
 import { getRole } from '@/modules/role';
 import { getAccountContext } from '@/modules/account-context';
 import { accountErrorMessage, getAccountService } from '@/services/account-service';
+import { leagueRequestsEnabled } from '@/utils/features';
 
 const ORPHAN_GRACE_MS = 15_000;
 
@@ -173,6 +175,7 @@ class AccountPage extends HTMLElement {
             <p class="account-section__desc">Your name and phone are visible only to you and league admins.</p>
             <account-profile-form mode="edit"></account-profile-form>
           </section>
+          ${leagueRequestsEnabled ? '<account-league></account-league>' : ''}
           <section class="card account-section" aria-labelledby="acct-methods">
             <h2 id="acct-methods">Sign-in methods</h2>
             <p class="account-section__desc">Connect more than one so you can always get in.</p>
@@ -186,6 +189,7 @@ class AccountPage extends HTMLElement {
     }
 
     this.innerHTML = `<div class="account-page">${html}</div>`;
+    if (mode === 'normal' && leagueRequestsEnabled) void import('@/components/account-league');
     this.querySelector('[data-action="retry"]')?.addEventListener('click', () => void getAccountContext().gate.refresh());
     this.querySelector('[data-action="reactivate"]')?.addEventListener('click', (e) => void this._reactivate(e.currentTarget as HTMLButtonElement));
     this.querySelectorAll('[data-action="sign-out"]').forEach((btn) => {

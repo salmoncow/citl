@@ -273,6 +273,9 @@ export const TEST_USERS = [
   { uid: 'seed-admin', email: 'admin@citl.test', displayName: 'Seed Admin', role: 'admin' },
   { uid: 'seed-user', email: 'user@citl.test', displayName: 'Seed User', role: 'user',
     profile: { firstName: 'Seed', lastName: 'User', displayName: 'Seed User', phone: '217 555 0100' } },
+  // Spec 009: a second member with a registration and a shooter link request.
+  { uid: 'seed-member', email: 'member@citl.test', displayName: 'Seed Member', role: 'user',
+    profile: { firstName: 'Seed', lastName: 'Member', displayName: 'Seed Member' } },
   // Spec 008: a deactivated member, for the Users tab Status column and
   // the /account reactivation panel.
   { uid: 'seed-deactivated', email: 'deactivated@citl.test', displayName: 'Seed Deactivated', role: 'user',

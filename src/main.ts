@@ -72,6 +72,7 @@ import { aboutView } from './views/about';
 import { downloadsView } from './views/downloads';
 import { adminView } from './views/admin';
 import { accountView } from './views/account';
+import { accountTeamView } from './views/account-team';
 import { privacyView } from './views/privacy';
 
 interface RouteDef {
@@ -267,6 +268,11 @@ class App {
         path: '/account',
         view: accountView,
         after: () => { void import('./components/account-page'); },
+      },
+      {
+        path: '/account/team',
+        view: accountTeamView,
+        after: () => { void import('./components/team-proposal-page'); },
       },
       {
         path: '/admin',

@@ -19,6 +19,7 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { syncLeagueTeams } from './lib/league-teams.js';
 
 import {
   ACTIVE_YEAR,
@@ -50,7 +51,11 @@ initializeApp({ projectId: PROJECT_ID });
 const auth = getAuth();
 const db = getFirestore();
 
-const SEEDED_COLLECTIONS = ['users', 'profiles', 'audit', 'announcements', 'config', 'seasons'];
+const SEEDED_COLLECTIONS = [
+  'users', 'profiles', 'audit', 'announcements', 'config', 'seasons',
+  // Spec 009
+  'leagueTeams', 'teamProposals', 'registrations', 'shooterLinkRequests', 'shooterLinks',
+];
 
 function usage(message) {
   if (message) console.error(`Error: ${message}\n`);
@@ -243,6 +248,60 @@ async function seedSeason(year, { status, currentWeek, publishedWeekCount, draft
   }
 }
 
+// ── Seed: league requests (spec 009) ───────────────────────────────────────
+
+/** Registration season the UI targets: latest season active → that year, else next. */
+const REQUEST_YEAR = COMPLETE_YEAR + 1;
+
+async function seedLeagueRequests() {
+  await syncLeagueTeams(db, { FieldValue });
+  const now = FieldValue.serverTimestamp();
+
+  // seed-user: one dependent and a draft proposal claiming a returning team.
+  await db.doc('profiles/seed-user/dependents/seed-dep-1').set({
+    firstName: 'Riley', lastName: 'User', birthYear: REQUEST_YEAR - 13, createdAt: now, updatedAt: now,
+  });
+  await db.doc(`teamProposals/${REQUEST_YEAR}_seed-user`).set({
+    captainUid: 'seed-user',
+    year: REQUEST_YEAR,
+    purpose: 'initial',
+    teamSource: 'returning',
+    leagueTeamId: 'hawks',
+    teamName: 'Hawks',
+    shooters: [
+      { kind: 'self', name: 'Seed User', rookie: false, minor: false },
+      { kind: 'dependent', name: 'Riley U.', rookie: true, minor: true, dependentId: 'seed-dep-1' },
+      { kind: 'named', name: 'Dave Brennan', rookie: false, minor: false },
+    ],
+    status: 'draft',
+    reviewNote: null,
+    submittedAt: null,
+    reviewedBy: null,
+    reviewedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  // seed-member: an individual registration and a shooter link request.
+  await db.doc(`registrations/${REQUEST_YEAR}_seed-member`).set({
+    uid: 'seed-member',
+    year: REQUEST_YEAR,
+    dependentIds: [],
+    preferredLeagueTeamId: 'eagles',
+    note: 'Can shoot most Tuesdays.',
+    status: 'submitted',
+    createdAt: now,
+    updatedAt: now,
+  });
+  await db.doc('shooterLinkRequests/seed-member').set({
+    shooterName: 'Aaron Klein',
+    note: 'Shot for the Eagles in 2024 and 2025.',
+    status: 'submitted',
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
 // ── Seed: top-level orchestrator ───────────────────────────────────────────
 
 async function seedCommand() {
@@ -251,7 +310,7 @@ async function seedCommand() {
   console.log('✓ wiped seeded collections + test auth users; restored other users\' mirrors');
 
   for (const u of TEST_USERS) await seedUser(u);
-  console.log(`✓ seeded ${TEST_USERS.length} test users (owner, admin, user, deactivated user)`);
+  console.log(`✓ seeded ${TEST_USERS.length} test users (owner, admin, user, member, deactivated user)`);
 
   await seedConfig();
   console.log('✓ seeded config/banner');
@@ -275,6 +334,9 @@ async function seedCommand() {
   });
   console.log(`✓ seeded ${COMPLETE_YEAR} (complete, ${WEEKS_PER_SEASON} weeks + awards)`);
 
+  await seedLeagueRequests();
+  console.log(`✓ seeded league teams and ${REQUEST_YEAR} requests (draft proposal, registration, link request, dependent)`);
+
   console.log('───────────────────────────────────────────────────');
   console.log('Test sign-in (any password works on the auth emulator):');
   for (const u of TEST_USERS) {
@@ -286,7 +348,7 @@ async function seedCommand() {
 
 async function statusCommand() {
   header('status');
-  for (const col of ['users', 'profiles', 'audit', 'announcements', 'config']) {
+  for (const col of ['users', 'profiles', 'audit', 'announcements', 'config', 'leagueTeams', 'teamProposals', 'registrations', 'shooterLinkRequests']) {
     const snap = await db.collection(col).count().get();
     console.log(`${col.padEnd(15)} ${snap.data().count}`);
   }

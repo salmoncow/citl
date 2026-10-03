@@ -27,7 +27,15 @@ export interface AccountStatusEntry {
   toStatus: AccountStatus | 'deleted';
 }
 
-export type AuditEntry = RoleChangeEntry | AccountStatusEntry;
+/** Spec 009: a captain submitted or withdrew a team proposal. */
+export interface ProposalEntry {
+  kind: 'proposal';
+  actorUid: string;
+  subjectId: string;
+  action: 'submitted' | 'withdrawn' | 'deleted';
+}
+
+export type AuditEntry = RoleChangeEntry | AccountStatusEntry | ProposalEntry;
 
 /** Queue an audit entry (with server `at`) on a transaction or batch. */
 export function queueAuditEntry(

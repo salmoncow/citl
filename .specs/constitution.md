@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.8.0
-**Last Updated:** 2026-10-01
+**Version:** 1.9.0
+**Last Updated:** 2026-10-03
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
 
@@ -62,30 +62,30 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-10-01
-**Last Architecture Review**: 2026-10-01
+**Last Updated**: 2026-10-03
+**Last Architecture Review**: 2026-10-03
 
 | Domain | Current State | Status |
 |--------|---------------|--------|
-| **UI Components** | Web Components under `src/components/` (18 custom elements + 2 render-helper modules + 9 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
+| **UI Components** | Web Components under `src/components/` (22 custom elements + 5 helper modules + 9 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
 | **Security** | Firebase Auth (Google, email link; optional public member accounts, spec 008 / ADR-012) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim, mirror and account status | Complete |
-| **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, member profiles, and audit log | Live |
-| **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (96 cases); function unit tests (37 cases). See §III.1. | Active |
+| **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, member profiles, member league requests (spec 009), and audit log | Live |
+| **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (143 cases); function unit tests (76 cases). See §III.1. | Active |
 | **Deployment** | GitHub Actions CI/CD: PR/push runs typecheck + build + three test suites; production deploy is gated on CI success (`workflow_run`) → Firebase Hosting + Firestore rules/indexes + Functions | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
 | **Cost** | Firebase Blaze (pay-as-you-go); usage discipline targets Spark-equivalent quotas | Near 0% usage |
 | **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
 
-**Key Metrics** (as of 2026-10-01):
+**Key Metrics** (as of 2026-10-03):
 - **Status**: Live in production at https://citl.club (Firebase Hosting); AWS/CloudFront decommissioned
-- **SPA Views**: 8 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`, `account`, `privacy`)
-- **Components**: 18 custom elements + 2 render helpers (`home-standings-parts`, `scorecard-render`) under `src/components/`; 9 `admin-tabs/` modules
-- **Services**: 11 (`account-service`, `admin-user-service`, `app-services`, `profile-validation`, `score-entry-preview`, `score-service`, `scorecard-builder`, `scoring-engine`, `season-awards-service`, `season-highlights`, `standings`)
+- **SPA Views**: 9 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`, `account`, `account-team`, `privacy`)
+- **Components**: 22 custom elements + 5 helper modules (`home-standings-parts`, `scorecard-render`, `league-dialog`, `registration-form`, `shooter-link-form`) under `src/components/`; 9 `admin-tabs/` modules
+- **Services**: 14 (`account-service`, `admin-user-service`, `app-services`, `league-validation`, `member-league-service`, `profile-validation`, `shooter-directory`, `score-entry-preview`, `score-service`, `scorecard-builder`, `scoring-engine`, `season-awards-service`, `season-highlights`, `standings`)
 - **Modules**: 8 (`account-context`, `account-gate`, `auth`, `auth-providers`, `navigation`, `role`, `router`, `ui`)
-- **Repositories**: 4 (`profile-repository`, `score-repository`, `user-repository`, `repository-factory`)
-- **Types**: 7 (`account`, `announcement`, `score`, `scorecard`, `season`, `shooter`, `user`)
+- **Repositories**: 6 (`dependent-repository`, `league-repository`, `profile-repository`, `score-repository`, `user-repository`, `repository-factory`)
+- **Types**: 8 (`account`, `announcement`, `league`, `score`, `scorecard`, `season`, `shooter`, `user`)
 - **Team Size**: 1 developer
-- **Firebase Usage**: Hosting live; Firestore live (scorecards + weekly results); Cloud Functions deployed (RBAC role-writer + auth trigger; account status + delete callables, spec 008); Blaze plan, near-zero spend
+- **Firebase Usage**: Hosting live; Firestore live (scorecards + weekly results); Cloud Functions deployed (RBAC role-writer + auth trigger; account status + delete callables, spec 008; `teamProposal` callable, spec 009); Blaze plan, near-zero spend
 
 > Prefer the live `src/` tree over hard counts above — recount at review time rather than trusting these numbers.
 
@@ -152,7 +152,15 @@ into Firestore on 2026-02-28.
 seasons/{year}                              → Season metadata + awards
 seasons/{year}/teams/{teamId}              → Team roster + totals arrays
 seasons/{year}/weeks/{weekNumber}          → Weekly results + standings snapshot + accolades
+leagueTeams/{teamId}                       → Persistent team identity + captain (spec 009)
+teamProposals/{year}_{uid}                 → Captain's proposed roster (callable-only writes)
+registrations/{year}_{uid}                 → Individual "join a team" request
+shooterLinkRequests/{uid}, shooterLinks/{uid} → Account-to-scorecard-name link (M3 approves)
+profiles/{uid}/dependents/{depId}          → Minors a member registers with them
 ```
+
+Season data (`seasons/**`) stays admin-written. Member requests never write it; the
+coordinator's approval (M3) is the only path from a request into a season.
 
 See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for the full schema reference.
 
@@ -164,8 +172,8 @@ See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for 
 
 **Current state**: three test suites, all run in CI (see `.specs/technical/cicd-pipeline.md`):
 - **Unit** (`src/**/*.test.ts`, Vitest): scoring engine, score service, schedule/yardage/markdown utils, UI helpers.
-- **Firestore rules** (`tests/rules/`, `@firebase/rules-unit-testing` on the emulator): 96 cases covering the RBAC allow/deny matrix and member profiles.
-- **Cloud Functions** (`tests/functions/`, emulator): 37 cases covering `setUserRole`, `onUserCreate`, `setAccountStatus` and `deleteAccount`.
+- **Firestore rules** (`tests/rules/`, `@firebase/rules-unit-testing` on the emulator): 143 cases covering the RBAC allow/deny matrix, member profiles, and member league requests.
+- **Cloud Functions** (`tests/functions/`, emulator): 76 cases covering `setUserRole`, `onUserCreate`, `setAccountStatus`, `deleteAccount`, `teamProposal`, roster checks, and the league team backfill.
 
 **Coverage posture**: business logic (scoring engine, score service) and security surfaces
 (rules, functions, auth-adjacent utilities) are the priority for test coverage. The UI and
@@ -187,6 +195,10 @@ not a hard gate.
 - Member-supplied data lives in `profiles/{uid}` under a rules field allowlist; the
   `users/{uid}` mirror (role, identity, account status) stays server-only. Status changes
   and deletion go through audited callables; owners/admins must be demoted first.
+- Minors never hold accounts. A member registers them as dependents under their own
+  profile; rosters show them as first name + last initial (spec 009, ADR-013).
+- Member league requests (proposals, registrations, link requests) never write
+  `seasons/**`; only the coordinator's review (M3) turns a request into season data.
 - Elevated access (owner/admin) is the `role` custom claim, set only by `setUserRole`.
 - Never rely on client-side auth checks alone — enforce with Firestore security rules
 - Scores/standings: public read, owner/admin-only write (custom claim `role`)
@@ -250,7 +262,7 @@ private static _skeleton(): string {
 - Page Load Time: <3 seconds (p95)
 - Time to Interactive (TTI): <5 seconds (p95)
 - First Contentful Paint (FCP): <1.5 seconds (p95)
-- JS bundle: <250 kB gzipped (currently ~246 kB gzipped, measured 2026-10-01 ✅ — little headroom left; account and sign-in UI is code-split)
+- JS bundle: <250 kB gzipped (currently ~249 kB gzipped, measured 2026-10-03 ✅ — under 1 kB headroom; account, sign-in, and league request UI is code-split, and the next main-path addition needs a trim first)
 - CSS: <20 kB gzipped (currently ~16 kB); fonts: self-hosted latin woff2 only, 9 files / ~187 kB if every weight loads, cached `immutable`. Figures and method: [build-system.md](technical/build-system.md#bundle-size-targets)
 
 **Firebase Quota Constraints**: the daily target ceilings and 70% alert thresholds are
@@ -472,7 +484,9 @@ unlock Cloud Functions, which the RBAC role-writer pattern requires.
 **Justified functions**: `setUserRole` + `onUserCreate` (spec 002);
 `setAccountStatus` + `deleteAccount` (spec 008 DD-1: client-unwritable status with an
 atomic audit entry, and a delete cascade over docs clients cannot delete; a few calls per
-month).
+month); `teamProposal` (spec 009 DD-2: roster checks over a list, which rules can't
+iterate, plus the one-captain-per-team and one-request-per-season checks, in one
+transaction; a few dozen calls per season).
 
 
 ### VI.2 Cost Optimization
@@ -582,3 +596,4 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.7.0 (2026-09-24): "Range Day" site redesign (spec 006, ADR-011) — added §III.6 Accessibility & Responsive Standards; §IV.1 styling line covers self-hosted `@fontsource` fonts and the new token groups/heat ramp; §III.3 skeleton path corrected to `admin-tables.css`; §III.4 JS figure re-measured (~242 kB) with CSS and font budgets; §II.1 inventory recounted
 - 1.7.1 (2026-09-25): Design-token hygiene (spec 007) — §IV.1 styling line: the token contract is now enforced by `src/styles/tokens.test.ts` (no colour literals or primitive references in component CSS; identical dark blocks)
 - 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)
+- 1.9.0 (2026-10-03): Team proposals and member requests (spec 009, ADR-013) — §II.5 lists the persistent `leagueTeams` and the member request collections; §VI.1 justifies `teamProposal`; §III.2 minors-as-dependents and requests-never-write-seasons notes; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~249 kB, under 1 kB headroom)

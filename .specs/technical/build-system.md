@@ -174,11 +174,13 @@ dist/
 
 ### Bundle Size Targets
 
-Measured 2026-10-01 after spec 008 (gzip; "before" is the pre-redesign build):
+Measured 2026-10-03 after spec 009 (gzip; "before" is the pre-redesign build). The main
+path is now two eagerly loaded chunks, `index` and `firebase-config` (Rollup splits the
+Firebase SDK out because lazy chunks import it too); the figure below is their sum:
 
 | Metric | Target | Before | Current |
 |--------|--------|--------|---------|
-| JS bundle (gzipped) | <250 kB | 229.3 kB | 245.9 kB main chunk ✅ (little headroom; spec 006 was 241.6 kB). Lazy chunks: account page 5.1 kB, sign-in dialog 2.7 kB, auth providers 2.7 kB, account service 1.4 kB |
+| JS bundle (gzipped) | <250 kB | 229.3 kB | 249.1 kB main path ✅ (index 84.3 + firebase-config 164.8; under 1 kB headroom; main after spec 008 and #305 was 248.5 kB). Lazy chunks: account page 5.8 kB, account league 5.1 kB, team proposal page 5.2 kB, league dialogs 3.4 kB, sign-in dialog 2.7 kB, auth providers 2.5 kB, account service 1.8 kB |
 | CSS (gzipped) | <20 kB | 7.6 kB | 15.6 kB ✅ |
 | Fonts (woff2, latin only) | — | 0 | 9 files, 187 kB total if every weight loads |
 | Total initial load | <500 kB | ~237 kB | ~444 kB worst case (fonts are fetched only for weights a page uses, then cached `immutable`) |
