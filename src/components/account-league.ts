@@ -12,7 +12,11 @@
  * proposal, registration, link request, and dependents (one list). The
  * league team list is read only when the join dialog opens or a
  * registration names a preferred team. Any `league-changed` event from a
- * child reloads the overview.
+ * child reloads the overview; only the newest load renders.
+ *
+ * A reload replaces the card that held focus (a dialog hands focus back to
+ * a button that is then re-rendered), so focus moves to that card's
+ * heading (§III.6).
  */
 
 import '@/components/account-dependents';
@@ -53,6 +57,7 @@ const LINK_LABEL: Record<LinkRequestStatus, string> = {
 class AccountLeague extends HTMLElement {
   private _overview: LeagueOverview | null = null;
   private _teams: LeagueTeam[] | null = null;
+  private _loadSeq = 0;
   private _onChanged = () => void this._load();
 
   connectedCallback(): void {
@@ -72,16 +77,18 @@ class AccountLeague extends HTMLElement {
   private async _load(): Promise<void> {
     const uid = this._uid;
     if (!uid) return;
+    const seq = ++this._loadSeq;
     const seasons = await getServices().scoreService.getAllSeasons();
     const year = registrationYear(seasons.success ? seasons.data : []);
     const res = await getMemberLeagueService().loadOverview(uid, year);
-    if (!this.isConnected) return;
+    if (!this.isConnected || seq !== this._loadSeq) return;
     if (!res.success) {
       this._renderError();
       return;
     }
     this._overview = res.data;
     if (res.data.registration?.preferredLeagueTeamId && !this._teams) await this._loadTeams();
+    if (seq !== this._loadSeq) return;
     this._render();
   }
 
@@ -123,19 +130,23 @@ class AccountLeague extends HTMLElement {
   private _render(): void {
     const o = this._overview;
     if (!o) return;
+    const active = document.activeElement;
+    const focusedHeading = active && this.contains(active)
+      ? active.closest('section')?.getAttribute('aria-labelledby') ?? null
+      : null;
     this.innerHTML = `
       <section class="card account-section" aria-labelledby="league-season">
-        <h2 id="league-season">${o.year} season</h2>
+        <h2 id="league-season" tabindex="-1">${o.year} season</h2>
         ${this._seasonBody(o)}
       </section>
       <section class="card account-section" aria-labelledby="league-deps">
-        <h2 id="league-deps">Dependents</h2>
+        <h2 id="league-deps" tabindex="-1">Dependents</h2>
         <p class="account-section__desc">Shooters under 18 join through a parent or guardian’s account and are
         always on the same team as them.</p>
         <account-dependents></account-dependents>
       </section>
       <section class="card account-section" aria-labelledby="league-link">
-        <h2 id="league-link">Scorecard name</h2>
+        <h2 id="league-link" tabindex="-1">Scorecard name</h2>
         ${this._linkBody(o)}
       </section>`;
 
@@ -149,6 +160,8 @@ class AccountLeague extends HTMLElement {
     on('withdraw-registration', () => void this._withdrawRegistration());
     on('link', () => void this._link());
     on('withdraw-link', () => void this._withdrawLink());
+
+    if (focusedHeading) this.querySelector<HTMLElement>(`#${focusedHeading}`)?.focus();
   }
 
   private _seasonBody(o: LeagueOverview): string {

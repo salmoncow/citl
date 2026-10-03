@@ -144,8 +144,8 @@ iterate the roster list), and by M3 review.
 | `reviewNote`, `reviewedBy`, `reviewedAt` | `null` until M3 | Kept on save |
 | `createdAt`, `updatedAt`, `submittedAt` | `Timestamp` (`submittedAt` nullable) | Server timestamps |
 
-**Access:** Read — the captain or owner/admin. Write — disallowed for clients. Submit and
-withdraw append an `audit` entry (`kind: 'proposal'`).
+**Access:** Read — the captain or owner/admin. Write — disallowed for clients. Submit,
+withdraw, and delete append an `audit` entry (`kind: 'proposal'`).
 
 ---
 
@@ -211,11 +211,11 @@ can outlive a deleted account without holding PII.
 | `fromStatus` | `'active' \| 'deactivated'` | `account-status` only |
 | `toStatus` | `'active' \| 'deactivated' \| 'deleted'` | `account-status` only |
 | `subjectId` | `string` | `proposal` only: the `teamProposals` doc id |
-| `action` | `'submitted' \| 'withdrawn'` | `proposal` only |
+| `action` | `'submitted' \| 'withdrawn' \| 'deleted'` | `proposal` only |
 | `at` | `Timestamp` | Server timestamp of the change |
 
 Writers: `setUserRole` (role-change), `setAccountStatus` (deactivate/reactivate),
-`teamProposal` (submit/withdraw), `deleteAccount` (`toStatus: 'deleted'`; a retry after a
+`teamProposal` (submit/withdraw/delete), `deleteAccount` (`toStatus: 'deleted'`; a retry after a
 partial failure may write a second entry).
 
 **Access:** Read — owner only. Write — disallowed for all clients (`if false`); only the

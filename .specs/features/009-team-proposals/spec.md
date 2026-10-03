@@ -401,6 +401,13 @@ deployable without exposing requests nobody can review.
 6. **Last season's roster** for "Start from" is the latest season listed in
    `leagueTeams.seasons`.
 7. **No email** in M2. Status shows on `/account` only, and M4 adds status emails.
+8. **Competing proposals**: until M3 sets `captainUid`, two members may propose the same
+   unclaimed returning team, or two new teams with the same name. M2 does not block this;
+   M3 approval sets the captain, after which the other proposal fails `team-has-captain` or
+   `league-team-exists` and the coordinator returns it.
+9. **Proposal vs registration**: the registration rule's `!exists(teamProposals/…)` and the
+   callable's registration check run in separate transactions, so a near-simultaneous pair
+   can both land. The window is small and M3 review sees both.
 
 ## Decisions for the owner (defaults applied above)
 

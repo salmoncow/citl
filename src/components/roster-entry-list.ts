@@ -56,6 +56,14 @@ class RosterEntryList extends HTMLElement {
         : [previewEntryName(e, this._ctx)]);
   }
 
+  private _guardianOptions(e: Extract<RosterEntryInput, { kind: 'named' }>, i: number): string {
+    const options = this._adultNames(i);
+    const current = normalizeShooterName(e.guardianName ?? '');
+    const known = options.some((n) => normalizeShooterName(n) === current);
+    return `<option value="">Choose…</option>
+      ${options.map((n) => `<option value="${escapeHtml(n)}" ${known && normalizeShooterName(n) === current ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}`;
+  }
+
   private _row(e: RosterEntryInput, i: number): string {
     const id = `${this._id}-${i}`;
     const label = escapeHtml(this._name(e));
@@ -76,18 +84,16 @@ class RosterEntryList extends HTMLElement {
         </div>
         ${e.minor ? `<span class="league-list__meta">Shown as ${label}</span>` : ''}`;
       minorCell = `
-        <input type="checkbox" class="roster-table__check" data-field="minor" data-i="${i}" id="${id}-minor"
-               ${e.minor ? 'checked' : ''} ${ro} aria-label="Under 18, shooter ${i + 1}"
-               ${e.minor ? `aria-controls="${id}-guardian"` : ''}>`;
+        <label class="roster-table__hit">
+          <input type="checkbox" class="roster-table__check" data-field="minor" data-i="${i}" id="${id}-minor"
+                 ${e.minor ? 'checked' : ''} ${ro} aria-label="Under 18, shooter ${i + 1}"
+                 ${e.minor ? `aria-controls="${id}-guardian"` : ''}>
+        </label>`;
       if (e.minor) {
-        const options = this._adultNames(i);
-        const current = e.guardianName ?? '';
-        const known = options.some((n) => normalizeShooterName(n) === normalizeShooterName(current));
         guardianCell = `
           <label class="visually-hidden" for="${id}-guardian">Guardian of ${label}</label>
           <select id="${id}-guardian" class="account-field__input" data-field="guardianName" data-i="${i}" ${ro}>
-            <option value="">Choose…</option>
-            ${options.map((n) => `<option value="${escapeHtml(n)}" ${known && normalizeShooterName(n) === normalizeShooterName(current) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}
+            ${this._guardianOptions(e, i)}
           </select>`;
       }
     } else {
@@ -101,8 +107,10 @@ class RosterEntryList extends HTMLElement {
       <tr>
         <td data-label="Shooter">${nameCell}</td>
         <td data-label="Rookie">
-          <input type="checkbox" class="roster-table__check" data-field="rookie" data-i="${i}"
-                 ${e.rookie ? 'checked' : ''} ${ro} aria-label="Rookie, ${label}">
+          <label class="roster-table__hit">
+            <input type="checkbox" class="roster-table__check" data-field="rookie" data-i="${i}"
+                   ${e.rookie ? 'checked' : ''} ${ro} aria-label="Rookie, ${label}">
+          </label>
         </td>
         <td data-label="Under 18">${minorCell}</td>
         <td data-label="Guardian">${guardianCell}</td>
@@ -131,6 +139,7 @@ class RosterEntryList extends HTMLElement {
       </div>`;
 
     this.innerHTML = `
+      <div class="roster-scroll" role="region" aria-label="Roster" tabindex="0">
       <table class="roster-table">
         <caption class="roster-table__caption">Roster: ${this._entries.length} of ${ROSTER_MAX} shooters</caption>
         <thead>
@@ -140,6 +149,7 @@ class RosterEntryList extends HTMLElement {
           ${this._entries.length ? this._entries.map((e, i) => this._row(e, i)).join('') : `<tr><td colspan="5" class="roster-table__empty">No shooters yet.</td></tr>`}
         </tbody>
       </table>
+      </div>
       ${controls}`;
 
     this._wire();
@@ -222,11 +232,17 @@ class RosterEntryList extends HTMLElement {
     next?.focus();
   }
 
+  /**
+   * Update the guardian choices in place. Re-rendering here would destroy
+   * whatever the user just clicked (change fires on the mousedown that
+   * moves focus), so only the <select> options are replaced.
+   */
   private _refreshGuardians(): void {
-    if (!this._entries.some((e) => e.kind === 'named' && e.minor)) return;
-    const active = document.activeElement instanceof HTMLElement ? document.activeElement.id : '';
-    this._render();
-    if (active) this.querySelector<HTMLElement>(`#${active}`)?.focus();
+    this._entries.forEach((e, i) => {
+      if (e.kind !== 'named' || !e.minor) return;
+      const select = this.querySelector<HTMLSelectElement>(`#${this._id}-${i}-guardian`);
+      if (select) select.innerHTML = this._guardianOptions(e, i);
+    });
   }
 }
 

@@ -76,6 +76,10 @@ describe('rejections', () => {
     await expect(call(null, save())).rejects.toMatchObject({ code: 'unauthenticated' });
     await expect(call(USER, { action: 'nope', year: YEAR })).rejects.toMatchObject({ code: 'invalid-argument' });
     await expect(call(USER, save({ teamName: 'x' }))).rejects.toMatchObject({ code: 'invalid-argument' });
+    for (const leagueTeamId of ['.', '..', '__x__']) {
+      await expect(call(USER, save({ teamSource: 'returning', leagueTeamId })))
+        .rejects.toMatchObject({ code: 'invalid-argument' });
+    }
   });
 
   it('rejects a year outside this year and next', async () => {
@@ -257,6 +261,7 @@ describe('submit, withdraw, delete', () => {
     await adminDb().doc(`teamProposals/${ID}`).update({ status: 'rejected' });
     await expect(call(USER, { action: 'delete', year: YEAR })).resolves.toEqual({ ok: true, status: null });
     expect(await proposal()).toBeUndefined();
+    expect(await auditActions()).toEqual(expect.arrayContaining(['submitted', 'deleted']));
   });
 
   it('approved proposals can be neither edited nor deleted', async () => {

@@ -44,7 +44,9 @@ export function isPrivileged(role: unknown): boolean {
 
 const namePart = z.string().trim().min(1).max(30).regex(/^\p{L}[\p{L}\p{M} .'-]*$/u);
 const teamName = z.string().trim().min(2).max(40).regex(/^[\p{L}\p{N}][\p{L}\p{N}\p{M} &'.-]*$/u);
-const docId = z.string().min(1).max(100).regex(/^[^/]+$/);
+// Firestore rejects '.', '..' and '__name__'-style ids; refuse them here so a
+// bad id is invalid-argument, not an internal path error.
+const docId = z.string().min(1).max(100).regex(/^(?!\.\.?$)(?!__.*__$)[^/]+$/);
 const year = z.number().int().min(2000).max(3000);
 
 const rosterEntryInput = z.discriminatedUnion('kind', [

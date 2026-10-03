@@ -32,7 +32,7 @@ export interface ProposalEntry {
   kind: 'proposal';
   actorUid: string;
   subjectId: string;
-  action: 'submitted' | 'withdrawn';
+  action: 'submitted' | 'withdrawn' | 'deleted';
 }
 
 export type AuditEntry = RoleChangeEntry | AccountStatusEntry | ProposalEntry;

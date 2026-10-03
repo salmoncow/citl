@@ -248,6 +248,7 @@ export async function handleTeamProposal(req: CallableRequest<unknown>): Promise
             throw fail('failed-precondition', 'bad-status', 'Withdraw the proposal before deleting it.');
           }
           tx.delete(proposalRef);
+          queueAuditEntry(tx, db, { kind: 'proposal', actorUid: uid, subjectId: proposalId, action: 'deleted' });
           return { ok: true as const, status: null };
         }
       }

@@ -753,13 +753,19 @@ coordinator for approval (M3) without members ever writing season data.
    and `registrations` keyed `{year}_{uid}`; `shooterLinkRequests/{uid}`). M3's review
    turns an approved request into season data. Members never write `seasons/**`.
 3. **Proposals go through a `teamProposal` callable.** Rules can't iterate a roster list,
-   and the checks (roster size and shape, minors with an adult guardian, one captain per
-   team, a proposal and a registration never both) need one transaction. Registrations,
+   and the checks (roster size and shape, minors with an adult guardian, the team not
+   already captained or named, no registration alongside) need one transaction. Competing
+   proposals for an unclaimed team are allowed; M3 approval picks one and sets the captain. Registrations,
    dependents and link requests are flat, so they are client writes under rules.
 4. **Minors live under the guardian's profile** (`profiles/{uid}/dependents`) and are
    stored on rosters as `First L.`. A named minor without an account needs an adult on
    the same roster as guardian.
-5. **Hidden behind `VITE_LEAGUE_REQUESTS`** in production until M3 (review) deploys, so no
+5. **Lazy services build their own repositories.** `member-league-service` constructs
+   `LeagueRepository` and `DependentRepository` itself instead of adding them to
+   `RepositoryFactory`, which is in the main bundle and imports its repositories
+   statically. This is a scoped exception to ADR-002 for lazy-loaded services only;
+   components still never construct repositories.
+6. **Hidden behind `VITE_LEAGUE_REQUESTS`** in production until M3 (review) deploys, so no
    request can be sent that no one can act on.
 
 **Rationale**

@@ -356,6 +356,18 @@ roster-entry-list { display: block; }
 
 .roster-table__name-fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); min-width: 14rem; }
 
+.roster-scroll { overflow-x: auto; }
+
+/* The label is the 44px hit area (§III.6); the checkbox inside stays 20px. */
+.roster-table__hit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--control-height);
+  min-height: var(--control-height);
+  cursor: pointer;
+}
+
 .roster-table__check { width: 20px; height: 20px; accent-color: var(--c-accent); }
 
 .roster-table__na { color: var(--c-text-muted); }

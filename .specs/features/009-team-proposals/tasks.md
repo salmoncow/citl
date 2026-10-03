@@ -146,4 +146,6 @@ nothing calls `teamProposal`, and an empty `leagueTeams` means the captain guard
 - [ ] **8.3 (S)** After the merge deploy, run the one-time invoker binding for
   `teamproposal` (`firebase-deployment.md` §"Adding a new callable function").
 - [ ] **8.4 (S)** Set `VITE_LEAGUE_REQUESTS=true` when M3 deploys; walk through on a preview
-  channel first.
+  channel first. In the same change, add dependents (minors' names and birth years) and
+  league requests to "What we collect" on `/privacy` and bump `TERMS_VERSION`, so members
+  re-accept before they can use the feature.
