@@ -236,7 +236,8 @@ service cloud.firestore {
                          .hasOnly(['dependentIds', 'preferredLeagueTeamId', 'note', 'updatedAt'])
                     && isValidRegistration(request.resource.data)
                     && request.resource.data.updatedAt == request.time;
-      allow delete: if isRequestOwner(regId) && resource.data.status == 'submitted';
+      // Spec 010 AC-20: a declined request can be cleared to ask again.
+      allow delete: if isRequestOwner(regId) && resource.data.status in ['submitted', 'declined'];
     }
 
     // ── shooterLinkRequests/{uid} — link to a scorecard name (spec 009) ─────
@@ -264,6 +265,18 @@ service cloud.firestore {
     // ── shooterLinks/{uid} — approved links, reserved for M3 ────────────────
     match /shooterLinks/{uid} {
       allow read:  if isSelf(uid) || isOwnerOrAdmin();
+      allow write: if false;
+    }
+
+    // ── captainChanges/{leagueTeamId} — captain handoff (spec 010 AC-17) ────
+    // Written only by the captainHandoff and reviewRequest callables. The
+    // nominating captain and the nominee can read it (members query with
+    // where fromUid == or where toUid == their uid).
+    match /captainChanges/{leagueTeamId} {
+      allow read:  if isSignedIn()
+                   && (resource.data.fromUid == request.auth.uid
+                       || resource.data.toUid == request.auth.uid
+                       || isOwnerOrAdmin());
       allow write: if false;
     }
 
