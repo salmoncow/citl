@@ -1,17 +1,24 @@
 /**
  * Captain guard: refuse to deactivate or delete a team captain.
  *
- * M1 (spec 008 DD-5): a seam with its final signature and no body.
- * Captaincy does not exist yet, so this returns immediately and costs no
- * read. M2/M3 fill it in with a
- * `where('captainUid', '==', uid).limit(1)` read on the persistent team
- * collection and throw `failed-precondition` when it matches.
+ * Spec 009 AC-17 (the spec 008 DD-5 seam, now filled in): one
+ * `leagueTeams where captainUid == uid limit 1` read. Captaincy is set by
+ * M3 approval and handoff; the captain must hand off first.
  *
  * Callers invoke it before any write.
  */
 
 import type { Firestore } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v2/https';
 
-export async function assertNotCaptain(_db: Firestore, _uid: string): Promise<void> {
-  // Intentionally empty until captaincy ships (M2/M3).
+export const CAPTAIN_REASON = 'captain';
+
+export const CAPTAIN_MESSAGE =
+  'You are a team captain. Hand off the captaincy, or ask the league coordinator to, before you continue.';
+
+export async function assertNotCaptain(db: Firestore, uid: string): Promise<void> {
+  const snap = await db.collection('leagueTeams').where('captainUid', '==', uid).limit(1).get();
+  if (!snap.empty) {
+    throw new HttpsError('failed-precondition', CAPTAIN_MESSAGE, { reason: CAPTAIN_REASON });
+  }
 }

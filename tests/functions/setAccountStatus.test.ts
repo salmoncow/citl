@@ -145,6 +145,12 @@ describe('reactivate', () => {
     expect(entries.map((e) => e['toStatus']).sort()).toEqual(['active', 'deactivated']);
   });
 
+  it('the real guard blocks deactivating a league team captain (spec 009)', async () => {
+    await adminDb().doc('leagueTeams/crazy-guns').set({ name: 'Crazy Guns', captainUid: USER, seasons: [2025] });
+    await expect(call(USER, 'user', { status: 'deactivated' }))
+      .rejects.toMatchObject({ code: 'failed-precondition', details: { reason: 'captain' } });
+  });
+
   it('does not call the captain guard on reactivate', async () => {
     await call(USER, 'user', { status: 'deactivated' });
     const guard = vi.fn().mockResolvedValue(undefined);

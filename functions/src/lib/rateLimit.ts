@@ -11,6 +11,7 @@
  * Counters in use:
  *   - setUserRole      20/hour/actor (RATE_LIMITS.setUserRole)
  *   - setAccountStatus 10/hour/uid   (RATE_LIMITS.setAccountStatus)
+ *   - teamProposal     60/hour/uid   (RATE_LIMITS.teamProposal)
  */
 
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
@@ -28,6 +29,7 @@ export interface RateLimitSpec {
 export const RATE_LIMITS = {
   setUserRole: { name: 'setUserRole', limit: 20 },
   setAccountStatus: { name: 'setAccountStatus', limit: 10 },
+  teamProposal: { name: 'teamProposal', limit: 60 },
 } as const satisfies Record<string, RateLimitSpec>;
 
 /** Kept for existing callers: the setUserRole limit. */

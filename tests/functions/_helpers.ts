@@ -109,3 +109,7 @@ export function callableRequest(args: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return { data: args.data, auth } as any;
 }
+
+export async function loadTeamProposal() {
+  return import('../../functions/src/teamProposal.js');
+}

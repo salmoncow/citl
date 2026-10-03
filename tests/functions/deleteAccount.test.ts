@@ -146,6 +146,40 @@ describe('success', () => {
   });
 });
 
+describe('captain guard (spec 009)', () => {
+  it('blocks a league team captain before any write', async () => {
+    await adminDb().doc('leagueTeams/crazy-guns').set({ name: 'Crazy Guns', captainUid: USER, seasons: [2025] });
+    await expect(call(USER, 'user', { confirm: 'DELETE' }))
+      .rejects.toMatchObject({ code: 'failed-precondition', details: { reason: 'captain' } });
+    expect(await exists(`users/${USER}`)).toBe(true);
+    expect(await exists(`profiles/${USER}`)).toBe(true);
+  });
+});
+
+describe('member requests cascade (spec 009 AC-18)', () => {
+  it('removes the member\'s proposals, registrations, link request and link; keeps others\'', async () => {
+    const db = adminDb();
+    await db.doc(`teamProposals/2026_${USER}`).set({ captainUid: USER, year: 2026, status: 'submitted' });
+    await db.doc(`teamProposals/2027_${USER}`).set({ captainUid: USER, year: 2027, status: 'draft' });
+    await db.doc(`registrations/2026_${USER}`).set({ uid: USER, year: 2026, status: 'submitted' });
+    await db.doc(`shooterLinkRequests/${USER}`).set({ shooterName: 'Pat', status: 'submitted' });
+    await db.doc(`shooterLinks/${USER}`).set({ shooterName: 'Pat' });
+    await db.doc(`teamProposals/2026_${OTHER}`).set({ captainUid: OTHER, year: 2026, status: 'draft' });
+    await db.doc(`registrations/2026_${OTHER}`).set({ uid: OTHER, year: 2026, status: 'submitted' });
+
+    await call(USER, 'user', { confirm: 'DELETE' });
+
+    for (const path of [
+      `teamProposals/2026_${USER}`, `teamProposals/2027_${USER}`, `registrations/2026_${USER}`,
+      `shooterLinkRequests/${USER}`, `shooterLinks/${USER}`,
+    ]) {
+      expect(await exists(path)).toBe(false);
+    }
+    expect(await exists(`teamProposals/2026_${OTHER}`)).toBe(true);
+    expect(await exists(`registrations/2026_${OTHER}`)).toBe(true);
+  });
+});
+
 describe('isolation', () => {
   it('leaves season docs containing the name, and other users, untouched', async () => {
     const team = adminDb().doc('seasons/2025/teams/t1');

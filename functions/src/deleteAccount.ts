@@ -13,12 +13,15 @@
  *      only, no PII). Removing the mirror first closes the rules'
  *      isActiveMember check, so no client can recreate the profile while
  *      step 3 runs.
- *   3. recursiveDelete(profiles/{uid}) — covers the future dependents
+ *   3. Member requests (spec 009 AC-18): the member's teamProposals and
+ *      registrations (single-field equality queries), shooterLinkRequests/{uid}
+ *      and shooterLinks/{uid}, in one batch.
+ *   4. recursiveDelete(profiles/{uid}) — covers the dependents
  *      subcollection.
- *   4. revokeRefreshTokens(uid), then deleteUser(uid).
+ *   5. revokeRefreshTokens(uid), then deleteUser(uid).
  *
  * Every step tolerates already-deleted state, so a retry after a partial
- * failure succeeds. A retry after a step-4 failure may write a second
+ * failure succeeds. A retry after a step-5 failure may write a second
  * audit entry, which is accepted. Deleting Auth first was rejected: it
  * would leave PII with no owner able to retry.
  *
@@ -91,10 +94,21 @@ export function makeDeleteAccountHandler(guard: typeof assertNotCaptain = assert
     });
     await batch.commit();
 
-    // 3. Profile and any subcollections (no-op if already gone).
+    // 3. Member requests (spec 009). Published seasons/** are never touched.
+    const [proposals, registrations] = await Promise.all([
+      db.collection('teamProposals').where('captainUid', '==', uid).get(),
+      db.collection('registrations').where('uid', '==', uid).get(),
+    ]);
+    const requests = db.batch();
+    for (const d of [...proposals.docs, ...registrations.docs]) requests.delete(d.ref);
+    requests.delete(db.doc(`shooterLinkRequests/${uid}`));
+    requests.delete(db.doc(`shooterLinks/${uid}`));
+    await requests.commit();
+
+    // 4. Profile and any subcollections, dependents included (no-op if already gone).
     await db.recursiveDelete(db.doc(`profiles/${uid}`));
 
-    // 4. Auth last.
+    // 5. Auth last.
     const adminAuth = getAuth();
     try {
       await adminAuth.revokeRefreshTokens(uid);
