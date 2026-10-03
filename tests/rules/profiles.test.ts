@@ -6,8 +6,8 @@
  * uid, anon}; first/last name rules (both required on create, character
  * set, length, displayName must equal "First Last"); update {name,
  * phone, remove phone, terms re-acceptance, each rejected change} for a
- * profile saved before the name split (legacy) and after; delete (Admin SDK only); reserved dependents
- * subcollection and notificationSettings/{uid} (denied).
+ * profile saved before the name split (legacy) and after; delete (Admin SDK only);
+ * notificationSettings/{uid} (denied). Dependents are covered in dependents.test.ts.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
@@ -314,9 +314,8 @@ describe('reserved paths', () => {
     await seedProfile(env, USER_UID);
   });
 
-  it('profiles/{uid}/dependents/{id} read and write denied for self', async () => {
+  it('profiles/{uid}/dependents/{id} rejects the legacy one-field shape (spec 009 opened the path)', async () => {
     const db = asRole(env, USER_UID, 'user');
-    await assertFails(getDoc(doc(db, 'profiles', USER_UID, 'dependents', 'x')));
     await assertFails(setDoc(doc(db, 'profiles', USER_UID, 'dependents', 'x'), { name: 'Kid' }));
   });
 
