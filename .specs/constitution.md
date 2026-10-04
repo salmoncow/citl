@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.10.0
-**Last Updated:** 2026-10-03
+**Version:** 1.11.0
+**Last Updated:** 2026-10-04
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
 
@@ -36,7 +36,9 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 **Constraints:**
 - **Maximum platforms**: 2–3 total
-- **Current platforms**: Firebase + GitHub (2 platforms)
+- **Current platforms**: Firebase + GitHub + AWS (3 platforms — at the maximum).
+  AWS is limited to Route 53 DNS and SES email (ADR-015); any other AWS service needs its
+  own ADR.
 - **New platform addition requires**:
   - All decision triggers met (see `operations-principles` global skill)
   - Explicit justification why existing platforms are insufficient
@@ -74,7 +76,8 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 | **Deployment** | GitHub Actions CI/CD: PR/push runs typecheck + build + three test suites; production deploy is gated on CI success (`workflow_run`) → Firebase Hosting + Firestore rules/indexes + Functions | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
 | **Cost** | Firebase Blaze (pay-as-you-go); usage discipline targets Spark-equivalent quotas | Near 0% usage |
-| **Platform** | 2 platforms (Firebase + GitHub) | Maintain at 2 |
+| **Infrastructure** | Firebase config as code (`firebase.json`, rules, indexes); AWS as CloudFormation in `infra/aws/` (ADR-015), linted in CI, deployed by the owner | Active |
+| **Platform** | 3 platforms (Firebase + GitHub + AWS: Route 53, SES) | Maximum; no additions |
 
 **Key Metrics** (as of 2026-10-03):
 - **Status**: Live in production at https://citl.club (Firebase Hosting); AWS/CloudFront decommissioned
@@ -171,9 +174,10 @@ See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for 
 
 ### III.1 Testing Requirements
 
-**Current state**: three test suites, all run in CI (see `.specs/technical/cicd-pipeline.md`):
+**Current state**: three test suites and a template lint, all run in CI (see `.specs/technical/cicd-pipeline.md`):
 - **Unit** (`src/**/*.test.ts`, Vitest): scoring engine, score service, schedule/yardage/markdown utils, UI helpers.
 - **Firestore rules** (`tests/rules/`, `@firebase/rules-unit-testing` on the emulator): 150 cases covering the RBAC allow/deny matrix, member profiles, member league requests, and the review queue.
+- **Infrastructure** (`infra/aws/*.yaml`): every CloudFormation template is linted (`cfn-lint`) and tag-checked (`scripts/check-aws-tags.py`) in CI.
 - **Cloud Functions** (`tests/functions/`, emulator): 115 cases covering `setUserRole`, `onUserCreate`, `setAccountStatus`, `deleteAccount`, `teamProposal`, `reviewRequest`, `captainHandoff`, roster checks and publishing, and the league team backfill.
 
 **Coverage posture**: business logic (scoring engine, score service) and security surfaces
@@ -208,6 +212,14 @@ not a hard gate.
 - Validate all inputs before writing to Firestore
 - Use `textContent` / `escapeHtml()` helper for any user-supplied content rendered to DOM
 - Never commit secrets or API keys — all Firebase config in `.env` (gitignored)
+
+**Cloud credentials and IAM** (ADR-015):
+- No long-lived cross-cloud credentials. Functions reach AWS with short-lived credentials
+  from `AssumeRoleWithWebIdentity` (Google-signed service-account token); no AWS access
+  keys exist for the site.
+- IAM is least privilege and lives in a reviewed template: named actions on named
+  resources, trust limited to one principal. No `*` actions; no `*` resources on write
+  actions.
 
 **Transport / Headers**:
 - `firebase.json` enforces: `X-Frame-Options`, `X-Content-Type-Options`,
@@ -349,6 +361,18 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
   - App Check (reCAPTCHA Enterprise, enforced in prod, relaxed under FUNCTIONS_EMULATOR)
 - **SDK**: `firebase` npm package (installed; imported as ES modules); `firebase-admin` + `firebase-functions` in `functions/` package
 
+**Email / AWS** (ADR-015):
+- Amazon SES (`us-east-1`) from `mail.citl.club`; DNS in Route 53
+- **Infrastructure as code**: every AWS resource is defined in `infra/aws/*.yaml`
+  (CloudFormation). Changes go through a PR (CI runs `cfn-lint`), then the owner deploys
+  from the merged branch with a change set (`.specs/technical/aws-infrastructure.md`).
+  The console is read-only in practice; actions with no CloudFormation resource are
+  listed in that doc. Stacks have termination protection; stateful resources
+  (`AWS::SES::EmailIdentity`) are `DeletionPolicy: Retain`.
+- **Tags**: every taggable AWS resource and stack carries `project=citl`,
+  `repo=github.com/salmoncow/citl`, `source=<template path>`, `managed-by=cloudformation`,
+  and `decision=<ADR or spec>`; `scripts/check-aws-tags.py` enforces it in CI.
+
 **Development**:
 - **Version Control**: Git + GitHub
 - **Node.js**: 24.x (pinned in `.nvmrc`)
@@ -376,6 +400,15 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
 ❌  <p>Loading…</p> in async components      Use .skeleton shimmer classes (§III.3)
 ```
 
+**Infrastructure anti-patterns** (ADR-015; checked by `@reviewer` from the ruleset below; `cfn-lint` in CI validates the templates themselves):
+```
+❌  Creating or editing AWS resources in the console   Change infra/aws/*.yaml, deploy the stack
+❌  AWS access keys (IAM users) for the site           Web identity federation (§III.2)
+❌  IAM "Action": "*" or write actions on "*"           Name actions and resource ARNs
+❌  DNS records for a template-owned name by hand      The template owns those records
+❌  A taggable AWS resource without the standard tags  project, repo, source, managed-by, decision (§IV.1)
+```
+
 **Process anti-patterns**:
 ```
 ❌  Direct commits to main                   Always open a PR
@@ -396,7 +429,7 @@ and are checked by `@reviewer`. Change a rule in the JSON, not in a doc copy.
 ### IV.3 Technology Evaluation Criteria
 
 Before adopting new technology, evaluate:
-1. Does it fit within current platforms (Firebase, GitHub)?
+1. Does it fit within current platforms (Firebase, GitHub, AWS Route 53/SES)?
 2. Can existing platforms provide this capability?
 3. What complexity does it add?
 4. What is AI migration capability? (target: ≥80%)
@@ -481,6 +514,8 @@ unlock Cloud Functions, which the RBAC role-writer pattern requires.
   SDK + Firestore rules cannot satisfy alone.
 - Set a Blaze budget alert at $5/mo as a safety net; investigate any
   spend above $1/mo immediately.
+- AWS (ADR-015): SES spend has its own budget alert at $1/mo, defined in
+  `infra/aws/ses.yaml`. Route 53 is a fixed $0.50/mo per hosted zone.
 
 **Justified functions**: `setUserRole` + `onUserCreate` (spec 002);
 `setAccountStatus` + `deleteAccount` (spec 008 DD-1: client-unwritable status with an
@@ -529,6 +564,7 @@ Prompt-library maintenance is covered by the review checklist in §VIII.1.
 
 ### VII.3 Technical Specifications
 
+- [.specs/technical/aws-infrastructure.md](./technical/aws-infrastructure.md) — AWS stacks (Route 53, SES) and deploy steps
 - [.specs/technical/build-system.md](./technical/build-system.md) — Vite 8 configuration
 - [.specs/technical/cicd-pipeline.md](./technical/cicd-pipeline.md) — GitHub Actions
 - [.specs/technical/firebase-deployment.md](./technical/firebase-deployment.md) — Firebase Hosting deployment
@@ -555,10 +591,13 @@ Prompt-library maintenance is covered by the review checklist in §VIII.1.
 **Quarterly reviews** (every 3 months). Walk this checklist against reality (the things that
 actually drift), then set the next "Last Updated"/"next review" dates at the top of this file:
 - §II.1 Current Architectural State — recount from the `src/` tree; fix any stale counts.
-- `.specs/technical/*` — do build-system / cicd-pipeline / firestore-schema still match `package.json`, `.github/workflows/`, `firestore.rules`, and `firestore.indexes.json`?
+- `.specs/technical/*` — do build-system / cicd-pipeline / firestore-schema / aws-infrastructure still match `package.json`, `.github/workflows/`, `firestore.rules`, `firestore.indexes.json`, and `infra/aws/`?
 - `.specs/README.md` and feature-spec statuses — are shipped specs marked Shipped and archived?
 - Evolution triggers — any domain approaching a complexity increase?
 - Firebase quota targets (§VI.1) — verify the platform's limits are unchanged.
+- AWS (ADR-015) — run CloudFormation drift detection on each stack in `infra/aws/`
+  (`aws cloudformation detect-stack-drift`); fix drift in the template, not the console.
+  Check the SES budget alert and sending reputation.
 
 **Next review due**: 2026-10-10.
 
@@ -601,4 +640,5 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.7.1 (2026-09-25): Design-token hygiene (spec 007) — §IV.1 styling line: the token contract is now enforced by `src/styles/tokens.test.ts` (no colour literals or primitive references in component CSS; identical dark blocks)
 - 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)
 - 1.9.0 (2026-10-03): Team proposals and member requests (spec 009, ADR-013) — §II.5 lists the persistent `leagueTeams` and the member request collections; §VI.1 justifies `teamProposal`; §III.2 minors-as-dependents and requests-never-write-seasons notes; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~249 kB, under 1 kB headroom)
+- 1.11.0 (2026-10-04): AWS as the third platform, managed as code (ADR-015, spec 011) — §I.2 platform list (AWS limited to Route 53 + SES); §II.1 Infrastructure and Platform rows; §III.1 template lint; §III.2 no long-lived cross-cloud credentials, least-privilege IAM; §IV.1 Email/AWS, infrastructure-as-code, and tagging standards; §IV.2 infrastructure anti-patterns; §IV.3 platform list; §VI.1 SES budget alert; §VIII.1 quarterly drift detection
 - 1.10.0 (2026-10-03): Coordinator review (spec 010, ADR-014) — §II.5 adds `captainChanges` and names `reviewRequest` as the request-to-season path; §VI.1 justifies `reviewRequest` and `captainHandoff`; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~231 kB after lazy-loading the admin panel)

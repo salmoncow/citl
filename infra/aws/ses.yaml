@@ -1,0 +1,282 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  CITL league email (spec 011, ADR-015). SES sending identity for mail.citl.club
+  with DKIM, custom MAIL FROM, DMARC, a bounce/complaint suppression
+  configuration set, a send-only IAM role assumed by the Firebase Functions
+  service account through Google web identity federation (no access keys),
+  and an SES cost budget. Deploy and update with the commands in
+  .specs/technical/aws-infrastructure.md. Every taggable resource carries the
+  standard tags (project, repo, source, managed-by, decision); CI checks this
+  with scripts/check-aws-tags.py.
+
+Parameters:
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route 53 hosted zone ID for citl.club.
+  MailDomain:
+    Type: String
+    Default: mail.citl.club
+    Description: SES sending domain (a subdomain of the hosted zone).
+  FromAddress:
+    Type: String
+    Default: news@mail.citl.club
+    Description: The only From address the sender role may use.
+  GoogleServiceAccountId:
+    Type: String
+    AllowedPattern: '^[0-9]{10,30}$'
+    Description: >-
+      Numeric unique ID of the Google service account the sendMail function
+      runs as (gcloud iam service-accounts describe ... --format='value(uniqueId)').
+  AlertEmail:
+    Type: String
+    AllowedPattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+    Description: Address that receives the SES budget alerts.
+  MonthlyBudgetUsd:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    Description: Monthly SES spend that triggers an alert (forecast and actual).
+  SandboxTestRecipient:
+    Type: String
+    Default: ''
+    Description: >-
+      Optional address to verify for testing while the account is in the SES
+      sandbox. Leave empty once production access is granted.
+
+Conditions:
+  HasSandboxTestRecipient: !Not [!Equals [!Ref SandboxTestRecipient, '']]
+
+Resources:
+  # Suppresses addresses that bounced or complained, without an SNS webhook
+  # (spec 011 DD-6). Set as the identity's default configuration set.
+  MailConfigurationSet:
+    Type: AWS::SES::ConfigurationSet
+    Properties:
+      Name: citl-mail
+      SuppressionOptions:
+        SuppressedReasons:
+          - BOUNCE
+          - COMPLAINT
+      ReputationOptions:
+        ReputationMetricsEnabled: true
+      SendingOptions:
+        SendingEnabled: true
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
+
+  MailIdentity:
+    Type: AWS::SES::EmailIdentity
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      EmailIdentity: !Ref MailDomain
+      DkimSigningAttributes:
+        NextSigningKeyLength: RSA_2048_BIT
+      MailFromAttributes:
+        MailFromDomain: !Sub 'bounce.${MailDomain}'
+        BehaviorOnMxFailure: USE_DEFAULT_VALUE
+      ConfigurationSetAttributes:
+        ConfigurationSetName: !Ref MailConfigurationSet
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
+
+  DkimRecord1:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !GetAtt MailIdentity.DkimDNSTokenName1
+      Type: CNAME
+      TTL: '1800'
+      ResourceRecords:
+        - !GetAtt MailIdentity.DkimDNSTokenValue1
+
+  DkimRecord2:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !GetAtt MailIdentity.DkimDNSTokenName2
+      Type: CNAME
+      TTL: '1800'
+      ResourceRecords:
+        - !GetAtt MailIdentity.DkimDNSTokenValue2
+
+  DkimRecord3:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !GetAtt MailIdentity.DkimDNSTokenName3
+      Type: CNAME
+      TTL: '1800'
+      ResourceRecords:
+        - !GetAtt MailIdentity.DkimDNSTokenValue3
+
+  MailFromMxRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub 'bounce.${MailDomain}'
+      Type: MX
+      TTL: '1800'
+      ResourceRecords:
+        - !Sub '10 feedback-smtp.${AWS::Region}.amazonses.com'
+
+  MailFromSpfRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub 'bounce.${MailDomain}'
+      Type: TXT
+      TTL: '1800'
+      ResourceRecords:
+        - '"v=spf1 include:amazonses.com ~all"'
+
+  # p=none to start; raise to quarantine once a few weeks of sends pass
+  # SPF/DKIM alignment (spec 011 AC-25).
+  DmarcRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub '_dmarc.${MailDomain}'
+      Type: TXT
+      TTL: '1800'
+      ResourceRecords:
+        - '"v=DMARC1; p=none"'
+
+  SandboxTestIdentity:
+    Type: AWS::SES::EmailIdentity
+    Condition: HasSandboxTestRecipient
+    Properties:
+      EmailIdentity: !Ref SandboxTestRecipient
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
+
+  # Assumed with AssumeRoleWithWebIdentity using a Google-signed ID token for
+  # the Functions service account; accounts.google.com is a built-in AWS
+  # identity provider, so no OIDC provider resource is needed.
+  # accounts.google.com:aud matches the token's azp (the service account's
+  # unique ID); :sub is the same ID.
+  SenderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: citl-ses-sender
+      Description: Send-only SES role for the CITL sendMail Cloud Function.
+      MaxSessionDuration: 3600
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: accounts.google.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'accounts.google.com:aud': !Ref GoogleServiceAccountId
+                'accounts.google.com:sub': !Ref GoogleServiceAccountId
+      Policies:
+        - PolicyName: ses-send-only
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ses:SendEmail
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/${MailDomain}'
+                  - !Sub 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:configuration-set/${MailConfigurationSet}'
+                  - !If
+                    - HasSandboxTestRecipient
+                    - !Sub 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/${SandboxTestRecipient}'
+                    - !Ref AWS::NoValue
+                Condition:
+                  StringEquals:
+                    'ses:FromAddress': !Ref FromAddress
+
+  SesBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: citl-ses-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetUsd
+          Unit: USD
+        CostFilters:
+          Service:
+            - Amazon Simple Email Service
+      ResourceTags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+Outputs:
+  SenderRoleArn:
+    Description: Role the sendMail function assumes (Functions parameter SES_ROLE_ARN).
+    Value: !GetAtt SenderRole.Arn
+  ConfigurationSetName:
+    Description: SES configuration set applied to every send.
+    Value: !Ref MailConfigurationSet
+  MailDomain:
+    Description: Verified sending domain.
+    Value: !Ref MailDomain

@@ -84,3 +84,17 @@ jobs:
       # Fails if the inline theme snippet in index.html drifts from the
       # sha256 pin in firebase.json's CSP script-src.
       - run: node scripts/check-csp-hash.js
+
+  infra-lint:
+    name: Infrastructure Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      # Pinned so a new rule release can't turn main red without a template change.
+      - run: pip install cfn-lint==1.57.1
+      - run: cfn-lint infra/aws/*.yaml
+      # Every taggable resource carries the standard traceability tags (ADR-015).
+      - run: python scripts/check-aws-tags.py
