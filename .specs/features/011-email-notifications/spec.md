@@ -2,7 +2,7 @@
 
 **Feature ID**: 011-email-notifications
 **Created**: 2026-10-04
-**Status**: Draft, for owner review
+**Status**: Approved 2026-10-04 (owner); AWS stack defined, build not started
 **Program**: Member accounts — M1 accounts and profile ([spec 008](../008-public-accounts/spec.md),
 shipped) · M2 member requests ([spec 009](../009-team-proposals/spec.md), shipped) · M3
 coordinator review ([spec 010](../010-coordinator-review/spec.md), shipped) · **M4 email
@@ -86,16 +86,17 @@ accounts and receive nothing; no email names a minor.
   failed | skipped`), `attempts`, `error`, `createdAt`, `sentAt`, `expireAt` (`createdAt` + 30
   days, a Firestore TTL field). Rules deny all client access.
 - [ ] AC-8: `sendMail` (Firestore `onDocumentCreated('mail/{id}')`, `retry: true`,
-  `maxInstances: 2`, secrets `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`,
-  `UNSUBSCRIBE_SECRET`): in a transaction it claims the doc (`pending` → `sending`, or a
+  `maxInstances: 2`, parameter `SES_ROLE_ARN`, secret `UNSUBSCRIBE_SECRET`; AWS credentials
+  per DD-8): in a transaction it claims the doc (`pending` → `sending`, or a
   `sending` doc older than 10 minutes); re-reads `users/{uid}` and skips (`skipped`) a missing
   or deactivated member, and for a topic email skips a member whose topic is now off; sends one
-  SESv2 `SendEmail` (From `Central Illinois Trap League <news@mail.citl.club>`, Reply-To
+  SESv2 `SendEmail` with configuration set `citl-mail` (From `Central Illinois Trap League
+  <news@mail.citl.club>`, Reply-To
   `LEAGUE_EMAIL`, text and HTML parts, the AC-4 headers for topic mail); sets `sent`. SES
   throttling or 5xx throws so the event retries (up to 5 attempts, then `failed`); any other SES
   error sets `failed` with the message. A doc not in `pending`/stale `sending` is ignored.
 - [ ] AC-9: In the emulator `sendMail` logs the message instead of calling SES and needs no
-  secrets.
+  AWS role or secret.
 - [ ] AC-10: Bodies are built by pure template functions in `functions/src/mail/templates.ts`:
   plain text plus a single-column HTML version with escaped content, the CITL name, the message,
   a link to the relevant page, and the footer (AC-4 or AC-6). No images, tracking pixels, or
@@ -162,11 +163,12 @@ accounts and receive nothing; no email names a minor.
   the first deploy of the new functions; ADR-015 records the SES choice and the queue design;
   constitution §I.2, §II.5, §VI.1 (1.10.0 → 1.11.0), `firestore-schema.md`, and `CLAUDE.md` Key
   Files are updated.
-- [ ] AC-25: Owner setup, before production sends: SES domain identity `mail.citl.club` with Easy
-  DKIM (three CNAMEs in Route 53), custom MAIL FROM `bounce.mail.citl.club` (MX and SPF TXT),
-  DMARC TXT `_dmarc.mail.citl.club` (`p=none` to start), account-level suppression for bounces
-  and complaints, production access (out of the sandbox), and an IAM user limited to
-  `ses:SendEmail` on that identity whose key goes into the two secrets.
+- [ ] AC-25: AWS resources are the CloudFormation stack `citl-mail` from `infra/aws/ses.yaml`
+  (ADR-015; [aws-infrastructure.md](../../technical/aws-infrastructure.md)): SES identity
+  `mail.citl.club` with DKIM, MAIL FROM `bounce.mail.citl.club`, DMARC `p=none`,
+  configuration set `citl-mail` suppressing bounces and complaints, the send-only role
+  `citl-ses-sender`, and an SES budget alert. The owner deploys it and requests SES production
+  access before production sends.
 
 **Tests, cost**
 - [ ] AC-26: The tests in §Testing Checklist pass, and all existing tests still pass.
@@ -179,7 +181,8 @@ accounts and receive nothing; no email names a minor.
 ## Constitutional Constraints
 
 - **§I.2 (platforms)**: AWS is already the league's DNS host; SES adds a service there, not a new
-  vendor. Firebase and Google Cloud have no general-purpose email sending. Justified in ADR-015.
+  vendor. Firebase and Google Cloud have no general-purpose email sending. ADR-015 records AWS
+  as the third platform, limited to Route 53 and SES, managed as CloudFormation.
 - **§VI.1 (functions)**: six new functions (DD-2). Volume per season: about 40 fan-outs, a few
   dozen status emails, and up to 4,000 sends. SES costs $0.10 per 1,000, about $0.40 a season;
   invocations and writes stay inside the free tier.
@@ -209,7 +212,8 @@ accounts and receive nothing; no email names a minor.
 | Server | `functions/src/{sendMail,unsubscribe,onAnnouncementCreated,onWeekPublished,onSeasonUpdated,requestDigest}.ts` (new) | function entry points |
 | Server | `functions/src/review/*.ts`, `captainHandoff.ts` | `queueMail` calls |
 | Config | `firestore.rules`, `firestore.indexes.json`, `firebase.json` | rules, TTL, rewrite |
-| Deps | `functions/package.json` | `@aws-sdk/client-sesv2` |
+| Deps | `functions/package.json` | `@aws-sdk/client-sesv2`, `@aws-sdk/credential-providers` |
+| Infra | `infra/aws/ses.yaml` | CloudFormation stack `citl-mail` (in place before the build) |
 
 ### Data model changes
 
@@ -254,12 +258,19 @@ stop a topic from any device. GET shows a confirm button because mail scanners f
 POST performs it and also serves RFC 8058 one-click from mail clients. Rotating the secret
 invalidates old links, which is acceptable.
 
-**DD-6 — Bounces and complaints use the SES account suppression list.** SES stops sending to
+**DD-6 — Bounces and complaints use SES suppression.** The `citl-mail` configuration set stops sending to
 addresses that bounced or complained without an SNS webhook. Volume is too low to need more.
 
 **DD-7 — Admin notice is a daily digest.** Registrations and link requests are client writes, so
 per-request emails would need two more triggers. The digest covers all four request types from
 the queries the Requests tab already runs, and sends nothing on quiet days.
+
+**DD-8 — AWS credentials by web identity federation, not keys.** `sendMail` gets a
+Google-signed ID token for its service account from the metadata server and exchanges it with
+STS `AssumeRoleWithWebIdentity` (`@aws-sdk/credential-providers` `fromWebToken`) for one-hour
+credentials for `citl-ses-sender`, cached until near expiry. The role trusts only that service
+account's numeric ID and may only send from `news@mail.citl.club`. No AWS key is stored
+anywhere (constitution §III.2, ADR-015).
 
 ---
 
@@ -329,7 +340,7 @@ Ordered groups (one commit each) are in [tasks.md](./tasks.md):
    week docs on republish (spec 005 DD-3).
 4. Schedule overrides are edited by the admin through `seasons/{year}.weekDateOverrides` only.
 
-## Decisions for the owner (defaults applied above)
+## Decisions for the owner (all six accepted 2026-10-04)
 
 1. **Sender**: our own `sendMail` function on the SES API rather than the Trigger Email
    extension (DD-1).

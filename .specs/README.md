@@ -19,6 +19,7 @@ The [constitution](./constitution.md) is the source of truth for project rules; 
 .specs/
 ├── constitution.md              # Project constitutional spec (single source of truth)
 ├── technical/                   # Technical configurations
+│   ├── aws-infrastructure.md    # AWS (Route 53, SES) CloudFormation stacks and owner deploy steps
 │   ├── build-system.md          # Vite 8 configuration and optimization
 │   ├── cicd-pipeline.md         # GitHub Actions CI/CD workflows
 │   ├── firebase-deployment.md   # Firebase Hosting deployment process
@@ -49,6 +50,7 @@ The [constitution](./constitution.md) is the source of truth for project rules; 
 ### Technical Specifications
 
 Project-specific technical configurations:
+- **aws-infrastructure.md** — AWS stacks in `infra/aws/`, change process, first deploy, manual actions
 - **build-system.md** — Vite 8 configuration, `@/` alias, minification, env variables
 - **cicd-pipeline.md** — GitHub Actions CI/CD workflows
 - **firebase-deployment.md** — Firebase Hosting setup, `citl-baed2` project, deployment commands

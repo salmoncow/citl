@@ -860,6 +860,65 @@ several documents that clients cannot write, and must be audited.
 
 ---
 
+### ADR-015: League Email on Amazon SES, AWS Managed as Code
+
+**Date**: 2026-10-04
+**Status**: Accepted
+**Domains Affected**: Platform, Security, Cost, Deployment
+
+**Context**
+
+M4 (spec 011) sends member email. Firebase and Google Cloud have no general-purpose email
+sending, so any choice is a third-party service. The league's DNS is already in AWS
+Route 53, so AWS was in use but not recorded as a platform. Adding SES makes AWS a
+platform the site depends on at runtime, with resources that must stay reproducible.
+
+**Decision**
+
+1. **Amazon SES (`us-east-1`) sends all league email** from `mail.citl.club`, through
+   one `mail/{id}` queue and one `sendMail` function on the SESv2 API (spec 011 DD-1, DD-3).
+2. **AWS is the third platform** (Firebase + GitHub + AWS), limited to Route 53 DNS and
+   SES. Any other AWS service needs its own ADR.
+3. **Every AWS resource is CloudFormation** in `infra/aws/`. The console is for reading,
+   not changing. The only manual AWS actions are the ones with no CloudFormation
+   resource, each recorded in `.specs/technical/aws-infrastructure.md` (the hosted
+   zone, which predates this ADR, and the SES production access request).
+4. **No long-lived cross-cloud credentials.** The function gets short-lived AWS
+   credentials with `AssumeRoleWithWebIdentity` using a Google-signed ID token for its
+   service account; the role trusts only that account and may only `ses:SendEmail` from
+   one address.
+5. **Templates are linted in CI** (`cfn-lint`) and deployed by the owner from a reviewed
+   branch with a change set; the stack has termination protection.
+
+**Rationale**
+
+- §I.2: SES extends a vendor already holding the league's DNS; the platform count is at
+  its maximum of three, which this ADR records rather than exceeds.
+- §III.2: no secret to leak or rotate; least-privilege role; IAM in a reviewed template.
+- §VI.1: about $0.40 per season; an SES budget alert at $1/month is in the template.
+- Reproducibility: the DKIM records come from the identity's outputs, so the DNS and the
+  identity can't drift apart.
+
+**Alternatives Considered**
+
+- **Console setup**: rejected; unreviewable, no record of what exists
+- **Terraform**: rejected; needs a state backend; CloudFormation keeps state in AWS
+- **IAM user access keys in Secret Manager**: rejected; long-lived keys need rotation
+- **Firebase Trigger Email extension over SMTP**: rejected; extension deploy permissions
+  in CI and SMTP credentials (spec 011 DD-1)
+- **Resend / Postmark**: rejected; a fourth platform
+
+**Consequences**
+
+- Enables: M4 email; later AWS changes as reviewed template diffs
+- Constrains: AWS changes only through `infra/aws/`; the platform list is full
+- Requires (owner ops): deploy the stack, request SES production access, run drift
+  detection at each quarterly review
+
+**Review Date**: 2027-04-01
+
+---
+
 ## How AI Agents Should Use This Log
 
 1. **Before implementing a new feature**: Check if a relevant decision exists that constrains

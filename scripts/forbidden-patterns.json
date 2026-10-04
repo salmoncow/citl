@@ -104,6 +104,33 @@
       "scope": ["*.ts"],
       "enforcedBy": "review",
       "message": "Client-side filtering of Firestore data — use where() queries (not auto-detectable)."
+    },
+    {
+      "id": "aws-console-change",
+      "ref": "§IV.2 (infrastructure) / ADR-015",
+      "severity": "forbid",
+      "kind": "manual",
+      "scope": ["infra/aws/**"],
+      "enforcedBy": "review",
+      "message": "AWS resource created or changed outside infra/aws/*.yaml — define it in a template and deploy the stack; only the manual actions listed in .specs/technical/aws-infrastructure.md are exempt."
+    },
+    {
+      "id": "aws-access-keys",
+      "ref": "§III.2 / §IV.2 / ADR-015",
+      "severity": "forbid",
+      "kind": "manual",
+      "scope": ["infra/aws/**", "functions/**"],
+      "enforcedBy": "review",
+      "message": "AWS access key or IAM user for the site (AWS::IAM::User, AWS::IAM::AccessKey, AWS_ACCESS_KEY_ID secret) — use web identity federation to a role."
+    },
+    {
+      "id": "iam-wildcard",
+      "ref": "§III.2 / §IV.2 / ADR-015",
+      "severity": "forbid",
+      "kind": "manual",
+      "scope": ["infra/aws/**"],
+      "enforcedBy": "review",
+      "message": "IAM statement with Action \"*\" or a write action on Resource \"*\" — name the actions and resource ARNs."
     }
   ]
 }

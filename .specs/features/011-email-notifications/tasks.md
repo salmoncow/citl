@@ -2,7 +2,7 @@
 
 **Feature**: 011-email-notifications
 **Spec**: [spec.md](./spec.md)
-**Status**: Not started (spec in review)
+**Status**: Spec approved 2026-10-04; AWS stack in Group 0; build not started
 
 Each numbered group below is one commit, in implementation order. AC refs point to
 [spec.md](./spec.md) §"Acceptance Criteria".
@@ -17,6 +17,8 @@ Each numbered group below is one commit, in implementation order. AC refs point 
 
 - [x] **0.1 (M)** Write `spec.md`.
 - [x] **0.2 (S)** Write `tasks.md`.
+- [x] **0.3 (M)** `infra/aws/ses.yaml`, `aws-infrastructure.md`, ADR-015, constitution 1.11.0,
+  CI `Infrastructure Lint` job (owner chose CloudFormation, `us-east-1`).
 
 ---
 
@@ -39,8 +41,8 @@ Each numbered group below is one commit, in implementation order. AC refs point 
 **Commit**: `feat(mail): add SES sender, templates, and signed unsubscribe`
 **AC**: AC-4 – AC-10
 
-- [ ] **2.1 (S)** Add `@aws-sdk/client-sesv2`; `mail/ses.ts` (client from secrets; emulator log
-  transport).
+- [ ] **2.1 (M)** Add `@aws-sdk/client-sesv2`, `@aws-sdk/credential-providers`; `mail/ses.ts`
+  (metadata ID token → `fromWebToken` for `SES_ROLE_ARN`; emulator log transport).
 - [ ] **2.2 (M)** `mail/templates.ts`: per-kind subject, text, HTML; escaping; footers.
 - [ ] **2.3 (M)** `sendMail`: claim, recipient checks, send, retry/fail handling.
 - [ ] **2.4 (M)** `lib/unsubscribeToken.ts`, `unsubscribe` (GET page, POST apply).
@@ -93,19 +95,19 @@ Each numbered group below is one commit, in implementation order. AC refs point 
 **Commit**: `docs(mail): record SES email notifications`
 **AC**: AC-24
 
-- [ ] **6.1 (M)** ADR-015; constitution 1.11.0; `firestore-schema.md`;
-  `firebase-deployment.md` (SES setup, secrets, first deploy); `CLAUDE.md` Key Files.
+- [ ] **6.1 (M)** `firestore-schema.md`; `firebase-deployment.md` (the secret, `SES_ROLE_ARN`,
+  first deploy); constitution §II.5, §VI.1; `CLAUDE.md` Key Files.
 
 ---
 
 ## Group 7 — Owner ops
 
-- [ ] **7.1 (M)** SES: verify `mail.citl.club` with Easy DKIM, custom MAIL FROM, DMARC record,
-  account suppression list, production access request (AC-25).
-- [ ] **7.2 (S)** IAM user limited to `ses:SendEmail`; set secrets `SES_ACCESS_KEY_ID`,
-  `SES_SECRET_ACCESS_KEY`, `UNSUBSCRIBE_SECRET` (`firebase functions:secrets:set`).
-- [ ] **7.3 (S)** Before merge: deploy the six functions from the PR branch with owner
-  credentials, then run the invoker binding for `unsubscribe` (public: `allUsers`). The
-  Firestore triggers and the scheduler need the Eventarc and Cloud Scheduler APIs, which the
-  first deploy enables.
-- [ ] **7.4 (S)** Preview walkthrough with SES in sandbox to a verified address; then merge.
+- [ ] **7.1 (S)** Deploy stack `citl-mail` and enable termination protection
+  ([aws-infrastructure.md](../../technical/aws-infrastructure.md) §First deploy); send the
+  `SenderRoleArn` output.
+- [ ] **7.2 (S)** Request SES production access (same doc, §Manual actions).
+- [ ] **7.3 (S)** Set the secret `UNSUBSCRIBE_SECRET` (`firebase functions:secrets:set`).
+- [ ] **7.4 (S)** Before merging the build: deploy the six functions from the PR branch with
+  owner credentials, then run the invoker binding for `unsubscribe` (public: `allUsers`). The
+  first deploy enables the Eventarc and Cloud Scheduler APIs.
+- [ ] **7.5 (S)** Preview walkthrough to the sandbox test address; then merge.

@@ -28,7 +28,7 @@ See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for host
 
 ```
 .github/workflows/
-├── ci.yml                  # typecheck + unit/rules/functions tests + build (5 parallel jobs)
+├── ci.yml                  # typecheck + unit/rules/functions tests + build + infra lint (6 parallel jobs)
 ├── deploy-production.yml   # CI success on main (workflow_run) → live site + rules/indexes/functions
 └── deploy-preview.yml      # PR → Firebase preview channel (7-day URL in PR comment)
 ```
@@ -37,7 +37,7 @@ See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for host
 
 ### `ci.yml`
 
-Runs on every push to `main` and every PR targeting `main`. Five parallel jobs, whose `name:`
+Runs on every push to `main` and every PR targeting `main`. Six parallel jobs, whose `name:`
 fields are the exact strings used in branch protection status checks:
 
 - `Type Check` — `npm run typecheck`
@@ -46,6 +46,8 @@ fields are the exact strings used in branch protection status checks:
 - `Cloud Functions Tests` — `npm run test:functions` (installs `functions/` deps; Java/Temurin 21)
 - `Build` — `npm run build` + `npm --prefix functions run build`, exercising the production
   rollup/terser path and the Functions `tsc` build
+- `Infrastructure Lint` — `cfn-lint infra/aws/*.yaml` (pinned version; ADR-015). AWS stacks are
+  deployed by the owner, not CI; see [aws-infrastructure.md](./aws-infrastructure.md)
 
 The `Type Check`, `Unit Tests`, and `Build` jobs need no Firebase credentials — the unit tests are
 pure in-memory (`vitest` with `environment: 'node'`) and the build succeeds with the `VITE_` env
@@ -155,6 +157,8 @@ they pass:
 - `Firestore Rules Tests`
 - `Cloud Functions Tests`
 - `Build`
+
+Add `Infrastructure Lint` to the required checks once it has passed on `main` (ADR-015).
 
 `Build & Deploy (Preview Channel)` is intentionally NOT a required check (a Firebase outage
 should not block merges).
