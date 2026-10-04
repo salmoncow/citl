@@ -2,15 +2,15 @@
  * Shooter link request dialog (spec 009 AC-15, AC-16, DD-7): the member
  * picks the name they shot under on past scorecards. A search over every
  * season's rosters (cached reads, loaded when the dialog opens) shows
- * each match with its seasons and teams; any name can also be typed.
- * The coordinator approves the link (M3).
+ * each match with its seasons and teams. The name sent must be one of
+ * them (spec 010 AC-11); the coordinator approves the link.
  */
 
 import { escapeHtml } from '@/modules/ui';
 import { getServices } from '@/services/app-services';
 import { getMemberLeagueService, resultMessage } from '@/services/member-league-service';
 import { LINK_NAME_MAX, NOTE_MAX } from '@/services/league-validation';
-import { loadShooterDirectory, searchDirectory, type DirectoryEntry } from '@/services/shooter-directory';
+import { findExact, loadShooterDirectory, searchDirectory, type DirectoryEntry } from '@/services/shooter-directory';
 import type { ShooterLinkRequest } from '@/types/league';
 import { openFormDialog } from '@/components/league-dialog';
 
@@ -34,8 +34,8 @@ function renderMatches(list: HTMLElement, status: HTMLElement, matches: Director
   status.textContent = !query.trim()
     ? ''
     : matches.length === 0
-      ? 'No scorecard names match. You can still send the name as typed.'
-      : `${matches.length} matching name${matches.length === 1 ? '' : 's'}. Choose one, or keep the name as typed.`;
+      ? 'No scorecard names match. Try your last name only. New to the league? You don’t need a link.'
+      : `${matches.length} matching name${matches.length === 1 ? '' : 's'}. Choose yours.`;
 }
 
 export function openShooterLinkDialog(opts: LinkDialogOptions): Promise<boolean> {
@@ -77,7 +77,7 @@ export function openShooterLinkDialog(opts: LinkDialogOptions): Promise<boolean>
       });
       void loadShooterDirectory(getServices().scoreService).then((res) => {
         if (!res.success) {
-          status.textContent = 'Couldn’t load scorecard names. You can still type yours.';
+          status.textContent = 'Couldn’t load scorecard names. Close this and try again.';
           return;
         }
         directory = res.data;
@@ -86,8 +86,10 @@ export function openShooterLinkDialog(opts: LinkDialogOptions): Promise<boolean>
     },
     onSubmit: async (form) => {
       const data = new FormData(form);
+      const picked = findExact(directory, String(data.get('shooterName') ?? ''));
+      if (!picked) return 'Choose your name from the scorecard names listed.';
       const res = await getMemberLeagueService().saveLinkRequest(opts.uid, {
-        shooterName: String(data.get('shooterName') ?? ''),
+        shooterName: picked.name,
         note: String(data.get('note') ?? ''),
       }, opts.existing?.status ?? null);
       return res.success ? null : resultMessage(res);

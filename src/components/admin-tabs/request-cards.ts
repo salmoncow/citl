@@ -154,28 +154,41 @@ export function registrationCard(key: string, item: RegistrationItem, names: rea
     </section>`;
 }
 
-export function linkCard(key: string, item: LinkItem, match: DirectoryEntry | null): string {
+/**
+ * Link card (AC-11): the coordinator picks one real scorecard name. The
+ * exact match is preselected; close matches cover misspellings. With no
+ * candidate the only action is Decline.
+ */
+export function linkCard(key: string, item: LinkItem, matches: readonly DirectoryEntry[], exact: DirectoryEntry | null): string {
   const headingId = uid('req-h');
-  const nameId = uid('req-link');
-  const found = match
-    ? `Found on ${match.seasons.join(', ')} scorecards (${escapeHtml(match.teams.join(', '))}).`
-    : 'This exact name isn’t on any scorecard. Correct the spelling below if you can match it.';
+  const groupName = uid('req-link');
+  const requested = escapeHtml(item.request.shooterName);
+  const choices = matches.map((m) => `
+      <label class="req-choice">
+        <input type="radio" name="${groupName}" value="${escapeHtml(m.name)}" data-link-name ${m === exact ? 'checked' : ''}>
+        <span><strong>${escapeHtml(m.name)}</strong>
+          <span class="req-muted">${escapeHtml(m.seasons.join(', '))} · ${escapeHtml(m.teams.join(', '))}</span></span>
+      </label>`).join('');
+  const picker = matches.length
+    ? `<fieldset class="req-choices">
+        <legend>${exact ? 'Link to this scorecard name' : `No exact match for “${requested}”. Pick the right name, or decline`}</legend>
+        ${choices}
+      </fieldset>`
+    : `<p class="req-warning">“${requested}” isn’t on any scorecard and nothing close matches. Decline with a note asking them to pick their name from the list.</p>`;
+  const buttons: [string, string, string][] = matches.length
+    ? [['approve', 'Approve link', 'btn-primary'], ['decline', 'Decline', 'btn-danger']]
+    : [['decline', 'Decline', 'btn-danger']];
   return `
     <section class="ann-admin-card req-card" data-card="${key}" aria-labelledby="${headingId}">
       <div class="ann-admin-card__header">
-        <h4 id="${headingId}" class="ann-admin-card__title">${escapeHtml(item.request.shooterName)}</h4>
+        <h4 id="${headingId}" class="ann-admin-card__title">${requested}</h4>
         <span class="ann-admin-card__meta">Scorecard name · Sent ${when(item.request.createdAt)}</span>
       </div>
       <p class="req-line">Member: ${memberLine(item.member)}</p>
       ${item.request.note ? `<p class="req-line">Their note: ${escapeHtml(item.request.note)}</p>` : ''}
-      <p class="req-line">${found}</p>
-      <div class="ann-editor__field">
-        <label for="${nameId}">Link to this scorecard name</label>
-        <input id="${nameId}" type="text" class="ann-editor__input" maxlength="60" data-link-name
-          value="${escapeHtml(match?.name ?? item.request.shooterName)}">
-      </div>
+      ${picker}
       ${noteField('Note to the member')}
-      ${actions(item.request.shooterName, [['approve', 'Approve link', 'btn-primary'], ['decline', 'Decline', 'btn-danger']])}
+      ${actions(item.request.shooterName, buttons)}
     </section>`;
 }
 

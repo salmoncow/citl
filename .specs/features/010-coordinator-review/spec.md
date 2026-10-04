@@ -120,8 +120,11 @@ averages; it never touches weeks, entries, or standings.
   from the call (AC-8 rules: unique, at most 15). Adds `year` to the league team's `seasons`
   (creating the league team doc, captain null, when missing). Sets the registration `placed`,
   `placedLeagueTeamId`, `reviewNote`, `reviewedBy`, `reviewedAt`. **Decline** sets `declined`.
-- [ ] AC-11: **Approve link** (status `submitted`; member active): the name is the call's
-  corrected name or the requested one. Fails with `name-taken` when another account's
+- [ ] AC-11: **Approve link** (status `submitted`; member active): the name is the one the
+  coordinator picks on the card (the exact match preselected, close matches listed; no free
+  text), or the requested one. It must be on a season roster (`not-on-scorecard`) and is
+  stored with the latest season's spelling. The member's link form also only sends a name
+  from the scorecard directory. Fails with `name-taken` when another account's
   `shooterLinks` doc has the same `nameKey`. Writes `shooterLinks/{uid}` (`shooterName`,
   `nameKey`, `linkedAt`, `linkedBy`) and sets the request `approved`. **Decline** sets
   `declined`.

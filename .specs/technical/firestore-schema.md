@@ -190,7 +190,8 @@ Update — self while `submitted` (`shooterName`, `note`, `updatedAt`). Delete �
 `submitted` or `declined` (a re-send after a decline deletes then creates).
 
 `shooterLinks/{uid}` is written when the coordinator approves (`shooterName`, `nameKey`,
-`linkedAt`, `linkedBy`); a `nameKey` already linked to another account is refused. Read — self or owner/admin. Write — disallowed for clients. When present,
+`linkedAt`, `linkedBy`). The name must be on a season roster (stored with the latest
+season's spelling); a `nameKey` already linked to another account is refused. Read — self or owner/admin. Write — disallowed for clients. When present,
 `teamProposal` uses its `shooterName` for the captain's roster entry.
 
 ---
