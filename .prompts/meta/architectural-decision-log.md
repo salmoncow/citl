@@ -889,6 +889,8 @@ platform the site depends on at runtime, with resources that must stay reproduci
    one address.
 5. **Templates are linted in CI** (`cfn-lint`) and deployed by the owner from a reviewed
    branch with a change set; the stack has termination protection.
+6. **Every resource is tagged to its origin**: `project`, `repo`, `source` (template path),
+   `managed-by`, `decision`; CI fails an untagged taggable resource.
 
 **Rationale**
 

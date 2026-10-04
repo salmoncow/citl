@@ -177,7 +177,7 @@ See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for 
 **Current state**: three test suites and a template lint, all run in CI (see `.specs/technical/cicd-pipeline.md`):
 - **Unit** (`src/**/*.test.ts`, Vitest): scoring engine, score service, schedule/yardage/markdown utils, UI helpers.
 - **Firestore rules** (`tests/rules/`, `@firebase/rules-unit-testing` on the emulator): 150 cases covering the RBAC allow/deny matrix, member profiles, member league requests, and the review queue.
-- **Infrastructure** (`infra/aws/*.yaml`, `cfn-lint`): every CloudFormation template is linted in CI.
+- **Infrastructure** (`infra/aws/*.yaml`): every CloudFormation template is linted (`cfn-lint`) and tag-checked (`scripts/check-aws-tags.py`) in CI.
 - **Cloud Functions** (`tests/functions/`, emulator): 115 cases covering `setUserRole`, `onUserCreate`, `setAccountStatus`, `deleteAccount`, `teamProposal`, `reviewRequest`, `captainHandoff`, roster checks and publishing, and the league team backfill.
 
 **Coverage posture**: business logic (scoring engine, score service) and security surfaces
@@ -369,6 +369,9 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
   The console is read-only in practice; actions with no CloudFormation resource are
   listed in that doc. Stacks have termination protection; stateful resources
   (`AWS::SES::EmailIdentity`) are `DeletionPolicy: Retain`.
+- **Tags**: every taggable AWS resource and stack carries `project=citl`,
+  `repo=github.com/salmoncow/citl`, `source=<template path>`, `managed-by=cloudformation`,
+  and `decision=<ADR or spec>`; `scripts/check-aws-tags.py` enforces it in CI.
 
 **Development**:
 - **Version Control**: Git + GitHub
@@ -403,6 +406,7 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
 ❌  AWS access keys (IAM users) for the site           Web identity federation (§III.2)
 ❌  IAM "Action": "*" or write actions on "*"           Name actions and resource ARNs
 ❌  DNS records for a template-owned name by hand      The template owns those records
+❌  A taggable AWS resource without the standard tags  project, repo, source, managed-by, decision (§IV.1)
 ```
 
 **Process anti-patterns**:
@@ -636,5 +640,5 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.7.1 (2026-09-25): Design-token hygiene (spec 007) — §IV.1 styling line: the token contract is now enforced by `src/styles/tokens.test.ts` (no colour literals or primitive references in component CSS; identical dark blocks)
 - 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)
 - 1.9.0 (2026-10-03): Team proposals and member requests (spec 009, ADR-013) — §II.5 lists the persistent `leagueTeams` and the member request collections; §VI.1 justifies `teamProposal`; §III.2 minors-as-dependents and requests-never-write-seasons notes; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~249 kB, under 1 kB headroom)
-- 1.11.0 (2026-10-04): AWS as the third platform, managed as code (ADR-015, spec 011) — §I.2 platform list (AWS limited to Route 53 + SES); §II.1 Infrastructure and Platform rows; §III.1 template lint; §III.2 no long-lived cross-cloud credentials, least-privilege IAM; §IV.1 Email/AWS and infrastructure-as-code standard; §IV.2 infrastructure anti-patterns; §IV.3 platform list; §VI.1 SES budget alert; §VIII.1 quarterly drift detection
+- 1.11.0 (2026-10-04): AWS as the third platform, managed as code (ADR-015, spec 011) — §I.2 platform list (AWS limited to Route 53 + SES); §II.1 Infrastructure and Platform rows; §III.1 template lint; §III.2 no long-lived cross-cloud credentials, least-privilege IAM; §IV.1 Email/AWS, infrastructure-as-code, and tagging standards; §IV.2 infrastructure anti-patterns; §IV.3 platform list; §VI.1 SES budget alert; §VIII.1 quarterly drift detection
 - 1.10.0 (2026-10-03): Coordinator review (spec 010, ADR-014) — §II.5 adds `captainChanges` and names `reviewRequest` as the request-to-season path; §VI.1 justifies `reviewRequest` and `captainHandoff`; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~231 kB after lazy-loading the admin panel)

@@ -31,15 +31,37 @@ account would add a CI permission grant for little gain at this size.
 
 ---
 
+## Tags
+
+Every taggable resource carries the same five tags, so anything in the AWS console or a
+bill traces back to this repo:
+
+| Key | Value | Purpose |
+|-----|-------|---------|
+| `project` | `citl` | Groups all league resources; the cost allocation tag |
+| `repo` | `github.com/salmoncow/citl` | Where the definition lives |
+| `source` | `infra/aws/<template>.yaml` | The template that owns the resource |
+| `managed-by` | `cloudformation` | Don't edit in the console |
+| `decision` | `ADR-015` (or the spec/ADR that added it) | Why it exists |
+
+They are set on each resource in the template and on the stack (`--tags`). CloudFormation
+adds `aws:cloudformation:stack-name` itself. Route 53 records can't be tagged; their
+stack is their origin. CI (`scripts/check-aws-tags.py`) fails when a taggable resource lacks
+a tag or a template uses a resource type the script hasn't classified.
+
+---
+
 ## Change process
 
-1. Edit the template in a PR. CI runs `cfn-lint infra/aws/*.yaml`.
+1. Edit the template in a PR. CI runs `cfn-lint infra/aws/*.yaml` and the tag check.
 2. After merge, the owner deploys from `main`. `deploy` keeps the previous value of any
    parameter not given, and `--no-execute-changeset` shows the change set first:
    ```bash
    aws cloudformation deploy --region us-east-1 --stack-name citl-mail \
      --template-file infra/aws/ses.yaml --capabilities CAPABILITY_NAMED_IAM \
-     --no-execute-changeset
+     --no-execute-changeset \
+     --tags project=citl repo=github.com/salmoncow/citl source=infra/aws/ses.yaml \
+       managed-by=cloudformation decision=ADR-015
    # review the printed change set, then run the execute-change-set command it prints
    ```
 3. Never change a template-owned resource in the console. If something drifted, fix the
@@ -71,7 +93,9 @@ SA_ID=$(gcloud iam service-accounts describe \
 aws cloudformation deploy --region us-east-1 --stack-name citl-mail \
   --template-file infra/aws/ses.yaml --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides HostedZoneId="$ZONE_ID" GoogleServiceAccountId="$SA_ID" \
-    AlertEmail=you@example.com SandboxTestRecipient=you@example.com
+    AlertEmail=you@example.com SandboxTestRecipient=you@example.com \
+  --tags project=citl repo=github.com/salmoncow/citl source=infra/aws/ses.yaml \
+    managed-by=cloudformation decision=ADR-015
 aws cloudformation update-termination-protection --region us-east-1 \
   --stack-name citl-mail --enable-termination-protection
 
@@ -97,6 +121,7 @@ Actions with no CloudFormation resource. Each is done once and recorded here.
 |--------|------|---------|
 | Route 53 hosted zone `citl.club` | Pre-existing (before ADR-015) | Not managed by a stack; the template only adds records |
 | SES production access | After the identity verifies | Below |
+| Activate `project` as a cost allocation tag | A day after the first deploy (the tag must appear in billing data first) | `aws ce update-cost-allocation-tags-status --cost-allocation-tags-status TagKey=project,Status=Active` |
 
 ```bash
 aws sesv2 put-account-details --region us-east-1 \

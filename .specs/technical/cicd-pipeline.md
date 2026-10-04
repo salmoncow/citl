@@ -46,7 +46,7 @@ fields are the exact strings used in branch protection status checks:
 - `Cloud Functions Tests` — `npm run test:functions` (installs `functions/` deps; Java/Temurin 21)
 - `Build` — `npm run build` + `npm --prefix functions run build`, exercising the production
   rollup/terser path and the Functions `tsc` build
-- `Infrastructure Lint` — `cfn-lint infra/aws/*.yaml` (pinned version; ADR-015). AWS stacks are
+- `Infrastructure Lint` — `cfn-lint infra/aws/*.yaml` (pinned version) and `scripts/check-aws-tags.py` (standard tags; ADR-015). AWS stacks are
   deployed by the owner, not CI; see [aws-infrastructure.md](./aws-infrastructure.md)
 
 The `Type Check`, `Unit Tests`, and `Build` jobs need no Firebase credentials — the unit tests are

@@ -124,6 +124,15 @@
       "message": "AWS access key or IAM user for the site (AWS::IAM::User, AWS::IAM::AccessKey, AWS_ACCESS_KEY_ID secret) — use web identity federation to a role."
     },
     {
+      "id": "aws-untagged-resource",
+      "ref": "§IV.1 / §IV.2 / ADR-015",
+      "severity": "forbid",
+      "kind": "manual",
+      "scope": ["infra/aws/**"],
+      "enforcedBy": "ci",
+      "message": "Taggable AWS resource without project, repo, source, managed-by, and decision tags — scripts/check-aws-tags.py fails CI."
+    },
+    {
       "id": "iam-wildcard",
       "ref": "§III.2 / §IV.2 / ADR-015",
       "severity": "forbid",

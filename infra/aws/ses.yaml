@@ -5,7 +5,9 @@ Description: >-
   configuration set, a send-only IAM role assumed by the Firebase Functions
   service account through Google web identity federation (no access keys),
   and an SES cost budget. Deploy and update with the commands in
-  .specs/technical/aws-infrastructure.md.
+  .specs/technical/aws-infrastructure.md. Every taggable resource carries the
+  standard tags (project, repo, source, managed-by, decision); CI checks this
+  with scripts/check-aws-tags.py.
 
 Parameters:
   HostedZoneId:
@@ -59,6 +61,17 @@ Resources:
         ReputationMetricsEnabled: true
       SendingOptions:
         SendingEnabled: true
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
 
   MailIdentity:
     Type: AWS::SES::EmailIdentity
@@ -73,6 +86,17 @@ Resources:
         BehaviorOnMxFailure: USE_DEFAULT_VALUE
       ConfigurationSetAttributes:
         ConfigurationSetName: !Ref MailConfigurationSet
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
 
   DkimRecord1:
     Type: AWS::Route53::RecordSet
@@ -141,6 +165,17 @@ Resources:
     Condition: HasSandboxTestRecipient
     Properties:
       EmailIdentity: !Ref SandboxTestRecipient
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
 
   # Assumed with AssumeRoleWithWebIdentity using a Google-signed ID token for
   # the Functions service account; accounts.google.com is a built-in AWS
@@ -153,6 +188,17 @@ Resources:
       RoleName: citl-ses-sender
       Description: Send-only SES role for the CITL sendMail Cloud Function.
       MaxSessionDuration: 3600
+      Tags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -195,6 +241,17 @@ Resources:
         CostFilters:
           Service:
             - Amazon Simple Email Service
+      ResourceTags:
+        - Key: project
+          Value: citl
+        - Key: repo
+          Value: github.com/salmoncow/citl
+        - Key: source
+          Value: infra/aws/ses.yaml
+        - Key: managed-by
+          Value: cloudformation
+        - Key: decision
+          Value: ADR-015
       NotificationsWithSubscribers:
         - Notification:
             NotificationType: ACTUAL

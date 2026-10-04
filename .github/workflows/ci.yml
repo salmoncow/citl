@@ -96,3 +96,5 @@ jobs:
       # Pinned so a new rule release can't turn main red without a template change.
       - run: pip install cfn-lint==1.57.1
       - run: cfn-lint infra/aws/*.yaml
+      # Every taggable resource carries the standard traceability tags (ADR-015).
+      - run: python scripts/check-aws-tags.py
