@@ -16,8 +16,7 @@
 import '@/styles/admin-requests.css';
 import { escapeHtml, showToast } from '@/modules/ui';
 import { getServices } from '@/services/app-services';
-import { normalizeShooterName } from '@/services/scoring-engine';
-import { loadShooterDirectory, type DirectoryEntry } from '@/services/shooter-directory';
+import { closeMatches, findExact, loadShooterDirectory } from '@/services/shooter-directory';
 import { leagueErrorMessage } from '@/services/member-league-service';
 import {
   compareRoster,
@@ -182,16 +181,17 @@ export class RequestsTab implements AdminTab {
   private async _links(q: ReviewQueue): Promise<string[]> {
     if (!q.links.length) return [];
     const dir = await loadShooterDirectory(scoreService);
-    const byKey = new Map<string, DirectoryEntry>((dir.success ? dir.data : []).map((e) => [e.key, e]));
+    const entries = dir.success ? dir.data : [];
     return q.links.map((item, i) => {
       const key = `l${i}`;
       this._requests.set(key, (act, card) => {
         if (act === 'decline') return { type: 'link', uid: item.uid, action: 'decline', note: readNote(card) };
-        const name = card.querySelector<HTMLInputElement>('[data-link-name]')?.value.trim() ?? '';
-        if (!name) return 'Enter the scorecard name to link.';
+        const name = card.querySelector<HTMLInputElement>('input[data-link-name]:checked')?.value ?? '';
+        if (!name) return 'Choose the scorecard name to link.';
         return { type: 'link', uid: item.uid, action: 'approve', shooterName: name, note: readNote(card) };
       });
-      return linkCard(key, item, byKey.get(normalizeShooterName(item.request.shooterName)) ?? null);
+      const name = item.request.shooterName;
+      return linkCard(key, item, closeMatches(entries, name), findExact(entries, name));
     });
   }
 

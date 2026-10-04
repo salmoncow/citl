@@ -57,6 +57,29 @@ export function searchDirectory(dir: readonly DirectoryEntry[], query: string, l
   return hits.slice(0, limit);
 }
 
+/** The entry for this exact name (normalized), if any. */
+export function findExact(dir: readonly DirectoryEntry[], name: string): DirectoryEntry | null {
+  const key = normalizeShooterName(name).replace(/\s+/g, ' ');
+  return key ? dir.find((e) => e.key === key) ?? null : null;
+}
+
+/**
+ * Candidates for a requested name: the exact match first, then names
+ * containing every word, then names sharing the last word (surname), so
+ * "Jon Smith" still offers "John Smith".
+ */
+export function closeMatches(dir: readonly DirectoryEntry[], name: string, limit = 8): DirectoryEntry[] {
+  const words = normalizeShooterName(name).split(/\s+/).filter(Boolean);
+  const last = words[words.length - 1];
+  if (!last) return [];
+  const exact = findExact(dir, name);
+  const out: DirectoryEntry[] = exact ? [exact] : [];
+  const add = (e: DirectoryEntry) => { if (!out.includes(e)) out.push(e); };
+  dir.filter((e) => words.every((w) => e.key.includes(w))).forEach(add);
+  dir.filter((e) => e.key.split(/\s+/).pop() === last).forEach(add);
+  return out.slice(0, limit);
+}
+
 export interface SeasonTeamSource {
   getAllSeasons(): Promise<Result<Season[]>>;
   getTeams(year: number): Promise<Result<Team[]>>;

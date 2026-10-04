@@ -283,13 +283,21 @@ describe('registrations', () => {
 describe('shooter links', () => {
   beforeEach(async () => {
     await db().doc(`shooterLinkRequests/${OTHER}`).set({ shooterName: 'pat  shooter', status: 'submitted' });
+    await db().doc('seasons/2023/teams/hawks').set({ name: 'Hawks', shooters: [{ name: 'PAT SHOOTER' }] });
+    await db().doc('seasons/2024/teams/hawks').set({ name: 'Hawks', shooters: [{ name: 'Pat Shooter' }] });
   });
 
-  it('links a corrected name and records the request', async () => {
-    await expect(asAdmin({ type: 'link', uid: OTHER, action: 'approve', shooterName: 'Pat Shooter' }))
+  it('links the latest scorecard spelling and records the request', async () => {
+    await expect(asAdmin({ type: 'link', uid: OTHER, action: 'approve', shooterName: 'pat shooter' }))
       .resolves.toEqual({ ok: true, status: 'approved' });
     expect(await data(`shooterLinks/${OTHER}`)).toMatchObject({ shooterName: 'Pat Shooter', nameKey: 'pat shooter', linkedBy: ADMIN });
     expect((await data(`shooterLinkRequests/${OTHER}`))?.['status']).toBe('approved');
+  });
+
+  it('refuses a name on no season roster', async () => {
+    await expect(asAdmin({ type: 'link', uid: OTHER, action: 'approve', shooterName: 'Made Up' }))
+      .rejects.toMatchObject({ details: { reason: 'not-on-scorecard' } });
+    expect(await data(`shooterLinks/${OTHER}`)).toBeUndefined();
   });
 
   it('refuses a name linked to another account; declines', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildShooterDirectory, loadShooterDirectory, searchDirectory } from './shooter-directory';
+import { buildShooterDirectory, closeMatches, findExact, loadShooterDirectory, searchDirectory } from './shooter-directory';
 import type { Team } from '@/types/score';
 
 function team(name: string, shooters: string[]): Team {
@@ -32,6 +32,21 @@ describe('searchDirectory', () => {
     expect(searchDirectory(dir, 'klein').map((e) => e.name)).toEqual(['Aaron Klein', 'Klein Aaronson']);
     expect(searchDirectory(dir, 'aaron klein')[0]?.name).toBe('Aaron Klein');
     expect(searchDirectory(dir, '  ')).toEqual([]);
+  });
+});
+
+describe('closeMatches / findExact', () => {
+  const dir = buildShooterDirectory([{ year: 2025, teams: [team('Eagles', ['John Smith', 'Jonathan Smith', 'Jon Smithers', 'Pete Sandoval'])] }]);
+
+  it('puts the exact name first, then word matches, then same surname', () => {
+    expect(closeMatches(dir, 'jonathan  smith').map((e) => e.name)).toEqual(['Jonathan Smith', 'John Smith']);
+    expect(closeMatches(dir, 'Jon Smith').map((e) => e.name)).toEqual(['Jon Smithers', 'Jonathan Smith', 'John Smith']);
+    expect(closeMatches(dir, 'Zed Nobody')).toEqual([]);
+  });
+
+  it('finds only an exact (normalized) name', () => {
+    expect(findExact(dir, ' john   SMITH ')?.name).toBe('John Smith');
+    expect(findExact(dir, 'Jon Smith')).toBeNull();
   });
 });
 
