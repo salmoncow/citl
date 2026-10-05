@@ -121,3 +121,42 @@ export async function loadReviewRequest() {
 export async function loadCaptainHandoff() {
   return import('../../functions/src/captainHandoff.js');
 }
+
+export async function loadMail() {
+  const [send, unsub, ses, token, templates] = await Promise.all([
+    import('../../functions/src/sendMail.js'),
+    import('../../functions/src/unsubscribe.js'),
+    import('../../functions/src/mail/ses.js'),
+    import('../../functions/src/lib/unsubscribeToken.js'),
+    import('../../functions/src/mail/templates.js'),
+  ]);
+  return { ...send, ...unsub, ...ses, ...token, ...templates };
+}
+
+/** Records sends; `fail` makes the next sends throw that error. */
+export function fakeTransport() {
+  const sent: Array<{ to: string; subject: string; text: string; html: string; headers?: Record<string, string> }> = [];
+  const state: { fail: Error | null } = { fail: null };
+  return {
+    sent,
+    state,
+    transport: {
+      async send(mail: (typeof sent)[number]) {
+        if (state.fail) throw state.fail;
+        sent.push(mail);
+      },
+    },
+  };
+}
+
+/** Queue a mail doc the way the server does (status pending). */
+export async function queueTestMail(id: string, data: Record<string, unknown>): Promise<void> {
+  await adminDb().doc(`mail/${id}`).set({
+    status: 'pending',
+    attempts: 0,
+    subject: 'Hello',
+    paragraphs: ['Body'],
+    createdAt: FieldValue.serverTimestamp(),
+    ...data,
+  });
+}
