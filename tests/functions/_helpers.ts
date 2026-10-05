@@ -160,3 +160,15 @@ export async function queueTestMail(id: string, data: Record<string, unknown>): 
     ...data,
   });
 }
+
+export async function loadTopicEmails() {
+  const [triggers, builders] = await Promise.all([
+    import('../../functions/src/topicEmails.js'),
+    import('../../functions/src/mail/builders.js'),
+  ]);
+  return { ...triggers, ...builders };
+}
+
+export async function mailDocs(): Promise<Array<Record<string, unknown>>> {
+  return (await adminDb().collection('mail').get()).docs.map((d) => d.data());
+}
