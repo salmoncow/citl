@@ -40,6 +40,13 @@
     ],
     "rewrites": [
       {
+        "source": "/unsubscribe",
+        "function": {
+          "functionId": "unsubscribe",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
