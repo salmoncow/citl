@@ -2,7 +2,7 @@
 
 **Feature**: 012-join-the-league
 **Spec**: [spec.md](./spec.md)
-**Status**: Groups 0–3 done (2026-10-06)
+**Status**: Groups 0–4 done (2026-10-06)
 
 **Complexity legend**: S = <30min · M = 30min–2h · L = >2h
 
@@ -24,3 +24,7 @@
 **AC**: AC-9
 - [x] **3.1 (S)** `RegistrationItem.pendingLinkName` in `league-review-service.ts` + test.
 - [x] **3.2 (S)** Warning line on the registration card.
+
+## Group 4 — Home newcomer guide
+**AC**: AC-10
+- [x] **4.1 (S)** "New to trap?" step and button → `#/join` when the flag is on.
