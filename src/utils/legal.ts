@@ -26,3 +26,6 @@ export const LEGAL_ANCHORS = {
   terms: 'terms-of-use',
   privacy: 'privacy-policy',
 } as const;
+
+/** Date the /privacy wording was last changed, shown on the page. */
+export const PRIVACY_UPDATED = 'October 6, 2026';
