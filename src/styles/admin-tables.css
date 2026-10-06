@@ -254,6 +254,10 @@ td:has(> .ac-wrapper) {
 .ann-editor__input,
 .ann-editor__textarea { width: 100%; padding: 6px 10px; border: 1px solid var(--c-input-border); border-radius: var(--radius-md); font-size: var(--text-sm); background: var(--c-card); color: var(--c-text); box-sizing: border-box; }
 .ann-editor__textarea { resize: vertical; font-family: monospace; min-height: 120px; }
+.ann-editor__check { display: flex; align-items: flex-start; gap: var(--space-3); min-height: var(--control-height); margin-bottom: var(--space-3); font-size: var(--text-sm); cursor: pointer; }
+.ann-editor__check input { flex-shrink: 0; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--c-accent); }
+.ann-editor__hint { display: block; color: var(--c-text-muted); }
+.ann-editor__check[hidden] { display: none; }
 .ann-editor__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .ann-admin-card { border: 1px solid var(--c-table-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); }
 .ann-admin-card__header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }

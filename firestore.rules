@@ -62,6 +62,17 @@ service cloud.firestore {
           && data.updatedAt is timestamp;
     }
 
+    // ── Email topics (spec 011) ─────────────────────────────────────────────
+    // Mirrors NOTIFICATION_TOPICS in src/types/notifications.ts.
+    function isValidTopics(t) {
+      return t is map
+          && t.keys().hasOnly(['news', 'scores', 'schedule', 'requests'])
+          && (!('news' in t) || t.news is bool)
+          && (!('scores' in t) || t.scores is bool)
+          && (!('schedule' in t) || t.schedule is bool)
+          && (!('requests' in t) || t.requests is bool);
+    }
+
     // ── League request helpers (spec 009) ───────────────────────────────────
     // Request doc ids are "{year}_{uid}"; the owner is read from the id so a
     // member can probe for their own (possibly missing) request.
@@ -281,7 +292,26 @@ service cloud.firestore {
     }
 
     // ── notificationSettings/{uid} — reserved for M4 ────────────────────────
+    // ── notificationSettings/{uid} — email topics (spec 011) ───────────────
+    // Self only. Missing topics mean off. The unsubscribe function and
+    // deleteAccount write through the Admin SDK.
     match /notificationSettings/{uid} {
+      allow read:           if isSelf(uid);
+      allow create, update: if isSelf(uid)
+                            && isActiveMember(uid)
+                            && request.resource.data.keys().hasOnly(['topics', 'updatedAt'])
+                            && request.resource.data.keys().hasAll(['topics', 'updatedAt'])
+                            && isValidTopics(request.resource.data.topics)
+                            && request.resource.data.updatedAt == request.time;
+      allow delete:         if false;
+    }
+
+    // ── mail/{id}, notifications/{key} — email queue and fan-out dedupe ────
+    // Server-only (spec 011 AC-7, AC-11).
+    match /mail/{id} {
+      allow read, write: if false;
+    }
+    match /notifications/{key} {
       allow read, write: if false;
     }
 
@@ -304,6 +334,11 @@ service cloud.firestore {
     match /config/banner {
       allow read:           if true;
       allow create, update: if isOwnerOrAdmin();
+    }
+
+    // ── config/mailDigest — requestDigest's last run (spec 011 AC-19) ───────
+    match /config/mailDigest {
+      allow read, write: if false;
     }
 
     // ── announcements/{docId} ──────────────────────────────────────────────

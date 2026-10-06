@@ -8,3 +8,5 @@ process.env['FUNCTIONS_EMULATOR'] = 'true';
 process.env['GCLOUD_PROJECT'] ??= 'citl-fn-test';
 process.env['FIREBASE_AUTH_EMULATOR_HOST'] ??= '127.0.0.1:9099';
 process.env['FIRESTORE_EMULATOR_HOST'] ??= '127.0.0.1:8080';
+// Spec 011: defineSecret('UNSUBSCRIBE_SECRET').value() reads process.env.
+process.env['UNSUBSCRIBE_SECRET'] ??= 'test-unsubscribe-secret';

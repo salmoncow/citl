@@ -87,6 +87,9 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `src/components/rules-toc.ts`, `scorecard-render.ts` | Rules TOC/accordion; scorecard heat-grid render helpers |
 | `src/styles/tokens.css` | "Range Day" design tokens, light/dark (ADR-011); the only place colours are defined, enforced by `tokens.test.ts` |
 | `src/styles/{components,home,scorecards,rules,admin-shell}.css` | Shared components; per-page styles; admin app shell |
+| `functions/src/sendMail.ts`, `functions/src/mail/*.ts` | Email outbox sender: `mail/{id}` → SES (web identity, no keys), templates, content builders (spec 011) |
+| `functions/src/{topicEmails,requestDigest,unsubscribe}.ts`, `functions/src/lib/{fanout,mailQueue,unsubscribeToken}.ts` | Topic fan-out, admin digest, signed one-click unsubscribe; `queueMail` for status emails inside decision transactions |
+| `src/components/account-email.ts`, `src/services/notification-service.ts` | `/account` Email card and topic choices (`notificationSettings/{uid}`) |
 | `infra/aws/ses.yaml` | CloudFormation for SES email (`mail.citl.club`), its DNS records, and the send-only role (ADR-015; deploy steps in `.specs/technical/aws-infrastructure.md`) |
 | `firebase.json` | Hosting config: SPA rewrite, CSP, cache headers |
 | `.env.example` | Template for required `VITE_FIREBASE_*` env vars |

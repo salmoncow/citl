@@ -3,7 +3,8 @@
  *
  * Banner is a singleton document (no year scoping); announcements are
  * per-year and rendered as cards with edit/delete buttons. Both share
- * a status line per editor for inline feedback.
+ * a status line per editor for inline feedback. New posts carry an
+ * "Email subscribers" box (spec 011 AC-12), hidden while editing.
  */
 
 import { ScoreService } from '@/services/score-service';
@@ -59,6 +60,11 @@ export class AnnouncementsTab implements AdminTab {
           <textarea id="ann-body" class="ann-editor__textarea" rows="6"
             placeholder="Write your announcement..."></textarea>
         </div>
+        <label class="ann-editor__check" id="ann-email-row">
+          <input type="checkbox" id="ann-email" checked aria-describedby="ann-email-hint">
+          <span>Email subscribers
+            <span id="ann-email-hint" class="ann-editor__hint">Sends this post to members who chose League news. Edits are not re-sent.</span></span>
+        </label>
         <div class="ann-editor__actions">
           <button id="ann-post-btn" class="btn-primary">Post Announcement</button>
           <button id="ann-cancel-btn" class="btn-secondary" style="display:none">Cancel Edit</button>
@@ -198,7 +204,8 @@ export class AnnouncementsTab implements AdminTab {
     }
 
     this._setAnnStatus('Posting…', '');
-    const result = await this._scoreService.createAnnouncement(year, title, body);
+    const email = host.querySelector<HTMLInputElement>('#ann-email')!.checked;
+    const result = await this._scoreService.createAnnouncement(year, title, body, email);
     if (!result.success) {
       this._setAnnStatus(`Error: ${result.error}`, 'error');
       return;
@@ -215,6 +222,7 @@ export class AnnouncementsTab implements AdminTab {
     this._editingAnnouncementId = id;
     host.querySelector<HTMLButtonElement>('#ann-post-btn')!.textContent = 'Save Changes';
     host.querySelector<HTMLButtonElement>('#ann-cancel-btn')!.style.display = '';
+    host.querySelector<HTMLElement>('#ann-email-row')!.hidden = true;
     host.querySelector('#ann-status')!.textContent = '';
     host.querySelector('#ann-title')!.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
@@ -267,6 +275,8 @@ export class AnnouncementsTab implements AdminTab {
     this._editingAnnouncementId = null;
     host.querySelector<HTMLButtonElement>('#ann-post-btn')!.textContent = 'Post Announcement';
     host.querySelector<HTMLButtonElement>('#ann-cancel-btn')!.style.display = 'none';
+    host.querySelector<HTMLElement>('#ann-email-row')!.hidden = false;
+    host.querySelector<HTMLInputElement>('#ann-email')!.checked = true;
     host.querySelector('#ann-status')!.textContent = '';
   }
 

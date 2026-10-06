@@ -12,6 +12,7 @@ import {
   clearFirestore,
   loadCaptainHandoff,
   loadDeleteAccount,
+  mailDocs,
   seedUser,
 } from './_helpers.js';
 
@@ -41,6 +42,8 @@ const call = (uid: string, data: unknown) => wrapped(callableRequest({ uid, role
 const nominate = (email = `${NOMINEE}@example.com`, uid = CAPTAIN) =>
   call(uid, { action: 'nominate', leagueTeamId: 'crazy-guns', email });
 const change = async () => (await adminDb().doc('captainChanges/crazy-guns').get()).data();
+/** Queued status mail as sorted "uid: subject" lines (spec 011). */
+const mailOut = async () => (await mailDocs()).map((m) => `${m['uid']}: ${m['subject']}`).sort();
 
 beforeEach(async () => {
   await clearFirestore();
@@ -60,10 +63,12 @@ describe('nominate', () => {
     });
     const audit = (await adminDb().collection('audit').get()).docs.map((d) => d.data());
     expect(audit).toEqual([expect.objectContaining({ kind: 'captain', action: 'nominated', targetUid: NOMINEE })]);
+    expect(await mailOut()).toEqual([`${NOMINEE}: You're nominated as captain of Crazy Guns`]);
   });
 
   it('rejects each failure reason', async () => {
     await expect(nominate('nobody@example.com')).rejects.toMatchObject({ details: { reason: 'no-member' } });
+    expect(await mailOut()).toEqual([]);
     await expect(nominate(`${CAPTAIN}@example.com`)).rejects.toMatchObject({ details: { reason: 'self-nomination' } });
     await expect(nominate(`${NOMINEE}@example.com`, OTHER)).rejects.toMatchObject({ details: { reason: 'not-captain' } });
     await expect(call(CAPTAIN, { action: 'nominate', leagueTeamId: 'crazy-guns', email: 'not-an-email' }))
@@ -99,11 +104,18 @@ describe('respond and cancel', () => {
     await expect(call(NOMINEE, { action: 'decline', leagueTeamId: 'crazy-guns' })).rejects.toMatchObject({ details: { reason: 'bad-status' } });
     // Accepting does not move the captaincy; the coordinator approves.
     expect((await adminDb().doc('leagueTeams/crazy-guns').get()).data()?.['captainUid']).toBe(CAPTAIN);
+    expect(await mailOut()).toContain(`${CAPTAIN}: Pat ${NOMINEE} accepted the Crazy Guns captaincy`);
+  });
+
+  it('the nominee declines and the captain is told', async () => {
+    await call(NOMINEE, { action: 'decline', leagueTeamId: 'crazy-guns' });
+    expect(await mailOut()).toContain(`${CAPTAIN}: Pat ${NOMINEE} declined the Crazy Guns captaincy`);
   });
 
   it('the captain cancels an open handoff; others cannot', async () => {
     await expect(call(NOMINEE, { action: 'cancel', leagueTeamId: 'crazy-guns' })).rejects.toMatchObject({ details: { reason: 'not-captain' } });
     await expect(call(CAPTAIN, { action: 'cancel', leagueTeamId: 'crazy-guns' })).resolves.toEqual({ ok: true, status: 'cancelled' });
+    expect(await mailOut()).toContain(`${NOMINEE}: Captain nomination for Crazy Guns cancelled`);
     await expect(call(CAPTAIN, { action: 'cancel', leagueTeamId: 'crazy-guns' })).rejects.toMatchObject({ details: { reason: 'bad-status' } });
     await expect(call(CAPTAIN, { action: 'cancel', leagueTeamId: 'ghosts' })).rejects.toMatchObject({ details: { reason: 'no-handoff' } });
   });

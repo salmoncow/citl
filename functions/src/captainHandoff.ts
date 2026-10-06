@@ -16,6 +16,9 @@
  * its own transaction); for nominate, the Auth email lookup (outside the
  * transaction, read-only); then one transaction with an audit entry.
  *
+ * Each step queues a status email in the same transaction (spec 011
+ * AC-17): nominate → nominee; cancel → nominee; accept/decline → captain.
+ *
  * Failure modes (details.reason): not-captain, no-member,
  * self-nomination, not-eligible, already-captain, handoff-open,
  * no-handoff, bad-status, not-nominee.
@@ -28,6 +31,8 @@ import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/
 import { captainHandoffInput } from './lib/validate.js';
 import { checkAndBumpInTransaction, RATE_LIMITS } from './lib/rateLimit.js';
 import { queueAuditEntry } from './lib/audit.js';
+import { queueMail } from './lib/mailQueue.js';
+import { handoffContent } from './mail/builders.js';
 import { assertNoOtherCaptaincy, fail, isEligible } from './lib/members.js';
 import { OPEN_HANDOFF } from './review/captain.js';
 
@@ -101,11 +106,13 @@ export async function handleCaptainHandoff(req: CallableRequest<unknown>): Promi
 
       const now = FieldValue.serverTimestamp();
       const toName = String(toProfile.data()?.['displayName'] ?? '');
+      const teamName = String(team.data()?.['name'] ?? input.leagueTeamId);
+      const fromName = String(fromProfile.data()?.['displayName'] ?? '');
       tx.set(changeRef, {
         leagueTeamId: input.leagueTeamId,
-        teamName: String(team.data()?.['name'] ?? input.leagueTeamId),
+        teamName,
         fromUid: uid,
-        fromName: String(fromProfile.data()?.['displayName'] ?? ''),
+        fromName,
         toUid,
         toName,
         status: 'nominated',
@@ -117,6 +124,7 @@ export async function handleCaptainHandoff(req: CallableRequest<unknown>): Promi
         reviewedAt: null,
       });
       queueAuditEntry(tx, db, { kind: 'captain', actorUid: uid, subjectId, action: 'nominated', targetUid: toUid });
+      queueMail(tx, db, toUid, handoffContent('nominated', teamName, fromName || 'Your captain'));
       return { ok: true as const, status: 'nominated' as const, toName };
     });
   }
@@ -127,12 +135,14 @@ export async function handleCaptainHandoff(req: CallableRequest<unknown>): Promi
     if (!change.exists || !c) throw fail('not-found', 'no-handoff', 'There is no handoff for this team.');
     const status = String(c['status']);
     const now = FieldValue.serverTimestamp();
+    const teamName = String(c['teamName'] ?? input.leagueTeamId);
 
     if (input.action === 'cancel') {
       if (c['fromUid'] !== uid) throw fail('permission-denied', 'not-captain', 'Only the nominating captain can cancel.');
       if (!OPEN_HANDOFF.includes(status)) throw fail('failed-precondition', 'bad-status', 'This handoff is already closed.');
       tx.update(changeRef, { status: 'cancelled', updatedAt: now });
       queueAuditEntry(tx, db, { kind: 'captain', actorUid: uid, subjectId, action: 'cancelled', targetUid: String(c['toUid']) });
+      queueMail(tx, db, String(c['toUid']), handoffContent('cancelled', teamName, String(c['fromName'] || 'Your captain')));
       return { ok: true as const, status: 'cancelled' as const };
     }
 
@@ -141,6 +151,7 @@ export async function handleCaptainHandoff(req: CallableRequest<unknown>): Promi
     const next = input.action === 'accept' ? 'accepted' : 'declined';
     tx.update(changeRef, { status: next, respondedAt: now, updatedAt: now });
     queueAuditEntry(tx, db, { kind: 'captain', actorUid: uid, subjectId, action: next, targetUid: uid });
+    queueMail(tx, db, String(c['fromUid']), handoffContent(next, teamName, String(c['toName'] || 'The nominee')));
     return { ok: true as const, status: next };
   });
 }

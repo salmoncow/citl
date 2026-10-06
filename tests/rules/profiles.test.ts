@@ -7,7 +7,7 @@
  * set, length, displayName must equal "First Last"); update {name,
  * phone, remove phone, terms re-acceptance, each rejected change} for a
  * profile saved before the name split (legacy) and after; delete (Admin SDK only);
- * notificationSettings/{uid} (denied). Dependents are covered in dependents.test.ts.
+ * notificationSettings/{uid} (legacy shape denied; spec 011 rules in notifications.test.ts). Dependents are covered in dependents.test.ts.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
@@ -319,9 +319,8 @@ describe('reserved paths', () => {
     await assertFails(setDoc(doc(db, 'profiles', USER_UID, 'dependents', 'x'), { name: 'Kid' }));
   });
 
-  it('notificationSettings/{uid} read and write denied for self', async () => {
+  it('notificationSettings/{uid} rejects a shape without topics (spec 011 opened the path)', async () => {
     const db = asRole(env, USER_UID, 'user');
-    await assertFails(getDoc(doc(db, 'notificationSettings', USER_UID)));
     await assertFails(setDoc(doc(db, 'notificationSettings', USER_UID), { weekly: true }));
   });
 });

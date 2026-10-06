@@ -2,7 +2,7 @@
 
 **Feature ID**: 011-email-notifications
 **Created**: 2026-10-04
-**Status**: Approved 2026-10-04 (owner); AWS stack defined, build not started
+**Status**: Implemented, for owner review (stack `citl-mail` deployed 2026-10-05)
 **Program**: Member accounts — M1 accounts and profile ([spec 008](../008-public-accounts/spec.md),
 shipped) · M2 member requests ([spec 009](../009-team-proposals/spec.md), shipped) · M3
 coordinator review ([spec 010](../010-coordinator-review/spec.md), shipped) · **M4 email
@@ -76,15 +76,18 @@ accounts and receive nothing; no email names a minor.
   `GET` with a valid signature returns a small page naming the topic and a **Unsubscribe** button
   (a POST form, so link scanners don't unsubscribe); `POST` with a valid signature sets that
   topic to `false` (merge) and returns a confirmation page linking to `/account`. An invalid
-  signature returns 400 and writes nothing. Repeating a POST is harmless.
+  signature returns 400 and writes nothing. Repeating a POST is harmless. A link for a deleted
+  account writes nothing (the settings doc is not recreated).
 - [ ] AC-6: Status emails and the digest footer link to `/#/account` instead of carrying an
   unsubscribe link (status emails answer the member's own request; see Decision 3).
 
 **F16 — Queue and sender**
-- [ ] AC-7: `mail/{id}` holds `to`, `uid`, `kind` (`news | scores | schedule | status |
-  digest`), `topic` (topic emails only), `subject`, `text`, `html`, `status` (`pending | sent |
-  failed | skipped`), `attempts`, `error`, `createdAt`, `sentAt`, `expireAt` (`createdAt` + 30
-  days, a Firestore TTL field). Rules deny all client access.
+- [ ] AC-7: `mail/{id}` holds `uid`, `kind` (`news | scores | schedule | status |
+  digest`), `topic` (topic emails only), the content (`subject`, `paragraphs`, optional `link`),
+  `status` (`pending | sending | sent | failed | skipped`), `attempts`, `error`, `createdAt`,
+  `expireAt` (`createdAt` + 30 days, a Firestore TTL field), and on send `to` and `sentAt`.
+  Text and HTML are rendered at send time, so the address and footer always reflect the
+  member's current account. Rules deny all client access.
 - [ ] AC-8: `sendMail` (Firestore `onDocumentCreated('mail/{id}')`, `retry: true`,
   `maxInstances: 2`, parameter `SES_ROLE_ARN`, secret `UNSUBSCRIBE_SECRET`; AWS credentials
   per DD-8): in a transaction it claims the doc (`pending` → `sending`, or a
@@ -95,6 +98,7 @@ accounts and receive nothing; no email names a minor.
   `LEAGUE_EMAIL`, text and HTML parts, the AC-4 headers for topic mail); sets `sent`. SES
   throttling or 5xx throws so the event retries (up to 5 attempts, then `failed`); any other SES
   error sets `failed` with the message. A doc not in `pending`/stale `sending` is ignored.
+  `SES_ROLE_ARN` is a non-secret param set in `functions/.env.citl-baed2`.
 - [ ] AC-9: In the emulator `sendMail` logs the message instead of calling SES and needs no
   AWS role or secret.
 - [ ] AC-10: Bodies are built by pure template functions in `functions/src/mail/templates.ts`:
@@ -122,13 +126,15 @@ accounts and receive nothing; no email names a minor.
   compares `weekDateOverrides` before and after and ignores every other field. For each week
   number after `currentWeek` whose value changed, it builds one line: "Week {n} moves to {date}",
   "Week {n} is cancelled", or "Week {n} is back on its regular date". All changed weeks in one
-  update go in one email. Key `schedule_{year}_{sha1 of the sorted changes}`, so re-saving the
-  same values sends nothing. No change after `currentWeek` sends nothing.
+  update go in one email. Key `schedule_{year}_{eventId}` (the Firestore event id), so a
+  retried event sends nothing while a later identical change still does; re-saving the same
+  values changes nothing and sends nothing. No change after `currentWeek` sends nothing. The
+  three topic triggers live in one file, `topicEmails.ts`.
 
 **F16 — Status emails**
-- [ ] AC-15: `lib/mailQueue.ts` `queueMail(tx, msg)` writes a `mail` doc inside the caller's
-  transaction, so a decision and its email commit together. It reads nothing; the sender
-  applies the AC-8 checks.
+- [ ] AC-15: `lib/mailQueue.ts` `queueMail(tx, db, uid, content, kind)` writes a `mail` doc
+  inside the caller's transaction, so a decision and its email commit together. It reads
+  nothing; the sender applies the AC-8 checks.
 - [ ] AC-16: `reviewRequest` queues, to the requesting member:
   - proposal approved, rejected, or changes requested (with the note); change request approved
     or rejected;
@@ -139,7 +145,7 @@ accounts and receive nothing; no email names a minor.
 - [ ] AC-17: `captainHandoff` queues: `nominate` → nominee (team, captain's name, link to
   `/account`); `cancel` → nominee; `accept` and `decline` → the nominating captain.
 - [ ] AC-18: Status emails never include rosters, other members' emails, or minors' names.
-  Recipient addresses come from `users/{uid}.email` read in the existing transaction.
+  Recipient addresses come from `users/{uid}.email`, read by `sendMail` at send time.
 
 **F16 — Coordinator digest**
 - [ ] AC-19: `requestDigest` (scheduled, daily 07:00 America/Chicago) reads the four queue
@@ -159,9 +165,9 @@ accounts and receive nothing; no email names a minor.
   `topics.{topic} ==` query uses the automatic single-field index.
 - [ ] AC-23: `firebase.json` adds the `/unsubscribe` rewrite to the `unsubscribe` function
   before the SPA catch-all.
-- [ ] AC-24: `firebase-deployment.md` documents the SES setup (AC-25), the three secrets, and
+- [ ] AC-24: `firebase-deployment.md` documents the SES setup (AC-25), the `SES_ROLE_ARN` param and `UNSUBSCRIBE_SECRET` secret, and
   the first deploy of the new functions; ADR-015 records the SES choice and the queue design;
-  constitution §I.2, §II.5, §VI.1 (1.10.0 → 1.11.0), `firestore-schema.md`, and `CLAUDE.md` Key
+  constitution §I.2 (1.11.0, with the stack), §II.5, §VI.1 (1.12.0), `firestore-schema.md`, and `CLAUDE.md` Key
   Files are updated.
 - [ ] AC-25: AWS resources are the CloudFormation stack `citl-mail` from `infra/aws/ses.yaml`
   (ADR-015; [aws-infrastructure.md](../../technical/aws-infrastructure.md)): SES identity
@@ -207,9 +213,9 @@ accounts and receive nothing; no email names a minor.
 | Components | `src/components/account-email.ts` (new) | Email card |
 | Components | `account-profile-form.ts`, `admin-tabs/announcements-tab.ts` | topic checkboxes at completion; **Email subscribers** |
 | Views | `src/views/privacy.ts` | email section |
-| Server | `functions/src/mail/{send,templates,ses}.ts` (new) | sender, templates, SES client |
+| Server | `functions/src/mail/{types,config,templates,builders,ses}.ts` (new) | content builders, templates, SES client |
 | Server | `functions/src/lib/{mailQueue,fanout,unsubscribeToken}.ts` (new) | outbox write, fan-out, HMAC |
-| Server | `functions/src/{sendMail,unsubscribe,onAnnouncementCreated,onWeekPublished,onSeasonUpdated,requestDigest}.ts` (new) | function entry points |
+| Server | `functions/src/{sendMail,unsubscribe,topicEmails,requestDigest}.ts` (new) | function entry points (`topicEmails.ts` holds the three topic triggers) |
 | Server | `functions/src/review/*.ts`, `captainHandoff.ts` | `queueMail` calls |
 | Config | `firestore.rules`, `firestore.indexes.json`, `firebase.json` | rules, TTL, rewrite |
 | Deps | `functions/package.json` | `@aws-sdk/client-sesv2`, `@aws-sdk/credential-providers` |

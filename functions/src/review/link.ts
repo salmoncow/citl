@@ -7,6 +7,8 @@
 
 import { FieldValue, type Firestore, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { queueAuditEntry } from '../lib/audit.js';
+import { queueMail } from '../lib/mailQueue.js';
+import { linkContent } from '../mail/builders.js';
 import { fail } from '../lib/members.js';
 import { normalizeName } from '../lib/roster.js';
 import type { ReviewResult } from './types.js';
@@ -33,6 +35,7 @@ export async function reviewLink(db: Firestore, input: LinkReview, actorUid: str
     if (input.action === 'decline') {
       tx.update(ref, { status: 'declined', ...reviewed });
       queueAuditEntry(tx, db, { kind: 'shooter-link', actorUid, subjectId: input.uid, action: 'declined' });
+      queueMail(tx, db, input.uid, linkContent('declined', String(r['shooterName'] ?? ''), input.note));
       return { ok: true, status: 'declined' };
     }
 
@@ -56,6 +59,7 @@ export async function reviewLink(db: Firestore, input: LinkReview, actorUid: str
     tx.set(db.doc(`shooterLinks/${input.uid}`), { shooterName, nameKey, linkedAt: now, linkedBy: actorUid });
     tx.update(ref, { status: 'approved', ...reviewed });
     queueAuditEntry(tx, db, { kind: 'shooter-link', actorUid, subjectId: input.uid, action: 'approved' });
+    queueMail(tx, db, input.uid, linkContent('approved', shooterName, input.note));
     return { ok: true, status: 'approved' };
   });
 }

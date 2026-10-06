@@ -1,7 +1,8 @@
 /**
  * <account-profile-form> — profile form (spec 008 AC-11, AC-12, AC-24).
  *
- * mode="complete"     first sign-in: name, phone, terms and 18+ boxes.
+ * mode="complete"     first sign-in: name, phone, email topics (checked,
+ *                     spec 011 AC-3), terms and 18+ boxes.
  *                     Submit stays disabled until the users/{uid} mirror
  *                     exists (onUserCreate is async; rules require it).
  * mode="edit"         name and phone.
@@ -14,6 +15,8 @@
 import { escapeHtml, showToast } from '@/modules/ui';
 import { getAccountContext } from '@/modules/account-context';
 import { accountErrorMessage, getAccountService } from '@/services/account-service';
+import { defaultTopics, getNotificationService, topicOptions } from '@/services/notification-service';
+import { checkedTopics, topicChecksHtml } from '@/components/account-email';
 import {
   NAME_PART_MAX,
   splitLegacyName,
@@ -100,6 +103,12 @@ class AccountProfileForm extends HTMLElement {
         <p id="${id}-phone-error" class="account-field__error" hidden></p>
       </div>`;
 
+    const topics = this.mode !== 'complete' ? '' : `
+      <fieldset class="league-fieldset">
+        <legend class="account-field__label">Email me about <span class="account-required">(optional)</span></legend>
+        ${topicChecksHtml(id, topicOptions(null), defaultTopics())}
+      </fieldset>`;
+
     const checks = this.mode === 'edit' ? '' : `
       <label class="account-check">
         <input type="checkbox" name="terms" required aria-describedby="${id}-checks-error">
@@ -117,6 +126,7 @@ class AccountProfileForm extends HTMLElement {
     this.innerHTML = `
       <form class="account-form" novalidate>
         ${fields}
+        ${topics}
         ${checks}
         <p class="account-form__wait account-field__hint" hidden>Setting up your account. This takes a few seconds.</p>
         <div class="account-form__actions">
@@ -188,6 +198,10 @@ class AccountProfileForm extends HTMLElement {
     if (!result.success) {
       showToast('error', accountErrorMessage(result.code));
       return;
+    }
+    if (this.mode === 'complete') {
+      const saved = await getNotificationService().save(uid, null, checkedTopics(form));
+      if (!saved.success) showToast('info', 'Your email choices didn’t save. Set them on the Email card.');
     }
     const msg = { complete: 'Profile created. Welcome!', edit: 'Profile saved.', 'accept-terms': 'Thanks. Terms accepted.' }[this.mode];
     showToast('success', msg);

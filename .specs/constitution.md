@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.11.0
-**Last Updated:** 2026-10-04
+**Version:** 1.12.0
+**Last Updated:** 2026-10-06
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
 
@@ -64,31 +64,31 @@ Project-specific strategic frameworks remain in `.prompts/meta/`.
 
 ### II.1 Current Architectural State
 
-**Last Updated**: 2026-10-03
-**Last Architecture Review**: 2026-10-03
+**Last Updated**: 2026-10-06
+**Last Architecture Review**: 2026-10-06
 
 | Domain | Current State | Status |
 |--------|---------------|--------|
-| **UI Components** | Web Components under `src/components/` (23 custom elements + 5 helper modules + 11 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
+| **UI Components** | Web Components under `src/components/` (24 custom elements + 5 helper modules + 11 `admin-tabs/` modules); hash router + page-level views under `src/views/`. See the `src/` tree for the current inventory. | Live |
 | **Security** | Firebase Auth (Google, email link; optional public member accounts, spec 008 / ADR-012) + Firestore rules + App Check + custom-claim RBAC (`role: 'owner' \| 'admin' \| 'user'`); Cloud Functions are sole writer of role claim, mirror and account status | Complete |
-| **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, member profiles, member league requests and coordinator review (specs 009–010), and audit log | Live |
-| **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (150 cases); function unit tests (115 cases). See §III.1. | Active |
+| **Data** | Firestore is the single data layer — drives home page, scorecards, RBAC user mirror, member profiles, member league requests and coordinator review (specs 009–010), email preferences and the outbound mail queue (spec 011), and audit log | Live |
+| **Testing** | Vitest unit tests (scoring engine, score service, standings/highlights/preview services, schedule/yardage/heat/sparkline/markdown utils, rules-text regression); rules-unit-testing matrix (155 cases); function unit tests (140 cases). See §III.1. | Active |
 | **Deployment** | GitHub Actions CI/CD: PR/push runs typecheck + build + three test suites; production deploy is gated on CI success (`workflow_run`) → Firebase Hosting + Firestore rules/indexes + Functions | Active |
 | **Monitoring** | Manual Firebase console checks | Active |
 | **Cost** | Firebase Blaze (pay-as-you-go); usage discipline targets Spark-equivalent quotas | Near 0% usage |
 | **Infrastructure** | Firebase config as code (`firebase.json`, rules, indexes); AWS as CloudFormation in `infra/aws/` (ADR-015), linted in CI, deployed by the owner | Active |
 | **Platform** | 3 platforms (Firebase + GitHub + AWS: Route 53, SES) | Maximum; no additions |
 
-**Key Metrics** (as of 2026-10-03):
+**Key Metrics** (as of 2026-10-06):
 - **Status**: Live in production at https://citl.club (Firebase Hosting); AWS/CloudFront decommissioned
 - **SPA Views**: 9 (`home`, `scorecards`, `rules`, `about`, `downloads`, `admin`, `account`, `account-team`, `privacy`)
-- **Components**: 23 custom elements + 5 helper modules (`home-standings-parts`, `scorecard-render`, `league-dialog`, `registration-form`, `shooter-link-form`) under `src/components/`; 11 `admin-tabs/` modules
-- **Services**: 15 (`account-service`, `admin-user-service`, `app-services`, `league-review-service`, `league-validation`, `member-league-service`, `profile-validation`, `shooter-directory`, `score-entry-preview`, `score-service`, `scorecard-builder`, `scoring-engine`, `season-awards-service`, `season-highlights`, `standings`)
+- **Components**: 24 custom elements + 5 helper modules (`home-standings-parts`, `scorecard-render`, `league-dialog`, `registration-form`, `shooter-link-form`) under `src/components/`; 11 `admin-tabs/` modules
+- **Services**: 16 (`account-service`, `admin-user-service`, `app-services`, `league-review-service`, `league-validation`, `member-league-service`, `notification-service`, `profile-validation`, `shooter-directory`, `score-entry-preview`, `score-service`, `scorecard-builder`, `scoring-engine`, `season-awards-service`, `season-highlights`, `standings`)
 - **Modules**: 8 (`account-context`, `account-gate`, `auth`, `auth-providers`, `navigation`, `role`, `router`, `ui`)
-- **Repositories**: 7 (`dependent-repository`, `league-repository`, `league-review-repository`, `profile-repository`, `score-repository`, `user-repository`, `repository-factory`)
-- **Types**: 8 (`account`, `announcement`, `league`, `score`, `scorecard`, `season`, `shooter`, `user`)
+- **Repositories**: 8 (`dependent-repository`, `league-repository`, `league-review-repository`, `notification-repository`, `profile-repository`, `score-repository`, `user-repository`, `repository-factory`)
+- **Types**: 9 (`account`, `announcement`, `league`, `notifications`, `score`, `scorecard`, `season`, `shooter`, `user`)
 - **Team Size**: 1 developer
-- **Firebase Usage**: Hosting live; Firestore live (scorecards + weekly results); Cloud Functions deployed (RBAC role-writer + auth trigger; account status + delete callables, spec 008; `teamProposal` callable, spec 009; `reviewRequest` + `captainHandoff` callables, spec 010); Blaze plan, near-zero spend
+- **Firebase Usage**: Hosting live; Firestore live (scorecards + weekly results); Cloud Functions deployed (RBAC role-writer + auth trigger; account status + delete callables, spec 008; `teamProposal` callable, spec 009; `reviewRequest` + `captainHandoff` callables, spec 010; six email functions on SES, spec 011); Blaze plan, near-zero spend
 
 > Prefer the live `src/` tree over hard counts above — recount at review time rather than trusting these numbers.
 
@@ -161,10 +161,16 @@ registrations/{year}_{uid}                 → Individual "join a team" request
 shooterLinkRequests/{uid}, shooterLinks/{uid} → Account-to-scorecard-name link (coordinator approves)
 captainChanges/{leagueTeamId}              → Captain handoff: nominate, accept, coordinator approves (spec 010)
 profiles/{uid}/dependents/{depId}          → Minors a member registers with them
+notificationSettings/{uid}                 → Email topics a member chose (spec 011)
+mail/{id}, notifications/{key}             → Outbound mail queue (30-day TTL) and fan-out dedupe; functions only
 ```
 
 Season data (`seasons/**`) stays admin-written. Member requests never write it; the
 coordinator's review (`reviewRequest`, spec 010) is the only path from a request into a season.
+
+Email (spec 011, ADR-015) goes out only through the `mail` queue: functions write a doc
+(status emails inside the decision's own transaction), and `sendMail` re-checks the
+recipient and sends through SES. No other code calls SES.
 
 See [.specs/technical/firestore-schema.md](./technical/firestore-schema.md) for the full schema reference.
 
@@ -275,7 +281,7 @@ private static _skeleton(): string {
 - Page Load Time: <3 seconds (p95)
 - Time to Interactive (TTI): <5 seconds (p95)
 - First Contentful Paint (FCP): <1.5 seconds (p95)
-- JS bundle: <250 kB gzipped (currently ~231 kB gzipped, measured 2026-10-03 ✅; the admin panel, account, sign-in, and league request UI are code-split)
+- JS bundle: <250 kB gzipped (currently ~232 kB gzipped, measured 2026-10-06 ✅; the admin panel, account, sign-in, and league request UI are code-split)
 - CSS: <20 kB gzipped (currently ~16 kB); fonts: self-hosted latin woff2 only, 9 files / ~187 kB if every weight loads, cached `immutable`. Figures and method: [build-system.md](technical/build-system.md#bundle-size-targets)
 
 **Firebase Quota Constraints**: the daily target ceilings and 70% alert thresholds are
@@ -525,7 +531,10 @@ iterate, plus the one-captain-per-team and one-request-per-season checks, in one
 transaction; a few dozen calls per season); `reviewRequest` + `captainHandoff` (spec 010
 DD-1: approval writes the season team, league team, request, and audit entry atomically,
 and handoff needs an email-to-account lookup only the Admin SDK can do; tens of calls per
-season).
+season); `sendMail`, `onAnnouncementCreated`, `onWeekPublished`, `onSeasonUpdated`,
+`requestDigest`, `unsubscribe` (spec 011 DD-1: sending email needs a server credential, and
+fan-out reads other members' settings; one invocation per email plus one per topic event,
+a few thousand a season).
 
 
 ### VI.2 Cost Optimization
@@ -641,4 +650,5 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.8.0 (2026-10-01): Public member accounts (spec 008, ADR-012 supersedes ADR-005) — §III.2 replaces admin-only auth with optional member accounts (Google, email link; adults only; server-authoritative status); §IV.1 Auth and Functions lines; §VI.1 lists the justified functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~246 kB)
 - 1.9.0 (2026-10-03): Team proposals and member requests (spec 009, ADR-013) — §II.5 lists the persistent `leagueTeams` and the member request collections; §VI.1 justifies `teamProposal`; §III.2 minors-as-dependents and requests-never-write-seasons notes; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~249 kB, under 1 kB headroom)
 - 1.11.0 (2026-10-04): AWS as the third platform, managed as code (ADR-015, spec 011) — §I.2 platform list (AWS limited to Route 53 + SES); §II.1 Infrastructure and Platform rows; §III.1 template lint; §III.2 no long-lived cross-cloud credentials, least-privilege IAM; §IV.1 Email/AWS, infrastructure-as-code, and tagging standards; §IV.2 infrastructure anti-patterns; §IV.3 platform list; §VI.1 SES budget alert; §VIII.1 quarterly drift detection
+- 1.12.0 (2026-10-06): Email notifications (spec 011) — §II.5 adds `notificationSettings`, `mail`, `notifications` and the queue-only email rule; §VI.1 justifies the six email functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~232 kB)
 - 1.10.0 (2026-10-03): Coordinator review (spec 010, ADR-014) — §II.5 adds `captainChanges` and names `reviewRequest` as the request-to-season path; §VI.1 justifies `reviewRequest` and `captainHandoff`; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~231 kB after lazy-loading the admin panel)
