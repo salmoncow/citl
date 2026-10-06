@@ -150,6 +150,8 @@ sign-in-options { display: block; }
   font-size: var(--text-sm);
 }
 
+.account-check .account-field__hint { display: block; }
+
 .account-check input {
   flex-shrink: 0;
   width: 20px;

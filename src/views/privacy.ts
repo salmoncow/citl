@@ -14,6 +14,9 @@ import { leagueRequestsEnabled } from '@/utils/features';
  *
  * Spec 010 AC-22: the league lines appear only when league requests are
  * on, which is also when TERMS_VERSION moves to the league version.
+ *
+ * Spec 011 AC-21: the Email section. Informational, so TERMS_VERSION is
+ * unchanged (Decision 4).
  */
 
 function league(html: string): string {
@@ -71,9 +74,20 @@ export function privacyView(): string {
         </ul>
         <h3>Where it is stored</h3>
         <p>On Google Firebase, which hosts this site. Your browser stores sign-in data so you stay signed in.</p>
+        <h3>Email</h3>
+        <ul>
+          <li>The league sends email to your sign-in address through Amazon Simple Email Service (SES), which processes
+            it only to deliver it.</li>
+          <li>You choose the topics on your account page: league news the coordinator chooses to email, posted score
+            results, and changes to upcoming shoot dates. League admins can also get a morning summary of new requests.</li>
+          ${league(`<li>Updates about your own requests (team proposals, join requests, scorecard-name links, and captain
+            changes) are sent whenever the coordinator decides one, whatever topics you choose.</li>`)}
+          <li>Every topic email has a one-click unsubscribe link. You can also change your topics on your account page.</li>
+          <li>We keep a record of each email sent, including the address it went to, for 30 days, then delete it.</li>
+        </ul>
         <h3>Your choices</h3>
         <ul>
-          <li>Edit your name and phone, or connect and remove sign-in methods, on your account page.</li>
+          <li>Edit your name and phone, choose your email topics, or connect and remove sign-in methods, on your account page.</li>
           ${league(`<li>Add, edit, or remove your dependents, and withdraw requests the coordinator hasn't decided yet.</li>`)}
           <li><strong>Deactivate</strong> your account to pause it; sign in later to reactivate.</li>
           <li><strong>Delete</strong> your account to remove your profile and sign-in permanently${league(', along with your dependents and league requests')}. Your name stays on

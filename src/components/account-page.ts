@@ -9,8 +9,8 @@
  *   reactivate  only Reactivate and Sign out (deactivated account)
  *   complete    first-sign-in profile form (terms + 18+)
  *   terms       terms re-acceptance
- *   normal      Profile, League (spec 009, when enabled), Sign-in methods,
- *               Account sections
+ *   normal      Profile, League (spec 009, when enabled), Email (spec 011),
+ *               Sign-in methods, Account sections
  *
  * In complete mode, if the users/{uid} mirror is still missing after
  * ORPHAN_GRACE_MS, either a previous delete stopped part-way (mirror
@@ -28,6 +28,7 @@ import '@/components/sign-in-dialog';
 import '@/components/account-profile-form';
 import '@/components/account-providers';
 import '@/components/account-danger-zone';
+import '@/components/account-email';
 import { escapeHtml, showToast } from '@/modules/ui';
 import { getRole } from '@/modules/role';
 import { getAccountContext } from '@/modules/account-context';
@@ -176,6 +177,7 @@ class AccountPage extends HTMLElement {
             <account-profile-form mode="edit"></account-profile-form>
           </section>
           ${leagueRequestsEnabled ? '<account-league></account-league>' : ''}
+          <account-email></account-email>
           <section class="card account-section" aria-labelledby="acct-methods">
             <h2 id="acct-methods">Sign-in methods</h2>
             <p class="account-section__desc">Connect more than one so you can always get in.</p>

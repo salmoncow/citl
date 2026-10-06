@@ -630,8 +630,8 @@ export class ScoreService {
     return this._cachedRead<Announcement[]>(`announcements:${year}`, () => this.repository.getAnnouncements(year));
   }
 
-  async createAnnouncement(year: number, title: string, body: string): Promise<Result<Announcement>> {
-    const result = await this.repository.createAnnouncement(year, title, body);
+  async createAnnouncement(year: number, title: string, body: string, email = false): Promise<Result<Announcement>> {
+    const result = await this.repository.createAnnouncement(year, title, body, email);
     if (result.success) this._invalidate(`announcements:${year}`);
     return result;
   }

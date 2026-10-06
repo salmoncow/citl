@@ -555,12 +555,14 @@ export class ScoreRepository {
     }
   }
 
-  async createAnnouncement(year: number, title: string, body: string): Promise<Result<Announcement>> {
+  /** `email`: ask onAnnouncementCreated to email `news` subscribers (spec 011 AC-12). */
+  async createAnnouncement(year: number, title: string, body: string, email = false): Promise<Result<Announcement>> {
     try {
       const ref = await addDoc(collection(this.db, 'announcements'), {
         year,
         title,
         body,
+        email,
         postedAt: serverTimestamp(),
         lastEditedAt: null,
       });
