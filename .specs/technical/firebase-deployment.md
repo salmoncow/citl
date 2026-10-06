@@ -210,6 +210,12 @@ gcloud run services add-iam-policy-binding unsubscribe --region=us-central1 \
   --member=allUsers --role=roles/run.invoker --project=citl-baed2
 ```
 
+The first deploy of the four Firestore-triggered functions failed on 2026-10-06 with
+"Permission denied while using the Eventarc Service Agent" (first Eventarc use in the
+project; the agent's role had not propagated). Deploying those four again a few minutes later
+succeeded. If it persists, grant `roles/eventarc.serviceAgent` to
+`service-590948706466@gcp-sa-eventarc.iam.gserviceaccount.com`.
+
 If a later CI deploy fails reading the secret or the scheduler job, grant the CI service
 account `roles/secretmanager.viewer` and `roles/cloudscheduler.admin` on the project.
 

@@ -2,7 +2,7 @@
 
 **Feature**: 011-email-notifications
 **Spec**: [spec.md](./spec.md)
-**Status**: Groups 0–6 done (2026-10-06); Group 7 is owner ops (7.1, 7.2 done)
+**Status**: Groups 0–6 done (2026-10-06); Group 7 owner ops done except 7.5
 
 Each numbered group below is one commit, in implementation order. AC refs point to
 [spec.md](./spec.md) §"Acceptance Criteria".
@@ -106,8 +106,8 @@ Each numbered group below is one commit, in implementation order. AC refs point 
   ([aws-infrastructure.md](../../technical/aws-infrastructure.md) §First deploy); send the
   `SenderRoleArn` output.
 - [x] **7.2 (S)** Request SES production access (same doc, §Manual actions).
-- [ ] **7.3 (S)** Set the secret `UNSUBSCRIBE_SECRET` (`firebase functions:secrets:set`).
-- [ ] **7.4 (S)** Before merging the build: deploy the six functions from the PR branch with
+- [x] **7.3 (S)** Set the secret `UNSUBSCRIBE_SECRET` (`firebase functions:secrets:set`).
+- [x] **7.4 (S)** Before merging the build: deploy the six functions from the PR branch with
   owner credentials, then run the invoker binding for `unsubscribe` (public: `allUsers`). The
   first deploy enables the Eventarc and Cloud Scheduler APIs.
 - [ ] **7.5 (S)** Preview walkthrough to the sandbox test address; then merge.
