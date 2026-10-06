@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true,
       assetsDir: 'assets',
 
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           assetFileNames: (assetInfo) => {
             const ext = assetInfo.name.split('.').pop();
@@ -32,6 +32,10 @@ export default defineConfig(({ mode }) => {
       sourcemap: mode === 'production' ? true : 'inline',
       minify: 'terser',
       cssCodeSplit: true,
+      // The largest chunk is the Firebase SDK (Firestore + Auth, ~565 kB min / ~165 kB gzip),
+      // which every page needs at startup. The limit sits just above it so the warning
+      // only fires if app code grows.
+      chunkSizeWarningLimit: 600,
     },
 
     server: {
@@ -51,10 +55,10 @@ export default defineConfig(({ mode }) => {
 
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
-        '@modules': path.resolve(__dirname, './src/modules'),
-        '@assets': path.resolve(__dirname, './src/assets'),
-        '@views': path.resolve(__dirname, './src/views'),
+        '@': path.resolve(import.meta.dirname, './src'),
+        '@modules': path.resolve(import.meta.dirname, './src/modules'),
+        '@assets': path.resolve(import.meta.dirname, './src/assets'),
+        '@views': path.resolve(import.meta.dirname, './src/views'),
       },
     },
   };

@@ -58,6 +58,7 @@ import { RouterModule } from './modules/router';
 import { AuthModule } from './modules/auth';
 import { AccountGate, isGatedPath } from './modules/account-gate';
 import { setAccountContext } from './modules/account-context';
+import { showToast } from './modules/ui';
 import { TERMS_VERSION } from './utils/legal';
 import { onRoleChange } from './modules/role';
 import type { Role } from './types/user';
@@ -161,10 +162,7 @@ class App {
   }
 
   private async _completeEmailLink(url: string): Promise<void> {
-    const [{ completeEmailLink }, { showToast }] = await Promise.all([
-      import('./modules/auth-providers'),
-      import('./modules/ui'),
-    ]);
+    const { completeEmailLink } = await import('./modules/auth-providers');
     const outcome = await completeEmailLink(url);
     switch (outcome.status) {
       case 'signed-in':
