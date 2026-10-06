@@ -29,8 +29,9 @@ describe('decideAccountGate', () => {
 });
 
 describe('isGatedPath', () => {
-  it('allows /account and /privacy while gated', () => {
+  it('allows /account, /privacy and /join while gated', () => {
     expect(isGatedPath('complete-profile', '/account')).toBe(false);
+    expect(isGatedPath('accept-terms', '/join')).toBe(false);
     expect(isGatedPath('complete-profile', '/privacy')).toBe(false);
     expect(isGatedPath('reactivate', '/')).toBe(true);
   });

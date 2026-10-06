@@ -13,6 +13,7 @@
 
 import type { User } from 'firebase/auth';
 import type { Role } from '@/types/user';
+import { leagueRequestsEnabled } from '@/utils/features';
 
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 const SUN_SVG  = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
@@ -113,6 +114,15 @@ export class NavigationModule {
     document.getElementById('nav-account-link')?.toggleAttribute('hidden', !signedIn);
     document.getElementById('nav-admin-link')?.toggleAttribute('hidden', !elevated);
     document.querySelector('.footer__admin-link')?.toggleAttribute('hidden', !elevated);
+    this._updateJoinCta(signedIn);
+  }
+
+  /** Spec 012 AC-1: "Join the league" → #/join, "My league" when signed in; #/about with the flag off. */
+  private _updateJoinCta(signedIn: boolean): void {
+    const cta = document.querySelector<HTMLAnchorElement>('.site-nav__cta');
+    if (!cta || !leagueRequestsEnabled) return;
+    cta.href = '#/join';
+    cta.textContent = signedIn ? 'My league' : 'Join the league';
   }
 
   destroy(): void {

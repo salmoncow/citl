@@ -31,30 +31,11 @@ import {
   type LeagueOverview,
 } from '@/services/member-league-service';
 import { minorDisplayName, registrationYear } from '@/services/league-validation';
-import type { LeagueTeam, LinkRequestStatus, ProposalStatus, RegistrationStatus } from '@/types/league';
+import type { LeagueTeam } from '@/types/league';
+import { LINK_LABEL, PROPOSAL_LABEL, REGISTRATION_LABEL } from '@/components/league-labels';
 import { confirmLeague } from '@/components/league-dialog';
 import { openRegistrationDialog } from '@/components/registration-form';
 import { openShooterLinkDialog } from '@/components/shooter-link-form';
-
-const PROPOSAL_LABEL: Record<ProposalStatus, string> = {
-  draft: 'Draft, not sent yet',
-  submitted: 'Submitted for review',
-  'changes-requested': 'Changes requested',
-  approved: 'Approved',
-  rejected: 'Not approved',
-};
-
-const REGISTRATION_LABEL: Record<RegistrationStatus, string> = {
-  submitted: 'Waiting for the coordinator to place you',
-  placed: 'Placed on a team',
-  declined: 'Declined',
-};
-
-const LINK_LABEL: Record<LinkRequestStatus, string> = {
-  submitted: 'Waiting for the coordinator to confirm',
-  approved: 'Linked',
-  declined: 'Not linked',
-};
 
 class AccountLeague extends HTMLElement {
   private _overview: LeagueOverview | null = null;

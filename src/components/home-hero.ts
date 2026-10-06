@@ -11,6 +11,7 @@ import { getServices } from '@/services/app-services';
 import { applyWeekDateOverrides, computeSchedule, seasonTimeline } from '@/utils/schedule';
 import type { TimelineEntry } from '@/utils/schedule';
 import { escapeHtml } from '@/modules/ui';
+import { leagueRequestsEnabled } from '@/utils/features';
 
 const { scoreService } = getServices();
 
@@ -50,7 +51,7 @@ class HomeHero extends HTMLElement {
             <h1 id="hero-title" class="hero__title">Central Illinois Trap League</h1>
             <p class="hero__lede">A free, family-friendly trap league for Central Illinois. Five shooters a squad, two bunkers a night, standings updated every week.</p>
             <div class="hero__actions">
-              <a class="btn-accent btn-lg" href="#/about">Join the league
+              <a class="btn-accent btn-lg" href="${leagueRequestsEnabled ? '#/join' : '#/about'}">Join the league
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </a>
               <a class="btn-outline-dark btn-lg" href="#standings">See the standings</a>

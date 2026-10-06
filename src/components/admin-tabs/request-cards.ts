@@ -141,6 +141,7 @@ export function registrationCard(key: string, item: RegistrationItem, names: rea
       <p class="req-line">Member: ${memberLine(item.member)}</p>
       <p class="req-line">Preferred team: ${preferred ? escapeHtml(preferred) : 'No preference'}</p>
       ${r.note ? `<p class="req-line">Their note: ${escapeHtml(r.note)}</p>` : ''}
+      ${item.pendingLinkName ? `<p class="req-warning">Scorecard name link waiting: “${escapeHtml(item.pendingLinkName)}”. Review it first, or they are placed as ${escapeHtml(item.selfName)}.</p>` : ''}
       ${teamField}
       <div class="admin-table-wrapper req-table">
         <table class="admin-roster-table">
