@@ -47,6 +47,8 @@ export interface RegistrationItem {
   /** The member's roster name: the approved link, else the profile name. */
   selfName: string;
   dependents: Dependent[];
+  /** The scorecard name the member asked to link, while that request waits (spec 012 AC-9). */
+  pendingLinkName: string | null;
 }
 
 export interface LinkItem {
@@ -146,7 +148,13 @@ export class LeagueReviewService {
           this.repo.dependents(r.uid, r.dependentIds ?? []),
           this.repo.linkedName(r.uid),
         ]);
-        return { registration: r, member: member(r.uid), selfName: linked ?? member(r.uid).name, dependents };
+        return {
+          registration: r,
+          member: member(r.uid),
+          selfName: linked ?? member(r.uid).name,
+          dependents,
+          pendingLinkName: links.find((l) => l.id === r.uid)?.shooterName ?? null,
+        };
       }));
 
       return success({

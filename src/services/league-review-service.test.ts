@@ -69,6 +69,20 @@ describe('LeagueReviewService.loadQueue', () => {
     expect(res.data.captains[0]?.captain.name).toBe('Name u1');
   });
 
+  it('marks a join request whose member has a link request waiting (spec 012 AC-9)', async () => {
+    const r = repo();
+    (r.listSubmittedRegistrations as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'r1', uid: 'u3', dependentIds: [], createdAt: ts(5) },
+      { id: 'r2', uid: 'u4', dependentIds: [], createdAt: ts(6) },
+    ]);
+    const res = await new LeagueReviewService(r, () => vi.fn() as never).loadQueue();
+    if (!res.success) throw new Error(res.error);
+    expect(res.data.registrations.map((x) => [x.registration.id, x.pendingLinkName])).toEqual([
+      ['r1', null],
+      ['r2', 'Pat'],
+    ]);
+  });
+
   it('returns a failure when a read fails', async () => {
     const r = repo();
     (r.listSubmittedLinks as ReturnType<typeof vi.fn>).mockRejectedValue(Object.assign(new Error('x'), { code: 'permission-denied' }));

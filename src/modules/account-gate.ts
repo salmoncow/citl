@@ -42,8 +42,8 @@ export function decideAccountGate(i: GateInput): GateDecision {
   return 'none';
 }
 
-/** Paths a gated user may still visit. */
-export const GATE_ALLOWED_PATHS: readonly string[] = ['/account', '/privacy'];
+/** Paths a gated user may still visit. /join renders the gate's steps itself (spec 012 AC-5). */
+export const GATE_ALLOWED_PATHS: readonly string[] = ['/account', '/privacy', '/join'];
 
 export function isGatedPath(decision: GateDecision, path: string): boolean {
   return decision !== 'none' && !GATE_ALLOWED_PATHS.includes(path);

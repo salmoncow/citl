@@ -74,6 +74,7 @@ npm run deploy:preview               # build + Firebase preview channel (7-day U
 | `functions/src/reviewRequest.ts`, `functions/src/review/*.ts` | Coordinator review: approve/reject proposals, place registrations, link names, captain handoffs (ADR-014) |
 | `functions/src/captainHandoff.ts`, `functions/src/lib/publish.ts` | Member-side captain handoff; pure roster merge used on approval |
 | `src/services/league-review-service.ts`, `src/components/admin-tabs/{requests-tab,request-cards}.ts` | Admin Requests tab (lazy) |
+| `src/components/join-page.ts`, `src/utils/join-intent.ts` | `#/join` (spec 012): Join the league entry point; walks sign-in, profile, scorecard name, join request; email-link return via join intent |
 | `src/components/account-captain.ts` | `/account` captain card and nomination card |
 | `src/services/scoring-engine.ts` | Pure scoring calculations (ADR-006) |
 | `src/services/season-highlights.ts` | Pure Home stats: award races, league average, top averages, straights |

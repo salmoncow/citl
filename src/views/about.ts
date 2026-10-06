@@ -1,4 +1,5 @@
 import { LEAGUE_EMAIL, leagueMailto } from '@/utils/contact';
+import { leagueRequestsEnabled } from '@/utils/features';
 
 /**
  * aboutView — About the league (spec 006: page hero + content cards;
@@ -41,12 +42,7 @@ export function aboutView(): string {
 
       <section class="card about-card">
         <h2>Enrollment &amp; Fees</h2>
-        <p>
-          Look for an announcement on the home page for when enrollments are open. Send an email to
-          the League Coordinator (<a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a>) as either an individual, or a pre-formed team. Even when enrollments
-          are closed, teams can still add new shooters to their ranks as long as they do not exceed
-          the 15 members per team limit.
-        </p>
+        ${leagueRequestsEnabled ? enrollmentWithAccounts() : enrollmentByEmail()}
 
         <p>
           The cost for enrollment in the league is free. However, Darnall's does require a per-day
@@ -80,4 +76,25 @@ export function aboutView(): string {
       </section>
     </div>
   `;
+}
+
+/** Spec 012 AC-2: with league requests on, joining starts at #/join. */
+function enrollmentWithAccounts(): string {
+  return `
+        <p>
+          To join, <a href="#/join">create an account and send a join request</a> as an individual,
+          or propose a pre-formed team. Requests are open all season, and teams can add new shooters
+          as long as they do not exceed the 15 members per team limit. Prefer email? Write to the
+          League Coordinator (<a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a>).
+        </p>`;
+}
+
+function enrollmentByEmail(): string {
+  return `
+        <p>
+          Look for an announcement on the home page for when enrollments are open. Send an email to
+          the League Coordinator (<a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a>) as either an individual, or a pre-formed team. Even when enrollments
+          are closed, teams can still add new shooters to their ranks as long as they do not exceed
+          the 15 members per team limit.
+        </p>`;
 }

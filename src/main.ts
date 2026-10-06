@@ -64,6 +64,7 @@ import { onRoleChange } from './modules/role';
 import type { Role } from './types/user';
 import { initAppCheck } from './infrastructure/appcheck';
 import { looksLikeEmailLink } from './utils/email-link';
+import { hasFreshJoinIntent } from './utils/join-intent';
 
 import { homeView } from './views/home';
 import { scorecardsView } from './views/scorecards';
@@ -74,6 +75,7 @@ import { adminView } from './views/admin';
 import { accountView } from './views/account';
 import { accountTeamView } from './views/account-team';
 import { privacyView } from './views/privacy';
+import { joinView } from './views/join';
 
 interface RouteDef {
   path: string;
@@ -147,12 +149,13 @@ class App {
   /**
    * Returns the email-link URL if this page load is one, after rewriting
    * the address bar to /#/account so the one-time code never stays in
-   * history. Also maps pathname /privacy to #/privacy.
+   * history (/#/join instead when sign-in started there, spec 012 AC-4).
+   * Also maps pathname /privacy to #/privacy.
    */
   private _captureBootUrl(): string | null {
     const href = window.location.href;
     if (looksLikeEmailLink(href)) {
-      window.history.replaceState(null, '', '/#/account');
+      window.history.replaceState(null, '', hasFreshJoinIntent() ? '/#/join' : '/#/account');
       return href;
     }
     if (window.location.pathname === '/privacy') {
@@ -268,6 +271,11 @@ class App {
         path: '/account',
         view: accountView,
         after: () => { void import('./components/account-page'); },
+      },
+      {
+        path: '/join',
+        view: joinView,
+        after: () => { void import('./components/join-page'); },
       },
       {
         path: '/account/team',
