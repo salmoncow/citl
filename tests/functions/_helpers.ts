@@ -172,3 +172,7 @@ export async function loadTopicEmails() {
 export async function mailDocs(): Promise<Array<Record<string, unknown>>> {
   return (await adminDb().collection('mail').get()).docs.map((d) => d.data());
 }
+
+export async function loadRequestDigest() {
+  return import('../../functions/src/requestDigest.js');
+}

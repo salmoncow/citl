@@ -5,6 +5,8 @@
 
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { queueAuditEntry } from '../lib/audit.js';
+import { queueMail } from '../lib/mailQueue.js';
+import { handoffContent } from '../mail/builders.js';
 import { assertNoOtherCaptaincy, fail, isEligible } from '../lib/members.js';
 import type { ReviewResult } from './types.js';
 
@@ -26,6 +28,7 @@ export async function reviewCaptain(db: Firestore, input: CaptainReview, actorUi
     const now = FieldValue.serverTimestamp();
     const reviewed = { reviewNote: input.note, reviewedBy: actorUid, reviewedAt: now, updatedAt: now };
     const c = change.data();
+    const teamName = String(team.data()?.['name'] ?? input.leagueTeamId);
 
     if (input.action === 'clear') {
       const fromUid = team.data()?.['captainUid'];
@@ -35,6 +38,7 @@ export async function reviewCaptain(db: Firestore, input: CaptainReview, actorUi
       queueAuditEntry(tx, db, {
         kind: 'captain', actorUid, subjectId: input.leagueTeamId, action: 'cleared', targetUid: String(fromUid),
       });
+      queueMail(tx, db, String(fromUid), handoffContent('removed', teamName, '', input.note));
       return { ok: true, status: 'cleared' };
     }
 
@@ -42,10 +46,15 @@ export async function reviewCaptain(db: Firestore, input: CaptainReview, actorUi
       throw fail('failed-precondition', 'bad-status', 'This handoff is no longer waiting for review.');
     }
     const toUid = String(c['toUid']);
+    const fromUid = String(c['fromUid']);
+    const fromName = String(c['fromName'] ?? 'The captain');
+    const toName = String(c['toName'] ?? 'The nominee');
 
     if (input.action === 'decline') {
       tx.update(changeRef, { status: 'rejected', ...reviewed });
       queueAuditEntry(tx, db, { kind: 'captain', actorUid, subjectId: input.leagueTeamId, action: 'rejected', targetUid: toUid });
+      queueMail(tx, db, toUid, handoffContent('rejected-new', teamName, fromName, input.note));
+      queueMail(tx, db, fromUid, handoffContent('rejected-old', teamName, toName, input.note));
       return { ok: true, status: 'rejected' };
     }
 
@@ -61,6 +70,8 @@ export async function reviewCaptain(db: Firestore, input: CaptainReview, actorUi
     tx.update(teamRef, { captainUid: toUid, updatedAt: now });
     tx.update(changeRef, { status: 'approved', ...reviewed });
     queueAuditEntry(tx, db, { kind: 'captain', actorUid, subjectId: input.leagueTeamId, action: 'approved', targetUid: toUid });
+    queueMail(tx, db, toUid, handoffContent('approved-new', teamName, fromName, input.note));
+    queueMail(tx, db, fromUid, handoffContent('approved-old', teamName, toName, input.note));
     return { ok: true, status: 'approved' };
   });
 }

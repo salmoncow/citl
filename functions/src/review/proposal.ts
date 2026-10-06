@@ -10,6 +10,8 @@
 import { FieldValue, type DocumentData, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { queueAuditEntry } from '../lib/audit.js';
+import { queueMail } from '../lib/mailQueue.js';
+import { proposalContent } from '../mail/builders.js';
 import {
   assertNoOtherCaptaincy,
   fail,
@@ -121,6 +123,7 @@ async function approve(
     updatedAt: now,
   });
   queueAuditEntry(tx, db, { kind: 'proposal', actorUid, subjectId: input.id, action: 'approved' });
+  queueMail(tx, db, captainUid, proposalContent(String(p['teamName']), year, isChange ? 'change-approved' : 'approved', input.note));
   return { ok: true, status: 'approved' };
 }
 
@@ -136,12 +139,16 @@ export async function reviewProposal(db: Firestore, input: ProposalReview, actor
 
     if (input.action === 'approve') return approve(tx, db, input, p, actorUid);
 
+    const captainUid = String(p['captainUid']);
+    const mail = (outcome: Parameters<typeof proposalContent>[2]) =>
+      queueMail(tx, db, captainUid, proposalContent(String(p['teamName']), Number(p['year']), outcome, input.note));
     const now = FieldValue.serverTimestamp();
     const reviewed = { reviewNote: input.note, reviewedBy: actorUid, reviewedAt: now, updatedAt: now };
     if (input.action === 'request-changes') {
       if (!input.note) throw new HttpsError('invalid-argument', 'Say what needs to change.', { reason: 'note-required' });
       tx.update(ref, { status: 'changes-requested', ...reviewed });
       queueAuditEntry(tx, db, { kind: 'proposal', actorUid, subjectId: input.id, action: 'changes-requested' });
+      mail('changes-requested');
       return { ok: true, status: 'changes-requested' };
     }
 
@@ -150,10 +157,12 @@ export async function reviewProposal(db: Firestore, input: ProposalReview, actor
       const shooters = await rebuildFromTeam(tx, db, p);
       tx.update(ref, { status: 'approved', shooters, ...reviewed });
       queueAuditEntry(tx, db, { kind: 'proposal', actorUid, subjectId: input.id, action: 'rejected' });
+      mail('change-rejected');
       return { ok: true, status: 'approved' };
     }
     tx.update(ref, { status: 'rejected', ...reviewed });
     queueAuditEntry(tx, db, { kind: 'proposal', actorUid, subjectId: input.id, action: 'rejected' });
+    mail('rejected');
     return { ok: true, status: 'rejected' };
   });
 }

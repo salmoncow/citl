@@ -1,6 +1,7 @@
 /**
  * Function tests for the reviewRequest callable (spec 010 AC-6 – AC-13)
- * and the change-request actions of teamProposal (AC-14, AC-15).
+ * and the change-request actions of teamProposal (AC-14, AC-15), with the
+ * status emails each decision queues (spec 011 AC-16, AC-18).
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -64,6 +65,12 @@ function approve(extra: Record<string, unknown> = {}) {
   return asAdmin({ type: 'proposal', id: PID, action: 'approve', settings: settings(FIVE), ...extra });
 }
 
+/** Queued status emails as "uid: subject", sorted (spec 011 AC-16). */
+async function mailOut(): Promise<string[]> {
+  return (await db().collection('mail').get()).docs
+    .map((d) => `${d.data()['uid']}: ${d.data()['subject']}`).sort();
+}
+
 async function auditOf(kind: string): Promise<unknown[]> {
   return (await db().collection('audit').where('kind', '==', kind).get()).docs.map((d) => d.data()['action']);
 }
@@ -111,6 +118,10 @@ describe('approve proposal', () => {
       status: 'approved', leagueTeamId: 'clay-busters', reviewNote: 'Welcome', reviewedBy: ADMIN,
     });
     expect(await auditOf('proposal')).toEqual(['approved']);
+    expect(await mailOut()).toEqual([`${CAPTAIN}: Clay Busters is approved for ${YEAR}`]);
+    const [mail] = (await db().collection('mail').get()).docs.map((d) => d.data());
+    expect(mail).toMatchObject({ kind: 'status', status: 'pending', paragraphs: [expect.any(String), "Coordinator's note: Welcome"] });
+    expect(mail?.['topic']).toBeUndefined();
   });
 
   it('merges into an existing season team, keeping stored shooters, and claims the league team', async () => {
@@ -140,6 +151,7 @@ describe('approve proposal', () => {
     await expect(approve()).rejects.toMatchObject({ code: 'failed-precondition', details: { reason: 'shooter-has-scores' } });
     expect((await data(`teamProposals/${PID}`))?.['status']).toBe('submitted');
     expect(await data('leagueTeams/clay-busters')).toBeUndefined();
+    expect(await mailOut()).toEqual([]);
   });
 
   it('refuses a missing average', async () => {
@@ -181,6 +193,10 @@ describe('reject and request changes', () => {
     await seedProposal();
     await expect(asAdmin({ type: 'proposal', id: PID, action: 'reject' })).resolves.toEqual({ ok: true, status: 'rejected' });
     expect(await auditOf('proposal')).toEqual(expect.arrayContaining(['changes-requested', 'rejected']));
+    expect(await mailOut()).toEqual([
+      `${CAPTAIN}: Changes requested for Clay Busters`,
+      `${CAPTAIN}: Clay Busters was not approved`,
+    ]);
   });
 });
 
@@ -212,6 +228,7 @@ describe('change requests', () => {
     await asAdmin({ type: 'proposal', id: PID, action: 'approve', settings: settings(['Ed Five']) });
     const names = ((await data(`seasons/${YEAR}/teams/clay-busters`))?.['shooters'] as { name: string }[]).map((s) => s.name);
     expect(names).toEqual([`Pat ${CAPTAIN}`, 'Al One', 'Bo Two', 'Cy Three', 'Ed Five']);
+    expect(await mailOut()).toContain(`${CAPTAIN}: Clay Busters roster change approved`);
   });
 
   it('rejecting a change and discarding a draft both restore the published roster', async () => {
@@ -221,6 +238,7 @@ describe('change requests', () => {
       .resolves.toEqual({ ok: true, status: 'approved' });
     let p = await data(`teamProposals/${PID}`);
     expect((p?.['shooters'] as { name: string }[]).map((s) => s.name)).toEqual(FIVE);
+    expect(await mailOut()).toContain(`${CAPTAIN}: Clay Busters roster change not approved`);
 
     await callProposal({ action: 'reopen', year: YEAR });
     await db().doc(`teamProposals/${PID}`).update({ shooters: roster([`Pat ${CAPTAIN}`]) });
@@ -261,6 +279,9 @@ describe('registrations', () => {
     expect(await data(`registrations/${RID}`)).toMatchObject({ status: 'placed', placedLeagueTeamId: 'crazy-guns' });
     expect(await data('leagueTeams/crazy-guns')).toMatchObject({ captainUid: null, seasons: [YEAR] });
     expect(await auditOf('registration')).toEqual(['placed']);
+    expect(await mailOut()).toEqual([`${OTHER}: You're on Crazy Guns for ${YEAR}`]);
+    const [mail] = (await db().collection('mail').get()).docs.map((d) => d.data());
+    expect(JSON.stringify(mail)).not.toContain('Sam'); // no minor's name (AC-18)
   });
 
   it('refuses a missing team, a removed dependent, and a name already on the team', async () => {
@@ -277,6 +298,7 @@ describe('registrations', () => {
     await expect(asAdmin({ type: 'registration', id: RID, action: 'decline', note: 'Teams are full' }))
       .resolves.toEqual({ ok: true, status: 'declined' });
     expect(await data(`registrations/${RID}`)).toMatchObject({ status: 'declined', reviewNote: 'Teams are full' });
+    expect(await mailOut()).toEqual([`${OTHER}: Your ${YEAR} join request`]);
   });
 });
 
@@ -292,6 +314,7 @@ describe('shooter links', () => {
       .resolves.toEqual({ ok: true, status: 'approved' });
     expect(await data(`shooterLinks/${OTHER}`)).toMatchObject({ shooterName: 'Pat Shooter', nameKey: 'pat shooter', linkedBy: ADMIN });
     expect((await data(`shooterLinkRequests/${OTHER}`))?.['status']).toBe('approved');
+    expect(await mailOut()).toEqual([`${OTHER}: Your scorecard name is linked`]);
   });
 
   it('refuses a name on no season roster', async () => {
@@ -307,13 +330,16 @@ describe('shooter links', () => {
     await expect(asAdmin({ type: 'link', uid: OTHER, action: 'decline', note: 'Not found' }))
       .resolves.toEqual({ ok: true, status: 'declined' });
     expect(await auditOf('shooter-link')).toEqual(['declined']);
+    expect(await mailOut()).toEqual([`${OTHER}: Your scorecard name request`]);
   });
 });
 
 describe('captain decisions', () => {
   beforeEach(async () => {
     await db().doc('leagueTeams/crazy-guns').set({ name: 'Crazy Guns', captainUid: CAPTAIN, seasons: [YEAR] });
-    await db().doc('captainChanges/crazy-guns').set({ leagueTeamId: 'crazy-guns', fromUid: CAPTAIN, toUid: OTHER, status: 'accepted' });
+    await db().doc('captainChanges/crazy-guns').set({
+      leagueTeamId: 'crazy-guns', fromUid: CAPTAIN, fromName: 'Pat C', toUid: OTHER, toName: 'Pat O', status: 'accepted',
+    });
   });
 
   const decide = (action: string) => asAdmin({ type: 'captain', leagueTeamId: 'crazy-guns', action });
@@ -323,6 +349,10 @@ describe('captain decisions', () => {
     expect((await data('leagueTeams/crazy-guns'))?.['captainUid']).toBe(OTHER);
     expect((await data('captainChanges/crazy-guns'))?.['status']).toBe('approved');
     await expect(decide('approve')).rejects.toMatchObject({ details: { reason: 'bad-status' } });
+    expect(await mailOut()).toEqual([
+      `${CAPTAIN}: Crazy Guns captaincy handed off`,
+      `${OTHER}: You're now captain of Crazy Guns`,
+    ]);
   });
 
   it('refuses a stale handoff or an ineligible nominee; declines', async () => {
@@ -331,6 +361,10 @@ describe('captain decisions', () => {
     await db().doc('leagueTeams/crazy-guns').update({ captainUid: ADMIN });
     await expect(decide('approve')).rejects.toMatchObject({ details: { reason: 'stale-handoff' } });
     await expect(decide('decline')).resolves.toEqual({ ok: true, status: 'rejected' });
+    expect(await mailOut()).toEqual([
+      `${CAPTAIN}: Crazy Guns captain handoff not approved`,
+      `${OTHER}: Crazy Guns captain handoff not approved`,
+    ]);
   });
 
   it('removes a captain and cancels the open handoff', async () => {
@@ -339,5 +373,6 @@ describe('captain decisions', () => {
     expect((await data('captainChanges/crazy-guns'))?.['status']).toBe('cancelled');
     await expect(decide('clear')).rejects.toMatchObject({ details: { reason: 'no-captain' } });
     expect(await auditOf('captain')).toEqual(['cleared']);
+    expect(await mailOut()).toEqual([`${CAPTAIN}: You're no longer captain of Crazy Guns`]);
   });
 });

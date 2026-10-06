@@ -6,6 +6,8 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { queueAuditEntry } from '../lib/audit.js';
+import { queueMail } from '../lib/mailQueue.js';
+import { registrationContent } from '../mail/builders.js';
 import { fail, isEligible, readDependents, selfNameFrom, teamShooters } from '../lib/members.js';
 import { addToRoster, type ShooterSetting } from '../lib/publish.js';
 import { minorDisplayName } from '../lib/roster.js';
@@ -34,6 +36,7 @@ export async function reviewRegistration(db: Firestore, input: RegistrationRevie
     if (input.action === 'decline') {
       tx.update(ref, { status: 'declined', ...reviewed });
       queueAuditEntry(tx, db, { kind: 'registration', actorUid, subjectId: input.id, action: 'declined' });
+      queueMail(tx, db, String(r['uid']), registrationContent(Number(r['year']), 'declined', undefined, input.note));
       return { ok: true, status: 'declined' };
     }
 
@@ -73,6 +76,7 @@ export async function reviewRegistration(db: Firestore, input: RegistrationRevie
     }
     tx.update(ref, { status: 'placed', placedLeagueTeamId: input.teamId, ...reviewed });
     queueAuditEntry(tx, db, { kind: 'registration', actorUid, subjectId: input.id, action: 'placed' });
+    queueMail(tx, db, uid, registrationContent(year, 'placed', String(team.data()?.['name'] ?? input.teamId), input.note));
     return { ok: true, status: 'placed' };
   });
 }
