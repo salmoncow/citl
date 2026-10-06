@@ -1,20 +1,28 @@
 import { LEAGUE_EMAIL, leagueMailto } from '@/utils/contact';
+import { leagueRequestsEnabled } from '@/utils/features';
 
 /**
  * homeView — landing page (spec 006): hero + next shoot, season stat tiles,
  * standings, news + newcomer guide, calendar strip, award races, venue.
  */
 
+// Spec 012 AC-10: with league requests on, the newcomer guide starts at #/join
+// and keeps emailing the coordinator as the alternative.
+const EMAIL_STEP = `<li><span><strong>Email the League Coordinator</strong> at <a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a> as an individual or a pre-formed team. Enrollment is free.</span></li>`;
+const JOIN_STEP = `<li><span><strong><a href="#/join">Join the league</a></strong> with a free account and send a join request, or email the League Coordinator at <a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a>. Enrollment is free.</span></li>`;
+const EMAIL_CTA = `<a class="btn-lg first-night__cta" href="${leagueMailto('CITL enrollment')}">Email the League Coordinator</a>`;
+const JOIN_CTA = `<a class="btn-lg first-night__cta" href="#/join">Join the league</a>`;
+
 const FIRST_TUESDAY = `
   <aside class="first-night" aria-labelledby="first-night-title">
     <span class="eyebrow eyebrow--on-dark">New to trap?</span>
     <h2 id="first-night-title">Your first Tuesday</h2>
     <ol class="first-night__steps">
-      <li><span><strong>Email the League Coordinator</strong> at <a href="${leagueMailto('CITL enrollment')}">${LEAGUE_EMAIL}</a> as an individual or a pre-formed team. Enrollment is free.</span></li>
+      ${leagueRequestsEnabled ? JOIN_STEP : EMAIL_STEP}
       <li><span><strong>Bring your gear:</strong> a 12-gauge (or smaller), shells, eye and ear protection.</span></li>
       <li><span><strong>Pay Darnall's range fee</strong> and shoot two bunkers — 50 targets.</span></li>
     </ol>
-    <a class="btn-lg first-night__cta" href="${leagueMailto('CITL enrollment')}">Email the League Coordinator</a>
+    ${leagueRequestsEnabled ? JOIN_CTA : EMAIL_CTA}
     <p class="first-night__fine">Under 16? Shoot with a parent or guardian. Keep it legal with a valid FOID card.</p>
   </aside>`;
 

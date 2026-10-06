@@ -62,6 +62,9 @@ at `#/about` and `#/join` shows the email instructions.
   link to `#/about` and read **Join the league**.
 - [ ] AC-2: The About page **Enrollment & Fees** card points to `#/join` (flag on) and keeps the
   coordinator email as the alternative. With the flag off its copy is unchanged.
+- [ ] AC-10: The home page **New to trap?** guide's first step and button point to `#/join`
+  (flag on), with the coordinator email kept in the step as the alternative. With the flag off
+  they are unchanged. (Added 2026-10-06 after #321 shipped.)
 
 **Join page (`#/join`, lazy chunk)**
 - [ ] AC-3: Signed out: a short summary (free, Tuesdays at Darnall's, per-day range fee), the
