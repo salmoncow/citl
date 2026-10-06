@@ -31,6 +31,7 @@ import { ScoreEntryTab } from './admin-tabs/score-entry-tab';
 import { AnnouncementsTab } from './admin-tabs/announcements-tab';
 import { SeasonEndTab } from './admin-tabs/season-end-tab';
 import type { AdminTab, AdminTabContext } from './admin-tabs/types';
+import { REQUEST_COUNT_EVENT } from '@/modules/navigation';
 
 const { scoreService, seasonAwardsService } = getServices();
 
@@ -62,7 +63,7 @@ class AdminPanel extends HTMLElement {
     const navItem = (tab: TabName, label: string, icon: string, active = false): string => `
       <button type="button" class="admin-tab-btn${active ? ' is-active' : ''}" data-tab="${tab}"${active ? ' aria-current="page"' : ''}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${icon}"/></svg>
-        <span data-label>${label}</span>${tab === 'requests' ? '<span class="admin-tab-badge" data-request-count hidden></span>' : ''}
+        <span data-label>${label}</span>${tab === 'requests' ? '<span class="count-badge" data-request-count hidden></span>' : ''}
       </button>`;
 
     this.innerHTML = `
@@ -194,6 +195,8 @@ class AdminPanel extends HTMLElement {
   private _setRequestCount(count: number): void {
     this._requestCount = count;
     this._renderRequestCount();
+    // The header Admin link shows the same count (navigation.ts).
+    window.dispatchEvent(new CustomEvent<number>(REQUEST_COUNT_EVENT, { detail: count }));
   }
 
   private _renderRequestCount(): void {
