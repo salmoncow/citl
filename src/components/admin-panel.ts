@@ -11,7 +11,9 @@
  *   - Score Entry     — weekly entry form, date override, publish
  *   - Announcements   — site banner + per-year announcements
  *   - Season End      — preview + finalize season awards (spec 004)
- *   - Requests        — coordinator review queue (spec 010), loaded on first open
+ *   - Requests        — coordinator review queue (spec 010), loaded on first open;
+ *                       its nav item and a banner above every other tab show
+ *                       how many requests wait for review
  *   - Users           — hosts <admin-users-panel> (owner-only dropdown)
  *
  * No shadow DOM. All user values rendered via textContent (never innerHTML),
@@ -48,6 +50,8 @@ class AdminPanel extends HTMLElement {
   private readonly _seasonEndTab = new SeasonEndTab(seasonAwardsService);
   /** Spec 010: the Requests tab is a lazy chunk, mounted on first open. */
   private _requestsTab: Promise<AdminTab> | null = null;
+  private _activeTab: TabName = 'team-mgmt';
+  private _requestCount = 0;
 
   /** All tabs that implement the AdminTab lifecycle (excludes self-managed Users tab). */
   private get _lifecycleTabs(): AdminTab[] {
@@ -58,7 +62,7 @@ class AdminPanel extends HTMLElement {
     const navItem = (tab: TabName, label: string, icon: string, active = false): string => `
       <button type="button" class="admin-tab-btn${active ? ' is-active' : ''}" data-tab="${tab}"${active ? ' aria-current="page"' : ''}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${icon}"/></svg>
-        <span>${label}</span>
+        <span data-label>${label}</span>${tab === 'requests' ? '<span class="admin-tab-badge" data-request-count hidden></span>' : ''}
       </button>`;
 
     this.innerHTML = `
@@ -91,6 +95,10 @@ class AdminPanel extends HTMLElement {
         </div>
 
         <div class="admin-content">
+          <div id="ap-requests-banner" class="admin-requests-banner" role="status" hidden>
+            <p class="admin-requests-banner__text"></p>
+            <button type="button" class="btn-primary" data-open-requests>Review requests</button>
+          </div>
           <div id="ap-panel-team-mgmt" class="admin-tab-content"></div>
           <div id="ap-panel-score-entry" class="admin-tab-content admin-tab-panel--hidden"></div>
           <div id="ap-panel-announcements" class="admin-tab-content admin-tab-panel--hidden"></div>
@@ -111,6 +119,7 @@ class AdminPanel extends HTMLElement {
     for (const btn of this.querySelectorAll<HTMLButtonElement>('.admin-tab-btn')) {
       btn.addEventListener('click', () => this._switchTab((btn.dataset['tab'] ?? '') as TabName));
     }
+    this.querySelector('[data-open-requests]')!.addEventListener('click', () => this._switchTab('requests'));
 
     this.querySelector('#ap-year')!.addEventListener('change', () => {
       this._shooterNameCache = null;
@@ -124,17 +133,19 @@ class AdminPanel extends HTMLElement {
     void this._refreshTeams();
     void this._refreshSeason();
     void this._getTeamNameSuggestions(CURRENT_YEAR);
+    void this._loadRequestCount();
   }
 
   // ── Tab switching ────────────────────────────────────────────────────────
 
   private _switchTab(tab: TabName): void {
+    this._activeTab = tab;
     for (const btn of this.querySelectorAll<HTMLButtonElement>('.admin-tab-btn')) {
       const on = btn.dataset['tab'] === tab;
       btn.classList.toggle('is-active', on);
       if (on) {
         btn.setAttribute('aria-current', 'page');
-        this.querySelector('#ap-title')!.textContent = btn.textContent?.trim() ?? '';
+        this.querySelector('#ap-title')!.textContent = btn.querySelector('[data-label]')?.textContent ?? '';
       } else {
         btn.removeAttribute('aria-current');
       }
@@ -154,6 +165,8 @@ class AdminPanel extends HTMLElement {
     const yearRow = this.querySelector<HTMLElement>('#ap-year-row');
     if (yearRow) yearRow.classList.toggle('admin-form-row--hidden', tab === 'users' || tab === 'requests');
 
+    this._renderRequestCount();
+
     if (tab === 'score-entry') this._scoreEntryTab.onActivate?.();
     else if (tab === 'announcements') this._announcementsTab.onActivate?.();
     else if (tab === 'season-end') this._seasonEndTab.onActivate?.();
@@ -167,6 +180,37 @@ class AdminPanel extends HTMLElement {
       return t;
     });
     (await this._requestsTab).onActivate?.();
+  }
+
+  // ── Pending request count ────────────────────────────────────────────────
+
+  /** Counts on open; the Requests tab reports the exact total after each load. */
+  private async _loadRequestCount(): Promise<void> {
+    const { getLeagueReviewService } = await import('@/services/league-review-service');
+    const res = await getLeagueReviewService().countWaiting();
+    if (res.success) this._setRequestCount(res.data);
+  }
+
+  private _setRequestCount(count: number): void {
+    this._requestCount = count;
+    this._renderRequestCount();
+  }
+
+  private _renderRequestCount(): void {
+    const n = this._requestCount;
+    const badge = this.querySelector<HTMLElement>('[data-request-count]');
+    if (badge) {
+      badge.textContent = String(n);
+      badge.setAttribute('aria-label', `${n} waiting`);
+      badge.hidden = n === 0;
+    }
+    const banner = this.querySelector<HTMLElement>('#ap-requests-banner');
+    if (banner) {
+      banner.querySelector('.admin-requests-banner__text')!.textContent =
+        `${n} request${n === 1 ? '' : 's'} waiting for review.`;
+      // The Requests tab states the total itself.
+      banner.hidden = n === 0 || this._activeTab === 'requests';
+    }
   }
 
   // ── Shared data refresh ──────────────────────────────────────────────────
@@ -273,6 +317,7 @@ class AdminPanel extends HTMLElement {
       getCurrentYearShooterNames: () => this._getCurrentYearShooterNames(),
       getTeamNames: () => this._getTeamNames(),
       getCachedShooterNames: () => this._shooterNameCache?.names ?? [],
+      setRequestCount: (count) => this._setRequestCount(count),
     };
   }
 }

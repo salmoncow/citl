@@ -101,3 +101,15 @@ describe('LeagueReviewService.review', () => {
     await expect(svc.review({ type: 'proposal', id: 'p', action: 'approve' })).resolves.toEqual({ ok: true, status: 'approved' });
   });
 });
+
+describe('LeagueReviewService.countWaiting', () => {
+  it('returns the repository count, and a failure when the read throws', async () => {
+    const ok = { countWaiting: vi.fn().mockResolvedValue(7) } as unknown as LeagueReviewRepository;
+    expect(await new LeagueReviewService(ok, () => vi.fn() as never).countWaiting()).toEqual({ success: true, data: 7 });
+
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const bad = { countWaiting: vi.fn().mockRejectedValue(new Error('denied')) } as unknown as LeagueReviewRepository;
+    const res = await new LeagueReviewService(bad, () => vi.fn() as never).countWaiting();
+    expect(res.success).toBe(false);
+  });
+});

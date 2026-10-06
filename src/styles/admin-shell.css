@@ -70,6 +70,38 @@ admin-panel { display: contents; }
 .admin-tab-btn.is-active { background: var(--c-shell-active); color: var(--c-text-inverse); font-weight: 700; }
 .admin-tab-btn.is-active svg { color: var(--c-accent); }
 
+/* Pending request count on the Requests nav item */
+.admin-tab-badge {
+  min-width: 1.5em;
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+.admin-tab-badge[hidden] { display: none; }
+
+/* Banner above every tab while requests wait for review */
+.admin-requests-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--c-accent);
+  border-radius: var(--radius-md);
+  background: var(--c-status-warning-bg);
+  color: var(--c-status-warning);
+}
+.admin-requests-banner[hidden] { display: none; }
+.admin-requests-banner__text { margin: 0; font-weight: 600; }
+
 .admin-header {
   grid-area: user;
   display: flex;

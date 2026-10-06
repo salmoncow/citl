@@ -120,6 +120,7 @@ export class RequestsTab implements AdminTab {
     }
 
     const total = proposals.length + registrations.length + links.length + handoffs.length;
+    this._ctx?.setRequestCount(total);
     const section = (title: string, cards: string[], empty: string) => `
       <h3>${title}${cards.length ? ` <span class="req-count">${cards.length}</span>` : ''}</h3>
       ${cards.length ? cards.join('') : `<p class="req-muted">${empty}</p>`}`;
