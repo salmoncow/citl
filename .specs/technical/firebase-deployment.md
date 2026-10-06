@@ -122,8 +122,9 @@ Before running `npm run deploy` or `npm run deploy:preview`:
 ## Cloud Functions Deployment
 
 citl-baed2 has Cloud Functions deployed in **`us-central1`**: the RBAC `setUserRole`
-callable and the on-create user-mirror trigger (first deploy 2026-05-04), plus the spec 008
-account callables `setAccountStatus` and `deleteAccount`.
+callable and the on-create user-mirror trigger (first deploy 2026-05-04), the spec 008
+account callables `setAccountStatus` and `deleteAccount`, the spec 009/010 league callables,
+and the spec 011 email functions (below).
 
 **Region**: earlier revisions of this doc said `us-east1`. The deployed region is whatever
 the `region` option in `functions/src/*.ts` says, and the browser client
@@ -165,12 +166,52 @@ Bindings in place / required:
 | `teamproposal` | `teamProposal` (spec 009) | **Run once after the spec 009 deploy** |
 | `reviewrequest` | `reviewRequest` (spec 010) | **Run once after the spec 010 deploy** |
 | `captainhandoff` | `captainHandoff` (spec 010) | **Run once after the spec 010 deploy** |
+| `unsubscribe` | `unsubscribe` (spec 011, HTTP via the `/unsubscribe` rewrite) | **Run once after the spec 011 deploy** |
 
 Without the binding, browser calls fail with a CORS / 403 error.
 
 This is **not** an authorization weakening — the in-function checks (`req.auth`, the
 `role` claim, recent sign-in for delete) are the actual boundary. See the global
 `firebase-deploy-runbook` skill (Gotcha 2) for the full rationale.
+
+### Email notifications (spec 011)
+
+Six functions: `sendMail` (Firestore `mail/{id}` created), `onAnnouncementCreated`,
+`onWeekPublished`, `onSeasonUpdated` (Firestore triggers), `requestDigest` (Cloud
+Scheduler, 07:00 America/Chicago), and `unsubscribe` (HTTP). Only `unsubscribe` needs the
+invoker binding above; event and scheduled functions are invoked by Google's own service
+agents.
+
+Configuration:
+
+| Name | Kind | Value |
+|------|------|-------|
+| `SES_ROLE_ARN` | Param (`functions/.env.citl-baed2`, committed) | `SenderRoleArn` output of the `citl-mail` stack. Not a secret: the role trusts only this project's compute service account ([aws-infrastructure.md](aws-infrastructure.md)) |
+| `UNSUBSCRIBE_SECRET` | Secret Manager | Random HMAC key for unsubscribe links. Rotating it invalidates links in mail already sent |
+
+The sender has no AWS keys: it exchanges a Google ID token from the metadata server for
+temporary credentials on `citl-ses-sender` (ADR-015). In the emulator, mail is logged, not
+sent.
+
+**First deploy** (owner credentials, before merging the build PR; the CI service account
+cannot set the invoker policy, enable APIs, or create the secret):
+
+```bash
+# 1. Create the secret (paste a random value, e.g. from: openssl rand -base64 32)
+firebase functions:secrets:set UNSUBSCRIBE_SECRET --project citl-baed2
+
+# 2. From the PR branch: deploy rules, the TTL index, and the six functions.
+#    Enables the Eventarc and Cloud Scheduler APIs and grants the runtime
+#    service account access to the secret.
+firebase deploy --project citl-baed2 --only firestore:rules,firestore:indexes,functions:sendMail,functions:unsubscribe,functions:onAnnouncementCreated,functions:onWeekPublished,functions:onSeasonUpdated,functions:requestDigest
+
+# 3. Public invoker for the unsubscribe endpoint
+gcloud run services add-iam-policy-binding unsubscribe --region=us-central1 \
+  --member=allUsers --role=roles/run.invoker --project=citl-baed2
+```
+
+If a later CI deploy fails reading the secret or the scheduler job, grant the CI service
+account `roles/secretmanager.viewer` and `roles/cloudscheduler.admin` on the project.
 
 ### First-time deploy to a different project
 

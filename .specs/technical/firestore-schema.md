@@ -1,6 +1,6 @@
 # Firestore Schema Reference
 
-Last updated: 2026-10-01 (spec 008: member accounts)
+Last updated: 2026-10-06 (spec 011: email notifications)
 
 ---
 
@@ -20,6 +20,7 @@ field types, access patterns, and key operational patterns.
 | Service | `src/services/account-service.ts` | Profile validation + writes, account callables (`setAccountStatus`, `deleteAccount`) |
 | Repository | `src/repositories/league-repository.ts`, `dependent-repository.ts` | Spec 009 league teams, proposals (read), registrations, link requests; dependents (throw on error) |
 | Service | `src/services/member-league-service.ts` | Spec 009 validation + writes, `teamProposal` callable (lazy-loaded, not in app-services) |
+| Repository / Service | `src/repositories/notification-repository.ts`, `src/services/notification-service.ts` | Spec 011 email topics: offered topics, defaults, save (lazy-loaded with `/account`) |
 
 Cache is invalidated on every write. No exceptions are thrown across module boundaries.
 
@@ -217,10 +218,64 @@ played that season. `deleteAccount` deletes docs where the member is the nominee
 
 ---
 
-### `notificationSettings/{uid}` — reserved (M4)
+### `notificationSettings/{uid}` — email topics (spec 011)
 
-Not created in M1. Explicitly denied for all clients. `deleteAccount` already deletes it so
-M4 (email notifications) does not change the delete path.
+Written by the member from `/account` and at profile completion; the `unsubscribe` function
+sets one topic to `false` (Admin SDK, merge).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `topics` | `{ news?, scores?, schedule?, requests?: boolean }` | Missing means off. `requests` (admin digest) is offered to admins and owners only; the digest re-checks the role |
+| `updatedAt` | `Timestamp` | Must equal `request.time` |
+
+Members who completed their profile before M4 have no doc (no topics) until they save once.
+`deleteAccount` deletes the doc. Fan-out queries `where('topics.{topic}', '==', true)` use
+the automatic single-field index.
+
+**Access:** Read — self. Create/update — self while active; keys exactly `topics` and
+`updatedAt`; booleans only. Delete — disallowed for clients.
+
+**TypeScript interface:** `NotificationSettingsDoc`, `NotificationTopics` — `src/types/notifications.ts`.
+
+---
+
+### `mail/{id}` — outbound email queue (spec 011)
+
+Auto-ID. Written by the Admin SDK only: topic fan-out (`lib/fanout.ts`), decision
+transactions (`lib/mailQueue.ts`, so a status email exists only if its decision committed),
+and `requestDigest`. Each create triggers `sendMail`, which claims the doc, re-checks the
+recipient, renders, and sends through SES.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `uid` | `string` | Recipient; the address is read from `users/{uid}.email` at send time |
+| `kind` | `'news' \| 'scores' \| 'schedule' \| 'status' \| 'digest'` | |
+| `topic` | `'news' \| 'scores' \| 'schedule'` | Topic mail only: re-checked at send, adds the unsubscribe footer and headers |
+| `subject`, `paragraphs`, `link?` | `string`, `string[]`, `{ label, path }` | Content; rendered to text and HTML at send |
+| `status` | `'pending' \| 'sending' \| 'sent' \| 'skipped' \| 'failed'` | `skipped` with `error` `no-account`, `deactivated`, `no-email`, or `topic-off` |
+| `attempts` | `number` | Claims so far; a retryable SES error re-queues until 5 |
+| `to` | `string` | Set when sent |
+| `error` | `string` | Last error or skip reason |
+| `createdAt`, `sentAt` | `Timestamp` | |
+| `expireAt` | `Timestamp` | `createdAt` + 30 days; the TTL policy in `firestore.indexes.json` deletes the doc |
+
+**Access:** Read and write — disallowed for all clients.
+
+---
+
+### `notifications/{key}` — fan-out dedupe (spec 011)
+
+One per topic event, claimed with `create()` before fan-out so a retried trigger sends
+nothing twice. Keys: `news_{announcementId}`, `scores_{year}_{week}`,
+`schedule_{year}_{eventId}`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `topic` | `string` | |
+| `recipients` | `number \| null` | Set after the mail docs are written |
+| `createdAt` | `Timestamp` | |
+
+**Access:** Read and write — disallowed for all clients.
 
 ---
 
@@ -275,7 +330,8 @@ read and bumped only inside the guarded callable's transaction via the Admin SDK
 
 ### `config/{doc}` — banner + site config
 
-Keyed by config document name. The only doc in use today is `config/banner`.
+Keyed by config document name: `config/banner` (below) and `config/mailDigest`
+(`{ lastRunAt: Timestamp }`, written by `requestDigest`; clients denied).
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -300,6 +356,7 @@ Auto-ID via `addDoc`.
 | `body` | `string` | Announcement body text |
 | `postedAt` | `Timestamp` | Firestore server timestamp |
 | `lastEditedAt` | `Timestamp \| null` | Set on edits; null on initial post |
+| `email` | `boolean` | Spec 011: "Email subscribers" at posting; `onAnnouncementCreated` emails `news` subscribers when true and the year is current. Missing on older posts |
 
 **Access:** Read — public. Write — admin only.
 
@@ -515,6 +572,9 @@ index:
   index; the `"{weekNumber}_{teamId}"` composite ID also lets the repository build entry
   references directly with no query at all.
 
+`firestore.indexes.json` also holds one field override: a TTL policy on `mail.expireAt`
+(spec 011).
+
 If a future query needs a composite index, add it to `firestore.indexes.json` and update
 this section — the two must always match.
 
@@ -532,3 +592,5 @@ this section — the two must always match.
 | `UserDoc`, `Role`, `AccountStatus` | `src/types/user.ts` |
 | `LeagueTeam`, `TeamProposal`, `RosterEntry`, `Registration`, `ShooterLinkRequest`, `Dependent` | `src/types/league.ts` |
 | `ProfileDoc`, `ProfileInput`, `AuthProviderId`, account callable I/O | `src/types/account.ts` |
+| `NotificationSettingsDoc`, `NotificationTopics`, `NotificationTopic` | `src/types/notifications.ts` |
+| `QueuedMail`, `MailContent`, `MailKind` (functions-internal) | `functions/src/mail/types.ts` |

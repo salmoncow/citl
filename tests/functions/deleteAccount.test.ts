@@ -52,7 +52,7 @@ beforeEach(async () => {
   await seedProfile(USER);
   await seedProfile(OTHER);
   await adminDb().doc(`profiles/${USER}/dependents/d1`).set({ firstName: 'Kid' });
-  await adminDb().doc(`notificationSettings/${USER}`).set({ weekly: true });
+  await adminDb().doc(`notificationSettings/${USER}`).set({ topics: { news: true, scores: true }, updatedAt: new Date() });
 });
 
 function call(uid: string | null, role: string | undefined, data: unknown, authTime?: number) {
