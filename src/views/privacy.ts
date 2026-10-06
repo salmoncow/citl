@@ -1,5 +1,5 @@
 import { LEAGUE_EMAIL, leagueMailto } from '@/utils/contact';
-import { LEGAL_ANCHORS, TERMS_VERSION } from '@/utils/legal';
+import { LEGAL_ANCHORS, PRIVACY_UPDATED, TERMS_VERSION } from '@/utils/legal';
 import { leagueRequestsEnabled } from '@/utils/features';
 
 /**
@@ -8,9 +8,9 @@ import { leagueRequestsEnabled } from '@/utils/features';
  * Pure HTML-string factory. Reachable at /#/privacy and /privacy (main.ts
  * maps the pathname), and allowed while the account gate is active.
  *
- * PLACEHOLDER COPY: accepted for M1 (owner decision 2026-10-01). Replace
- * with the league's final wording and bump TERMS_VERSION before
- * announcing accounts (tasks 1.8 / 11.6).
+ * Final wording published 2026-10-06 (PRIVACY_UPDATED). It describes
+ * practices already in effect, so TERMS_VERSION is unchanged. Bump it
+ * only for a material change members must accept again.
  *
  * Spec 010 AC-22: the league lines appear only when league requests are
  * on, which is also when TERMS_VERSION moves to the league version.
@@ -34,8 +34,9 @@ export function privacyView(): string {
     </div>
 
     <div class="prose">
-      <p><em>Draft wording, version ${TERMS_VERSION}. The league will publish final wording here; if it changes,
-      you'll be asked to accept it again the next time you sign in.</em></p>
+      <p><em>Last updated ${PRIVACY_UPDATED} (version ${TERMS_VERSION}). These terms and this policy are set by the
+      Central Illinois Trap League. If we make a material change, we'll post it here and ask you to accept it the
+      next time you sign in.</em></p>
 
       <section id="${LEGAL_ANCHORS.terms}" tabindex="-1">
         <h2>Terms of Use</h2>
@@ -55,9 +56,12 @@ export function privacyView(): string {
         <h2>Privacy Policy</h2>
         <h3>What we collect</h3>
         <ul>
-          <li>From your sign-in provider (Google or an emailed link): your email address and account identifier.</li>
+          <li>From your sign-in provider (Google or an emailed link): your email address and account identifier. With
+            Google, also the name and profile photo link on your Google account.</li>
           <li>From you: your name, and a phone number if you choose to give one.</li>
-          <li>Records of when you accepted these terms, confirmed you are 18 or older, and changed your account status.</li>
+          <li>Records of when you created your account, last signed in, accepted these terms, confirmed you are 18 or
+            older, and changed your account status.</li>
+          <li>Your email topic choices.</li>
           ${league(`<li>Shooters under 18 you add to your account: their first and last name and birth year.</li>
           <li>Your league requests (team proposals and rosters, requests to join a team, and requests to link your account
             to a name on past scorecards), the coordinator's decisions and notes, and the scorecard name linked to your account.</li>
@@ -66,14 +70,29 @@ export function privacyView(): string {
         </ul>
         <h3>Who can see it</h3>
         <ul>
-          <li>Your profile is private to you and the league's site administrators.</li>
+          <li>Your profile, including your email and phone, is private to you and the league's site administrators.</li>
           ${league(`<li>Your league requests and your dependents' details are private to you and the league coordinator.</li>
           <li>Once the coordinator approves a team or places you on one, roster names are public on the site, like every
             past scorecard. Shooters under 18 appear as first name and last initial only.</li>`)}
           <li>We do not sell or share your information, and we do not show advertising.</li>
         </ul>
         <h3>Where it is stored</h3>
-        <p>On Google Firebase, which hosts this site. Your browser stores sign-in data so you stay signed in.</p>
+        <ul>
+          <li>On Google Firebase, which hosts this site and runs its sign-in and database.</li>
+          <li>To block automated abuse, the site uses Google reCAPTCHA, which receives information about your browser
+            and device under <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's
+            Privacy Policy</a>.</li>
+          <li>Your browser stores sign-in data so you stay signed in, the email address you entered while an emailed
+            sign-in link is pending, and your light or dark display choice. The site uses no advertising or
+            analytics cookies.</li>
+        </ul>
+        <h3>How long we keep it</h3>
+        <ul>
+          <li>Account information is kept while your account exists, including while it is deactivated.</li>
+          <li>Records of emails sent are deleted after 30 days.</li>
+          <li>When you delete your account, your profile${league(', dependents, and league requests')} are deleted
+            right away. We keep a record that the account was deleted, without your name or email.</li>
+        </ul>
         <h3>Email</h3>
         <ul>
           <li>The league sends email to your sign-in address through Amazon Simple Email Service (SES), which processes

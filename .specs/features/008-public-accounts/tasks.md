@@ -265,8 +265,9 @@ every box in it is checked and its validation gate passes. AC refs point to [spe
   with the App Check debug token.
 - [ ] **11.5 (S)** Production smoke: with the browser console open, check for CSP violations
   across all providers, plus one deactivate/reactivate and one delete of a test account.
-- [ ] **11.6 (S)** Replace the placeholder terms copy with the owner's wording (from 1.8) and set
-  the final `TERMS_VERSION` before announcing accounts.
+- [x] **11.6 (S)** Replace the placeholder terms copy with the owner's wording (from 1.8) and set
+  the final `TERMS_VERSION` before announcing accounts. Done 2026-10-06: final wording, no
+  version bump (it describes practices already in effect).
 - [ ] **11.7 (S)** After one week, check Firebase usage against the §VI.1 thresholds and the
   billing budget alert ($5/mo).
 - [ ] **11.8 (S)** Move this spec directory to `.specs/features/archive/` once shipped.
