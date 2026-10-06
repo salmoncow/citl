@@ -18,6 +18,9 @@ import { leagueRequestsEnabled } from '@/utils/features';
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 const SUN_SVG  = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
 
+/** <admin-panel> dispatches this on window with the pending request count as `detail`. */
+export const REQUEST_COUNT_EVENT = 'citl:request-count';
+
 export class NavigationModule {
   private _topnav: HTMLElement | null = null;
   private _dropdown: HTMLElement | null = null;
@@ -42,6 +45,10 @@ export class NavigationModule {
     this._burgerBtn = document.getElementById('burger-btn') as HTMLButtonElement | null;
     this._dropBtn = document.getElementById('dropbtn') as HTMLButtonElement | null;
     this._themeToggleBtn = document.getElementById('theme-toggle') as HTMLButtonElement | null;
+
+    window.addEventListener(REQUEST_COUNT_EVENT, (e) => {
+      this.setAdminRequestCount((e as CustomEvent<number>).detail);
+    });
 
     const footerYear = document.getElementById('footer-year');
     if (footerYear) footerYear.textContent = String(new Date().getFullYear());
@@ -107,12 +114,31 @@ export class NavigationModule {
    *   - header Account: shown only when signed in
    *   - header + footer Admin: shown only for owner/admin
    */
+  /**
+   * Pending request count on the header Admin link (hidden at 0). main.ts
+   * counts on sign-in; <admin-panel> reports changes via REQUEST_COUNT_EVENT.
+   */
+  setAdminRequestCount(count: number): void {
+    const link = document.getElementById('nav-admin-link');
+    if (!link) return;
+    let badge = link.querySelector<HTMLElement>('.count-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'count-badge';
+      link.append(badge);
+    }
+    badge.textContent = String(count);
+    badge.setAttribute('aria-label', `${count} requests waiting`);
+    badge.hidden = count === 0;
+  }
+
   updateAuthState(user: User | null, role: Role | null): void {
     const signedIn = user !== null;
     const elevated = signedIn && (role === 'owner' || role === 'admin');
     document.getElementById('nav-sign-in')?.toggleAttribute('hidden', signedIn);
     document.getElementById('nav-account-link')?.toggleAttribute('hidden', !signedIn);
     document.getElementById('nav-admin-link')?.toggleAttribute('hidden', !elevated);
+    if (!elevated) this.setAdminRequestCount(0);
     document.querySelector('.footer__admin-link')?.toggleAttribute('hidden', !elevated);
     this._updateJoinCta(signedIn);
   }

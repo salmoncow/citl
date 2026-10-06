@@ -38,6 +38,8 @@ export interface AdminTabContext {
   getTeamNames(): string[];
   /** Synchronously read the cached cross-year shooter suggestions (no fetch). */
   getCachedShooterNames(): string[];
+  /** Report how many requests wait for review (Requests nav badge and banner). */
+  setRequestCount(count: number): void;
 }
 
 export interface AdminTab {

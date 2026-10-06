@@ -91,6 +91,8 @@ class App {
   private _gate: AccountGate | null = null;
   private _roleUnsubscribe: (() => void) | null = null;
   private _currentRole: Role | null = null;
+  /** The elevated user the header request count was loaded for. */
+  private _requestCountUid: string | null = null;
 
   async init(): Promise<void> {
     initAppCheck();
@@ -206,12 +208,27 @@ class App {
         this._currentRole = role;
         this._navigation!.updateAuthState(this._auth!.currentUser, role);
         this._applyAdminViewState();
+        void this._loadAdminRequestCount();
         if (!resolved) {
           resolved = true;
           resolve();
         }
       });
     });
+  }
+
+  /**
+   * Pending request count on the header Admin link, once per elevated
+   * sign-in. The review service is a lazy chunk, so non-admins never load it.
+   */
+  private async _loadAdminRequestCount(): Promise<void> {
+    const uid = this._isElevated() ? this._auth!.currentUser?.uid ?? null : null;
+    if (uid === this._requestCountUid) return;
+    this._requestCountUid = uid;
+    if (!uid) return;
+    const { getLeagueReviewService } = await import('./services/league-review-service');
+    const res = await getLeagueReviewService().countWaiting();
+    if (res.success && this._requestCountUid === uid) this._navigation!.setAdminRequestCount(res.data);
   }
 
   private _isElevated(): boolean {

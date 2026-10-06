@@ -13,6 +13,7 @@
 import {
   collection,
   doc,
+  getCountFromServer,
   getDoc,
   getDocs,
   limit,
@@ -25,6 +26,14 @@ import { toLeagueTeam } from '@/repositories/league-repository';
 
 /** A season has a few dozen requests; this bounds each queue read. */
 const QUEUE_READ_LIMIT = 100;
+
+/** The queues the coordinator acts on, as [collection, status]. */
+const WAITING: readonly (readonly [string, string])[] = [
+  ['teamProposals', 'submitted'],
+  ['registrations', 'submitted'],
+  ['shooterLinkRequests', 'submitted'],
+  ['captainChanges', 'accepted'],
+];
 
 export interface MemberInfo {
   name: string;
@@ -55,6 +64,18 @@ export class LeagueReviewRepository {
 
   listAcceptedHandoffs(): Promise<(CaptainChange & { id: string })[]> {
     return this._byStatus<CaptainChange>('captainChanges', 'accepted');
+  }
+
+  /**
+   * How many requests wait for review: the four queues the Requests tab
+   * lists. Count aggregations, so a few reads however long the queues are.
+   */
+  async countWaiting(): Promise<number> {
+    const counts = await Promise.all(
+      WAITING.map(([name, status]) =>
+        getCountFromServer(query(collection(this.db, name), where('status', '==', status)))),
+    );
+    return counts.reduce((sum, c) => sum + c.data().count, 0);
   }
 
   async listCaptainedTeams(): Promise<LeagueTeam[]> {

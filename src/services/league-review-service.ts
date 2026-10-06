@@ -177,6 +177,16 @@ export class LeagueReviewService {
     }
   }
 
+  /** The number of requests waiting for review, for the admin badge and banner. */
+  async countWaiting(): Promise<Result<number>> {
+    try {
+      return success(await this.repo.countWaiting());
+    } catch (e) {
+      console.error('[LeagueReviewService] countWaiting failed:', e);
+      return failure(String(e), codeOf(e, 'LOAD_ERROR'));
+    }
+  }
+
   /** The names a registration places, in order: the member, then dependents as "First L.". */
   placementNames(item: RegistrationItem): string[] {
     return [item.selfName, ...item.dependents.map((d) => minorDisplayName(d.firstName, d.lastName))];

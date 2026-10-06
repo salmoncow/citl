@@ -70,6 +70,25 @@ admin-panel { display: contents; }
 .admin-tab-btn.is-active { background: var(--c-shell-active); color: var(--c-text-inverse); font-weight: 700; }
 .admin-tab-btn.is-active svg { color: var(--c-accent); }
 
+.admin-tab-btn .count-badge { margin-left: auto; }
+
+/* Banner above every tab while requests wait for review */
+.admin-requests-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--c-accent);
+  border-radius: var(--radius-md);
+  background: var(--c-status-warning-bg);
+  color: var(--c-status-warning);
+}
+.admin-requests-banner[hidden] { display: none; }
+.admin-requests-banner__text { margin: 0; font-weight: 600; }
+
 .admin-header {
   grid-area: user;
   display: flex;
