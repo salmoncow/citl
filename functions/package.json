@@ -26,10 +26,10 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^22.20.4",
+    "@types/node": "^22.20.5",
     "firebase-functions-test": "^3.4.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.3"
   },
   "overrides": {
     "google-gax": {
