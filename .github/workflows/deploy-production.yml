@@ -11,8 +11,9 @@ on:
     types: [completed]
   workflow_dispatch:
 
-# Never run two production deploys at once; cancel an in-flight deploy
-# if a newer commit's CI passes first.
+# Never run two production deploys at once. An in-flight deploy always
+# finishes; if several are queued behind it, only the newest pending run
+# is kept and older pending runs are cancelled.
 concurrency:
   group: deploy-production
   cancel-in-progress: false
