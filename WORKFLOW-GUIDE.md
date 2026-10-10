@@ -74,7 +74,7 @@ Quick sanity pass: forbidden patterns, typecheck, tests. Lighter than the full r
 /deploy-preview
 ```
 
-Runs build, typecheck, tests, then deploys a 7-day Firebase preview channel. Stops on any failure.
+Runs build, typecheck, tests, then deploys to the `citl-preview` site (https://citl-preview.web.app). Stops on any failure.
 
 ---
 

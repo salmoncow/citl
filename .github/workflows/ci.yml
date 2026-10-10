@@ -84,6 +84,10 @@ jobs:
       # Fails if the inline theme snippet in index.html drifts from the
       # sha256 pin in firebase.json's CSP script-src.
       - run: node scripts/check-csp-hash.js
+      # Fails if any workflow injects an App Check debug token or the
+      # build contains the debug-token branch (every workflow here
+      # targets production, citl-baed2).
+      - run: node scripts/check-app-check-debug.js
 
   infra-lint:
     name: Infrastructure Lint

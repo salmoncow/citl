@@ -1,9 +1,9 @@
 ---
 name: deploy-preview
-description: Prepare and execute a Firebase preview channel deployment. Triggers on phrases like "deploy preview", "preview deploy", "test deployment", "Firebase preview".
+description: Prepare and execute a preview deployment to the citl-preview Hosting site. Triggers on phrases like "deploy preview", "preview deploy", "test deployment", "Firebase preview".
 ---
 
-Prepare and execute a Firebase preview channel deployment.
+Prepare and execute a preview deployment to the `citl-preview` Hosting site.
 
 ## Steps
 
@@ -16,10 +16,12 @@ Run `npm run typecheck`. If it fails, report the error and stop.
 ### 3. Run tests
 Run `npm run test`. If it fails, report the error and stop.
 
-### 4. Deploy to preview channel
-Run `firebase hosting:channel:deploy preview --expires 7d`.
+### 4. Deploy to the preview site
+Run `npm run deploy:preview:site` (the build from step 1 is reused).
 
-Report the preview URL from the output.
+The preview URL is always https://citl-preview.web.app. Do NOT use
+`firebase hosting:channel:deploy`: channel URLs aren't on the reCAPTCHA key's
+allowlist, so App Check fails there (Firestore, sign-in, and callables all break).
 
 ### 5. Post-deploy verification checklist
 Remind the user to verify (from `.specs/technical/firebase-deployment.md`):
@@ -32,5 +34,6 @@ Remind the user to verify (from `.specs/technical/firebase-deployment.md`):
 
 ## Important notes
 - Firestore security rules are NOT deployed to preview channels — production only
-- Preview channels expire after 7 days
+- The preview site is a single slot: CI deploys from PRs overwrite it, and the last deploy wins
+- Never set an App Check debug token for a build; the predeploy guard fails the deploy
 - If any pre-deploy step fails, do NOT proceed with deployment

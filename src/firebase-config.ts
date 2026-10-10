@@ -26,7 +26,7 @@ const firebaseConfig = {
 
 export const isDevelopment = import.meta.env.DEV;
 export const isProduction = import.meta.env.PROD;
-export const useEmulator = import.meta.env['VITE_USE_EMULATOR'] === 'true';
+export const useEmulator = import.meta.env.VITE_USE_EMULATOR === 'true';
 
 /**
  * Validates that all required Firebase config values are present.

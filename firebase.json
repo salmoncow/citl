@@ -30,7 +30,8 @@
   },
   "hosting": {
     "predeploy": [
-      "node scripts/check-csp-hash.js"
+      "node scripts/check-csp-hash.js",
+      "node scripts/check-app-check-debug.js"
     ],
     "public": "dist",
     "ignore": [

@@ -20,7 +20,7 @@ See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for host
 | Push to `main` or PR | `ci.yml` | Type Check + Unit Tests + Firestore Rules Tests + Cloud Functions Tests + Build (5 parallel jobs) |
 | CI workflow completes successfully on `main` (`workflow_run`) | `deploy-production.yml` | Build → Firestore rules + indexes + Cloud Functions → Firebase Hosting (live) |
 | Manual (`workflow_dispatch`) | `deploy-production.yml` | On-demand production deploy |
-| PR opened/updated/reopened | `deploy-preview.yml` | Build → Firebase preview channel (7-day link in PR comment) |
+| PR opened/updated/reopened | `deploy-preview.yml` | Build → `citl-preview` Hosting site (https://citl-preview.web.app; URL in the job summary) |
 
 ---
 
@@ -30,7 +30,7 @@ See [.specs/technical/firebase-deployment.md](./firebase-deployment.md) for host
 .github/workflows/
 ├── ci.yml                  # typecheck + unit/rules/functions tests + build + infra lint (6 parallel jobs)
 ├── deploy-production.yml   # CI success on main (workflow_run) → live site + rules/indexes/functions
-└── deploy-preview.yml      # PR → Firebase preview channel (7-day URL in PR comment)
+└── deploy-preview.yml      # PR → citl-preview Hosting site (https://citl-preview.web.app)
 ```
 
 ---
@@ -85,12 +85,16 @@ See [`.github/workflows/deploy-production.yml`](../../.github/workflows/deploy-p
 
 ### `deploy-preview.yml`
 
-Runs the production vite build on PRs and deploys it to a preview channel. Skipped for dependabot
-PRs (`if: github.actor != 'dependabot[bot]'`). Firestore rules/indexes and Cloud Functions are NOT
-deployed in preview — those changes only go live on production. The `permissions` block grants
-`pull-requests: write` (required for GitHub's restrictive default token permissions so the action
-can post the preview URL as a PR comment). Preview channels expire after 7 days. Triggers on PR
-open, synchronize, and reopen.
+Runs the production vite build on PRs and deploys it (`npm run deploy:preview:site`) to the
+dedicated `citl-preview` Hosting site at https://citl-preview.web.app. That fixed hostname is on the
+reCAPTCHA Enterprise key's allowlist, so App Check works without a debug token (Hosting preview
+channels can't be allowlisted; see `firebase-deployment.md` → App Check Configuration). Skipped for
+dependabot PRs (`if: github.actor != 'dependabot[bot]'`). Firestore rules/indexes and Cloud
+Functions are NOT deployed in preview; those changes only go live on production. One slot: a
+`deploy-preview` concurrency group queues deploys, and the last one wins. The URL goes to the job
+summary, so the job needs only `contents: read`. The hosting `predeploy` hook runs
+`scripts/check-app-check-debug.js`, which fails the deploy if any workflow injects an App Check
+debug token or the build contains one. Triggers on PR open, synchronize, and reopen.
 
 See [`.github/workflows/deploy-preview.yml`](../../.github/workflows/deploy-preview.yml).
 
@@ -160,7 +164,7 @@ they pass:
 
 Add `Infrastructure Lint` to the required checks once it has passed on `main` (ADR-015).
 
-`Build & Deploy (Preview Channel)` is intentionally NOT a required check (a Firebase outage
+`Build & Deploy (Preview Site)` is intentionally NOT a required check (a Firebase outage
 should not block merges).
 
 Also enable:
@@ -199,11 +203,11 @@ keep weekly volume manageable. Production dependencies and **all majors stay as 
 That is deliberate — `deploy-production.yml` is CI-gated specifically so a dependabot major that
 breaks the build cannot ship, and batching majors into a grouped PR would undercut that gate.
 
-Dependabot PRs get CI but no preview channel: `deploy-preview.yml` skips them via
+Dependabot PRs get CI but no preview deploy: `deploy-preview.yml` skips them via
 `if: github.actor != 'dependabot[bot]'`. For a **production** dependency that only manifests in a
 browser (the `firebase` client SDK, for instance) that means no in-browser check before it
 reaches production — verify against the live site after the deploy, or open a throwaway
-non-dependabot PR to get a preview channel.
+non-dependabot PR to get a preview deploy.
 
 **Ignored majors**: three packages have major-version bumps suppressed in `dependabot.yml`, each
 for a specific reason rather than as general noise reduction. Minor and patch bumps still flow.
@@ -233,7 +237,7 @@ ecosystem with its last-checked time, and surfaces schema errors there.
 | Build time | <2 minutes |
 | Deploy time | <1 minute |
 | Total pipeline time | <3 minutes |
-| Concurrent PR previews | Up to 10 |
+| Concurrent PR previews | 1 (single `citl-preview` site; last deploy wins) |
 
 `salmoncow/citl` is a public repository, so GitHub Actions on standard GitHub-hosted runners is free and unmetered (the 2,000 minutes/month free-tier quota applies only to private repositories).
 
@@ -271,7 +275,8 @@ Firebase console → Hosting → Release history → select previous release →
 - [x] Branch protection rules enabled on `main` (all five CI jobs required as of 2026-07-10)
 - [x] `.github/dependabot.yml` created (version updates for `github-actions` + both npm manifests)
 - [x] Test: merge to `main` → CI passes → `workflow_run` triggers production deploy
-- [x] Test: open PR → verify preview channel URL posts as PR comment
+- [x] Test: open PR → preview deploy succeeds
+- [ ] Test: open PR → citl-preview.web.app serves the PR build; Firestore reads, sign-in, and a callable pass App Check
 - [x] Test: typecheck failure on a branch blocks merge
 
 ---

@@ -101,9 +101,11 @@ See [firebase.json](../../firebase.json) for full configuration.
 npm run deploy
 # equivalent to: npm run build && firebase deploy --only hosting
 
-# Preview channel deploy (7-day expiry, shareable URL)
+# Preview deploy to the citl-preview site (https://citl-preview.web.app)
 npm run deploy:preview
-# equivalent to: npm run build && firebase hosting:channel:deploy preview
+# equivalent to: npm run build && npm run deploy:preview:site
+# (writes .firebase-preview.json from firebase.json's hosting block with
+#  site: citl-preview, then `firebase deploy --only hosting --config ...`)
 ```
 
 ### Pre-Deployment Checklist
@@ -244,8 +246,9 @@ Firebase console → Authentication → Sign-in method. Record the date each ste
 | Apple | Not enabled (owner decision 2026-10-01: $99/yr developer fee is outside budget). | — |
 
 **Authorized domains** (Authentication → Settings): `citl.club`, `citl-baed2.web.app`,
-`citl-baed2.firebaseapp.com`, `localhost`, and the exact host of the stable `preview`
-channel (`citl-baed2--preview-*.web.app`) so popups and email links work on preview deploys.
+`citl-baed2.firebaseapp.com`, `localhost`, and `citl-preview.web.app` (the preview site) so
+popups and email links work on preview deploys. The old `citl-baed2--preview-*.web.app` channel
+entry can be removed; App Check fails on channel URLs anyway.
 The email-link continue URL is the origin root (`<origin>/`), so the origin must be listed.
 
 **Client toggle**: `VITE_AUTH_PROVIDERS` (default `google,email`) controls which
@@ -288,8 +291,8 @@ defense. The actual security boundaries for citl are:
   Check — keep these tight as the real boundary)
 - **Firestore security rules** + custom-claim RBAC (`role: owner | admin | user`)
 - **App Check** with reCAPTCHA Enterprise — enforced on Cloud Functions callables in
-  code (`enforceAppCheck: !isEmulator`) and on Firestore via the Firebase Console
-  (App Check → APIs → Cloud Firestore → Enforce)
+  code (`enforceAppCheck: !isEmulator`) and on Firestore and Authentication via the
+  Firebase Console (App Check → APIs → Enforce)
 - **Cloud Functions** in-body `req.auth.token.role` checks
 
 See `security-principles` skill section "Soft controls vs real boundaries"
@@ -324,29 +327,59 @@ The Vite-injected env var is **`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`** (not
 `VITE_APPCHECK_SITE_KEY` — provider-specific naming makes the key format obvious
 in code review).
 
-### Domain registration trade-off
+### Domain verification and previews
 
-reCAPTCHA Enterprise key registration does **not** support wildcard domains, so
-Firebase preview-channel URLs (`citl-baed2--preview-{hash}.web.app`) cannot be
-covered by a single domain entry.
+One Score-based key, `citl-login-main`, with **domain verification ON**
+(`allowAllDomains: false`). Allowed domains:
 
-citl currently uses **Option 1** from the runbook: one key with domain verification
-disabled, valid for prod, dev, and preview channels. The risk (anyone with the key
-can use it from any origin) is acceptable for citl because:
+- `citl.club`, `www.citl.club`
+- `citl-baed2.web.app`, `citl-baed2.firebaseapp.com`
+- `citl-preview.web.app` (PR previews, below)
+- `localhost` (`npm run dev:prod`)
 
-- The actual authorization boundary is Firestore rules + Cloud Functions custom-claim
-  checks, not App Check
-- The site is public-by-design (standings/scorecards are open-read)
-- The user mirror collection is admin-only-write, enforced server-side
+Check it with `gcloud recaptcha keys list --project=citl-baed2` (read-only).
 
-If user PII is ever added to the data model, revisit and switch to Option 2 (split
-prod / dev keys with domain verification on the prod key).
+**Enforcement**: Firebase Console → App Check → APIs enforces Cloud Firestore
+and Authentication; every callable sets `enforceAppCheck: !isEmulator`. An
+origin that can't mint a token can't read Firestore, sign in, or call a
+function.
 
-**See the `firebase-deploy-runbook` skill** for the full trade-off discussion.
+**Previews**: reCAPTCHA allowed domains have no mid-label wildcards, so
+Hosting preview channels (`citl-baed2--<channel>-<hash>.web.app`) can never
+be allowlisted. PR previews therefore deploy to a second Hosting site,
+`citl-preview`, whose hostname is fixed and on the list
+(`.github/workflows/deploy-preview.yml`, `npm run deploy:preview`). It is a
+single slot: the most recent PR deploy wins. It runs against production
+data, like the old preview channels.
+
+**No debug tokens in builds.** Until 2026-10 the preview workflow injected
+an App Check debug token, which was compiled into every public preview
+bundle. Anyone could read it there and mint App Check tokens for production.
+Now:
+
+- `src/infrastructure/appcheck.ts` reads `VITE_APP_CHECK_DEBUG_TOKEN` only when
+  `import.meta.env.DEV` (Vite dev server); `vite build` drops the branch.
+- `scripts/check-app-check-debug.js` (CI build job and the hosting `predeploy`
+  hook) fails if any workflow references a debug token, if a build contains
+  the debug branch, or if a build inlines the whole `import.meta.env` object.
+  (Bracket access such as `import.meta.env['X']` causes that and ships every
+  `VITE_*` value.)
+- A personal debug token for local dev lives only in your `.env`. Revoke it
+  in Console → App Check → Apps → Manage debug tokens when you're done.
+
+**Why not one key with verification off** (runbook Option 1): the key is public
+in the bundle, so anyone could mint production App Check tokens from any
+origin. That was tolerable for open-read standings. With member profiles,
+email addresses, and dependents in the data model (specs 008–012), it isn't.
+**Why not a second, permissive key** (runbook Option 2): App Check binds one
+site key per web app, so that means a second web app whose permissive key
+works from any origin. That leaves the same hole, just behind a different app ID.
+
+**See the `firebase-deploy-runbook` skill** for the general trade-off.
 
 ### Post-Deployment Verification
 
-After every deploy, verify at `https://citl-baed2.web.app` (or preview channel URL):
+After every deploy, verify at `https://citl-baed2.web.app` (or `https://citl-preview.web.app`):
 
 - [ ] Home page loads and displays standings / results feed
 - [ ] Navigation works: About, Rules, Downloads, Scorecards
@@ -443,25 +476,27 @@ Roll back immediately if post-deployment verification finds:
 
 ---
 
-## Preview Channels
+## Preview Site
 
-Preview channels create isolated deployments with 7-day expiry:
+PR previews deploy to the `citl-preview` Hosting site, not to preview
+channels (see App Check Configuration for why):
 
 ```bash
 npm run deploy:preview
-# Creates: https://citl-baed2--preview-[hash].web.app
+# Deploys to: https://citl-preview.web.app
 ```
 
-**Use preview channels for**:
+CI does the same on every non-dependabot PR (`deploy-preview.yml`) and writes
+the URL to the job summary. There's one slot, so the last deploy wins.
+
+**Use the preview site for**:
 - Testing new features before promoting to live
 - Sharing with stakeholders (league captains, etc.) for review
 - Validating CSP headers without affecting production
 
-**Clean up old channels**:
-```bash
-firebase hosting:channel:list
-firebase hosting:channel:delete preview --force
-```
+Don't use `firebase hosting:channel:deploy`. Channel URLs aren't on the
+reCAPTCHA key's allowlist, so Firestore, sign-in, and callables all fail
+App Check there.
 
 ---
 
