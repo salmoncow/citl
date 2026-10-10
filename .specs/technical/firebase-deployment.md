@@ -251,10 +251,21 @@ popups and email links work on preview deploys. The old `citl-baed2--preview-*.w
 entry can be removed; App Check fails on channel URLs anyway.
 The email-link continue URL is the origin root (`<origin>/`), so the origin must be listed.
 
+**Auth domain = the serving domain.** Production builds use `authDomain: citl.club`
+(`VITE_FIREBASE_AUTH_DOMAIN` secret) and preview builds use `citl-preview.web.app`
+(set in `deploy-preview.yml`). Each Hosting site serves its own `/__/auth/handler` and
+`/__/auth/iframe`, so the sign-in frame is same-origin: CSP `frame-src 'self'` covers it and
+browsers that partition third-party storage don't break the popup. Pointing a site at
+another site's auth domain fails: CSP blocks framing it (seen on the first preview deploy).
+Each auth domain's handler must be on the Google OAuth web client's **Authorized redirect
+URIs** (Google Cloud console → APIs & Services → Credentials):
+`https://citl.club/__/auth/handler`, `https://citl-preview.web.app/__/auth/handler`.
+
 **Client toggle**: `VITE_AUTH_PROVIDERS` (default `google,email`) controls which
 buttons render. Enable a provider in the console before adding it to the list.
 
-**CSP**: no change. Popups and the auth handler run on `*.firebaseapp.com` (`frame-src`),
+**CSP**: no change. The auth iframe and handler run on the site's own domain (`'self'`;
+`*.firebaseapp.com` stays in `frame-src` for the default auth domain),
 callables on `*.run.app` / `*.cloudfunctions.net` (`connect-src`); no provider avatars are
 rendered. Verify on preview (spec 008 task 11.5).
 

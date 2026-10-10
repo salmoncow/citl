@@ -37,7 +37,12 @@ jobs:
         run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          # Sign-in runs on the site's own domain, as production does on
+          # citl.club: the auth iframe/handler is then same-origin (CSP
+          # frame-src 'self') and not subject to third-party storage
+          # blocking. Needs https://citl-preview.web.app/__/auth/handler
+          # on the Google OAuth client's authorized redirect URIs.
+          VITE_FIREBASE_AUTH_DOMAIN: citl-preview.web.app
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
