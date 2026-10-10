@@ -1,7 +1,7 @@
 # Project Constitution: citl.club (Central Illinois Trap League)
 
-**Version:** 1.12.0
-**Last Updated:** 2026-10-06
+**Version:** 1.12.1
+**Last Updated:** 2026-10-10
 **Scope:** All development on the citl-static project
 **Review Frequency:** Quarterly (next review: 2026-10-10)
 
@@ -364,7 +364,7 @@ Reference implementation and rationale: spec 006 (DD-3, DD-13).
   - Hosting (SPA rewrite, security headers, cache rules)
   - Auth (Google, email link; role-based custom claims; optional member accounts)
   - Cloud Functions (TypeScript, Node 22, us-central1 — RBAC role-writer + auth trigger; `setAccountStatus` + `deleteAccount`, justified in spec 008 DD-1)
-  - App Check (reCAPTCHA Enterprise, enforced in prod, relaxed under FUNCTIONS_EMULATOR)
+  - App Check (reCAPTCHA Enterprise): enforced in prod on Cloud Functions callables in code (`enforceAppCheck: !isEmulator`, relaxed under FUNCTIONS_EMULATOR) and on Firestore via the Firebase Console enforcement toggle (service-level, not `firestore.rules`)
 - **SDK**: `firebase` npm package (installed; imported as ES modules); `firebase-admin` + `firebase-functions` in `functions/` package
 
 **Email / AWS** (ADR-015):
@@ -651,4 +651,5 @@ actually drift), then set the next "Last Updated"/"next review" dates at the top
 - 1.9.0 (2026-10-03): Team proposals and member requests (spec 009, ADR-013) — §II.5 lists the persistent `leagueTeams` and the member request collections; §VI.1 justifies `teamProposal`; §III.2 minors-as-dependents and requests-never-write-seasons notes; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~249 kB, under 1 kB headroom)
 - 1.11.0 (2026-10-04): AWS as the third platform, managed as code (ADR-015, spec 011) — §I.2 platform list (AWS limited to Route 53 + SES); §II.1 Infrastructure and Platform rows; §III.1 template lint; §III.2 no long-lived cross-cloud credentials, least-privilege IAM; §IV.1 Email/AWS, infrastructure-as-code, and tagging standards; §IV.2 infrastructure anti-patterns; §IV.3 platform list; §VI.1 SES budget alert; §VIII.1 quarterly drift detection
 - 1.12.0 (2026-10-06): Email notifications (spec 011) — §II.5 adds `notificationSettings`, `mail`, `notifications` and the queue-only email rule; §VI.1 justifies the six email functions; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~232 kB)
+- 1.12.1 (2026-10-10): §IV.1 App Check line states enforcement per product (Functions in code, Firestore via console), matching `.specs/technical/firebase-deployment.md`
 - 1.10.0 (2026-10-03): Coordinator review (spec 010, ADR-014) — §II.5 adds `captainChanges` and names `reviewRequest` as the request-to-season path; §VI.1 justifies `reviewRequest` and `captainHandoff`; §II.1 inventory and test counts recounted; §III.4 JS figure re-measured (~231 kB after lazy-loading the admin panel)

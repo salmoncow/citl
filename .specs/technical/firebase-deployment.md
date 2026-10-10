@@ -287,7 +287,9 @@ defense. The actual security boundaries for citl are:
 - **API target restrictions** on the key (Firestore, Identity Toolkit, App
   Check — keep these tight as the real boundary)
 - **Firestore security rules** + custom-claim RBAC (`role: owner | admin | user`)
-- **App Check** with reCAPTCHA Enterprise (configured but not yet enforced)
+- **App Check** with reCAPTCHA Enterprise — enforced on Cloud Functions callables in
+  code (`enforceAppCheck: !isEmulator`) and on Firestore via the Firebase Console
+  (App Check → APIs → Cloud Firestore → Enforce)
 - **Cloud Functions** in-body `req.auth.token.role` checks
 
 See `security-principles` skill section "Soft controls vs real boundaries"

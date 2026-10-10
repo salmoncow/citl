@@ -235,7 +235,7 @@ ecosystem with its last-checked time, and surfaces schema errors there.
 | Total pipeline time | <3 minutes |
 | Concurrent PR previews | Up to 10 |
 
-GitHub Actions free tier provides 2,000 minutes/month — well within budget for infrequent deploys.
+`salmoncow/citl` is a public repository, so GitHub Actions on standard GitHub-hosted runners is free and unmetered (the 2,000 minutes/month free-tier quota applies only to private repositories).
 
 ---
 
