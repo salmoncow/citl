@@ -240,7 +240,7 @@ Firebase console → Authentication → Sign-in method. Record the date each ste
 
 | Provider | Setup | Status |
 |----------|-------|--------|
-| Google | Already enabled. Add `https://citl.club/privacy` as the privacy/terms URL on the Google OAuth consent screen. | Enabled; consent-screen URL: _pending_ |
+| Google | Already enabled. Add `https://citl.club/privacy` as the privacy/terms URL on the Google OAuth consent screen. | Enabled; consent-screen URL set (confirmed 2026-10-10) |
 | Email link | Enable Email/Password with **Email link (passwordless sign-in)**. Keep **email enumeration protection on** (the client never calls `fetchSignInMethodsForEmail`). Optional: custom sender domain (DNS verification for `citl.club`, records in Route 53). | Enabled 2026-10-01; enumeration protection: _confirm_ |
 | Microsoft | Not enabled (owner decision 2026-10-02). | — |
 | Apple | Not enabled (owner decision 2026-10-01: $99/yr developer fee is outside budget). | — |
@@ -266,7 +266,9 @@ buttons render. Enable a provider in the console before adding it to the list.
 
 **CSP**: no change. The auth iframe and handler run on the site's own domain (`'self'`;
 `*.firebaseapp.com` stays in `frame-src` for the default auth domain),
-callables on `*.run.app` / `*.cloudfunctions.net` (`connect-src`); no provider avatars are
+callables on `*.run.app` / `*.cloudfunctions.net` (`connect-src`). `connect-src` also allows
+`https://apis.google.com`: the popup helper (gapi, already trusted in `script-src`) pings
+`apis.google.com/js/gen_204`, a CSP violation on every Google sign-in until 2026-10-10. No provider avatars are
 rendered. Verify on preview (spec 008 task 11.5).
 
 ---
@@ -431,7 +433,7 @@ URL access and refresh.
 All routes receive these headers (configured in `firebase.json`):
 
 ```
-X-Frame-Options: DENY
+X-Frame-Options: SAMEORIGIN
 X-Content-Type-Options: nosniff
 Strict-Transport-Security: max-age=31536000; includeSubDomains
 Referrer-Policy: strict-origin-when-cross-origin
