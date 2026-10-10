@@ -38,6 +38,14 @@ export const KIND_LABEL: Record<TicketKind, string> = {
   handoff: 'Handoff',
 };
 
+/** What an "Open …" link in the dialog calls a ticket; with the requester, tickets for one team differ. */
+const KIND_NOUN: Record<TicketKind, string> = {
+  proposal: 'team proposal',
+  registration: 'join request',
+  link: 'name link',
+  handoff: 'captain handoff',
+};
+
 const FILTER_LABEL: Record<QueueFilter, string> = {
   all: 'All',
   proposal: 'Team proposals',
@@ -234,11 +242,13 @@ export function ticketList(tickets: readonly Ticket[], deps: ReadonlyMap<string,
 }
 
 /** Dialog content: header, body (order notes first), and footer actions. */
-export function ticketDialogContent(t: Ticket, dep: Dependency | undefined, titleOf: (key: string) => string | null): string {
+export function ticketDialogContent(t: Ticket, dep: Dependency | undefined, ticketOf: (key: string) => Ticket | undefined): string {
   const notes = (dep?.notes ?? []).map((n) => {
     const links = n.open.flatMap((k) => {
-      const title = titleOf(k);
-      return title ? [`<button type="button" class="req-open" data-open="${k}">Open ${escapeHtml(title)}</button>`] : [];
+      const target = ticketOf(k);
+      return target
+        ? [`<button type="button" class="req-open" data-open="${k}">Open ${KIND_NOUN[target.kind]}: ${escapeHtml(target.title)}, from ${escapeHtml(target.requester)}</button>`]
+        : [];
     }).join('');
     return `<div class="req-warning req-order" role="note">${escapeHtml(n.text)}${links ? `<span class="req-order__links">${links}</span>` : ''}</div>`;
   }).join('');

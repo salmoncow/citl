@@ -149,8 +149,10 @@ export class LeagueReviewService {
       }));
       const member = (uid: string): QueueMember => members.get(uid) ?? { uid, name: 'Unknown member', email: null, active: false };
 
+      // Only proposals claiming a team compete; a captain's roster change doesn't.
+      const claims = (p: TeamProposal) => p.purpose !== 'change';
       const byTeam = new Map<string, number>();
-      for (const p of proposals) byTeam.set(proposalTeamId(p), (byTeam.get(proposalTeamId(p)) ?? 0) + 1);
+      for (const p of proposals.filter(claims)) byTeam.set(proposalTeamId(p), (byTeam.get(proposalTeamId(p)) ?? 0) + 1);
 
       const regItems = await Promise.all(registrations.map(async (r): Promise<RegistrationItem> => {
         const [dependents, linked] = await Promise.all([
@@ -171,7 +173,7 @@ export class LeagueReviewService {
           proposal: p,
           member: member(p.captainUid),
           teamId: proposalTeamId(p),
-          competing: (byTeam.get(proposalTeamId(p)) ?? 1) - 1,
+          competing: claims(p) ? (byTeam.get(proposalTeamId(p)) ?? 1) - 1 : 0,
         })),
         registrations: regItems.sort((a, b) => oldestFirst(a.registration, b.registration)),
         links: [...links].sort(oldestFirst).map(({ id, ...request }) => ({ uid: id, request, member: member(id) })),

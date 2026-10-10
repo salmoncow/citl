@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ReviewQueue } from '@/services/league-review-service';
 import type { Ticket } from './request-cards';
-import { filterChips, relativeAge, sortTickets, ticketDependencies, ticketList, ticketRow, type Dependency } from './request-list';
+import { filterChips, relativeAge, sortTickets, ticketDependencies, ticketDialogContent, ticketList, ticketRow, type Dependency } from './request-list';
 
 const NOW = new Date('2026-10-10T12:00:00Z');
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000);
@@ -135,5 +135,18 @@ describe('filters', () => {
     const html = ticketList(tickets, new Map(), 'registration', NOW);
     expect(html.match(/<li hidden>/g)).toHaveLength(1);
     expect(ticketList(tickets, new Map(), 'handoff', NOW)).toContain('No handoffs waiting.');
+  });
+});
+
+describe('ticketDialogContent', () => {
+  it('names the kind of each ticket an order note opens, so same-titled tickets differ', () => {
+    const handoff = ticket('h0', null, { kind: 'handoff', title: 'Eagles', requester: 'Greg <L>' });
+    const html = ticketDialogContent(
+      ticket('p0', null, { title: 'Eagles' }),
+      { pills: [], notes: [{ text: 'Decide first.', open: ['h0', 'gone'] }], blockedBy: [] },
+      (k) => (k === 'h0' ? handoff : undefined),
+    );
+    expect(html).toContain('data-open="h0">Open captain handoff: Eagles, from Greg &lt;L&gt;</button>');
+    expect(html).not.toContain('data-open="gone"');
   });
 });

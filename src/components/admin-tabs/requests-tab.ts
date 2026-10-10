@@ -63,6 +63,20 @@ async function teamsOf(year: number): Promise<Team[]> {
   return res.success ? res.data : [];
 }
 
+/**
+ * A league team's name: from the season's teams, else the two seasons
+ * before (cached reads the proposal comparisons share), else its id.
+ */
+async function teamName(id: string, year: number, seasonTeams: readonly Team[]): Promise<string> {
+  const found = seasonTeams.find((t) => t.id === id);
+  if (found) return found.name;
+  for (const y of [year - 1, year - 2]) {
+    const prior = (await teamsOf(y)).find((t) => t.id === id);
+    if (prior) return prior.name;
+  }
+  return id;
+}
+
 async function defaultsFor(year: number, names: readonly string[]): Promise<Defaults> {
   const pairs = await Promise.all(names.map(async (name) => {
     const res = await scoreService.computeShooterDefaults(year, name);
@@ -207,8 +221,8 @@ export class RequestsTab implements AdminTab {
     if (!dialog || !ticket || this._busy) return;
     // Reopening the same ticket keeps what was typed until the next reload.
     if (this._dialogKey !== key) {
-      const titleOf = (k: string) => this._tickets.find((t) => t.key === k)?.title ?? null;
-      dialog.innerHTML = ticketDialogContent(ticket, this._deps.get(key), titleOf);
+      const ticketOf = (k: string) => this._tickets.find((t) => t.key === k);
+      dialog.innerHTML = ticketDialogContent(ticket, this._deps.get(key), ticketOf);
       this._dialogKey = key;
       dialog.querySelector('.req-dialog__body')?.scrollTo?.(0, 0);
     }
@@ -257,9 +271,7 @@ export class RequestsTab implements AdminTab {
     const r = item.registration;
     const names = getLeagueReviewService().placementNames(item);
     const [teams, defaults] = await Promise.all([teamsOf(r.year), defaultsFor(r.year, names)]);
-    const preferred = r.preferredLeagueTeamId
-      ? teams.find((t) => t.id === r.preferredLeagueTeamId)?.name ?? r.preferredLeagueTeamId
-      : null;
+    const preferred = r.preferredLeagueTeamId ? await teamName(r.preferredLeagueTeamId, r.year, teams) : null;
     this._requests.set(key, (act, card) => {
       if (act === 'decline') return { type: 'registration', id: r.id, action: 'decline', note: readNote(card) };
       const teamId = card.querySelector<HTMLSelectElement>('[data-team]')?.value ?? '';
