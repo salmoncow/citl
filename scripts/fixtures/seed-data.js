@@ -280,6 +280,18 @@ export const TEST_USERS = [
   // the /account reactivation panel.
   { uid: 'seed-deactivated', email: 'deactivated@citl.test', displayName: 'Seed Deactivated', role: 'user',
     status: 'deactivated', profile: { firstName: 'Seed', lastName: 'Deactivated', displayName: 'Seed Deactivated' } },
+  // Spec 010: members whose requests exercise the Requests queue's order
+  // dependencies (see seedLeagueRequests in seed-emulator.js).
+  { uid: 'seed-captain', email: 'captain@citl.test', displayName: 'Greg Litchfield', role: 'user',
+    profile: { firstName: 'Greg', lastName: 'Litchfield', displayName: 'Greg Litchfield' } },
+  { uid: 'seed-nominee', email: 'nominee@citl.test', displayName: 'Pete Sandoval', role: 'user',
+    profile: { firstName: 'Pete', lastName: 'Sandoval', displayName: 'Pete Sandoval' } },
+  { uid: 'seed-rival', email: 'rival@citl.test', displayName: 'Carl Webb', role: 'user',
+    profile: { firstName: 'Carl', lastName: 'Webb', displayName: 'Carl Webb' } },
+  { uid: 'seed-hawk', email: 'hawk@citl.test', displayName: 'Sam Rivera', role: 'user',
+    profile: { firstName: 'Sam', lastName: 'Rivera', displayName: 'Sam Rivera' } },
+  { uid: 'seed-family', email: 'family@citl.test', displayName: 'Jim Ortega', role: 'user',
+    profile: { firstName: 'Jim', lastName: 'Ortega', displayName: 'Jim Ortega' } },
 ];
 
 /**

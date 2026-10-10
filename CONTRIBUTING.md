@@ -27,7 +27,7 @@ automatically (via `ensure:functions`) so the emulated `onUserCreate`/`setUserRo
 functions work on a fresh checkout — no manual `npm --prefix functions` step needed.
 
 To get a realistic dataset (2024 season in progress + 2025 season complete, four
-teams, five test accounts, sample league requests) running on the local emulator:
+teams, ten test accounts, a queue of 2026 league requests) running on the local emulator:
 
 ```bash
 npm run dev:seeded        # one-shot: boot emulators, seed, start Vite
@@ -42,9 +42,9 @@ npm run dev               # terminal 3 — Vite against the seeded emulators
 ```
 
 The seed script is idempotent — re-running it clears the seeded collections
-(`users`, `profiles`, `audit`, `announcements`, `config`, `seasons`, and the spec 009
-`leagueTeams`, `teamProposals`, `registrations`, `shooterLinkRequests`, `shooterLinks`)
-plus the five `*@citl.test` auth users, then rewrites them. Any other Auth user (e.g. a
+(`users`, `profiles`, `audit`, `announcements`, `config`, `seasons`, and the spec 009/010
+`leagueTeams`, `teamProposals`, `registrations`, `shooterLinkRequests`, `shooterLinks`,
+`captainChanges`) plus the ten `*@citl.test` auth users, then rewrites them. Any other Auth user (e.g. a
 fake-Google account you signed in with) gets its `users/{uid}` mirror written
 back with its existing role, and goes through profile setup again on next
 sign-in. Other emulator state (e.g.
@@ -59,6 +59,28 @@ Test sign-in (emulator accepts any password):
 | admin | admin@citl.test    |
 | user  | user@citl.test     |
 | user  | member@citl.test   |
+| user  | deactivated@citl.test (deactivated) |
+| user  | captain@citl.test (Eagles captain) |
+| user  | nominee@citl.test  |
+| user  | rival@citl.test    |
+| user  | hawk@citl.test     |
+| user  | family@citl.test   |
+
+### Seeded league requests (2026)
+
+The admin **Requests** tab gets ten requests that show every order dependency the
+queue flags (`src/components/admin-tabs/request-list.ts`). Eagles has a 2026 team doc
+and a captain; the `seasons/2026` doc itself is not written, so the public site
+doesn't list 2026.
+
+| Request | Shows |
+| ------- | ----- |
+| Hawks proposals from user@ and hawk@ | Competing proposals, no captain yet |
+| Eagles roster change from captain@ | Decide before the handoff; drops Walt Keller, who is already on the 2026 team |
+| Eagles handoff captain@ → nominee@ | Waits on the roster change |
+| Eagles proposal from rival@ | Team already decided (reject); waits on rival@'s name link |
+| Name links from rival@, member@, deactivated@ | No exact match, exact match, no match + inactive account |
+| Join requests from member@ and family@ (two dependents) | Wait on the 2026 proposals; member@ also waits on its name link |
 
 Other subcommands:
 
