@@ -378,3 +378,24 @@ Ordered groups (one commit each) are in [tasks.md](./tasks.md):
 - **M4 (spec 011)**: status emails for every decision and nomination.
 - **Later**: merging two league teams (a rename between seasons) in the UI; unlinking a
   scorecard name; registered users as the roster.
+
+## Revision — Ticket-style queue (2026-10)
+
+The Requests tab now shows a compact queue in place of stacked, fully expanded cards:
+
+- **Queue view**: one row per request (type badge, subject, requester, season, age, flags),
+  with filter chips by kind. A row opens the request in a modal `<dialog>` holding the card
+  content from AC-2 – AC-4 and its actions. After a decision the dialog closes, the queue reloads,
+  and focus moves to the next row.
+- **Captains view**: the AC-4 captains table, behind a Queue | Captains toggle.
+- **Order dependencies** (`request-list.ts`, advisory; the callable still refuses the hard
+  failures). A decision reads current state, so the queue sorts a request after the requests it
+  waits on, and flags it on the row and in the dialog:
+  - a member's pending scorecard-name link goes before their join request or proposal (the
+    roster name comes from the link);
+  - a season's team proposals go before join requests for that season (approval replaces the
+    team's roster);
+  - a proposal for a team that already has a different captain can only be rejected (DD-8);
+  - a captain's roster change goes before a handoff on the same team.
+- AC-2 comparison: shooters on the current season's team doc but missing from the proposal are
+  now listed as Dropped (approval removes them), with a warning above the table.

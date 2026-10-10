@@ -1,13 +1,176 @@
 /* ============================================================
-   Admin Requests tab (spec 010): review queue cards.
+   Admin Requests tab (spec 010): ticket queue + ticket dialog.
    Imported by the lazily-loaded requests tab, so it ships in
    that chunk. Colours come from tokens.css only.
    ============================================================ */
 
-.req-card { display: grid; gap: var(--space-3); }
-.req-card .ann-admin-card__header,
-.req-card .admin-table-wrapper { margin-bottom: 0; }
-.req-card[aria-busy="true"] { opacity: 0.6; }
+/* ── Toolbar, filters ─────────────────────────────────────── */
+.req-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.req-filters { margin: var(--space-3) 0; }
+.req-chip__count { margin-left: var(--space-1); font-variant-numeric: tabular-nums; opacity: 0.75; }
+.req-empty { display: block; padding: var(--space-4) 0; font-size: var(--text-sm); }
+
+/* ── Ticket list ──────────────────────────────────────────── */
+.req-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-card);
+  overflow: hidden;
+}
+.req-list > li + li { border-top: 1px solid var(--c-border); }
+
+.req-row {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) minmax(0, 11rem) 3.5rem 4.5rem;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--c-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.req-row:hover { background: var(--c-table-hover); }
+.req-row:focus-visible { outline: 2px solid var(--c-focus); outline-offset: -2px; }
+
+.req-row__main { display: grid; gap: 2px; min-width: 0; }
+.req-row__title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.req-row__sub,
+.req-row__who,
+.req-row__season,
+.req-row__age { font-size: var(--text-sm); color: var(--c-text-muted); }
+.req-row__sub,
+.req-row__who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.req-row__season,
+.req-row__age { font-variant-numeric: tabular-nums; text-align: right; }
+.req-row__pills { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+
+.req-badge {
+  justify-self: start;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.req-badge--proposal { background: var(--c-brand-tint); color: var(--c-brand-text); }
+.req-badge--registration { background: var(--c-status-success-bg); color: var(--c-status-success); }
+.req-badge--link { background: var(--c-status-info-bg); color: var(--c-status-info); }
+.req-badge--handoff { background: var(--c-accent-tint); color: var(--c-accent-text); }
+
+.req-pill {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--c-border-strong);
+  font-size: var(--text-xs);
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+.req-pill--order { border-color: var(--c-warning-border); background: var(--c-warning-bg); color: var(--c-text); }
+
+@media screen and (max-width: 639px) {
+  .req-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "badge main age" "badge who season";
+    row-gap: var(--space-1);
+    align-items: start;
+  }
+  .req-row .req-badge { grid-area: badge; }
+  .req-row__main { grid-area: main; }
+  .req-row__who { grid-area: who; }
+  .req-row__season { grid-area: season; }
+  .req-row__age { grid-area: age; }
+}
+
+/* ── Ticket dialog ────────────────────────────────────────── */
+.req-dialog {
+  width: min(860px, 94vw);
+  max-width: none;
+  max-height: 90vh;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  background: var(--c-bg);
+  color: var(--c-text);
+  overflow: hidden;
+}
+.req-dialog[open] { display: flex; flex-direction: column; }
+.req-dialog::backdrop { background: var(--c-scrim); }
+
+.req-dialog__card { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.req-dialog__card[aria-busy="true"] .req-dialog__body,
+.req-dialog__card[aria-busy="true"] .req-dialog__footer { opacity: 0.6; }
+
+.req-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--c-border);
+}
+.req-dialog__heading { display: grid; gap: var(--space-1); min-width: 0; }
+.req-dialog__title { margin: 0; font-size: var(--text-xl); color: var(--c-heading); overflow-wrap: anywhere; }
+.req-dialog__meta { margin: 0; font-size: var(--text-sm); color: var(--c-text-muted); }
+
+.req-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+.req-dialog__body > * { flex-shrink: 0; }
+.req-dialog__body .admin-table-wrapper,
+.req-dialog__body .ann-editor__field { margin-bottom: 0; }
+
+.req-dialog__footer {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+.req-dialog__footer .req-card__actions { margin: 0; justify-content: flex-end; }
+
+.req-warning.req-order {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--c-warning-border);
+  background: var(--c-warning-bg);
+  color: var(--c-text);
+}
+.req-order__links { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.req-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-link);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.req-open:hover { color: var(--c-link-hover); }
+.req-open:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; }
+
+@media screen and (max-width: 639px) {
+  .req-dialog { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  .req-dialog__header,
+  .req-dialog__body,
+  .req-dialog__footer { padding-left: var(--space-4); padding-right: var(--space-4); }
+}
 
 .req-line { margin: 0; font-size: var(--text-sm); }
 .req-muted { color: var(--c-text-muted); font-size: var(--text-xs); }
@@ -20,17 +183,6 @@
   font-size: var(--text-sm);
   color: var(--c-status-error);
   background: var(--c-status-error-bg);
-}
-
-.req-count {
-  display: inline-block;
-  min-width: 1.5em;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--c-brand-tint);
-  color: var(--c-brand-text);
-  font-size: var(--text-sm);
-  text-align: center;
 }
 
 .req-table { overflow-x: auto; }

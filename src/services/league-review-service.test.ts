@@ -25,6 +25,15 @@ describe('compareRoster', () => {
     ]);
   });
 
+  it('lists shooters on this season’s team but not in the proposal as dropped', () => {
+    const rows = compareRoster(['Pat Captain'], [shooter('Gone Guy')], [shooter('Placed Member', 31), shooter('gone guy', 38)]);
+    expect(rows.map((r) => [r.name, r.status, r.stored?.startingAvg ?? null])).toEqual([
+      ['Pat Captain', 'new', null],
+      ['Gone Guy', 'dropped', 38],
+      ['Placed Member', 'dropped', 31],
+    ]);
+  });
+
   it('treats everyone as new when there is no last season', () => {
     expect(compareRoster(['A B'], null, null)).toEqual([{ name: 'A B', status: 'new', stored: null }]);
   });

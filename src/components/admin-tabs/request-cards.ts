@@ -1,9 +1,11 @@
 /**
- * HTML builders for the admin Requests tab (spec 010 AC-1 – AC-4).
+ * Ticket builders for the admin Requests tab (spec 010 AC-1 – AC-4).
  *
  * Pure string factories: every user value goes through escapeHtml().
- * Each card is a <section data-card="{key}"> whose buttons carry
- * data-act; requests-tab.ts wires them and reads the inputs back with
+ * Each request becomes a Ticket: the row summary for the queue list
+ * (request-list.ts) plus the detail body and action buttons shown in the
+ * ticket dialog. The dialog wraps them in <div data-card="{key}">; the
+ * buttons carry data-act, and requests-tab.ts reads the inputs back with
  * readSettings() and readNote().
  */
 
@@ -24,12 +26,37 @@ export const NOTE_MAX = 500;
 /** Prefilled starting average and rookie flag, by shooter name. */
 export type Defaults = ReadonlyMap<string, { startingAvg: number; rookie: boolean }>;
 
+export type TicketKind = 'proposal' | 'registration' | 'link' | 'handoff';
+
+/** One request in the queue: what its row shows and what its dialog holds. */
+export interface Ticket {
+  key: string;
+  kind: TicketKind;
+  title: string;
+  subtitle: string;
+  requester: string;
+  season: number | null;
+  date: Date | null;
+  /** Short plain-text flags shown as pills on the row. */
+  flags: string[];
+  /** Dialog meta line under the title (plain text). */
+  meta: string;
+  /** Dialog body markup. */
+  body: string;
+  /** Dialog footer markup: the error box and the action buttons. */
+  actions: string;
+}
+
 let seq = 0;
 const uid = (prefix: string) => `${prefix}-${++seq}`;
 
 function when(ts: { toDate(): Date } | null | undefined): string {
   return ts ? ts.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
 }
+
+const dateOf = (ts: { toDate(): Date } | null | undefined): Date | null => (ts ? ts.toDate() : null);
+
+const inactiveFlag = (m: QueueMember): string[] => (m.active ? [] : ['Account inactive']);
 
 function memberLine(m: QueueMember): string {
   const email = m.email ? ` (${escapeHtml(m.email)})` : '';
@@ -74,16 +101,16 @@ const STATUS_TEXT: Record<RosterRow['status'], string> = {
   dropped: 'Dropped',
 };
 
-export function proposalCard(key: string, item: ProposalItem, rows: readonly RosterRow[], lastYear: number | null, d: Defaults): string {
+export function proposalTicket(key: string, item: ProposalItem, rows: readonly RosterRow[], lastYear: number | null, d: Defaults): Ticket {
   const p = item.proposal;
   const kind = p.purpose === 'change' ? 'Roster change' : p.teamSource === 'returning' ? 'Returning team' : 'New team';
   const entry = new Map(p.shooters.map((s) => [s.name, s]));
-  const headingId = uid('req-h');
   const body = rows.map((r) => {
     const e = entry.get(r.name);
     const minor = e?.minor ? `<span class="req-muted">Under 18${e.guardianName ? `, guardian ${escapeHtml(e.guardianName)}` : ''}</span>` : '';
     if (r.status === 'dropped') {
-      return `<tr class="req-row--dropped"><td>${escapeHtml(r.name)}</td><td>${STATUS_TEXT[r.status]}</td><td></td><td></td><td></td></tr>`;
+      const onTeam = r.stored ? ` <span class="req-muted">(on the ${p.year} team now)</span>` : '';
+      return `<tr class="req-row--dropped"><td>${escapeHtml(r.name)}</td><td>${STATUS_TEXT[r.status]}${onTeam}</td><td></td><td></td><td></td></tr>`;
     }
     return `<tr>
       <td>${escapeHtml(r.name)}${e?.kind === 'self' ? ' <span class="req-muted">(captain)</span>' : ''} ${minor}</td>
@@ -95,14 +122,24 @@ export function proposalCard(key: string, item: ProposalItem, rows: readonly Ros
   const competing = item.competing > 0
     ? `<p class="req-warning">${item.competing} other proposal${item.competing === 1 ? '' : 's'} for this team. Approving one sets the captain; reject the others with a note.</p>`
     : '';
-  return `
-    <section class="ann-admin-card req-card" data-card="${key}" aria-labelledby="${headingId}">
-      <div class="ann-admin-card__header">
-        <h4 id="${headingId}" class="ann-admin-card__title">${escapeHtml(p.teamName)}</h4>
-        <span class="ann-admin-card__meta">${p.year} · ${kind} · Submitted ${when(p.submittedAt)}</span>
-      </div>
+  const droppedNow = rows.filter((r) => r.status === 'dropped' && r.stored).length;
+  const removes = droppedNow
+    ? `<p class="req-warning">Approving removes ${droppedNow} shooter${droppedNow === 1 ? '' : 's'} already on the ${p.year} team (marked below).</p>`
+    : '';
+  return {
+    key,
+    kind: 'proposal',
+    title: p.teamName,
+    subtitle: `${kind} · ${p.shooters.length} shooter${p.shooters.length === 1 ? '' : 's'}`,
+    requester: item.member.name,
+    season: p.year,
+    date: dateOf(p.submittedAt),
+    flags: [...(item.competing > 0 ? ['Competing'] : []), ...(droppedNow ? ['Removes shooters'] : []), ...inactiveFlag(item.member)],
+    meta: `${p.year} · ${kind} · Submitted ${when(p.submittedAt)}`,
+    body: `
       <p class="req-line">Captain: ${memberLine(item.member)}</p>
       ${competing}
+      ${removes}
       <div class="admin-table-wrapper req-table">
         <table class="admin-roster-table">
           <caption class="visually-hidden">Roster for ${escapeHtml(p.teamName)}${lastYear ? `, compared with ${lastYear}` : ''}</caption>
@@ -111,14 +148,13 @@ export function proposalCard(key: string, item: ProposalItem, rows: readonly Ros
           <tbody>${body}</tbody>
         </table>
       </div>
-      ${noteField('Note to the captain (required to request changes)')}
-      ${actions(p.teamName, [['approve', 'Approve', 'btn-primary'], ['request-changes', 'Request changes', 'btn-secondary'], ['reject', 'Reject', 'btn-danger']])}
-    </section>`;
+      ${noteField('Note to the captain (required to request changes)')}`,
+    actions: actions(p.teamName, [['approve', 'Approve', 'btn-primary'], ['request-changes', 'Request changes', 'btn-secondary'], ['reject', 'Reject', 'btn-danger']]),
+  };
 }
 
-export function registrationCard(key: string, item: RegistrationItem, names: readonly string[], teams: readonly Team[], preferred: string | null, d: Defaults): string {
+export function registrationTicket(key: string, item: RegistrationItem, names: readonly string[], teams: readonly Team[], preferred: string | null, d: Defaults): Ticket {
   const r = item.registration;
-  const headingId = uid('req-h');
   const selectId = uid('req-team');
   const options = teams.map((t) =>
     `<option value="${escapeHtml(t.id)}" ${t.id === r.preferredLeagueTeamId ? 'selected' : ''}>${escapeHtml(t.name)} (${t.shooters.length})</option>`).join('');
@@ -132,16 +168,21 @@ export function registrationCard(key: string, item: RegistrationItem, names: rea
         <select id="${selectId}" data-team><option value="">Choose a team…</option>${options}</select>
       </div>`
     : `<p class="req-warning">No ${r.year} teams yet. Add the team in Team Management first, or decline.</p>`;
-  return `
-    <section class="ann-admin-card req-card" data-card="${key}" aria-labelledby="${headingId}">
-      <div class="ann-admin-card__header">
-        <h4 id="${headingId}" class="ann-admin-card__title">${escapeHtml(item.member.name)}</h4>
-        <span class="ann-admin-card__meta">${r.year} · Join request · Sent ${when(r.createdAt)}</span>
-      </div>
+  const extra = names.length - 1;
+  return {
+    key,
+    kind: 'registration',
+    title: item.member.name,
+    subtitle: `Join request${extra > 0 ? ` · +${extra} under 18` : ''} · ${preferred ? `Prefers ${preferred}` : 'No preference'}`,
+    requester: item.member.name,
+    season: r.year,
+    date: dateOf(r.createdAt),
+    flags: [...(teams.length ? [] : ['No teams yet']), ...inactiveFlag(item.member)],
+    meta: `${r.year} · Join request · Sent ${when(r.createdAt)}`,
+    body: `
       <p class="req-line">Member: ${memberLine(item.member)}</p>
       <p class="req-line">Preferred team: ${preferred ? escapeHtml(preferred) : 'No preference'}</p>
       ${r.note ? `<p class="req-line">Their note: ${escapeHtml(r.note)}</p>` : ''}
-      ${item.pendingLinkName ? `<p class="req-warning">Scorecard name link waiting: “${escapeHtml(item.pendingLinkName)}”. Review it first, or they are placed as ${escapeHtml(item.selfName)}.</p>` : ''}
       ${teamField}
       <div class="admin-table-wrapper req-table">
         <table class="admin-roster-table">
@@ -150,18 +191,17 @@ export function registrationCard(key: string, item: RegistrationItem, names: rea
           <tbody>${rows}</tbody>
         </table>
       </div>
-      ${noteField('Note to the member')}
-      ${actions(item.member.name, [['place', 'Place on team', 'btn-primary'], ['decline', 'Decline', 'btn-danger']])}
-    </section>`;
+      ${noteField('Note to the member')}`,
+    actions: actions(item.member.name, [['place', 'Place on team', 'btn-primary'], ['decline', 'Decline', 'btn-danger']]),
+  };
 }
 
 /**
- * Link card (AC-11): the coordinator picks one real scorecard name. The
+ * Link ticket (AC-11): the coordinator picks one real scorecard name. The
  * exact match is preselected; close matches cover misspellings. With no
  * candidate the only action is Decline.
  */
-export function linkCard(key: string, item: LinkItem, matches: readonly DirectoryEntry[], exact: DirectoryEntry | null): string {
-  const headingId = uid('req-h');
+export function linkTicket(key: string, item: LinkItem, matches: readonly DirectoryEntry[], exact: DirectoryEntry | null): Ticket {
   const groupName = uid('req-link');
   const requested = escapeHtml(item.request.shooterName);
   const choices = matches.map((m) => `
@@ -179,32 +219,42 @@ export function linkCard(key: string, item: LinkItem, matches: readonly Director
   const buttons: [string, string, string][] = matches.length
     ? [['approve', 'Approve link', 'btn-primary'], ['decline', 'Decline', 'btn-danger']]
     : [['decline', 'Decline', 'btn-danger']];
-  return `
-    <section class="ann-admin-card req-card" data-card="${key}" aria-labelledby="${headingId}">
-      <div class="ann-admin-card__header">
-        <h4 id="${headingId}" class="ann-admin-card__title">${requested}</h4>
-        <span class="ann-admin-card__meta">Scorecard name · Sent ${when(item.request.createdAt)}</span>
-      </div>
+  const match = exact ? [] : matches.length ? ['No exact match'] : ['No match'];
+  return {
+    key,
+    kind: 'link',
+    title: `“${item.request.shooterName}”`,
+    subtitle: exact ? 'Scorecard name · exact match' : `Scorecard name · ${matches.length} close match${matches.length === 1 ? '' : 'es'}`,
+    requester: item.member.name,
+    season: null,
+    date: dateOf(item.request.createdAt),
+    flags: [...match, ...inactiveFlag(item.member)],
+    meta: `Scorecard name · Sent ${when(item.request.createdAt)}`,
+    body: `
       <p class="req-line">Member: ${memberLine(item.member)}</p>
       ${item.request.note ? `<p class="req-line">Their note: ${escapeHtml(item.request.note)}</p>` : ''}
       ${picker}
-      ${noteField('Note to the member')}
-      ${actions(item.request.shooterName, buttons)}
-    </section>`;
+      ${noteField('Note to the member')}`,
+    actions: actions(item.request.shooterName, buttons),
+  };
 }
 
-export function handoffCard(key: string, c: CaptainChange): string {
-  const headingId = uid('req-h');
-  return `
-    <section class="ann-admin-card req-card" data-card="${key}" aria-labelledby="${headingId}">
-      <div class="ann-admin-card__header">
-        <h4 id="${headingId}" class="ann-admin-card__title">${escapeHtml(c.teamName)}</h4>
-        <span class="ann-admin-card__meta">Captain handoff · Accepted by the nominee</span>
-      </div>
+export function handoffTicket(key: string, c: CaptainChange): Ticket {
+  return {
+    key,
+    kind: 'handoff',
+    title: c.teamName,
+    subtitle: `Captain handoff · ${c.fromName} → ${c.toName}`,
+    requester: c.fromName,
+    season: null,
+    date: dateOf(c.createdAt),
+    flags: [],
+    meta: 'Captain handoff · Accepted by the nominee',
+    body: `
       <p class="req-line">From ${escapeHtml(c.fromName)} to ${escapeHtml(c.toName)}</p>
-      ${noteField('Note')}
-      ${actions(c.teamName, [['approve', 'Approve handoff', 'btn-primary'], ['decline', 'Decline', 'btn-danger']])}
-    </section>`;
+      ${noteField('Note')}`,
+    actions: actions(c.teamName, [['approve', 'Approve handoff', 'btn-primary'], ['decline', 'Decline', 'btn-danger']]),
+  };
 }
 
 export function captainsTable(rows: readonly { team: LeagueTeam; captain: QueueMember }[]): string {

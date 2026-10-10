@@ -82,7 +82,9 @@ export function proposalTeamId(p: Pick<TeamProposal, 'leagueTeamId' | 'teamName'
 
 /**
  * Compare a proposed roster with the team's last season (returning, new,
- * dropped) and attach any record already on this season's team doc.
+ * dropped) and attach any record already on this season's team doc. A
+ * shooter on this season's team doc but not in the proposal is dropped,
+ * with `stored` set.
  */
 export function compareRoster(
   names: readonly string[],
@@ -96,10 +98,17 @@ export function compareRoster(
     const key = normalizeShooterName(name);
     return { name, status: last.has(key) ? 'returning' : 'new', stored: stored.get(key) ?? null };
   });
+  // Approval replaces this season's roster, so anyone on it now but not
+  // in the proposal is dropped too, e.g. a member placed from a join request.
+  const dropped = new Map<string, RosterRow>();
   for (const s of lastSeason ?? []) {
-    if (!proposed.has(normalizeShooterName(s.name))) rows.push({ name: s.name, status: 'dropped', stored: null });
+    const key = normalizeShooterName(s.name);
+    if (!proposed.has(key)) dropped.set(key, { name: s.name, status: 'dropped', stored: stored.get(key) ?? null });
   }
-  return rows;
+  for (const [key, s] of stored) {
+    if (!proposed.has(key) && !dropped.has(key)) dropped.set(key, { name: s.name, status: 'dropped', stored: s });
+  }
+  return [...rows, ...dropped.values()];
 }
 
 function oldestFirst<T extends { createdAt?: { toMillis(): number } | null; submittedAt?: { toMillis(): number } | null }>(a: T, b: T): number {
