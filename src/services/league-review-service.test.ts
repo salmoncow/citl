@@ -25,6 +25,15 @@ describe('compareRoster', () => {
     ]);
   });
 
+  it('lists shooters on this season’s team but not in the proposal as dropped', () => {
+    const rows = compareRoster(['Pat Captain'], [shooter('Gone Guy')], [shooter('Placed Member', 31), shooter('gone guy', 38)]);
+    expect(rows.map((r) => [r.name, r.status, r.stored?.startingAvg ?? null])).toEqual([
+      ['Pat Captain', 'new', null],
+      ['Gone Guy', 'dropped', 38],
+      ['Placed Member', 'dropped', 31],
+    ]);
+  });
+
   it('treats everyone as new when there is no last season', () => {
     expect(compareRoster(['A B'], null, null)).toEqual([{ name: 'A B', status: 'new', stored: null }]);
   });
@@ -67,6 +76,18 @@ describe('LeagueReviewService.loadQueue', () => {
     expect(res.data.links[0]).toMatchObject({ uid: 'u4', member: { name: 'Name u4' } });
     expect(svc.placementNames(res.data.registrations[0]!)).toEqual(['Linked Name', 'Sam D.']);
     expect(res.data.captains[0]?.captain.name).toBe('Name u1');
+  });
+
+  it('does not count a captain’s roster change as competing', async () => {
+    const r = repo();
+    (r.listSubmittedProposals as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'p1', captainUid: 'u1', purpose: 'change', teamName: 'Crazy Guns', leagueTeamId: 'crazy-guns', submittedAt: ts(1), shooters: [] },
+      { id: 'p2', captainUid: 'u2', purpose: 'initial', teamName: 'Crazy Guns', leagueTeamId: 'crazy-guns', submittedAt: ts(2), shooters: [] },
+      { id: 'p3', captainUid: 'u3', purpose: 'initial', teamName: 'Crazy Guns', leagueTeamId: 'crazy-guns', submittedAt: ts(3), shooters: [] },
+    ]);
+    const res = await new LeagueReviewService(r, () => vi.fn() as never).loadQueue();
+    if (!res.success) throw new Error(res.error);
+    expect(res.data.proposals.map((p) => [p.proposal.id, p.competing])).toEqual([['p1', 0], ['p2', 1], ['p3', 1]]);
   });
 
   it('marks a join request whose member has a link request waiting (spec 012 AC-9)', async () => {

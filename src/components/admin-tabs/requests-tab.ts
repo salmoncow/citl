@@ -1,11 +1,14 @@
 /**
  * Requests tab — the coordinator's review queue (spec 010 F11 – F14).
  *
- * Loaded on first open (its own chunk, AC-1). Lists submitted team
- * proposals, join requests, scorecard-name links, and accepted captain
- * handoffs, oldest first, plus league teams with a captain (AC-4). Every
- * decision goes through LeagueReviewService.review (the reviewRequest
- * callable); the queue reloads after each one.
+ * Loaded on first open (its own chunk, AC-1). A ticket-style queue: one
+ * row per submitted team proposal, join request, scorecard-name link, and
+ * accepted captain handoff, oldest first with order dependencies applied
+ * (request-list.ts), filterable by kind. A row opens the ticket in a
+ * modal dialog where the coordinator decides it. A Captains view lists
+ * league teams with a captain (AC-4). Every decision goes through
+ * LeagueReviewService.review (the reviewRequest callable); the queue
+ * reloads after each one.
  *
  * Reads on open (AC-5): four status queries and the captained teams,
  * one profile + user read per member, then cached season team reads for
@@ -30,14 +33,27 @@ import type { Team } from '@/types/score';
 import { showConfirmDialog } from './admin-shared';
 import {
   captainsTable,
-  handoffCard,
-  linkCard,
-  proposalCard,
+  handoffTicket,
+  linkTicket,
+  proposalTicket,
   readNote,
   readSettings,
-  registrationCard,
+  registrationTicket,
   type Defaults,
+  type Ticket,
 } from './request-cards';
+import {
+  filterChips,
+  sortTickets,
+  ticketDependencies,
+  ticketDialogContent,
+  ticketKey,
+  ticketList,
+  viewToggle,
+  type Dependency,
+  type QueueFilter,
+  type QueueView,
+} from './request-list';
 import type { AdminTab, AdminTabContext } from './types';
 
 const { scoreService } = getServices();
@@ -45,6 +61,20 @@ const { scoreService } = getServices();
 async function teamsOf(year: number): Promise<Team[]> {
   const res = await scoreService.getTeams(year);
   return res.success ? res.data : [];
+}
+
+/**
+ * A league team's name: from the season's teams, else the two seasons
+ * before (cached reads the proposal comparisons share), else its id.
+ */
+async function teamName(id: string, year: number, seasonTeams: readonly Team[]): Promise<string> {
+  const found = seasonTeams.find((t) => t.id === id);
+  if (found) return found.name;
+  for (const y of [year - 1, year - 2]) {
+    const prior = (await teamsOf(y)).find((t) => t.id === id);
+    if (prior) return prior.name;
+  }
+  return id;
 }
 
 async function defaultsFor(year: number, names: readonly string[]): Promise<Defaults> {
@@ -56,19 +86,47 @@ async function defaultsFor(year: number, names: readonly string[]): Promise<Defa
 }
 
 export class RequestsTab implements AdminTab {
-  private _host: HTMLElement | null = null;
+  private _root: HTMLElement | null = null;
+  private _dialog: HTMLDialogElement | null = null;
   private _ctx: AdminTabContext | null = null;
   private _queue: ReviewQueue | null = null;
   private _busy = false;
   private _loadSeq = 0;
-  /** Request payload builders by card key, rebuilt on every render. */
+  private _view: QueueView = 'queue';
+  private _filter: QueueFilter = 'all';
+  /** Tickets in display order, and their order dependencies, from the last load. */
+  private _tickets: Ticket[] = [];
+  private _deps = new Map<string, Dependency>();
+  /** The ticket the dialog holds; null after a reload so it is rebuilt. */
+  private _dialogKey: string | null = null;
+  /** Set when a decision closes the dialog, so focus doesn't return to a removed row. */
+  private _decided = false;
+  /** Request payload builders by card key, rebuilt on every load. */
   private _requests = new Map<string, (act: string, card: HTMLElement) => ReviewRequest | string>();
 
   mount(host: HTMLElement, ctx: AdminTabContext): void {
-    this._host = host;
     this._ctx = ctx;
+    this._root = document.createElement('div');
+    const dialog = document.createElement('dialog');
+    dialog.className = 'req-dialog';
+    dialog.setAttribute('aria-labelledby', 'req-dialog-title');
+    this._dialog = dialog;
+    host.replaceChildren(this._root, dialog);
+
+    dialog.addEventListener('cancel', (e) => { if (this._busy) e.preventDefault(); });
+    dialog.addEventListener('close', () => this._onDialogClosed());
+    // Clicking the backdrop (the dialog element itself) closes it.
+    dialog.addEventListener('click', (e) => { if (e.target === dialog && !this._busy) dialog.close(); });
     host.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-act]');
+      const target = e.target as HTMLElement;
+      const open = target.closest<HTMLElement>('[data-open]');
+      if (open) { this._openTicket(open.dataset['open'] ?? ''); return; }
+      const filter = target.closest<HTMLElement>('[data-filter]');
+      if (filter) { this._setFilter(filter.dataset['filter'] as QueueFilter); return; }
+      const view = target.closest<HTMLElement>('[data-view]');
+      if (view) { this._setView(view.dataset['view'] as QueueView); return; }
+      if (target.closest('[data-close]')) { if (!this._busy) this._dialog?.close(); return; }
+      const btn = target.closest<HTMLButtonElement>('button[data-act]');
       const card = btn?.closest<HTMLElement>('[data-card]');
       if (btn && card) void this._act(card, btn.dataset['act'] ?? '');
     });
@@ -79,8 +137,8 @@ export class RequestsTab implements AdminTab {
   }
 
   private _renderLoading(): void {
-    if (!this._host) return;
-    this._host.innerHTML = `
+    if (!this._root) return;
+    this._root.innerHTML = `
       <div class="skeleton-group" aria-busy="true" aria-label="Loading requests">
         <span class="skeleton skeleton--lg"></span><span class="skeleton skeleton--md"></span>
       </div>`;
@@ -90,53 +148,102 @@ export class RequestsTab implements AdminTab {
     const seq = ++this._loadSeq;
     if (!this._queue) this._renderLoading();
     const res = await getLeagueReviewService().loadQueue();
-    if (seq !== this._loadSeq || !this._host) return;
+    if (seq !== this._loadSeq || !this._root) return;
     if (!res.success) {
-      this._host.innerHTML = `<p class="admin-status admin-status--error" role="alert">Couldn’t load requests. ${escapeHtml(res.error)}</p>`;
+      this._root.innerHTML = `<p class="admin-status admin-status--error" role="alert">Couldn’t load requests. ${escapeHtml(res.error)}</p>`;
       return;
     }
-    this._queue = res.data;
-    const html = await this._renderQueue(res.data);
+    const tickets = await this._buildTickets(res.data);
     if (seq !== this._loadSeq) return;
-    this._host.innerHTML = html;
+    this._queue = res.data;
+    this._deps = ticketDependencies(res.data);
+    this._tickets = sortTickets(tickets, this._deps);
+    this._dialogKey = null;
+    this._ctx?.setRequestCount(this._tickets.length);
+    this._render();
   }
 
-  private async _renderQueue(q: ReviewQueue): Promise<string> {
+  private async _buildTickets(q: ReviewQueue): Promise<Ticket[]> {
     this._requests.clear();
     const [proposals, registrations, links] = await Promise.all([
-      Promise.all(q.proposals.map((item, i) => this._proposal(`p${i}`, item))),
-      Promise.all(q.registrations.map((item, i) => this._registration(`r${i}`, item))),
+      Promise.all(q.proposals.map((item, i) => this._proposal(ticketKey.proposal(i), item))),
+      Promise.all(q.registrations.map((item, i) => this._registration(ticketKey.registration(i), item))),
       this._links(q),
     ]);
     const handoffs = q.handoffs.map((c, i) => {
-      const key = `h${i}`;
+      const key = ticketKey.handoff(i);
       this._requests.set(key, (act, card) => ({
         type: 'captain', leagueTeamId: c.leagueTeamId, action: act === 'approve' ? 'approve' : 'decline', note: readNote(card),
       }));
-      return handoffCard(key, c);
+      return handoffTicket(key, c);
     });
     for (const { team } of q.captains) {
       this._requests.set(`captain:${team.id}`, () => ({ type: 'captain', leagueTeamId: team.id, action: 'clear' }));
     }
-
-    const total = proposals.length + registrations.length + links.length + handoffs.length;
-    this._ctx?.setRequestCount(total);
-    const section = (title: string, cards: string[], empty: string) => `
-      <h3>${title}${cards.length ? ` <span class="req-count">${cards.length}</span>` : ''}</h3>
-      ${cards.length ? cards.join('') : `<p class="req-muted">${empty}</p>`}`;
-    return `
-      <p class="admin-publish-note" tabindex="-1" data-summary>${total ? `${total} request${total === 1 ? '' : 's'} waiting.` : 'Nothing is waiting for review.'}
-        Approving a team or placing a member updates that season’s roster right away.</p>
-      ${section('Team proposals', proposals, 'No team proposals waiting.')}
-      ${section('Join requests', registrations, 'No join requests waiting.')}
-      ${section('Scorecard names', links, 'No link requests waiting.')}
-      ${section('Captain handoffs', handoffs, 'No handoffs waiting.')}
-      <hr class="admin-divider">
-      <h3>Team captains</h3>
-      ${captainsTable(q.captains)}`;
+    return [...proposals, ...registrations, ...links, ...handoffs];
   }
 
-  private async _proposal(key: string, item: ProposalItem): Promise<string> {
+  /** Render the current view from the loaded queue (no reads). */
+  private _render(): void {
+    if (!this._root || !this._queue) return;
+    const total = this._tickets.length;
+    const toggle = viewToggle(this._view, total, this._queue.captains.length);
+    if (this._view === 'captains') {
+      this._root.innerHTML = `
+        <div class="req-toolbar">${toggle}</div>
+        <p class="admin-publish-note" tabindex="-1" data-summary>League teams with a captain. Removing a captain cancels any open handoff.</p>
+        ${captainsTable(this._queue.captains)}`;
+      return;
+    }
+    this._root.innerHTML = `
+      <div class="req-toolbar">${toggle}</div>
+      <p class="admin-publish-note" tabindex="-1" data-summary>${total ? `${total} request${total === 1 ? '' : 's'} waiting, in the order to review them.` : 'Nothing is waiting for review.'}
+        Approving a team or placing a member updates that season’s roster right away.</p>
+      ${total ? filterChips(this._tickets, this._filter) : ''}
+      ${ticketList(this._tickets, this._deps, this._filter, new Date())}`;
+  }
+
+  private _setFilter(filter: QueueFilter): void {
+    this._filter = filter;
+    this._render();
+    this._root?.querySelector<HTMLElement>(`[data-filter="${filter}"]`)?.focus();
+  }
+
+  private _setView(view: QueueView): void {
+    this._view = view;
+    this._render();
+    this._root?.querySelector<HTMLElement>(`[data-view="${view}"]`)?.focus();
+  }
+
+  private _openTicket(key: string): void {
+    const dialog = this._dialog;
+    const ticket = this._tickets.find((t) => t.key === key);
+    if (!dialog || !ticket || this._busy) return;
+    // Reopening the same ticket keeps what was typed until the next reload.
+    if (this._dialogKey !== key) {
+      const ticketOf = (k: string) => this._tickets.find((t) => t.key === k);
+      dialog.innerHTML = ticketDialogContent(ticket, this._deps.get(key), ticketOf);
+      this._dialogKey = key;
+      dialog.querySelector('.req-dialog__body')?.scrollTo?.(0, 0);
+    }
+    this._decided = false;
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector<HTMLElement>('.req-dialog__close')?.focus();
+  }
+
+  private _onDialogClosed(): void {
+    if (this._decided || !this._dialogKey) return;
+    this._root?.querySelector<HTMLElement>(`[data-open="${this._dialogKey}"]`)?.focus();
+  }
+
+  /** After a reload, focus the row now where the decided one was, else the summary (§III.6). */
+  private _focusAfterDecision(index: number): void {
+    const rows = [...(this._root?.querySelectorAll<HTMLElement>('li:not([hidden]) > [data-open]') ?? [])];
+    const target = rows[Math.min(index, rows.length - 1)] ?? this._root?.querySelector<HTMLElement>('[data-summary]');
+    target?.focus();
+  }
+
+  private async _proposal(key: string, item: ProposalItem): Promise<Ticket> {
     const p = item.proposal;
     const [prev1, prev2, current] = await Promise.all([teamsOf(p.year - 1), teamsOf(p.year - 2), teamsOf(p.year)]);
     const last1 = prev1.find((t) => t.id === item.teamId);
@@ -157,16 +264,14 @@ export class RequestsTab implements AdminTab {
       if (act === 'request-changes' && !note) return 'Write a note saying what needs to change.';
       return { type: 'proposal', id: p.id, action: act === 'reject' ? 'reject' : 'request-changes', note };
     });
-    return proposalCard(key, item, rows, lastYear, defaults);
+    return proposalTicket(key, item, rows, lastYear, defaults);
   }
 
-  private async _registration(key: string, item: RegistrationItem): Promise<string> {
+  private async _registration(key: string, item: RegistrationItem): Promise<Ticket> {
     const r = item.registration;
     const names = getLeagueReviewService().placementNames(item);
     const [teams, defaults] = await Promise.all([teamsOf(r.year), defaultsFor(r.year, names)]);
-    const preferred = r.preferredLeagueTeamId
-      ? teams.find((t) => t.id === r.preferredLeagueTeamId)?.name ?? r.preferredLeagueTeamId
-      : null;
+    const preferred = r.preferredLeagueTeamId ? await teamName(r.preferredLeagueTeamId, r.year, teams) : null;
     this._requests.set(key, (act, card) => {
       if (act === 'decline') return { type: 'registration', id: r.id, action: 'decline', note: readNote(card) };
       const teamId = card.querySelector<HTMLSelectElement>('[data-team]')?.value ?? '';
@@ -176,15 +281,15 @@ export class RequestsTab implements AdminTab {
       if (bad) return `Enter a starting average from 0 to 50 for ${bad.name}.`;
       return { type: 'registration', id: r.id, action: 'place', teamId, settings, note: readNote(card) };
     });
-    return registrationCard(key, item, names, teams, preferred, defaults);
+    return registrationTicket(key, item, names, teams, preferred, defaults);
   }
 
-  private async _links(q: ReviewQueue): Promise<string[]> {
+  private async _links(q: ReviewQueue): Promise<Ticket[]> {
     if (!q.links.length) return [];
     const dir = await loadShooterDirectory(scoreService);
     const entries = dir.success ? dir.data : [];
     return q.links.map((item, i) => {
-      const key = `l${i}`;
+      const key = ticketKey.link(i);
       this._requests.set(key, (act, card) => {
         if (act === 'decline') return { type: 'link', uid: item.uid, action: 'decline', note: readNote(card) };
         const name = card.querySelector<HTMLInputElement>('input[data-link-name]:checked')?.value ?? '';
@@ -192,7 +297,7 @@ export class RequestsTab implements AdminTab {
         return { type: 'link', uid: item.uid, action: 'approve', shooterName: name, note: readNote(card) };
       });
       const name = item.request.shooterName;
-      return linkCard(key, item, closeMatches(entries, name), findExact(entries, name));
+      return linkTicket(key, item, closeMatches(entries, name), findExact(entries, name));
     });
   }
 
@@ -224,6 +329,9 @@ export class RequestsTab implements AdminTab {
       if (!ok) return;
     }
 
+    const key = card.dataset['card'] ?? '';
+    const visible = this._tickets.filter((t) => this._filter === 'all' || t.kind === this._filter);
+    const index = Math.max(0, visible.findIndex((t) => t.key === key));
     this._busy = true;
     card.setAttribute('aria-busy', 'true');
     const res = await getLeagueReviewService().review(req);
@@ -232,6 +340,10 @@ export class RequestsTab implements AdminTab {
     if (!res.ok) {
       this._showError(card, leagueErrorMessage(res.code, res.reason, res.message));
       return;
+    }
+    if (this._dialog?.open) {
+      this._decided = true;
+      this._dialog.close();
     }
     showToast('success', DONE[`${req.type}:${req.action}`] ?? 'Done.');
     if (req.type === 'proposal' || req.type === 'registration') {
@@ -242,8 +354,9 @@ export class RequestsTab implements AdminTab {
       if (year === this._ctx?.getYear()) void this._ctx?.refreshTeams();
     }
     await this._load();
-    // The acted-on card is gone after the reload; move focus to the summary (§III.6).
-    this._host?.querySelector<HTMLElement>('[data-summary]')?.focus();
+    // The decided ticket is gone after the reload; focus its neighbour (§III.6).
+    if (req.type === 'captain' && req.action === 'clear') this._root?.querySelector<HTMLElement>('[data-summary]')?.focus();
+    else this._focusAfterDecision(index);
   }
 }
 
