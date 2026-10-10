@@ -99,7 +99,7 @@ slash commands. In order:
 2. **`/implement <feature>`** — execute the spec (runs typecheck + tests when done)
 3. **`@reviewer`** — audit the branch against the constitutional checks and draft the PR description
 4. **`/check`** — quick pre-commit compliance pass before committing
-5. **`/deploy-preview`** — build + typecheck + test, then deploy a 7-day Firebase preview channel
+5. **`/deploy-preview`** — build + typecheck + test, then deploy to the `citl-preview` site
 
 Canonical descriptions of this workflow live in:
 - [WORKFLOW-GUIDE.md](../WORKFLOW-GUIDE.md) — hands-on cheat sheet with example prompts

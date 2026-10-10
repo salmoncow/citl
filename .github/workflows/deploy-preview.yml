@@ -1,19 +1,30 @@
 name: Deploy to Firebase Hosting (Preview)
 
+# PR previews deploy to the dedicated `citl-preview` Hosting site
+# (https://citl-preview.web.app), not to preview channels. Its fixed
+# hostname is on the production reCAPTCHA Enterprise key's allowed
+# domains, so App Check works with real reCAPTCHA tokens and no debug
+# token is ever built into the bundle. scripts/check-app-check-debug.js
+# (CI and the hosting predeploy hook) fails if one is added here.
+
 on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
 
+# One preview site, one slot: the most recent PR deploy wins. Queue
+# deploys rather than cancel one halfway through.
+concurrency:
+  group: deploy-preview
+  cancel-in-progress: false
+
 jobs:
   build-and-preview:
-    name: Build & Deploy (Preview Channel)
+    name: Build & Deploy (Preview Site)
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]'
     permissions:
       contents: read
-      pull-requests: write
-      checks: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -26,7 +37,12 @@ jobs:
         run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          # Sign-in runs on the site's own domain, as production does on
+          # citl.club: the auth iframe/handler is then same-origin (CSP
+          # frame-src 'self') and not subject to third-party storage
+          # blocking. Needs https://citl-preview.web.app/__/auth/handler
+          # on the Google OAuth client's authorized redirect URIs.
+          VITE_FIREBASE_AUTH_DOMAIN: citl-preview.web.app
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
@@ -35,18 +51,17 @@ jobs:
           VITE_RECAPTCHA_ENTERPRISE_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY }}
           # League requests (specs 009/010): off until the repository variable is "true".
           VITE_LEAGUE_REQUESTS: ${{ vars.VITE_LEAGUE_REQUESTS }}
-          # Preview-only: App Check debug token. Bypasses reCAPTCHA on
-          # preview channel origins, which can't be added to the
-          # reCAPTCHA Enterprise allowed-domains list. The token value
-          # must be registered in Firebase Console → App Check → Apps →
-          # Manage debug tokens for the citl web app. Do NOT add this
-          # env var to deploy-production.yml.
-          VITE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_APP_CHECK_DEBUG_TOKEN }}
 
-      - name: Deploy to Firebase Hosting (preview channel)
-        uses: FirebaseExtended/action-hosting-deploy@v0.11.0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: citl-baed2
-          expires: 7d
+      - name: Write service account credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+
+      - name: Deploy to the citl-preview Hosting site
+        run: npm run deploy:preview:site
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+
+      - name: Preview URL
+        run: |
+          echo "Preview of ${{ github.event.pull_request.head.sha }} (PR ${{ github.event.pull_request.number }}): https://citl-preview.web.app" >> "$GITHUB_STEP_SUMMARY"

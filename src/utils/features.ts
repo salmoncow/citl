@@ -8,7 +8,7 @@
  * terms version (utils/legal.ts).
  */
 
-const leagueFlag = import.meta.env['VITE_LEAGUE_REQUESTS'];
+const leagueFlag = import.meta.env.VITE_LEAGUE_REQUESTS;
 
 export const leagueRequestsEnabled =
-  leagueFlag === 'true' || (leagueFlag !== 'false' && import.meta.env['VITE_USE_EMULATOR'] === 'true');
+  leagueFlag === 'true' || (leagueFlag !== 'false' && import.meta.env.VITE_USE_EMULATOR === 'true');

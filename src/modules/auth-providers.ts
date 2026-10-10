@@ -81,7 +81,7 @@ export function parseEnabledProviders(raw: string | undefined): ProviderKey[] {
 }
 
 export function enabledProviders(): ProviderKey[] {
-  return parseEnabledProviders(import.meta.env['VITE_AUTH_PROVIDERS']);
+  return parseEnabledProviders(import.meta.env.VITE_AUTH_PROVIDERS);
 }
 
 function popupProvider(_key: PopupProviderKey): AuthProvider {

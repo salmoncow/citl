@@ -45,7 +45,7 @@ npm run seed:emulator                # Seed running emulators (also: -- clear | 
 npm run build                        # Production build → dist/
 npm run preview                      # Serve dist/ locally
 npm run deploy                       # build + deploy hosting, Firestore rules, indexes, and Functions
-npm run deploy:preview               # build + Firebase preview channel (7-day URL)
+npm run deploy:preview               # build + deploy to the citl-preview site (https://citl-preview.web.app)
 ```
 
 > **Fresh checkout?** `.emulator-data/` is git-ignored, so `npm run dev` starts an empty
@@ -133,7 +133,7 @@ This project uses a spec-kit framework with Claude Code agents, skills, hooks, a
 | `/constitution` | Project state dashboard: architectural state, evolution triggers, forbidden patterns |
 | `/implement <feature>` | Execute a feature spec from `.specs/features/` with constitutional compliance |
 | `/check` | Quick pre-commit compliance check: forbidden patterns, typecheck, tests |
-| `/deploy-preview` | Build + typecheck + test + Firebase preview channel deploy |
+| `/deploy-preview` | Build + typecheck + test + deploy to the `citl-preview` site |
 
 ### Automated Hooks
 
@@ -148,7 +148,7 @@ This project uses a spec-kit framework with Claude Code agents, skills, hooks, a
 3. **Implement**: Run `/implement <feature>` to execute the spec
 4. **Review**: Invoke `@reviewer` to audit changes and draft PR
 5. **Check**: Run `/check` before committing for a quick compliance pass
-6. **Deploy**: Run `/deploy-preview` to test on a preview channel
+6. **Deploy**: Run `/deploy-preview` to test on the preview site
 
 ---
 
