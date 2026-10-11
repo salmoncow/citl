@@ -47,6 +47,7 @@ import './components/home-standings';
 import './components/home-award-races';
 import './components/home-announcements';
 import './components/site-banner';
+import { mountPreviewBar } from './components/preview-bar';
 import './components/season-scorecards';
 import './components/scoresheet-generator';
 import './components/yardage-table';
@@ -96,6 +97,7 @@ class App {
 
   async init(): Promise<void> {
     initAppCheck();
+    mountPreviewBar();
 
     this._mainContent = document.getElementById('main-content');
     this._navigation = new NavigationModule();

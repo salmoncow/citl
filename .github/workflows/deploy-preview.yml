@@ -6,14 +6,19 @@ name: Deploy to Firebase Hosting (Preview)
 # domains, so App Check works with real reCAPTCHA tokens and no debug
 # token is ever built into the bundle. scripts/check-app-check-debug.js
 # (CI and the hosting predeploy hook) fails if one is added here.
+#
+# The site must never pass for production (citl.club): preview builds
+# show a "preview build" bar (VITE_PREVIEW_SITE), every response carries
+# X-Robots-Tag: noindex (scripts/preview-site-config.js), and the site is
+# taken offline when the last open PR closes (take-down job below).
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
 
 # One preview site, one slot: the most recent PR deploy wins. Queue
-# deploys rather than cancel one halfway through.
+# deploys and take-downs rather than cancel one halfway through.
 concurrency:
   group: deploy-preview
   cancel-in-progress: false
@@ -22,7 +27,7 @@ jobs:
   build-and-preview:
     name: Build & Deploy (Preview Site)
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]'
+    if: github.event.action != 'closed' && github.actor != 'dependabot[bot]'
     permissions:
       contents: read
     steps:
@@ -51,6 +56,9 @@ jobs:
           VITE_RECAPTCHA_ENTERPRISE_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY }}
           # League requests (specs 009/010): off until the repository variable is "true".
           VITE_LEAGUE_REQUESTS: ${{ vars.VITE_LEAGUE_REQUESTS }}
+          # Shows the "preview build, official site is citl.club" bar.
+          # deploy:preview:site refuses a build without it.
+          VITE_PREVIEW_SITE: 'true'
 
       - name: Write service account credentials
         env:
@@ -65,3 +73,46 @@ jobs:
       - name: Preview URL
         run: |
           echo "Preview of ${{ github.event.pull_request.head.sha }} (PR ${{ github.event.pull_request.number }}): https://citl-preview.web.app" >> "$GITHUB_STEP_SUMMARY"
+
+  # Between PRs nothing should be served at citl-preview.web.app. When a
+  # PR closes (merged or not) and no other previewable PR is open, stop
+  # serving the site; the next preview deploy brings it back.
+  take-down:
+    name: Take Down Preview Site
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed' && github.actor != 'dependabot[bot]'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Count other open PRs that deploy previews
+        id: open
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --state open --json author \
+            -q '[.[] | select(.author.login != "app/dependabot")] | length')
+          echo "count=$n" >> "$GITHUB_OUTPUT"
+          echo "Open previewable PRs: $n"
+
+      - uses: actions/checkout@v7
+        if: steps.open.outputs.count == '0'
+      - uses: actions/setup-node@v7
+        if: steps.open.outputs.count == '0'
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+        if: steps.open.outputs.count == '0'
+
+      - name: Write service account credentials
+        if: steps.open.outputs.count == '0'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+
+      - name: Stop serving citl-preview.web.app
+        if: steps.open.outputs.count == '0'
+        run: npx firebase hosting:disable --site citl-preview --project citl-baed2 --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
