@@ -37,3 +37,23 @@ site-banner[hidden] {
   line-height: 1.5;
 }
 
+
+/* Preview-build bar (src/components/preview-bar.ts): only on citl-preview */
+.preview-bar {
+  padding: var(--space-2) var(--space-6);
+  background: var(--c-status-warning-bg);
+  border-bottom: 2px solid var(--c-accent);
+  text-align: center;
+}
+
+.preview-bar__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-status-warning);
+}
+
+.preview-bar__text a {
+  color: inherit;
+  text-decoration: underline;
+}

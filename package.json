@@ -22,7 +22,7 @@
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:rules": "firebase deploy --only firestore:rules",
     "deploy:functions": "firebase deploy --only functions",
-    "deploy:preview": "npm run build && npm run deploy:preview:site",
+    "deploy:preview": "VITE_PREVIEW_SITE=true npm run build && npm run deploy:preview:site",
     "deploy:preview:site": "node scripts/preview-site-config.js && firebase deploy --only hosting --config .firebase-preview.json --project citl-baed2",
     "deploy:rules:dryrun": "firebase deploy --only firestore:rules --dry-run",
     "preemulators": "npm run ensure:functions",

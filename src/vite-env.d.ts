@@ -17,6 +17,8 @@ interface ImportMetaEnv {
   readonly VITE_RECAPTCHA_ENTERPRISE_SITE_KEY?: string;
   /** App Check debug token; read only under the dev server (appcheck.ts). */
   readonly VITE_APP_CHECK_DEBUG_TOKEN?: string;
+  /** 'true' only for builds deployed to the citl-preview site (preview-bar.ts). */
+  readonly VITE_PREVIEW_SITE?: string;
 }
 // Read env vars with dot access only: Vite replaces `import.meta.env.X`
 // statically, but `import.meta.env['X']` inlines the whole env object,

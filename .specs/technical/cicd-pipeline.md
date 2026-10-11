@@ -95,6 +95,10 @@ Functions are NOT deployed in preview; those changes only go live on production.
 summary, so the job needs only `contents: read`. The hosting `predeploy` hook runs
 `scripts/check-app-check-debug.js`, which fails the deploy if any workflow injects an App Check
 debug token or the build contains one. Triggers on PR open, synchronize, and reopen.
+Preview builds set `VITE_PREVIEW_SITE=true` (the "official site is citl.club" bar) and
+responses carry `X-Robots-Tag: noindex`. On PR close, a `take-down` job disables the
+site (`firebase hosting:disable`) when no other non-dependabot PR is open; it shares the
+`deploy-preview` concurrency group, so it can't race a deploy.
 
 See [`.github/workflows/deploy-preview.yml`](../../.github/workflows/deploy-preview.yml).
 

@@ -502,6 +502,21 @@ npm run deploy:preview
 CI does the same on every non-dependabot PR (`deploy-preview.yml`) and writes
 the URL to the job summary. There's one slot, so the last deploy wins.
 
+**It must never pass for production.** Three safeguards:
+
+- **Preview bar.** Preview builds set `VITE_PREVIEW_SITE=true`, which shows a bar
+  above the nav: "Preview build for testing. The official site is citl.club…"
+  (`src/components/preview-bar.ts`). Production builds never set it, so the bar's
+  code is stripped from them. `scripts/preview-site-config.js` refuses to deploy
+  a build without the bar.
+- **Not indexed.** Every preview response carries `X-Robots-Tag: noindex, nofollow`
+  (added only to the derived preview config), and `index.html` declares
+  `<link rel="canonical" href="https://citl.club/">` on both sites.
+- **Offline between PRs.** When a PR closes and no other non-dependabot PR is
+  open, the `take-down` job runs `firebase hosting:disable --site citl-preview`,
+  so the URL serves "Site Not Found". The next preview deploy re-enables it. To
+  show a preview with no PR open, run `npm run deploy:preview` (it sets the flag).
+
 **Use the preview site for**:
 - Testing new features before promoting to live
 - Sharing with stakeholders (league captains, etc.) for review
