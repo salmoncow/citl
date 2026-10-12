@@ -24,6 +24,13 @@
   transition: filter var(--t-fast), background var(--t-fast), transform var(--t-fast);
 }
 
+/* The display above outranks the UA [hidden] rule; keep `hidden` authoritative. */
+.btn-primary[hidden],
+.btn-secondary[hidden],
+.btn-danger[hidden],
+.btn-accent[hidden],
+.btn-outline-dark[hidden] { display: none; }
+
 .btn-primary:active,
 .btn-secondary:active,
 .btn-danger:active,
