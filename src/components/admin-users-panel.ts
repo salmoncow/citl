@@ -101,6 +101,8 @@ class AdminUsersPanel extends HTMLElement {
 
   private async _fetch(append: boolean): Promise<void> {
     if (this._loading) return;
+    // No cursor means no further page; a null cursor would refetch page 1.
+    if (append && this._nextCursor === null) return;
     this._loading = true;
     this._setStatus(append ? 'Loading more…' : 'Loading users…');
     this._setError(null);
