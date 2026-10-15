@@ -36,6 +36,11 @@ updates:
       # update-types filter so it covers majors too.
       vitest:
         patterns: ['vitest', '@vitest/*']
+      # Same failure mode: each @firebase/rules-unit-testing major pins
+      # its firebase peer to one major (v5 → ^12, v6 → ^13), so split
+      # PRs each fail `npm ci` with ERESOLVE. See #347 / #348.
+      firebase-client:
+        patterns: ['firebase', '@firebase/rules-unit-testing']
       # Keep the weekly noise to one PR for low-risk dev bumps.
       # Production deps and majors stay individual so they get review.
       dev-dependencies:
