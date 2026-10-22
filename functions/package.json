@@ -29,7 +29,7 @@
     "@types/node": "^22.20.5",
     "firebase-functions-test": "^3.4.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   },
   "overrides": {
     "google-gax": {
