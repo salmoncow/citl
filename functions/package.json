@@ -19,7 +19,7 @@
     "test": "npm run test:functions --prefix .."
   },
   "dependencies": {
-    "@aws-sdk/client-sesv2": "^3.1150.0",
+    "@aws-sdk/client-sesv2": "^3.1153.0",
     "@aws-sdk/credential-providers": "^3.1153.0",
     "firebase-admin": "^13.0.0",
     "firebase-functions": "^7.4.0",
